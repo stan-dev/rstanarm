@@ -39,8 +39,8 @@ data {
   //   {sum_}size_which_coef, which_coef_{zindex,xindex}
   //   {sum_,sum_size_}which_interactions
   //   y_nrow{_auc}_cpts, auc_{qnodes,qwts}
-  //   a_K_data, has_grp, grp_assoc
-  //   idx_cpts, grp_idx_cpts
+  //   a_K_data, has_grp, grp_assoc, idx_grp
+  //   idx_cpts
   //   y{1,2,3}_x_        {eta,eps,auc}_cpts
   //   y{1,2,3}_z{1,2}_   {eta,eps,auc}_cpts
   //   y{1,2,3}_z{1,2}_id_{eta,eps,auc}_cpts

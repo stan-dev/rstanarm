@@ -24,39 +24,30 @@
 
   // dimensions
   int<lower=0> e_K;                // num. predictors in event submodel
-  int<lower=0> len_epts;           // num. events (ie. not censored)
-  int<lower=0> len_qpts;           // num. rows used for quadrature
-  int<lower=0> len_ipts;           // num. rows used for quadrature for interval cens
   int<lower=0> basehaz_nvars;      // num. aux parameters for baseline hazard
   int<lower=0> qnodes;             // num. nodes for GK quadrature
-
+  int<lower=0> len_epts;           // num. epts (event times)
+  int<lower=0> len_qpts;           // num. qpts (quadrature points)
+  int<lower=0> len_ipts;           // num. ipts (qpts for interval cens.)
+  int<lower=0> len_cpts;           // = len_epts + len_qpts + len_ipts
+  int idx_cpts[3,2];               // index for breaking cpts into epts,qpts,ipts
+	
   // response and time variables
   vector[len_epts] epts;           // time of events
   vector[len_qpts] qpts;           // time at quadpoints
   vector[len_ipts] ipts;           // time at quadpoints for interval censoring
 
-  // predictor matrices
-  matrix[len_epts, e_K] e_x_epts;  // for rows with events
-  matrix[len_qpts, e_K] e_x_qpts;  // for rows at quadpoints
-  matrix[len_ipts, e_K] e_x_ipts;  // for rows at quadpoints for interval censoring
-
-  // predictor means
-  vector[e_K] e_xbar;
-
-  // design matrices for baseline hazard
-  matrix[len_epts, basehaz_nvars] basis_epts;  // spline basis for rows with events
-  matrix[len_qpts, basehaz_nvars] basis_qpts;  // spline basis for rows at quadpoints
-  matrix[len_ipts, basehaz_nvars] basis_ipts;  // spline basis for rows at quadpoints
-                                               //   for interval censoring
+  // design matrices
+  matrix[len_cpts, basehaz_nvars] basis; // spline basis
+  matrix[len_cpts, e_K] e_x;             // predictor matrix   
+  vector[e_K] e_xbar;                    // predictor means
 
   // GK quadrature weights, with (b-a)/2 scaling already incorporated
   vector[len_qpts] qwts;
   vector[len_ipts] iwts;
 
   // weights, set to zero if not used
-  vector[len_epts] e_weights_epts;
-  vector[len_qpts] e_weights_qpts;
-  vector[len_ipts] e_weights_ipts;
+  vector[len_cpts] e_weights;
 
   // constant shift for log baseline hazard
   real norm_const;

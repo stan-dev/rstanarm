@@ -57,108 +57,107 @@
     int<lower=1> which_interactions[sum_size_which_interactions];
 
     // num. rows in long. predictor matrix
-    int<lower=0> y_nrow_cpts[3];
+    int<lower=0> y_qrows[3];
 
   //---- data for calculating eta in GK quadrature
 
     // fe design matrices
 
-    matrix[assoc_uses[1,1] == 1 ? y_nrow_cpts[1] : 0, yK[1]] y1_x_eta_cpts;
-    matrix[assoc_uses[1,2] == 1 ? y_nrow_cpts[2] : 0, yK[2]] y2_x_eta_cpts;
-    matrix[assoc_uses[1,3] == 1 ? y_nrow_cpts[3] : 0, yK[3]] y3_x_eta_cpts;
+    matrix[assoc_uses[1,1] == 1 ? y_qrows[1] : 0, yK[1]] y1_x_eta;
+    matrix[assoc_uses[1,2] == 1 ? y_qrows[2] : 0, yK[2]] y2_x_eta;
+    matrix[assoc_uses[1,3] == 1 ? y_qrows[3] : 0, yK[3]] y3_x_eta;
 
     // re design matrices, group factor 1
 
-    vector[assoc_uses[1,1] == 1 && bK1_len[1] > 0 ? y_nrow_cpts[1] : 0] y1_z1_eta_cpts[bK1_len[1]];
-    vector[assoc_uses[1,2] == 1 && bK1_len[2] > 0 ? y_nrow_cpts[2] : 0] y2_z1_eta_cpts[bK1_len[2]];
-    vector[assoc_uses[1,3] == 1 && bK1_len[3] > 0 ? y_nrow_cpts[3] : 0] y3_z1_eta_cpts[bK1_len[3]];
+    vector[assoc_uses[1,1] == 1 && bK1_len[1] > 0 ? y_qrows[1] : 0] y1_z1_eta[bK1_len[1]];
+    vector[assoc_uses[1,2] == 1 && bK1_len[2] > 0 ? y_qrows[2] : 0] y2_z1_eta[bK1_len[2]];
+    vector[assoc_uses[1,3] == 1 && bK1_len[3] > 0 ? y_qrows[3] : 0] y3_z1_eta[bK1_len[3]];
 
     // re design matrices, group factor 2
 
-    vector[assoc_uses[1,1] == 1 && bK2_len[1] > 0 ? y_nrow_cpts[1] : 0] y1_z2_eta_cpts[bK2_len[1]];
-    vector[assoc_uses[1,2] == 1 && bK2_len[2] > 0 ? y_nrow_cpts[2] : 0] y2_z2_eta_cpts[bK2_len[2]];
-    vector[assoc_uses[1,3] == 1 && bK2_len[3] > 0 ? y_nrow_cpts[3] : 0] y3_z2_eta_cpts[bK2_len[3]];
+    vector[assoc_uses[1,1] == 1 && bK2_len[1] > 0 ? y_qrows[1] : 0] y1_z2_eta[bK2_len[1]];
+    vector[assoc_uses[1,2] == 1 && bK2_len[2] > 0 ? y_qrows[2] : 0] y2_z2_eta[bK2_len[2]];
+    vector[assoc_uses[1,3] == 1 && bK2_len[3] > 0 ? y_qrows[3] : 0] y3_z2_eta[bK2_len[3]];
 
     // ids for re design matrices, group factor 1
 
-    int<lower=0> y1_z1_id_eta_cpts[assoc_uses[1,1] == 1 && bK1_len[1] > 0 ? y_nrow_cpts[1] : 0];
-    int<lower=0> y2_z1_id_eta_cpts[assoc_uses[1,2] == 1 && bK1_len[2] > 0 ? y_nrow_cpts[2] : 0];
-    int<lower=0> y3_z1_id_eta_cpts[assoc_uses[1,3] == 1 && bK1_len[3] > 0 ? y_nrow_cpts[3] : 0];
+    int<lower=0> y1_z1_id_eta[assoc_uses[1,1] == 1 && bK1_len[1] > 0 ? y_qrows[1] : 0];
+    int<lower=0> y2_z1_id_eta[assoc_uses[1,2] == 1 && bK1_len[2] > 0 ? y_qrows[2] : 0];
+    int<lower=0> y3_z1_id_eta[assoc_uses[1,3] == 1 && bK1_len[3] > 0 ? y_qrows[3] : 0];
 
     // ids for re design matrices, group factor 1
 
-    int<lower=0> y1_z2_id_eta_cpts[assoc_uses[1,1] == 1 && bK2_len[1] > 0 ? y_nrow_cpts[1] : 0];
-    int<lower=0> y2_z2_id_eta_cpts[assoc_uses[1,2] == 1 && bK2_len[2] > 0 ? y_nrow_cpts[2] : 0];
-    int<lower=0> y3_z2_id_eta_cpts[assoc_uses[1,3] == 1 && bK2_len[3] > 0 ? y_nrow_cpts[3] : 0];
+    int<lower=0> y1_z2_id_eta[assoc_uses[1,1] == 1 && bK2_len[1] > 0 ? y_qrows[1] : 0];
+    int<lower=0> y2_z2_id_eta[assoc_uses[1,2] == 1 && bK2_len[2] > 0 ? y_qrows[2] : 0];
+    int<lower=0> y3_z2_id_eta[assoc_uses[1,3] == 1 && bK2_len[3] > 0 ? y_qrows[3] : 0];
 
   //---- data for calculating derivative of eta in GK quadrature
 
     // fe design matrices
 
-    matrix[assoc_uses[2,1] == 1 ? y_nrow_cpts[1] : 0, yK[1]] y1_x_eps_cpts;
-    matrix[assoc_uses[2,2] == 1 ? y_nrow_cpts[2] : 0, yK[2]] y2_x_eps_cpts;
-    matrix[assoc_uses[2,3] == 1 ? y_nrow_cpts[3] : 0, yK[3]] y3_x_eps_cpts;
+    matrix[assoc_uses[2,1] == 1 ? y_qrows[1] : 0, yK[1]] y1_x_eps;
+    matrix[assoc_uses[2,2] == 1 ? y_qrows[2] : 0, yK[2]] y2_x_eps;
+    matrix[assoc_uses[2,3] == 1 ? y_qrows[3] : 0, yK[3]] y3_x_eps;
 
     // re design matrices, group factor 1
 
-    vector[assoc_uses[2,1] == 1 && bK1_len[1] > 0 ? y_nrow_cpts[1] : 0] y1_z1_eps_cpts[bK1_len[1]];
-    vector[assoc_uses[2,2] == 1 && bK1_len[2] > 0 ? y_nrow_cpts[2] : 0] y2_z1_eps_cpts[bK1_len[2]];
-    vector[assoc_uses[2,3] == 1 && bK1_len[3] > 0 ? y_nrow_cpts[3] : 0] y3_z1_eps_cpts[bK1_len[3]];
+    vector[assoc_uses[2,1] == 1 && bK1_len[1] > 0 ? y_qrows[1] : 0] y1_z1_eps[bK1_len[1]];
+    vector[assoc_uses[2,2] == 1 && bK1_len[2] > 0 ? y_qrows[2] : 0] y2_z1_eps[bK1_len[2]];
+    vector[assoc_uses[2,3] == 1 && bK1_len[3] > 0 ? y_qrows[3] : 0] y3_z1_eps[bK1_len[3]];
 
     // re design matrices, group factor 2
 
-    vector[assoc_uses[2,1] == 1 && bK2_len[1] > 0 ? y_nrow_cpts[1] : 0] y1_z2_eps_cpts[bK2_len[1]];
-    vector[assoc_uses[2,2] == 1 && bK2_len[2] > 0 ? y_nrow_cpts[2] : 0] y2_z2_eps_cpts[bK2_len[2]];
-    vector[assoc_uses[2,3] == 1 && bK2_len[3] > 0 ? y_nrow_cpts[3] : 0] y3_z2_eps_cpts[bK2_len[3]];
+    vector[assoc_uses[2,1] == 1 && bK2_len[1] > 0 ? y_qrows[1] : 0] y1_z2_eps[bK2_len[1]];
+    vector[assoc_uses[2,2] == 1 && bK2_len[2] > 0 ? y_qrows[2] : 0] y2_z2_eps[bK2_len[2]];
+    vector[assoc_uses[2,3] == 1 && bK2_len[3] > 0 ? y_qrows[3] : 0] y3_z2_eps[bK2_len[3]];
 
     // ids for re design matrices, group factor 1
 
-    int<lower=0> y1_z1_id_eps_cpts[assoc_uses[2,1] == 1 && bK1_len[1] > 0 ? y_nrow_cpts[1] : 0];
-    int<lower=0> y2_z1_id_eps_cpts[assoc_uses[2,2] == 1 && bK1_len[2] > 0 ? y_nrow_cpts[2] : 0];
-    int<lower=0> y3_z1_id_eps_cpts[assoc_uses[2,3] == 1 && bK1_len[3] > 0 ? y_nrow_cpts[3] : 0];
+    int<lower=0> y1_z1_id_eps[assoc_uses[2,1] == 1 && bK1_len[1] > 0 ? y_qrows[1] : 0];
+    int<lower=0> y2_z1_id_eps[assoc_uses[2,2] == 1 && bK1_len[2] > 0 ? y_qrows[2] : 0];
+    int<lower=0> y3_z1_id_eps[assoc_uses[2,3] == 1 && bK1_len[3] > 0 ? y_qrows[3] : 0];
 
     // ids for re design matrices, group factor 1
 
-    int<lower=0> y1_z2_id_eps_cpts[assoc_uses[2,1] == 1 && bK2_len[1] > 0 ? y_nrow_cpts[1] : 0];
-    int<lower=0> y2_z2_id_eps_cpts[assoc_uses[2,2] == 1 && bK2_len[2] > 0 ? y_nrow_cpts[2] : 0];
-    int<lower=0> y3_z2_id_eps_cpts[assoc_uses[2,3] == 1 && bK2_len[3] > 0 ? y_nrow_cpts[3] : 0];
+    int<lower=0> y1_z2_id_eps[assoc_uses[2,1] == 1 && bK2_len[1] > 0 ? y_qrows[1] : 0];
+    int<lower=0> y2_z2_id_eps[assoc_uses[2,2] == 1 && bK2_len[2] > 0 ? y_qrows[2] : 0];
+    int<lower=0> y3_z2_id_eps[assoc_uses[2,3] == 1 && bK2_len[3] > 0 ? y_qrows[3] : 0];
 
   //---- data for calculating integral of eta in GK quadrature
-
-    // num. of nodes for GK quadrature for area under marker trajectory
-    int<lower=0> auc_qnodes;
-    int<lower=0> nrow_y_Xq_auc; // num. rows in long. predictor matrix at auc quadpoints
-    vector[sum(assoc_uses[3,]) > 0 ? nrow_y_Xq_auc : 0] auc_qwts;
+ 
+    int<lower=0> auc_qnodes;      // num. of quadnodes for AUC of biomarker trajectory 
+    int<lower=0> y_qrows_for_auc; // num. rows in long. predictor matrix at auc qpts
+    vector[sum(assoc_uses[3,]) > 0 ? y_qrows_for_auc : 0] auc_qwts;
 
     // fe design matrices
 
-    matrix[assoc_uses[3,1] == 1 ? y_nrow_cpts[1] : 0, yK[1]] y1_x_auc_cpts;
-    matrix[assoc_uses[3,2] == 1 ? y_nrow_cpts[2] : 0, yK[2]] y2_x_auc_cpts;
-    matrix[assoc_uses[3,3] == 1 ? y_nrow_cpts[3] : 0, yK[3]] y3_x_auc_cpts;
+    matrix[assoc_uses[3,1] == 1 ? y_qrows_for_auc : 0, yK[1]] y1_x_auc;
+    matrix[assoc_uses[3,2] == 1 ? y_qrows_for_auc : 0, yK[2]] y2_x_auc;
+    matrix[assoc_uses[3,3] == 1 ? y_qrows_for_auc : 0, yK[3]] y3_x_auc;
 
     // re design matrices, group factor 1
 
-    vector[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? y_nrow_cpts[1] : 0] y1_z1_auc_cpts[bK1_len[1]];
-    vector[assoc_uses[3,2] == 1 && bK1_len[2] > 0 ? y_nrow_cpts[2] : 0] y2_z1_auc_cpts[bK1_len[2]];
-    vector[assoc_uses[3,3] == 1 && bK1_len[3] > 0 ? y_nrow_cpts[3] : 0] y3_z1_auc_cpts[bK1_len[3]];
+    vector[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? y_qrows_for_auc : 0] y1_z1_auc[bK1_len[1]];
+    vector[assoc_uses[3,2] == 1 && bK1_len[2] > 0 ? y_qrows_for_auc : 0] y2_z1_auc[bK1_len[2]];
+    vector[assoc_uses[3,3] == 1 && bK1_len[3] > 0 ? y_qrows_for_auc : 0] y3_z1_auc[bK1_len[3]];
 
     // re design matrices, group factor 2
 
-    vector[assoc_uses[3,1] == 1 && bK2_len[1] > 0 ? y_nrow_cpts[1] : 0] y1_z2_auc_cpts[bK2_len[1]];
-    vector[assoc_uses[3,2] == 1 && bK2_len[2] > 0 ? y_nrow_cpts[2] : 0] y2_z2_auc_cpts[bK2_len[2]];
-    vector[assoc_uses[3,3] == 1 && bK2_len[3] > 0 ? y_nrow_cpts[3] : 0] y3_z2_auc_cpts[bK2_len[3]];
+    vector[assoc_uses[3,1] == 1 && bK2_len[1] > 0 ? y_qrows_for_auc : 0] y1_z2_auc[bK2_len[1]];
+    vector[assoc_uses[3,2] == 1 && bK2_len[2] > 0 ? y_qrows_for_auc : 0] y2_z2_auc[bK2_len[2]];
+    vector[assoc_uses[3,3] == 1 && bK2_len[3] > 0 ? y_qrows_for_auc : 0] y3_z2_auc[bK2_len[3]];
 
     // ids for re design matrices, group factor 1
 
-    int<lower=0> y1_z1_id_auc_cpts[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? y_nrow_cpts[1] : 0];
-    int<lower=0> y2_z1_id_auc_cpts[assoc_uses[3,2] == 1 && bK1_len[2] > 0 ? y_nrow_cpts[2] : 0];
-    int<lower=0> y3_z1_id_auc_cpts[assoc_uses[3,3] == 1 && bK1_len[3] > 0 ? y_nrow_cpts[3] : 0];
+    int<lower=0> y1_z1_id_auc[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? y_qrows_for_auc : 0];
+    int<lower=0> y2_z1_id_auc[assoc_uses[3,2] == 1 && bK1_len[2] > 0 ? y_qrows_for_auc : 0];
+    int<lower=0> y3_z1_id_auc[assoc_uses[3,3] == 1 && bK1_len[3] > 0 ? y_qrows_for_auc : 0];
 
     // ids for re design matrices, group factor 1
 
-    int<lower=0> y1_z2_id_auc_cpts[assoc_uses[3,1] == 1 && bK2_len[1] > 0 ? y_nrow_cpts[1] : 0];
-    int<lower=0> y2_z2_id_auc_cpts[assoc_uses[3,2] == 1 && bK2_len[2] > 0 ? y_nrow_cpts[2] : 0];
-    int<lower=0> y3_z2_id_auc_cpts[assoc_uses[3,3] == 1 && bK2_len[3] > 0 ? y_nrow_cpts[3] : 0];
+    int<lower=0> y1_z2_id_auc[assoc_uses[3,1] == 1 && bK2_len[1] > 0 ? y_qrows_for_auc : 0];
+    int<lower=0> y2_z2_id_auc[assoc_uses[3,2] == 1 && bK2_len[2] > 0 ? y_qrows_for_auc : 0];
+    int<lower=0> y3_z2_id_auc[assoc_uses[3,3] == 1 && bK2_len[3] > 0 ? y_qrows_for_auc : 0];
 
   //---- data for calculating assoc*data interactions in GK quadrature
 
@@ -166,13 +165,13 @@
     int<lower=0,upper=a_K> a_K_data[M*4];
 
     // design matrix for interacting with ev/es/mv/ms at quadpoints
-    matrix[sum(y_nrow_cpts[1:M]), sum(a_K_data)] y_x_data_cpts;
+    matrix[sum(y_qrows[1:M]), sum(a_K_data)] y_x_data;
 
-    // indexing specifying rows of y_x_data_cpts_*pts that correspond to each submodel
-    int<lower=0> idx_cpts[3,2];
+    // indexing specifying rows of y_x_data that correspond to each submodel
+    int<lower=0> idx_data[3,2];
 
   //---- data for combining lower level units clustered within patients
 
     int<lower=0,upper=1> has_grp[M]; // 1 = has clustering below patient level
     int<lower=0,upper=4> grp_assoc;  // 1 = sum, 2 = mean, 3 = min, 4 = max
-    int<lower=0> grp_idx_cpts[len_cpts,2];
+    int<lower=0> idx_grp[len_cpts,2];

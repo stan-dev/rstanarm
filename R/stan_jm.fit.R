@@ -583,7 +583,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
     # baseline hazard
     standata$basehaz_type     <- ai(basehaz$type)
     standata$basehaz_nvars    <- ai(basehaz$nvars)
-    standata$basis_cpts       <- e_mod$basis_cpts
+    standata$basis            <- e_mod$basis_cpts
     standata$norm_const       <- e_mod$norm_const
     
     # priors
