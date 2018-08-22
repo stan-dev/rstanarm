@@ -1483,8 +1483,8 @@ extract_pars.stansurv <- function(object, stanmat = NULL, means = FALSE) {
   nms_beta <- colnames(object$x)
   nms_tde  <- get_smooth_name(object$s_events, type = "smooth_coefs")
   nms_smth <- get_smooth_name(object$s_events, type = "smooth_sd")
-  nms_int  <- get_int_name(object$basehaz)
-  nms_aux  <- get_aux_name(object$basehaz)
+  nms_int  <- get_int_name_basehaz(object$basehaz)
+  nms_aux  <- get_aux_name_basehaz(object$basehaz)
   alpha    <- stanmat[, nms_int,  drop = FALSE]
   beta     <- stanmat[, nms_beta, drop = FALSE]
   beta_tde <- stanmat[, nms_tde,  drop = FALSE]
@@ -1887,8 +1887,8 @@ get_int_name_basehaz <- function(x, ...) {
 get_int_name_ymod <- function(x, ...) {
   if (x$intercept_type$number) paste0(x$stub, "|(Intercept)") else NULL
 }
-get_int_name_emod <- function(x, basehaz, ...) {
-  nm <- get_int_name(basehaz)
+get_int_name_emod <- function(x, ...) {
+  nm <- get_int_name(x$basehaz)
   if (!is.null(nm)) paste0("Event|", nm) else NULL
 }
 
@@ -1911,8 +1911,8 @@ get_aux_name_ymod <- function(x, ...) {
          neg_binomial_2   = paste0(x$stub, "|reciprocal_dispersion"),
          NULL)
 }
-get_aux_name_emod <- function(x, basehaz, ...) {
-  nms <- get_aux_name(basehaz)
+get_aux_name_emod <- function(x, ...) {
+  nms <- get_aux_name(x$basehaz)
   if (!is.null(nms)) paste0("Event|", nms) else NULL
 }
 
@@ -1922,7 +1922,7 @@ get_beta_name_ymod <- function(x) {
   if (!is.null(nms)) paste0(x$stub, "|", nms) else NULL
 }
 get_beta_name_emod <- function(x, ...) {
-  nms <- colnames(x$Xq)
+  nms <- colnames(x$x)
   if (!is.null(nms)) paste0("Event|", nms) else NULL
 }
 

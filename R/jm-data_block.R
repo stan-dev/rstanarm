@@ -1306,34 +1306,6 @@ unclass_Surv_column <- function(data) {
 
 #--------------- Functions related to association structure
 
-# Return an array summarising the joint model association structure
-#
-# @param assoc A list of character vectors, the user input to the assoc 
-#   argument of the stan_jm call.
-# @param lag_assoc A numeric vector, the lag time for the association 
-#   structure related to each longitudinal submodel.
-# @param ok_assoc_list A named list of character vectors, where the named 
-#   elements of the list are the following:
-#     ok_assoc:             valid types of association structures
-#     ok_assoc_data:        assocs that can be interacted with covariates
-#     ok_assoc_interaction: assocs that can be interacted with one another
-#     ok_assoc_interval:    assocs that can be used with interval censoring
-# @param metastuff A list with meta information about the joint model.
-# @return An array, with a column for each longitudinal submodel and a row
-#   for each aspect of the association structure summary.
-handle_assoc <- function(assoc, lag_assoc, ok_assoc_list, meta_stuff) {
-  ok_assoc_interactions <- ok_assoc_list$ok_assoc_interactions
-  out <- mapply(validate_assoc, 
-                y_mod       = y_mod, 
-                user_x      = assoc,
-                lag         = lag_assoc, 
-                MoreArgs    = nlist(meta_stuff, ok_assoc_list))
-  out <- check_order_of_assoc_interactions(out, ok_assoc_interactions)
-  out <- set_colnames(out, paste0("Long", 1:M))
-  out
-}
-
-
 # Return a named list summarising the association for one submodel
 # 
 # @param user_x A character vector or NULL, being the user input to the
@@ -1342,24 +1314,22 @@ handle_assoc <- function(assoc, lag_assoc, ok_assoc_list, meta_stuff) {
 # @param id_var The name of the ID variable 
 # @param metastuff A list with meta information about the joint model.
 # @return A list with information about the desired association structure.
-validate_assoc <- function(user_x, lag, y_mod, ok_assoc_list, meta_stuff) {
+handle_assoc <- function(user_assoc, user_lag, y_mod, meta) {
   
-  M         <- meta_stuff$M
-  id_var    <- meta_stuff$id_var
-  has_icens <- meta_stuff$has_icens
+  M              <- meta$M
+  id_var         <- meta$id_var
+  has_icens      <- meta$has_icens
+  ok_assoc       <- meta$ok_assoc
+  ok_assoc_data  <- meta$ok_assoc_data
+  ok_assoc_int   <- meta$ok_assoc_int
+  ok_assoc_icens <- meta$ok_assoc_icens
   
-  ok_assoc              <- ok_assoc_list$ok_assoc
-  ok_assoc_data         <- ok_assoc_list$ok_assoc_data
-  ok_assoc_interval     <- ok_assoc_list$ok_assoc_interval
-  ok_assoc_interactions <- ok_assoc_list$ok_assoc_interactions
-  
-  ok_inputs <- c(ok_assoc, 
-                 paste0(ok_assoc_data, "_data"),
-                 uapply(ok_assoc_interactions, paste0, "_", ok_assoc_interactions))
+  ok_inputs <- c(ok_assoc, paste0(ok_assoc_data, "_data"),
+                 uapply(ok_assoc_int, paste0, "_", ok_assoc_int))
   
   disallowed <- c("muslope", "shared_b", "shared_coef")
 
-  trimmed_assoc <- trim_assoc(user_assoc, ok_assoc_data, ok_assoc_interactions)
+  trimmed_assoc <- trim_assoc(user_assoc, ok_assoc_data, ok_assoc_int)
   
   if (not.null(user_assoc) && !all(trimmed_assoc %in% ok_inputs))
     stop2("An unsupported association type has been specified. The ",
@@ -1371,9 +1341,9 @@ validate_assoc <- function(user_x, lag, y_mod, ok_assoc_list, meta_stuff) {
     stop2("The following association structures are temporarily disallowed: ",
           "and may be reinstated in a future release: ", comma(disallowed))
     
-  if (has_icens && !all(trimmed_assoc %in% ok_assoc_interval))
+  if (has_icens && !all(trimmed_assoc %in% ok_assoc_icens))
     stop2("When interval censoring is present, only the following association ",
-          "structures are allowed:", comma(ok_assoc_interval))
+          "structures are allowed:", comma(ok_assoc_icens))
   
   if (not.null(user_assoc) && !is.character(user_assoc))
     stop2("The 'assoc' argument should be a character vector or, for a ",
@@ -1433,12 +1403,12 @@ validate_assoc <- function(user_x, lag, y_mod, ok_assoc_list, meta_stuff) {
   assoc$which_formulas <- sapply(ok_inputs_data, parse_assoc_data, user_assoc, simplify = FALSE) 
   
   # Parse suffix specifying indices for interactions between association terms
-  ok_inputs_interactions <- unlist(lapply(ok_assoc_interactions, paste0, "_", ok_assoc_interactions))
+  ok_inputs_interactions <- unlist(lapply(ok_assoc_int, paste0, "_", ok_assoc_int))
   assoc$which_interactions <- sapply(ok_inputs_interactions, parse_assoc_interactions, 
                                      user_assoc, max_index = M, simplify = FALSE)
   
   # Lag for association structure
-  assoc$which_lag <- lag
+  assoc$which_lag <- user_lag
   
   assoc
 }
@@ -1495,15 +1465,15 @@ validate_lag_assoc <- function(lag_assoc, M) {
 #   assoc argument in the stan_jm call
 # @param ok_assoc_data A character vector specifying which types
 #   of association terms are allowed to be interacted with data
-# @param ok_assoc_interactions A character vector specifying which types
+# @param ok_assoc_int A character vector specifying which types
 #   of association terms are allowed to be interacted with other 
 #   association terms
-trim_assoc <- function(x, ok_assoc_data, ok_assoc_interactions) {
+trim_assoc <- function(x, ok_assoc_data, ok_assoc_int) {
   x <- gsub("^shared_b\\(.*",    "shared_b",    x) 
   x <- gsub("^shared_coef\\(.*", "shared_coef", x) 
   for (i in ok_assoc_data)
     x <- gsub(paste0("^", i, "_data\\(.*"),    paste0(i, "_data"), x)
-  for (i in ok_assoc_interactions) for (j in ok_assoc_interactions)
+  for (i in ok_assoc_int) for (j in ok_assoc_int)
     x <- gsub(paste0("^", i, "_", j, "\\(.*"), paste0(i, "_", j),  x) 
   x     
 }
@@ -1606,12 +1576,12 @@ parse_assoc_interactions <- function(x, user_x, max_index) {
 #
 # @param assoc A two dimensional array with information about desired association
 #   structure for the joint model (returned by a call to validate_assoc). 
-# @param ok_assoc_interactions A character vector, specifying which association
+# @param ok_assoc_int A character vector, specifying which association
 #   structures are allowed to be used in interactions
-check_order_of_assoc_interactions <- function(assoc, ok_assoc_interactions) {
+check_order_of_assoc_interactions <- function(assoc, ok_assoc_int) {
   M <- ncol(assoc)
-  for (i in ok_assoc_interactions) {
-    for (j in ok_assoc_interactions) {
+  for (i in ok_assoc_int) {
+    for (j in ok_assoc_int) {
       header <- paste0(i, "_", j)
       header_reversed <- paste0(j, "_", i)
       for (m in 1:M) {
@@ -1664,7 +1634,7 @@ make_assoc_component_flags <- function(assoc) {
       tmp <- assoc[sel, , drop = FALSE]
       tmp <- pad_matrix(tmp, cols = 3L, value = FALSE)
       ai(as.logical(colSums(tmp > 0)))
-    })
+    }, assoc = assoc)
   t(assoc_uses)
 }
 
@@ -1721,7 +1691,7 @@ get_basic_grp_info <- function(y_mod, id_var) {
 }
 
 get_extra_grp_info <- function(basic_info, flist, id_var, grp_assoc,
-                               ok_grp_assocs = c("sum", "mean", "min", "max")) {
+                               ok_assoc_grp = c("sum", "mean", "min", "max")) {
   has_grp <- basic_info$has_grp
   grp_var <- basic_info$grp_var
   if (!has_grp) { # no grouping factor clustered within patients
@@ -1732,8 +1702,8 @@ get_extra_grp_info <- function(basic_info, flist, id_var, grp_assoc,
     if (is.null(grp_assoc))
       stop2("'grp_assoc' cannot be NULL when there is a grouping factor ",
             "clustered within patients.")       
-    if (!grp_assoc %in% ok_grp_assocs)
-      stop2("'grp_assoc' must be one of: ", paste(ok_grp_assocs, collapse = ", "))
+    if (!grp_assoc %in% ok_assoc_grp)
+      stop2("'grp_assoc' must be one of: ", comma(ok_assoc_grp))
     
     # cluster and patient ids for each row of the z matrix
     factor_grp <- factor(flist[[grp_var]]) 
@@ -1779,7 +1749,7 @@ get_num_assoc_pars <- function(assoc, a_mod_stuff) {
 #
 # @param e_mod_stuff A list object returned by a call to the handle_coxmod function
 # @param standata The data list that will be passed to Stan
-generate_prefit_inits <- function(init_fit, standata) {
+get_prefit_inits <- function(init_fit, e_mod, standata) {
   
   init_means <- rstan::get_posterior_mean(init_fit)
   init_nms   <- rownames(init_means)
@@ -1827,7 +1797,7 @@ generate_init_function <- function(e_mod_stuff, standata) {
   
   # Initial values for intercepts, coefficients and aux parameters
   e_beta <- e_mod_stuff$mod$coef
-  e_aux <- if (standata$basehaz_type == 1L) runif(1, 0.5, 3) else rep(0, standata$basehaz_df)
+  e_aux <- if (standata$basehaz_type == 1L) runif(1, 0.5, 3) else rep(0, standata$basehaz_nvars)
   e_z_beta       <- standardise_coef(x        = e_beta, 
                                      location = standata$e_prior_mean, 
                                      scale    = standata$e_prior_scale) 
@@ -2023,11 +1993,11 @@ check_weights <- function(weights, id_var) {
 # @param id_var The name of the ID variable
 handle_weights <- function(mod_stuff, weights, id_var) {
   
-  is_glmod <- (is.null(mod_stuff$eventtime))
+  is_glmod <- (is.null(mod_stuff$exittime))
   
   # No weights provided by user
   if (is.null(weights)) {
-    len <- if (is_glmod) length(mod_stuff$Y$Y) else length(mod_stuff$eventtime)
+    len <- if (is_glmod) length(mod_stuff$Y$Y) else 0
     return(rep(0.0, len)) 
   }
   
@@ -2183,7 +2153,7 @@ standata_add_assoc_grp <- function(standata, a_mod, grp_stuff) {
   has_grp <- fetch_(grp_stuff, "has_grp")
   if (any(has_grp)) {
     sel <- which(has_grp)[[1L]]
-    standata$grp_idx <- attr(a_mod[[sel]], "grp_idx")
+    standata$idx_grp <- attr(a_mod[[sel]], "grp_idx")
     standata$grp_assoc <- switch(grp_assoc, 
                                  sum  = 1L,
                                  mean = 2L,
@@ -2191,7 +2161,7 @@ standata_add_assoc_grp <- function(standata, a_mod, grp_stuff) {
                                  max  = 4L,
                                  0L)
   } else { # no lower level clustering
-    standata$grp_idx   <- matrix(0L, standata$nrow_e_Xq, 2L)
+    standata$idx_grp   <- matrix(0L, standata$len_cpts, 2L)
     standata$grp_assoc <- 0L
   } 
   standata$has_grp <- aa(ai(has_grp))
@@ -2200,95 +2170,84 @@ standata_add_assoc_grp <- function(standata, a_mod, grp_stuff) {
 
 
 # Data (design matrices) for the main types of association structure
-standata_add_assoc_xz <- function(standata, a_mod, assoc, meta_stuff) {
-  M <- meta_stuff$M
-  cnms_nms <- names(meta_stuff$cnms)
-  for (m in 1:M) {
+standata_add_assoc_xz <- function(standata, a_mod, meta, assoc) {
+  cnms_nms <- names(meta$cnms)
+  N_tmp <- sapply(a_mod, function(x) NROW(x$mod_eta$xtemp))
+  N_tmp <- c(N_tmp, rep(0, 3 - length(N_tmp)))
+  standata$y_qrows <- as.array(as.integer(N_tmp))
+  for (m in 1:3) {
     for (i in c("eta", "eps", "auc")) {
       nm_check <- switch(i,
                          eta = "^eta|^mu",
                          eps = "slope",
                          auc = "auc")
       sel <- grep(nm_check, rownames(assoc))
-      req <- any(unlist(assoc[sel,m]))
-      for (j in c("epts", "qpts", "ipts")) {
-        if (m <= M && req) {
-          tmp_stuff <- a_mod[[m]][[paste0("parts_", j)]][[paste0("mod_", i)]]
-          
-          # fe design matrix 
-          X_tmp <- tmp_stuff$xtemp
-          
-          # re design matrix, group factor 1
-          Z1_tmp    <- tmp_stuff$z[[cnms_nms[1L]]]
-          Z1_tmp    <- transpose(Z1_tmp)
-          Z1_tmp    <- convert_null(Z1_tmp, "matrix")
-          Z1_tmp_id <- tmp_stuff$group_list[[cnms_nms[1L]]]
-          Z1_tmp_id <- groups(Z1_tmp_id)
-          Z1_tmp_id <- convert_null(Z1_tmp_id, "arrayinteger")
-          
-          # re design matrix, group factor 2
-          if (length(cnms_nms) > 1L) {
-            Z2_tmp    <- tmp_stuff$z[[cnms_nms[2L]]]
-            Z2_tmp    <- transpose(Z2_tmp)
-            Z2_tmp    <- convert_null(Z2_tmp, "matrix")
-            Z2_tmp_id <- tmp_stuff$group_list[[cnms_nms[2L]]]
-            Z2_tmp_id <- groups(Z2_tmp_id)
-            Z2_tmp_id <- convert_null(Z2_tmp_id, "arrayinteger")
-          } else {
-            Z2_tmp    <- matrix(0,standata$bK2_len[m],0) 
-            Z2_tmp_id <- aa(integer(0))
-          }
+      if (m <= meta$M && any(unlist(assoc[sel,m]))) {
+        tmp_stuff <- a_mod[[m]][[paste0("mod_", i)]]
+        
+        # fe design matrix 
+        X_tmp <- tmp_stuff$xtemp
+        
+        # re design matrix, group factor 1
+        Z1_tmp    <- tmp_stuff$z[[cnms_nms[1L]]]
+        Z1_tmp    <- transpose(Z1_tmp)
+        Z1_tmp    <- convert_null(Z1_tmp, "matrix")
+        Z1_tmp_id <- tmp_stuff$group_list[[cnms_nms[1L]]]
+        Z1_tmp_id <- groups(Z1_tmp_id)
+        Z1_tmp_id <- convert_null(Z1_tmp_id, "arrayinteger")
+        
+        # re design matrix, group factor 2
+        if (length(cnms_nms) > 1L) {
+          Z2_tmp    <- tmp_stuff$z[[cnms_nms[2L]]]
+          Z2_tmp    <- transpose(Z2_tmp)
+          Z2_tmp    <- convert_null(Z2_tmp, "matrix")
+          Z2_tmp_id <- tmp_stuff$group_list[[cnms_nms[2L]]]
+          Z2_tmp_id <- groups(Z2_tmp_id)
+          Z2_tmp_id <- convert_null(Z2_tmp_id, "arrayinteger")
         } else {
-          X_tmp     <- matrix(0,0,standata$yK[m])
-          Z1_tmp    <- matrix(0,standata$bK1_len[m],0) 
           Z2_tmp    <- matrix(0,standata$bK2_len[m],0) 
-          Z1_tmp_id <- aa(integer(0)) 
-          Z2_tmp_id <- aa(integer(0)) 
+          Z2_tmp_id <- aa(integer(0))
         }
-        standata[[paste0("y", m, "_x_",     i)]] <- X_tmp
-        standata[[paste0("y", m, "_z1_",    i)]] <- Z1_tmp
-        standata[[paste0("y", m, "_z2_",    i)]] <- Z2_tmp
-        standata[[paste0("y", m, "_z1_id_", i)]] <- Z1_tmp_id
-        standata[[paste0("y", m, "_z2_id_", i)]] <- Z2_tmp_id              
+      } else {
+        X_tmp     <- matrix(0,0,standata$yK[m])
+        Z1_tmp    <- matrix(0,standata$bK1_len[m],0) 
+        Z2_tmp    <- matrix(0,standata$bK2_len[m],0) 
+        Z1_tmp_id <- aa(integer(0)) 
+        Z2_tmp_id <- aa(integer(0)) 
       }
+      standata[[paste0("y", m, "_x_",     i)]] <- X_tmp
+      standata[[paste0("y", m, "_z1_",    i)]] <- Z1_tmp
+      standata[[paste0("y", m, "_z2_",    i)]] <- Z2_tmp
+      standata[[paste0("y", m, "_z1_id_", i)]] <- Z1_tmp_id
+      standata[[paste0("y", m, "_z2_id_", i)]] <- Z2_tmp_id              
     }             
   }
   standata
 }
 
 # Dimensions for auc association structure
-standata_add_assoc_auc <- function(standata, a_mod, e_mod, meta_stuff) {
+standata_add_assoc_auc <- function(standata, a_mod, meta) {
   
   count_rows <- function(i) { 
     nr <- NROW(i$mod_auc$x)
     if (nr > 0) nr else NULL 
   }
   
-  nrow_y_x_auc_qpts <- unique(uapply(a_mod, count_rows))
-  if (length(nrow_y_x_auc_qpts) > 1L)
+  nrow_y_x_auc <- unique(uapply(a_mod, count_rows))
+  if (length(nrow_y_x_auc) > 1L)
     stop2("Bug found: nrows for auc should be the same for all submodels.")
-
-  qnodes <- meta_stuff$auc_qnodes
-  
+  qnodes <- meta$auc_qnodes
   uses_auc_assoc <- any(standata$assoc_uses[3,] > 0)
-  
   if (uses_auc_assoc) {
     qw   <- get_quadpoints(qnodes)$weights
     qfun <- function(i) lapply(qw, unstandardise_qwts, 0, i)
-    standata$auc_ewts         <- aa(uapply(e_mod$epts,         qfun))
-    standata$auc_qwts         <- aa(uapply(e_mod$qpts,         qfun))
-    standata$auc_qwts_upper   <- aa(uapply(e_mod$qpts_upper,   qfun))
-    standata$auc_qwts_delayed <- aa(uapply(e_mod$qpts_delayed, qfun))
+    standata$auc_qwts <- aa(uapply(standata$cpts, qfun))
   } else {
-    standata$auc_ewts         <- double(0)
-    standata$auc_qwts         <- double(0)
-    standata$auc_qwts_upper   <- double(0)
-    standata$auc_qwts_delayed <- double(0)
+    standata$auc_qwts <- double(0)
   }
-  
-  standata$auc_qnodes    <- ai(qnodes)
-  standata$auc_qrows     <- ai(e_mod$npat * qnodes) 
-  standata$nrow_y_Xq_auc <- ai(nrow_y_x_auc_qpts %ORifNULL% 0)
+  standata$auc_qnodes <- ai(qnodes)
+  standata$y_qrows_for_auc <- ai(nrow_y_x_auc %ORifNULL% 0)
+  standata
 }
 
 # Data for interaction-based and shared parameter association structures
@@ -2300,9 +2259,9 @@ standata_add_assoc_extras <- function(standata, a_mod, assoc) {
   #   idx_q: indexing for the rows of Xq_data that correspond to each submodel, 
   #     since it is formed as a block diagonal matrix
   xq_data <- fetch(a_mod, "X_bind_data") # design mat for the interactions
-  standata$y_Xq_data <- aa(am(Matrix::bdiag(xq_data)))
+  standata$y_x_data <- aa(am(Matrix::bdiag(xq_data)))
   standata$a_K_data <- fetch_array(a_mod, "K_data")
-  standata$idx_q <- get_idx_array(standata$nrow_y_Xq)
+  standata$idx_data <- get_idx_array(standata$y_qrows)
   
   # interactions between association terms
   wi <- "which_interactions"

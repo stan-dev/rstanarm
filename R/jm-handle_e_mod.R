@@ -52,18 +52,18 @@
 #     subject ID variable also included.
 #   tvc: Logical, if TRUE then a counting type Surv() object was used
 #     in the fitted Cox model (ie. time varying covariates). 
-handle_e_mod <- function(formula, data, meta_stuff) {
+handle_e_mod <- function(formula, data, meta) {
   
   if (!requireNamespace("survival"))
     stop("the 'survival' package must be installed to use this function")
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
   
-  id_var      <- meta_stuff$id_var
-  id_list     <- meta_stuff$id_list
-  qnodes      <- meta_stuff$qnodes
-  basehaz     <- meta_stuff$basehaz
-  basehaz_ops <- meta_stuff$basehaz_ops
+  id_var      <- meta$id_var
+  id_list     <- meta$id_list
+  qnodes      <- meta$qnodes
+  basehaz     <- meta$basehaz
+  basehaz_ops <- meta$basehaz_ops
   
   # parse formula, create model data & frame
   formula   <- parse_formula(formula, data)
@@ -159,6 +159,9 @@ handle_e_mod <- function(formula, data, meta_stuff) {
     iwts <- rep(0,0)
     iids <- rep(0,0)
   }
+
+  cpts <- c(epts, qpts, ipts)
+  cids <- c(eids, qids, iids)
   
   # # quadrature points & weights, evaluated for rows with delayed entry
   # if (ndelayed) {
@@ -173,11 +176,13 @@ handle_e_mod <- function(formula, data, meta_stuff) {
   len_epts <- length(epts)
   len_qpts <- length(qpts)
   len_ipts <- length(ipts)
+  len_cpts <- length(cpts)
+  idx_cpts <- get_idx_array(c(len_epts, len_qpts, len_ipts))
   
   # basis terms for baseline hazard
-  basis_cpts <- rbind(make_basis(epts, basehaz), 
-                      make_basis(qpts, basehaz), 
-                      make_basis(ipts, basehaz))
+  basis_epts <-  make_basis(epts, basehaz)
+  basis_qpts <-  make_basis(qpts, basehaz)
+  basis_ipts <-  make_basis(ipts, basehaz)
   
   # predictor matrices
   x <- make_x(formula$tf_form, mf)$x
@@ -190,12 +195,18 @@ handle_e_mod <- function(formula, data, meta_stuff) {
   # fit a cox model
   mod <- survival::coxph(formula$formula, data = data, x = TRUE)
   
-  nlist(mod, 
+  # calculate mean log incidence, used as a shift in log baseline hazard
+  norm_const <- log(nevent / sum(t_end - t_beg))
+  
+  nlist(mod,
+        qnodes,
         basehaz,
         has_intercept,
+        has_icens = as.logical(nicens),
         model_frame = mf,
         entrytime,
         exittime,
+        norm_const,
         t_beg, 
         t_end,
         t_upp,
@@ -213,15 +224,21 @@ handle_e_mod <- function(formula, data, meta_stuff) {
         len_epts,
         len_qpts,
         len_ipts,
+        len_cpts,
+        idx_cpts,
         epts, 
         qpts, 
-        ipts, 
+        ipts,
+        cpts,
         qwts, 
         iwts, 
         eids,
         qids,
         iids,
-        basis_cpts,
+        cids,
+        basis_epts,
+        basis_qpts,
+        basis_ipts,
         x,
         x_cpts,
         x_bar = colMeans(x),

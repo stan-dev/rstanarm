@@ -125,16 +125,17 @@ stan_jm.fit <- function(formulaLong          = NULL,
   # Combine meta information
   stub  <- ifelse(is_jm, "Long", "y")
   stubs <- paste0(stub, seq(M))
-  meta_stuff <- nlist(is_jm,
-                      id_var,
-                      time_var,
-                      basehaz,
-                      basehaz_ops,
-                      epsilon,
-                      qnodes,
-                      stub, 
-                      stubs,
-                      auc_qnodes = 15L)
+  meta  <- nlist(M,
+                 is_jm,
+                 id_var,
+                 time_var,
+                 basehaz,
+                 basehaz_ops,
+                 epsilon,
+                 qnodes,
+                 stub, 
+                 stubs,
+                 auc_qnodes = 15L)
   
   #--------------------------
   # Longitudinal submodel(s)
@@ -142,20 +143,20 @@ stan_jm.fit <- function(formulaLong          = NULL,
   
   # info for separate longitudinal submodels
   y_mod <- xapply(formulaLong, dataLong, family, stubs, FUN = handle_y_mod)
-  
+    
   # construct single cnms list for all longitudinal submodels
-  cnms <- get_common_cnms(y_mod, stub = stub)
+  meta$cnms <- cnms <- get_common_cnms(y_mod, stub = stub)
   
   # construct single list with unique levels for each grouping factor
-  flevels <- get_common_flevels(y_mod)
+  meta$flevels <- flevels <- get_common_flevels(y_mod)
   
   # ensure id_var is a valid grouping factor in all submodels
   if (is_jm) {
     id_var  <- check_id_var (y_mod,   id_var)
     id_list <- check_id_list(y_mod,   id_var)
     weights <- check_weights(weights, id_var)
-    meta_stuff$id_var  <- id_var
-    meta_stuff$id_list <- id_list
+    meta$id_var  <- id_var
+    meta$id_list <- id_list
   }
   
   # observation weights
@@ -498,14 +499,14 @@ stan_jm.fit <- function(formulaLong          = NULL,
   if (is_jm) { # begin jm block
 
     # fit separate event submodel
-    e_mod <- handle_e_mod(formula    = formulaEvent, 
-                          data       = dataEvent, 
-                          meta_stuff = meta_stuff)
+    e_mod <- handle_e_mod(formula = formulaEvent, 
+                          data    = dataEvent, 
+                          meta    = meta)
     
-    basehaz <- e_mod$basehaz  
-    
+    meta$has_icens <- e_mod$has_icens 
+
     # observation weights
-    e_weights <- handle_weights(e_mod, weights, id_var)
+    #e_weights <- handle_weights(e_mod, weights, id_var)
   
     # check longitudinal observation times are not later than the event time
     lapply(dataLong, 
@@ -539,8 +540,8 @@ stan_jm.fit <- function(formulaLong          = NULL,
     
     e_user_prior_aux_stuff <- e_prior_aux_stuff <-
       handle_glm_prior(priorEvent_aux, 
-                       nvars         = basehaz$nvars,
-                       default_scale = get_default_aux_scale(basehaz),
+                       nvars         = e_mod$basehaz$nvars,
+                       default_scale = get_default_aux_scale(e_mod$basehaz),
                        link          = NULL, 
                        ok_dists      = ok_dists_e_aux)
 
@@ -571,6 +572,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
     standata$len_epts         <- ai(e_mod$len_epts)
     standata$len_qpts         <- ai(e_mod$len_qpts)
     standata$len_ipts         <- ai(e_mod$len_ipts)
+    standata$idx_cpts         <- am(e_mod$idx_cpts)
     standata$e_has_intercept  <- ai(e_mod$has_intercept)
     
     # design matrices
@@ -587,9 +589,11 @@ stan_jm.fit <- function(formulaLong          = NULL,
     standata$e_xbar           <- aa(e_mod$x_bar)
 
     # baseline hazard
-    standata$basehaz_type     <- ai(basehaz$type)
-    standata$basehaz_nvars    <- ai(basehaz$nvars)
-    standata$basis            <- e_mod$basis_cpts
+    standata$basehaz_type     <- ai(e_mod$basehaz$type)
+    standata$basehaz_nvars    <- ai(e_mod$basehaz$nvars)
+    standata$basis_epts       <- e_mod$basis_epts
+    standata$basis_qpts       <- e_mod$basis_qpts
+    standata$basis_ipts       <- e_mod$basis_ipts
     standata$norm_const       <- e_mod$norm_const
     
     # priors
@@ -604,6 +608,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
     standata$e_prior_mean_for_intercept <- c(e_prior_intercept_stuff$prior_mean)
     standata$e_prior_scale_for_intercept<- c(e_prior_intercept_stuff$prior_scale)
     standata$e_prior_df_for_intercept   <- c(e_prior_intercept_stuff$prior_df)
+    standata$e_prior_mean_for_aux       <- e_prior_aux_stuff$prior_mean
     standata$e_prior_scale_for_aux      <- e_prior_aux_stuff$prior_scale
     standata$e_prior_df_for_aux         <- e_prior_aux_stuff$prior_df
     standata$e_global_prior_scale       <- e_prior_stuff$global_prior_scale
@@ -627,20 +632,22 @@ stan_jm.fit <- function(formulaLong          = NULL,
                   "shared_b", 
                   "shared_coef")
     
-    ok_assoc_data         <- ok_assoc[c(2,3,5,6)] # ok to interact with covariates
-    ok_assoc_interactions <- ok_assoc[c(2,5)]     # ok to interact across biomarkers
-    ok_assoc_interval     <- ok_assoc[c(1:3,5,6)] # ok to use with interval censoring
-
-    ok_assoc_list <- nlist(ok_assoc,
-                           ok_assoc_data,
-                           ok_assoc_interactions,
-                           ok_assoc_interval)
+    meta$ok_assoc       <- ok_assoc
+    meta$ok_assoc_data  <- ok_assoc[c(2,3,5,6)] # ok to interact with covariates
+    meta$ok_assoc_int   <- ok_assoc[c(2,5)]     # ok to interact across biomarkers
+    meta$ok_assoc_icens <- ok_assoc[c(1:3,5,6)] # ok to use with interval censoring
     
     # check lag time is valid
     lag_assoc <- validate_lag_assoc(lag_assoc, M) 
     
     # return an array summarising the association structure
-    assoc <- handle_assoc(assoc, lag_assoc, ok_assoc_list, meta_stuff)
+    assoc <- mapply(handle_assoc, 
+                    user_assoc = assoc,
+                    user_lag   = lag_assoc, 
+                    y_mod      = y_mod,
+                    MoreArgs   = nlist(meta))
+    assoc <- check_order_of_assoc_interactions(assoc, meta$ok_assoc_int)
+    assoc <- set_colnames(assoc, stubs)
 
     # for each submodel, identify grouping factors clustered within 'id_var' 
     # (i.e. lower level clustering)
@@ -671,13 +678,13 @@ stan_jm.fit <- function(formulaLong          = NULL,
       validate_assoc_with_grp(grp_stuff, assoc, ok_assoc_with_grp)
     
     # design matrices for longitudinal submodel at the quadrature points
-    auc_qnodes <- meta_stuff$auc_qnodes <- 15L
+    auc_qnodes <- meta$auc_qnodes <- 15L
     a_mod <- xapply(FUN       = handle_assocmod, 
                     data      = dataLong, 
                     assoc     = apply(assoc, 2L, c), # converts array to list
                     y_mod     = y_mod,
                     grp_stuff = grp_stuff, 
-                    args      = nlist(e_mod, meta_stuff))
+                    args      = nlist(e_mod, meta))
         
     # number of association parameters
     a_K <- get_num_assoc_pars(assoc, a_mod)
@@ -717,7 +724,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
     })
     
     if (is.character(init) && (init =="prefit"))
-      init <- get_prefit_inits(init_fit, standata)
+      init <- get_prefit_inits(init_fit, e_mod, standata)
     
     #----------- Prior distributions -----------# 
 
@@ -770,10 +777,10 @@ stan_jm.fit <- function(formulaLong          = NULL,
     standata$has_assoc <- make_assoc_type_flags(assoc)
 
     # data for calculating eta, slope, auc in GK quadrature
-    standata <- standata_add_assoc_grp   (standata, a_mod, grp_stuff)
-    standata <- standata_add_assoc_xz    (standata, a_mod, assoc, meta_stuff)
-    standata <- standata_add_assoc_auc   (standata, a_mod, e_mod, meta_stuff)
-    standata <- standata_add_assoc_extras(standata, a_mod, assoc)
+    standata <- standata_add_assoc_grp   (standata, a_mod = a_mod, grp_stuff)
+    standata <- standata_add_assoc_xz    (standata, a_mod = a_mod, meta = meta, assoc = assoc)
+    standata <- standata_add_assoc_auc   (standata, a_mod = a_mod, meta = meta)
+    standata <- standata_add_assoc_extras(standata, a_mod = a_mod, assoc = assoc)
     
     # hyperparameters for assoc parameter priors
     standata$a_prior_dist         <- e_prior_assoc_stuff$prior_dist 
@@ -794,30 +801,44 @@ stan_jm.fit <- function(formulaLong          = NULL,
   # Prior summary
   #---------------
   
-  prior_info <- summarize_jm_prior(
-    user_priorLong                      = y_user_prior_stuff,
-    user_priorLong_intercept            = y_user_prior_intercept_stuff,
-    user_priorLong_aux                  = y_user_prior_aux_stuff,
-    user_prior_covariance               = prior_covariance,
-    y_has_intercept                     = fetch_(y_mod, "x", "has_intercept"),
-    y_has_predictors                    = fetch_(y_mod, "x", "K") > 0,
-    adjusted_priorLong_scale            = fetch(y_prior_stuff, "prior_scale"),
-    adjusted_priorLong_intercept_scale  = fetch(y_prior_intercept_stuff, "prior_scale"),
-    adjusted_priorLong_aux_scale        = fetch(y_prior_aux_stuff, "prior_scale"),
-    family                              = family, 
-    if (is_jm) basehaz                  = basehaz,
-    if (is_jm) user_priorEvent          = e_user_prior_stuff,
-    if (is_jm) user_priorEvent_intercept= e_user_prior_intercept_stuff,
-    if (is_jm) user_priorEvent_aux      = e_user_prior_aux_stuff,
-    if (is_jm) user_priorEvent_assoc    = e_user_prior_assoc_stuff,
-    if (is_jm) e_has_intercept          = standata$e_has_intercept,
-    if (is_jm) e_has_predictors         = standata$e_K > 0,
-    if (is_jm) has_assoc                = a_K > 0,
-    if (is_jm) adjusted_priorEvent_scale           = e_prior_stuff$prior_scale,
-    if (is_jm) adjusted_priorEvent_intercept_scale = e_prior_intercept_stuff$prior_scale,
-    if (is_jm) adjusted_priorEvent_aux_scale       = e_prior_aux_stuff$prior_scale,
-    if (is_jm) adjusted_priorEvent_assoc_scale     = e_prior_assoc_stuff$prior_scale)  
-  
+  if (is_jm) {
+    prior_info <- summarize_jm_prior(
+      user_priorLong                      = y_user_prior_stuff,
+      user_priorLong_intercept            = y_user_prior_intercept_stuff,
+      user_priorLong_aux                  = y_user_prior_aux_stuff,
+      user_prior_covariance               = prior_covariance,
+      y_has_intercept                     = fetch_(y_mod, "x", "has_intercept"),
+      y_has_predictors                    = fetch_(y_mod, "x", "K") > 0,
+      adjusted_priorLong_scale            = fetch(y_prior_stuff, "prior_scale"),
+      adjusted_priorLong_intercept_scale  = fetch(y_prior_intercept_stuff, "prior_scale"),
+      adjusted_priorLong_aux_scale        = fetch(y_prior_aux_stuff, "prior_scale"),
+      family                              = family, 
+      basehaz                             = e_mod$basehaz,
+      user_priorEvent                     = e_user_prior_stuff,
+      user_priorEvent_intercept           = e_user_prior_intercept_stuff,
+      user_priorEvent_aux                 = e_user_prior_aux_stuff,
+      user_priorEvent_assoc               = e_user_prior_assoc_stuff,
+      e_has_intercept                     = standata$e_has_intercept,
+      e_has_predictors                    = standata$e_K > 0,
+      has_assoc                           = standata$a_K > 0,
+      adjusted_priorEvent_scale           = e_prior_stuff$prior_scale,
+      adjusted_priorEvent_intercept_scale = e_prior_intercept_stuff$prior_scale,
+      adjusted_priorEvent_aux_scale       = e_prior_aux_stuff$prior_scale,
+      adjusted_priorEvent_assoc_scale     = e_prior_assoc_stuff$prior_scale)      
+  } else {
+    prior_info <- summarize_jm_prior(
+      user_priorLong                      = y_user_prior_stuff,
+      user_priorLong_intercept            = y_user_prior_intercept_stuff,
+      user_priorLong_aux                  = y_user_prior_aux_stuff,
+      user_prior_covariance               = prior_covariance,
+      y_has_intercept                     = fetch_(y_mod, "x", "has_intercept"),
+      y_has_predictors                    = fetch_(y_mod, "x", "K") > 0,
+      adjusted_priorLong_scale            = fetch(y_prior_stuff, "prior_scale"),
+      adjusted_priorLong_intercept_scale  = fetch(y_prior_intercept_stuff, "prior_scale"),
+      adjusted_priorLong_aux_scale        = fetch(y_prior_aux_stuff, "prior_scale"),
+      family                              = family)    
+  }
+
   #-----------
   # Fit model
   #-----------
@@ -868,8 +889,8 @@ stan_jm.fit <- function(formulaLong          = NULL,
   
   if (is_jm) {
     e_nms_beta  <- get_beta_name_emod(e_mod)
-    e_nms_int   <- get_int_name_emod (e_mod, basehaz)
-    e_nms_aux   <- get_aux_name_emod (e_mod, basehaz)
+    e_nms_int   <- get_int_name_emod (e_mod)
+    e_nms_aux   <- get_aux_name_emod (e_mod)
     e_nms_assoc <- get_assoc_name(a_mod, assoc)
   } else {
     e_nms_beta  <- NULL

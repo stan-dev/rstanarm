@@ -37,10 +37,13 @@
 # @param auc_qnodes Integer specifying the number of GK quadrature nodes to
 #   use in the integral/AUC based association structures.
 # @return The list returned by make_assoc_parts.
-handle_assocmod <- function(data, assoc, y_mod, e_mod, grp_stuff, meta_stuff) {
+handle_assocmod <- function(data, assoc, y_mod, e_mod, grp_stuff, meta) {
   
   if (!requireNamespace("data.table"))
     stop2("the 'data.table' package must be installed to use this function.")
+  
+  id_var   <- meta$id_var
+  time_var <- meta$time_var
   
   # before turning data into a data.table (for a rolling merge against 
   # the quadrature points) we want to make sure that the data does not
@@ -63,7 +66,7 @@ handle_assocmod <- function(data, assoc, y_mod, e_mod, grp_stuff, meta_stuff) {
                newdata      = dt, 
                y_mod        = y_mod, 
                grp_stuff    = grp_stuff, 
-               meta_stuff   = meta_stuff, 
+               meta         = meta, 
                assoc        = assoc,
                ids          = e_mod$cids,
                times        = e_mod$cpts)

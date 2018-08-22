@@ -31,27 +31,24 @@
   int<lower=0> len_ipts;           // num. ipts (qpts for interval cens.)
   int<lower=0> len_cpts;           // = len_epts + len_qpts + len_ipts
   int idx_cpts[3,2];               // index for breaking cpts into epts,qpts,ipts
-	
+
   // response and time variables
   vector[len_epts] epts;           // time of events
   vector[len_qpts] qpts;           // time at quadpoints
   vector[len_ipts] ipts;           // time at quadpoints for interval censoring
 
   // predictor matrices
-  matrix[len_cpts, e_K] e_x;             // predictor matrix   
+  matrix[len_cpts, e_K] e_x;             // predictor matrix
   vector[e_K] e_xbar;                    // predictor means
 
-	// spline basis for baseline hazard
+  // spline basis for baseline hazard
   matrix[len_epts, basehaz_nvars] basis_epts;
   matrix[len_qpts, basehaz_nvars] basis_qpts;
   matrix[len_ipts, basehaz_nvars] basis_ipts;
-	
+
   // GK quadrature weights, with (b-a)/2 scaling already incorporated
   vector[len_qpts] qwts;
   vector[len_ipts] iwts;
-
-  // weights, set to zero if not used
-  vector[len_cpts] e_weights;
 
   // constant shift for log baseline hazard
   real norm_const;

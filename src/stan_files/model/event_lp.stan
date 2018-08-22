@@ -1,10 +1,14 @@
-	vector[len_epts] e_eta_epts = e_eta[idx_cpts[1,1]:idx_cpts[1,2]];
-	vector[len_qpts] e_eta_qpts = e_eta[idx_cpts[2,1]:idx_cpts[2,2]];
-	vector[len_ipts] e_eta_ipts = e_eta[idx_cpts[3,1]:idx_cpts[3,2]];
+  vector[len_epts] e_eta_epts;
+  vector[len_qpts] e_eta_qpts;
+  vector[len_ipts] e_eta_ipts;
 
   real lhaz_epts = 0;  // summation of log hazard at event times
   real lsur_qpts = 0;  // summation of log surv based on qpts
   real lsur_ipts = 0;  // summation of log surv based on ipts
+
+  if (len_epts > 0) e_eta_epts = e_eta[idx_cpts[1,1]:idx_cpts[1,2]];
+  if (len_qpts > 0) e_eta_qpts = e_eta[idx_cpts[2,1]:idx_cpts[2,2]];
+  if (len_ipts > 0) e_eta_ipts = e_eta[idx_cpts[3,1]:idx_cpts[3,2]];
 
   // evaluate log hazard and log survival
   if (basehaz_type == 5) { // exponential model
