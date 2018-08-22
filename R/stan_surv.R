@@ -668,31 +668,6 @@ has_intercept <- function(basehaz) {
   (nm %in% c("exp", "weibull", "gompertz"))
 }
 
-# Return the name of the intercept parameter for a survival model.
-#
-# @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
-# @return A character string or NULL.
-get_int_name <- function(basehaz) {
-  if (has_intercept(basehaz)) "(Intercept)" else NULL
-}
-
-# Return the name of the auxiliary parameter(s) for a survival model.
-#
-# @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
-# @return A character string, character vector, or NULL.
-get_aux_name <- function(basehaz) {
-  nm <- get_basehaz_name(basehaz)
-  nvars <- basehaz$nvars
-  switch(nm,
-         exp       = NULL,
-         weibull   = "weibull-shape",
-         gompertz  = "gompertz-scale",
-         ms        = paste0("m-splines-coef", seq(nvars)),
-         bs        = paste0("b-splines-coef", seq(nvars)),
-         piecewise = paste0("piecewise-coef", seq(nvars)),
-         NA)
-}
-
 # Return the name of the tde spline coefs or smoothing parameters.
 #
 # @param x The predictor matrix for the time-dependent effects, with column names.

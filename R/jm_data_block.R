@@ -584,8 +584,10 @@ handle_y_mod <- function(formula, data, family) {
   has_aux <- check_for_aux(family)
   family <- append_mvmer_famlink(family, is_bernoulli)
   
-  nlist(y, x, z, reTrms, model_frame = mf, formula, terms, 
-        family, intercept_type, has_aux)
+  out <- nlist(y, x, z, reTrms, model_frame = mf, formula, terms, 
+               family, intercept_type, has_aux)
+  
+  structure(out, class = c("ymodinfo", "list"))
 }
 
 # Return the response vector for passing to Stan
@@ -1148,42 +1150,44 @@ handle_e_mod <- function(formula, data, qnodes, basehaz, id_var, y_id_list) {
   # fit a cox model
   mod <- survival::coxph(formula$formula, data = data, x = TRUE)
   
-  nlist(mod, 
-        basehaz,
-        has_intercept,
-        model_frame = mf,
-        entrytime,
-        exittime,
-        t_beg, 
-        t_end,
-        t_upp,
-        t_event,
-        t_rcens,
-        t_lcens,
-        t_lower,
-        t_upper,
-        status,
-        nevent,
-        nrcens,
-        nlcens,
-        nicens,
-        ndelayed,
-        len_epts,
-        len_qpts,
-        len_ipts,
-        epts, 
-        qpts, 
-        ipts, 
-        qwts, 
-        iwts, 
-        eids,
-        qids,
-        iids,
-        basis_cpts,
-        x,
-        x_cpts,
-        x_bar = colMeans(x),
-        K)
+  out <- nlist(mod, 
+               basehaz,
+               has_intercept,
+               model_frame = mf,
+               entrytime,
+               exittime,
+               t_beg, 
+               t_end,
+               t_upp,
+               t_event,
+               t_rcens,
+               t_lcens,
+               t_lower,
+               t_upper,
+               status,
+               nevent,
+               nrcens,
+               nlcens,
+               nicens,
+               ndelayed,
+               len_epts,
+               len_qpts,
+               len_ipts,
+               epts, 
+               qpts, 
+               ipts, 
+               qwts, 
+               iwts, 
+               eids,
+               qids,
+               iids,
+               basis_cpts,
+               x,
+               x_cpts,
+               x_bar = colMeans(x),
+               K)
+  
+  structure(out, class = c("emodinfo", "list"))
 }
 
 # Check that the ids in the longitudinal and survival models match
@@ -1312,16 +1316,18 @@ handle_basehaz <- function(basehaz,
     
   }  
     
-  nlist(type_name = basehaz, 
-        type = basehaz_for_stan(basehaz), 
-        nvars, 
-        iknots, 
-        bknots, 
-        basis,
-				df = nvars,
-				user_df = nvars,
-				knots = if (basehaz == "bs") iknots else c(bknots[1], iknots, bknots[2]),
-				bs_basis = basis)
+  out <- nlist(type_name = basehaz, 
+               type = basehaz_for_stan(basehaz), 
+               nvars, 
+               iknots, 
+               bknots, 
+               basis,
+               df = nvars,
+               user_df = nvars,
+               knots = if (basehaz == "bs") iknots else c(bknots[1], iknots, bknots[2]),
+               bs_basis = basis)
+  
+  structure(out, class = c("basehazinfo", "list"))
 }
 
 # Return the integer respresentation for the baseline hazard, used by Stan

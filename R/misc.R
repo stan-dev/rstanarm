@@ -1876,7 +1876,7 @@ get_ranef_name <- function(cnms, flevels) {
 }
 
 # Return the name for the mean_PPD
-get_int_name <- function(x, ...) {
+get_ppd_name <- function(x, ...) {
   UseMethod("get_int_name")
 }
 get_ppd_name.ymodinfo <- function(x, ...) {

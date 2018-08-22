@@ -61,6 +61,13 @@ transformed data {
   int<lower=0> e_hs = get_nvars_for_hs(e_prior_dist);
   int<lower=0> a_hs = get_nvars_for_hs(a_prior_dist);
 
+  vector[len_epts] log_epts  = log(epts); // log of event times
+  vector[len_qpts] log_qpts  = log(qpts); // log of quadrature points
+  vector[len_ipts] log_ipts  = log(ipts); // log of qpts for interval censoring
+
+  real sum_epts     = sum(epts);     // sum of event times
+  real sum_log_epts = sum(log_epts); // sum of log event times
+
   // declares:
   //   yHs{1,2,3}
   //   len_{z_T,var_group,rho}
@@ -69,6 +76,7 @@ transformed data {
   //   bCov{1,2}_idx
   //   {sqrt,log,sum_log}_y{1,2,3}
 #include /tdata/tdata_mvmer.stan
+
 }
 parameters {
   // declares:

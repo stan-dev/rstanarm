@@ -767,7 +767,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
     standata <- standata_add_assoc_grp   (standata, a_mod, grp_stuff)
     standata <- standata_add_assoc_xz    (standata, a_mod, assoc, meta_stuff)
     standata <- standata_add_assoc_auc   (standata, a_mod, e_mod, meta_stuff)
-    standata <- standata_add_assoc_extras(standata, a_mod, assoc, meta_stuff)
+    standata <- standata_add_assoc_extras(standata, a_mod, assoc)
     
     # hyperparameters for assoc parameter priors
     standata$a_prior_dist         <- e_prior_assoc_stuff$prior_dist 

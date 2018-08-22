@@ -7,7 +7,7 @@
   real lsur_ipts = 0;  // summation of log surv based on ipts
 
   // evaluate log hazard and log survival
-  if (type == 5) { // exponential model
+  if (basehaz_type == 5) { // exponential model
     if (len_epts > 0) {
       lhaz_epts = sum(e_eta_epts);
     }
@@ -18,11 +18,11 @@
       lsur_ipts = - dot_product(iwts, exp(e_eta_ipts));
     }
   }
-  else if (type == 1) { // weibull model
+  else if (basehaz_type == 1) { // weibull model
     real shape = e_aux[1];
     real log_shape = log(shape);
     if (len_epts > 0) {
-      lhaz_epts = (len_epts * log_shape) + (shape - 1) * sum_log_t_events + sum(e_eta_epts);
+      lhaz_epts = (len_epts * log_shape) + (shape - 1) * sum_log_epts + sum(e_eta_epts);
     }
     if (len_qpts > 0) {
       vector[len_qpts] lhaz_qpts;
@@ -35,10 +35,10 @@
       lsur_ipts = - dot_product(iwts, exp(lhaz_ipts));
     }
   }
-  else if (type == 6) { // gompertz model
+  else if (basehaz_type == 6) { // gompertz model
     real scale = e_aux[1];
     if (len_epts > 0) {
-      lhaz_epts = scale * sum_t_events + sum(e_eta_epts);
+      lhaz_epts = scale * sum_epts + sum(e_eta_epts);
     }
     if (len_qpts > 0) {
       vector[len_qpts] lhaz_qpts;
@@ -51,9 +51,9 @@
       lsur_ipts = - dot_product(iwts, exp(lhaz_ipts));
     }
   }
-  else if (type == 4) { // M-splines, on haz scale
+  else if (basehaz_type == 4) { // M-splines, on haz scale
     if (len_epts > 0)
-      lhaz_epts = sum(log(basis_events * e_aux) + e_eta_epts);
+      lhaz_epts = sum(log(basis_epts * e_aux) + e_eta_epts);
     if (len_qpts > 0) {
       vector[len_qpts] lhaz_qpts;
       lhaz_qpts = log(basis_qpts * e_aux) + e_eta_qpts;
@@ -65,9 +65,9 @@
       lsur_ipts = - dot_product(iwts, exp(lhaz_ipts));
     }
   }
-  else if (type == 2) { // B-splines, on log haz scale
+  else if (basehaz_type == 2) { // B-splines, on log haz scale
     if (len_epts > 0) {
-      lhaz_epts = sum(basis_events * e_aux + e_eta_epts);
+      lhaz_epts = sum(basis_epts * e_aux + e_eta_epts);
     }
     if (len_qpts > 0) {
       vector[len_qpts] lhaz_qpts;

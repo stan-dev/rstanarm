@@ -37,11 +37,15 @@
   vector[len_qpts] qpts;           // time at quadpoints
   vector[len_ipts] ipts;           // time at quadpoints for interval censoring
 
-  // design matrices
-  matrix[len_cpts, basehaz_nvars] basis; // spline basis
+  // predictor matrices
   matrix[len_cpts, e_K] e_x;             // predictor matrix   
   vector[e_K] e_xbar;                    // predictor means
 
+	// spline basis for baseline hazard
+  matrix[len_epts, basehaz_nvars] basis_epts;
+  matrix[len_qpts, basehaz_nvars] basis_qpts;
+  matrix[len_ipts, basehaz_nvars] basis_ipts;
+	
   // GK quadrature weights, with (b-a)/2 scaling already incorporated
   vector[len_qpts] qwts;
   vector[len_ipts] iwts;
