@@ -213,11 +213,11 @@ if (require(MASS))
     fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                      family = neg_binomial_2(links[i]), 
                      seed = SEED, chains = 1, iter = 100,
-                     prior_PD = TRUE, QR = TRUE, refresh = 100)
+                     QR = TRUE, refresh = 100)
     fit2 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                         link = links[i],
                         seed = SEED, chains = 1, iter = 100,
-                        prior_PD = TRUE, QR = TRUE, refresh = 100)
+                        QR = TRUE, refresh = 100)
     expect_stanreg(fit1)
     expect_stanreg(fit2)
     expect_equal(as.matrix(fit1), as.matrix(fit2))
@@ -270,7 +270,7 @@ test_that("stan_glm returns expected result for bernoulli", {
     expect_stanreg(fit)
     
     val <- coef(fit)
-    ans <- coef(glm(y ~ x, family = fam, start = val))
+    ans <- coef(glm(y ~ x, family = fam, start = b))
     if (links[i] != "log") expect_equal(val, ans, 0.03, info = links[i])
     else expect_equal(val[-1], ans[-1], 0.06, info = links[i])
   }
@@ -283,7 +283,6 @@ test_that("stan_glm returns expected result for binomial example", {
   trials <- rpois(N, lambda = 30)
   trials <<- trials
   X <- cbind(1, matrix(rnorm(N * 3, sd = 0.5), N, 3))
-  X <<- X
   for (i in 1:length(links)) {
     fam <- binomial(links[i])
     if (i == 4) {
@@ -302,7 +301,7 @@ test_that("stan_glm returns expected result for binomial example", {
     expect_stanreg(fit)
     
     val <- coef(fit)
-    ans <- coef(glm(y ~ X[,-1], family = fam, start = val))
+    ans <- coef(glm(y ~ X[,-1], family = fam, start = b))
     if (links[i] != "log") expect_equal(val, ans, 0.017, info = links[i])
     else expect_equal(val[-1], ans[-1], 0.008, info = links[i])
 
