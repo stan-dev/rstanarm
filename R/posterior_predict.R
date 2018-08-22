@@ -457,6 +457,7 @@ pp_b_ord <- function(b, Z_names) {
       stop("multiple matches bug")
     m <- grep(paste0("b[", sub(" (.*):.*$", " \\1:_NEW_\\1", x), "]"),
               colnames(b), fixed = TRUE)
+    len <- length(m)
     if (len == 1)
       return(m)
     if (len > 1)
