@@ -99,11 +99,11 @@
         if (m == 1) {
           int bMat1_colshift = 0;
           int bMat2_colshift = 0;
-          dydt_eta_q = evaluate_eta(y1_xq_eps,
-                                    y1_z1q_eps,
-                                    y1_z2q_eps,
-                                    y1_z1q_id_eps,
-                                    y1_z2q_id_eps,
+          dydt_eta_q = evaluate_eta(y1_x_eps,
+                                    y1_z1_eps,
+                                    y1_z2_eps,
+                                    y1_z1_id_eps,
+                                    y1_z2_id_eps,
                                     yGamma1,
                                     yBeta1,
                                     bMat1,
@@ -115,11 +115,11 @@
         else if (m == 2) {
           int bMat1_colshift = bK1_len[1];
           int bMat2_colshift = bK2_len[1];
-          dydt_eta_q = evaluate_eta(y2_xq_eps,
-                                    y2_z1q_eps,
-                                    y2_z2q_eps,
-                                    y2_z1q_id_eps,
-                                    y2_z2q_id_eps,
+          dydt_eta_q = evaluate_eta(y2_x_eps,
+                                    y2_z1_eps,
+                                    y2_z2_eps,
+                                    y2_z1_id_eps,
+                                    y2_z2_id_eps,
                                     yGamma2,
                                     yBeta2,
                                     bMat1,
@@ -131,11 +131,11 @@
         else if (m == 3) {
           int bMat1_colshift = sum(bK1_len[1:2]);
           int bMat2_colshift = sum(bK2_len[1:2]);
-          dydt_eta_q = evaluate_eta(y3_xq_eps,
-                                    y3_z1q_eps,
-                                    y3_z2q_eps,
-                                    y3_z1q_id_eps,
-                                    y3_z2q_id_eps,
+          dydt_eta_q = evaluate_eta(y3_x_eps,
+                                    y3_z1_eps,
+                                    y3_z2_eps,
+                                    y3_z1_id_eps,
+                                    y3_z2_id_eps,
                                     yGamma3,
                                     yBeta3,
                                     bMat1,
