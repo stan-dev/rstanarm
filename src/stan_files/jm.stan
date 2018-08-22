@@ -23,24 +23,27 @@ data {
   //   y_prior_dist{_for_intercept,_for_aux,_for_cov}, prior_PD
 #include /data/data_mvmer.stan
 
-  // declares: 
-	//   e_prior_dist{_for_intercept,_for_aux}
-	//   qnodes
-	//   len_{epts,qpts,ipts}
-	//   epts,qpts,ipts
-	//   qwts,iwts
-	//   basehaz_type
+  // declares:
+  //   e_prior_dist{_for_intercept,_for_aux}
+  //   qnodes
+  //   len_{epts,qpts,ipts}
+  //   epts,qpts,ipts
+  //   qwts,iwts
+  //   basehaz_type
 #include /data/data_event.stan
 
-  // declares: 
-	//   a_{K,xbar}, a_prior_dist, assoc, assoc_uses, has_assoc,
-  //   {sum_}size_which_b, which_b_zindex, {sum_}size_which_coef,
-  //   which_coef_{zindex,xindex}, a_K_data, y_Xq_{eta,eps,lag,auc,data},
-  //   {sum_,sum_size_}which_interactions, idx_q,
-  //   nrow_y_Xq{_auc}, auc_{qnodes,qwts}, has_grp, grp_assoc, grp_idx,
-  //   y{1,2,3}_x_{eta,eps,auc}_{epts,qpts,qpts_upper,qpts_delayed}
-  //   y{1,2,3}_z{1,2}q_{eta,eps,auc}_{epts,qpts,qpts_upper,qpts_delayed}
-  //   y{1,2,3}_z{1,2}q_id_{eta,eps,auc}_{epts,qpts,qpts_upper,qpts_delayed}
+  // declares:
+  //   a_{K,xbar}
+  //   a_prior_dist, assoc, assoc_uses, has_assoc
+  //   {sum_}size_which_b, which_b_zindex
+  //   {sum_}size_which_coef, which_coef_{zindex,xindex}
+  //   {sum_,sum_size_}which_interactions
+  //   y_nrow{_auc}_cpts, auc_{qnodes,qwts}
+  //   a_K_data, has_grp, grp_assoc
+  //   idx_cpts, grp_idx_cpts
+  //   y{1,2,3}_x_        {eta,eps,auc}_cpts
+  //   y{1,2,3}_z{1,2}_   {eta,eps,auc}_cpts
+  //   y{1,2,3}_z{1,2}_id_{eta,eps,auc}_cpts
 #include /data/data_assoc.stan
 
   // declares:
@@ -101,8 +104,12 @@ transformed parameters {
 
   //---- Parameters for longitudinal submodels
 
-  // declares and defines: yBeta{1,2,3}, yAux{1,2,3}, yAuxMaximum,
-  //   theta_L, bMat{1,2}
+  // declares and defines:
+  //   yBeta{1,2,3}
+  //   yAux{1,2,3}
+  //   yAuxMaximum,
+  //   theta_L
+  //   bMat{1,2}
 #include /tparameters/tparameters_mvmer.stan
 
   //---- Parameters for event submodel
@@ -124,26 +131,13 @@ model {
 
   //---- Log likelihood for event submodel (GK quadrature)
   {
-    vector[len_epts] e_eta_epts;
-    vector[len_qpts] e_eta_qpts;
-    vector[len_ipts] e_eta_ipts;
+    vector[len_cpts] e_eta;
 
     // Event submodel: linear predictor at event and quad times
-    if (e_K > 0) {
-      if (len_epts > 0) e_eta_epts = e_x_epts * e_beta;
-      if (len_qpts > 0) e_eta_qpts = e_x_qpts * e_beta;
-      if (len_ipts > 0) e_eta_ipts = e_x_ipts * e_beta;
-    }
-    else {
-      if (len_epts > 0) e_eta_epts = rep_vector(0.0, len_epts);
-      if (len_qpts > 0) e_eta_qpts = rep_vector(0.0, len_qpts);
-      if (len_ipts > 0) e_eta_ipts = rep_vector(0.0, len_ipts);
-    }
-    if (e_has_intercept == 1) {
-      if (len_epts > 0) e_eta_epts = e_eta_epts + e_gamma[1];
-      if (len_qpts > 0) e_eta_qpts = e_eta_qpts + e_gamma[1];
-      if (len_ipts > 0) e_eta_ipts = e_eta_ipts + e_gamma[1];
-    }
+    if (e_K > 0) e_eta = e_x * e_beta;
+    else         e_eta = rep_vector(0.0, len_cpts);
+
+    if (e_has_intercept == 1) e_eta = e_eta + e_gamma[1];
 
     if (assoc == 1) {
       // declares:

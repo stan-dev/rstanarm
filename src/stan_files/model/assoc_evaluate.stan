@@ -1,5 +1,5 @@
     // !!! be careful that indexing of has_assoc matches stan_jm.fit !!!
-                      
+
     // mark tracks indexing within a_beta vector, which is the
     // vector of association parameters
     int mark = 0;
@@ -11,7 +11,7 @@
 
     // mark3 tracks indexing within size_which_interactions vector
     int mark3 = 0;
-    
+
     for (m in 1:M) {
 
       //----- etavalue and any interactions
@@ -23,85 +23,39 @@
           has_assoc[14,m] == 1) { // etavalue * muvalue
 
         // declare and define eta for longitudinal submodel m
-        vector[y_nrow_epts[m]] eta_tmp;        
-        if (m == 1) {
-          int bMat1_colshift = 0;
-          int bMat2_colshift = 0;
-          eta_tmp = evaluate_eta(y1_x_eta_epts, 
-                                 y1_z1_eta_epts, 
-                                 y1_z2_eta_epts, 
-                                 y1_z1_id_eta_epts, 
-                                 y1_z2_id_eta_epts, 
-                                 yGamma1, 
-                                 yBeta1, 
-                                 bMat1, 
-                                 bMat2, 
-                                 bMat1_colshift, 
-                                 bMat2_colshift, 
-                                 intercept_type[1]);
-        }
-        else if (m == 2) {
-          int bMat1_colshift = bK1_len[1];
-          int bMat2_colshift = bK2_len[1];
-          eta_tmp = evaluate_eta(y2_x_eta_epts, 
-                                 y2_z1_eta_epts, 
-                                 y2_z2_eta_epts, 
-                                 y2_z1_id_eta_epts, 
-                                 y2_z2_id_eta_epts, 
-                                 yGamma2, 
-                                 yBeta2, 
-                                 bMat1, 
-                                 bMat2, 
-                                 bMat1_colshift, 
-                                 bMat2_colshift, 
-                                 intercept_type[2]);
-        }
-        else if (m == 3) {
-          int bMat1_colshift = sum(bK1_len[1:2]);
-          int bMat2_colshift = sum(bK2_len[1:2]);
-          eta_tmp = evaluate_eta(y3_x_eta_epts, 
-                                 y3_z1_eta_epts, 
-                                 y3_z2_eta_epts, 
-                                 y3_z1_id_eta_epts, 
-                                 y3_z2_id_eta_epts, 
-                                 yGamma3, 
-                                 yBeta3, 
-                                 bMat1, 
-                                 bMat2, 
-                                 bMat1_colshift, 
-                                 bMat2_colshift, 
-                                 intercept_type[3]);
-        }
+#include /model/make_eta_tmp.stan
 
         // add etavalue and any interactions to event submodel eta
         if (has_assoc[1,m] == 1) { // etavalue
-          vector[N] val;
+          vector[y_qrows[m]] val;
           if (has_grp[m] == 0) {
-					  val = eta_tmp;
+            val = eta_tmp;
           }
-					else {
-					  val = collapse_within_groups(eta_tmp, grp_idx_epts, grp_assoc);
+          else {
+            val = collapse_within_groups(eta_tmp, grp_idx_cpts, grp_assoc);
           }
-					mark = mark + 1;
-          e_eta_epts = e_eta_epts + a_beta[mark] * (val - a_xbar[mark]);
+          mark = mark + 1;
+          e_eta = e_eta + a_beta[mark] * (val - a_xbar[mark]);
         }
         mark2 = mark2 + 1; // count even if assoc type isn't used
         if (has_assoc[9,m] == 1) { // etavalue*data
+          int idx1 = idx_data_cpts[m,1];
+          int idx2 = idx_data_cpts[m,2];
           int J = a_K_data[mark2];
           int j_shift = (mark2 == 1) ? 0 : sum(a_K_data[1:(mark2-1)]);
           for (j in 1:J) {
-            vector[N] val;
+            vector[y_qrows[m]] val;
             int sel = j_shift + j;
             if (has_grp[m] == 0) {
-              val = eta_tmp .* y_x_data_epts[idx_data_epts[m,1]:idx_data_epts[m,2], sel];
+              val = eta_tmp .* y_x_data_cpts[idx1:idx2, sel];
             }
             else {
               val = collapse_within_groups(
-                eta_tmp .* y_x_data_epts[idx_data_epts[m,1]:idx_data_epts[m,2], sel],
-                grp_idx_epts, grp_assoc);
+                eta_tmp .* y_x_data_cpts[idx1:idx2, sel],
+                grp_idx_cpts, grp_assoc);
             }
             mark = mark + 1;
-            e_eta_epts = e_eta_epts + a_beta[mark] * (val - a_xbar[mark]);
+            e_eta = e_eta + a_beta[mark] * (val - a_xbar[mark]);
           }
         }
         mark3 = mark3 + 1; // count even if assoc type isn't used
@@ -109,7 +63,7 @@
           for (j in 1:size_which_interactions[mark3]) {
             int j_shift = (mark3 == 1) ? 0 : sum(size_which_interactions[1:(mark3-1)]);
             int sel = which_interactions[j+j_shift];
-            vector[N] val;
+            vector[y_qrows[m]] val;
 #include /model/make_eta_tmp2.stan
             val = eta_tmp .* eta_tmp2;
             mark = mark + 1;
@@ -121,8 +75,8 @@
           for (j in 1:size_which_interactions[mark3]) {
             int j_shift = (mark3 == 1) ? 0 : sum(size_which_interactions[1:(mark3-1)]);
             int sel = which_interactions[j+j_shift];
-            vector[N] val;
-            vector[nrow_y_Xq[sel]] mu_tmp2;
+            vector[y_qrows[m]] val;
+            vector[y_nrow_cpts[sel]] mu_tmp2;
 #include /model/make_eta_tmp2.stan
             mu_tmp2 = evaluate_mu(eta_tmp2, family[sel], link[sel]);
             val = eta_tmp .* mu_tmp2;
@@ -137,107 +91,153 @@
 
       //----- etaslope and any interactions
 
-            mark2 = mark2 + 1;
-            if ((has_assoc[2,m] == 1) || (has_assoc[10,m] == 1)) {
+      mark2 = mark2 + 1;
+      if ((has_assoc[2,m] == 1) || (has_assoc[10,m] == 1)) {
 
-                // declare and define etaslope at quadpoints for submodel m
-                vector[nrow_y_Xq[m]] dydt_eta_q;
-                if (m == 1) {
-                    int bMat1_colshift = 0;
-                    int bMat2_colshift = 0;
-                    dydt_eta_q = evaluate_eta(y1_xq_eps, y1_z1q_eps, y1_z2q_eps,
-                                              y1_z1q_id_eps, y1_z2q_id_eps,
-                                              yGamma1, yBeta1, bMat1, bMat2,
-                                              bMat1_colshift, bMat2_colshift, 0);
-                }
-                else if (m == 2) {
-                    int bMat1_colshift = bK1_len[1];
-                    int bMat2_colshift = bK2_len[1];
-                    dydt_eta_q = evaluate_eta(y2_xq_eps, y2_z1q_eps, y2_z2q_eps,
-                                              y2_z1q_id_eps, y2_z2q_id_eps,
-                                              yGamma2, yBeta2, bMat1, bMat2,
-                                              bMat1_colshift, bMat2_colshift, 0);
-                }
-                else if (m == 3) {
-                    int bMat1_colshift = sum(bK1_len[1:2]);
-                    int bMat2_colshift = sum(bK2_len[1:2]);
-                    dydt_eta_q = evaluate_eta(y3_xq_eps, y3_z1q_eps, y3_z2q_eps,
-                                              y3_z1q_id_eps, y3_z2q_id_eps,
-                                              yGamma3, yBeta3, bMat1, bMat2,
-                                              bMat1_colshift, bMat2_colshift, 0);
-                }
-
-        // add etaslope and any interactions to event submodel eta
-                if (has_assoc[2,m] == 1) { // etaslope
-                    vector[N] val;
-                    if (has_grp[m] == 0) {
-                        val = dydt_eta_q;
-                    }
-                    else {
-                        val = collapse_within_groups(dydt_eta_q, grp_idx, grp_assoc);
-                    }
-                    mark = mark + 1;
-                    e_eta = e_eta + a_beta[mark] * (val - a_xbar[mark]);
-                }
-                if (has_assoc[10,m] == 1) { // etaslope*data
-                    int J = a_K_data[mark2];
-                    int j_shift = (mark2 == 1) ? 0 : sum(a_K_data[1:(mark2-1)]);
-                    for (j in 1:J) {
-                        vector[N] val;
-                        int sel = j_shift + j;
-                        if (has_grp[m] == 0) {
-                            val = dydt_eta_q .* y_x_data[idx_data[m,1]:idx_data[m,2], sel];
-                        }
-                        else {
-                            val = collapse_within_groups(
-                                dydt_eta_q .* y_x_data[idx_data[m,1]:idx_data[m,2], sel],
-                                grp_idx, grp_assoc);
-                        }
-                        mark = mark + 1;
-                        e_eta = e_eta + a_beta[mark] * (val - a_xbar[mark]);
-                    }
-                }
-      }
-
-      //----- etaauc
-
-      // add etaauc to event submodel eta
-      if (has_assoc[3,m] == 1) { // etaauc
-        vector[nrow_y_Xq_auc] eta_auc_tmp; // eta at all auc quadpoints (for submodel m)
-        vector[nrow_y_Xq[m]] val; // eta following summation over auc quadpoints
+        // declare and define etaslope at quadpoints for submodel m
+        vector[y_nrow_cpts[m]] dydt_eta_q;
         if (m == 1) {
           int bMat1_colshift = 0;
           int bMat2_colshift = 0;
-          eta_auc_tmp = evaluate_eta(y1_xq_auc, y1_z1q_auc, y1_z2q_auc, 
-                                 y1_z1q_id_auc, y1_z2q_id_auc, 
-                                 yGamma1, yBeta1, bMat1, bMat2, 
-                                 bMat1_colshift, bMat2_colshift, 
-                                 intercept_type[1]);
+          dydt_eta_q = evaluate_eta(y1_xq_eps,
+                                    y1_z1q_eps,
+                                    y1_z2q_eps,
+                                    y1_z1q_id_eps,
+                                    y1_z2q_id_eps,
+                                    yGamma1,
+                                    yBeta1,
+                                    bMat1,
+                                    bMat2,
+                                    bMat1_colshift,
+                                    bMat2_colshift,
+                                    0);
         }
         else if (m == 2) {
           int bMat1_colshift = bK1_len[1];
           int bMat2_colshift = bK2_len[1];
-          eta_auc_tmp = evaluate_eta(y2_xq_auc, y2_z1q_auc, y2_z2q_auc, 
-                                 y2_z1q_id_auc, y2_z2q_id_auc, 
-                                 yGamma2, yBeta2, bMat1, bMat2, 
-                                 bMat1_colshift, bMat2_colshift, 
-                                 intercept_type[2]);
+          dydt_eta_q = evaluate_eta(y2_xq_eps,
+                                    y2_z1q_eps,
+                                    y2_z2q_eps,
+                                    y2_z1q_id_eps,
+                                    y2_z2q_id_eps,
+                                    yGamma2,
+                                    yBeta2,
+                                    bMat1,
+                                    bMat2,
+                                    bMat1_colshift,
+                                    bMat2_colshift,
+                                    0);
         }
         else if (m == 3) {
           int bMat1_colshift = sum(bK1_len[1:2]);
           int bMat2_colshift = sum(bK2_len[1:2]);
-          eta_auc_tmp = evaluate_eta(y3_xq_auc, y3_z1q_auc, y3_z2q_auc, 
-                                 y3_z1q_id_auc, y3_z2q_id_auc, 
-                                 yGamma3, yBeta3, bMat1, bMat2, 
-                                 bMat1_colshift, bMat2_colshift, 
-                                 intercept_type[3]);
-        }       
+          dydt_eta_q = evaluate_eta(y3_xq_eps,
+                                    y3_z1q_eps,
+                                    y3_z2q_eps,
+                                    y3_z1q_id_eps,
+                                    y3_z2q_id_eps,
+                                    yGamma3,
+                                    yBeta3,
+                                    bMat1,
+                                    bMat2,
+                                    bMat1_colshift,
+                                    bMat2_colshift,
+                                    0);
+        }
+
+        // add etaslope and any interactions to event submodel eta
+        if (has_assoc[2,m] == 1) { // etaslope
+          vector[y_qrows[m]] val;
+          if (has_grp[m] == 0) {
+            val = dydt_eta_q;
+          }
+          else {
+            val = collapse_within_groups(dydt_eta_q, grp_idx_cpts, grp_assoc);
+          }
+          mark = mark + 1;
+          e_eta = e_eta + a_beta[mark] * (val - a_xbar[mark]);
+        }
+        if (has_assoc[10,m] == 1) { // etaslope*data
+          int idx1 = idx_data_cpts[m,1];
+          int idx2 = idx_data_cpts[m,2];
+          int J = a_K_data[mark2];
+          int j_shift = (mark2 == 1) ? 0 : sum(a_K_data[1:(mark2-1)]);
+          for (j in 1:J) {
+            vector[y_qrows[m]] val;
+            int sel = j_shift + j;
+            if (has_grp[m] == 0) {
+              val = dydt_eta_q .* y_x_data_cpts[idx1:idx2, sel];
+            }
+            else {
+              val = collapse_within_groups(dydt_eta_q .* y_x_data_cpts[idx1:idx2, sel],
+                                           grp_idx_cpts,
+                                           grp_assoc);
+            }
+            mark = mark + 1;
+            e_eta = e_eta + a_beta[mark] * (val - a_xbar[mark]);
+          }
+        }
+      }
+
+      //----- etaauc
+
+      if (has_assoc[3,m] == 1) { // etaauc
+        vector[y_nrow_cpts_auc] eta_auc_tmp; // eta at all auc qpts (for submodel m)
+        vector[y_nrow_cpts[m]]  val;         // eta following summation over auc qpts
+        if (m == 1) {
+          int bMat1_colshift = 0;
+          int bMat2_colshift = 0;
+          eta_auc_tmp = evaluate_eta(y1_x_auc_cpts,
+                                     y1_z1_auc_cpts,
+                                     y1_z2_auc_cpts,
+                                     y1_z1_id_auc_cpts,
+                                     y1_z2_id_auc_cpts,
+                                     yGamma1,
+                                     yBeta1,
+                                     bMat1,
+                                     bMat2,
+                                     bMat1_colshift,
+                                     bMat2_colshift,
+                                     intercept_type[1]);
+        }
+        else if (m == 2) {
+          int bMat1_colshift = bK1_len[1];
+          int bMat2_colshift = bK2_len[1];
+          eta_auc_tmp = evaluate_eta(y2_x_auc_cpts,
+                                     y2_z1_auc_cpts,
+                                     y2_z2_auc_cpts,
+                                     y2_z1_id_auc_cpts,
+                                     y2_z2_id_auc_cpts,
+                                     yGamma2,
+                                     yBeta2,
+                                     bMat1,
+                                     bMat2,
+                                     bMat1_colshift,
+                                     bMat2_colshift,
+                                     intercept_type[2]);
+        }
+        else if (m == 3) {
+          int bMat1_colshift = sum(bK1_len[1:2]);
+          int bMat2_colshift = sum(bK2_len[1:2]);
+          eta_auc_tmp = evaluate_eta(y3_x_auc_cpts,
+                                     y3_z1_auc_cpts,
+                                     y3_z2_auc_cpts,
+                                     y3_z1_id_auc_cpts,
+                                     y3_z2_id_auc_cpts,
+                                     yGamma3,
+                                     yBeta3,
+                                     bMat1,
+                                     bMat2,
+                                     bMat1_colshift,
+                                     bMat2_colshift,
+                                     intercept_type[3]);
+        }
         mark = mark + 1;
-        for (r in 1:nrow_y_Xq[m]) {
+        for (r in 1:y_nrow_cpts[m]) {
           vector[auc_qnodes] val_tmp;
           vector[auc_qnodes] wgt_tmp;
           val_tmp = eta_auc_tmp[((r-1) * auc_qnodes + 1):(r * auc_qnodes)];
-          wgt_tmp = auc_qwts[((r-1) * auc_qnodes + 1):(r * auc_qnodes)];
+          wgt_tmp = auc_qwts   [((r-1) * auc_qnodes + 1):(r * auc_qnodes)];
           val[r] = sum(wgt_tmp .* val_tmp);
         }
         e_eta = e_eta + a_beta[mark] * (val - a_xbar[mark]);
@@ -252,18 +252,18 @@
           has_assoc[16,m] == 1) { // muvalue * muvalue
 
         // declare and define mu for submodel m
-        vector[nrow_y_Xq[m]] mu_tmp;
-#include /model/make_eta_tmp.stan
+        vector[y_nrow_cpts[m]] mu_tmp;
+#include /model/make_eta_cpts_tmp.stan
         mu_tmp = evaluate_mu(eta_tmp, family[m], link[m]);
 
         // add muvalue and any interactions to event submodel eta
         if (has_assoc[4,m] == 1) { // muvalue
-          vector[N] val;
+          vector[y_qrows[m]] val;
           if (has_grp[m] == 0) {
             val = mu_tmp;
           }
           else {
-            val = collapse_within_groups(mu_tmp, grp_idx, grp_assoc);
+            val = collapse_within_groups(mu_tmp, grp_idx_cpts, grp_assoc);
           }
           mark = mark + 1;
           e_eta = e_eta + a_beta[mark] * (val - a_xbar[mark]);
@@ -272,15 +272,15 @@
           int tmp = a_K_data[mark2];
           int j_shift = (mark2 == 1) ? 0 : sum(a_K_data[1:(mark2-1)]);
           for (j in 1:tmp) {
-            vector[N] val;
+            vector[y_qrows[m]] val;
             int sel = j_shift + j;
             if (has_grp[m] == 0) {
-              val = mu_tmp .* y_x_data[idx_data[m,1]:idx_data[m,2], sel];
+              val = mu_tmp .* y_x_data_cpts[idx_data_cpts[m,1]:idx_data_cpts[m,2], sel];
             }
             else {
               val = collapse_within_groups(
-                mu_tmp .* y_x_data[idx_data[m,1]:idx_data[m,2], sel],
-                grp_idx, grp_assoc);
+                mu_tmp .* y_x_data_cpts[idx_data_cpts[m,1]:idx_data_cpts[m,2], sel],
+                grp_idx_cpts, grp_assoc);
             }
             mark = mark + 1;
             e_eta = e_eta + a_beta[mark] * (val - a_xbar[mark]);
@@ -291,8 +291,8 @@
           for (j in 1:size_which_interactions[mark3]) {
             int j_shift = (mark3 == 1) ? 0 : sum(size_which_interactions[1:(mark3-1)]);
             int sel = which_interactions[j+j_shift];
-            vector[N] val;
-#include /model/make_eta_tmp2.stan
+            vector[y_qrows[m]] val;
+#include /model/make_eta_cpts_tmp2.stan
             val = mu_tmp .* eta_tmp2;
             mark = mark + 1;
             e_eta = e_eta + a_beta[mark] * (val - a_xbar[mark]);
@@ -303,9 +303,9 @@
           for (j in 1:size_which_interactions[mark3]) {
             int j_shift = (mark3 == 1) ? 0 : sum(size_which_interactions[1:(mark3-1)]);
             int sel = which_interactions[j+j_shift];
-            vector[N] val;
-            vector[nrow_y_Xq[sel]] mu_tmp2;
-#include /model/make_eta_tmp2.stan
+            vector[y_qrows[m]] val;
+            vector[y_nrow_cpts[sel]] mu_tmp2;
+#include /model/make_eta_cpts_tmp2.stan
             mu_tmp2 = evaluate_mu(eta_tmp2, family[sel], link[sel]);
             val = mu_tmp .* mu_tmp2;
             mark = mark + 1;
@@ -328,43 +328,64 @@
 
       // add muauc to event submodel eta
       if (has_assoc[6,m] == 1) { // muauc
-        vector[nrow_y_Xq_auc] eta_auc_tmp; // eta at all auc quadpoints (for submodel m)
-        vector[nrow_y_Xq_auc] mu_auc_tmp; // mu at all auc quadpoints (for submodel m)  
-        vector[nrow_y_Xq[m]] val; // mu following summation over auc quadpoints 
+        vector[y_nrow_auc]     eta_auc_tmp; // eta at all auc qpts (for submodel m)
+        vector[y_nrow_auc]     mu_auc_tmp;  // mu  at all auc qpts (for submodel m)
+        vector[y_nrow_cpts[m]] val;         // mu  following summation over auc qpts
         if (m == 1) {
           int bMat1_colshift = 0;
           int bMat2_colshift = 0;
-          eta_auc_tmp = evaluate_eta(y1_xq_auc, y1_z1q_auc, y1_z2q_auc, 
-                                 y1_z1q_id_auc, y1_z2q_id_auc, 
-                                 yGamma1, yBeta1, bMat1, bMat2, 
-                                 bMat1_colshift, bMat2_colshift, 
-                                 intercept_type[1]);
+          eta_auc_tmp = evaluate_eta(y1_x_auc_cpts,
+                                     y1_z1_auc_cpts,
+                                     y1_z2_auc_cpts,
+                                     y1_z1_id_auc_cpts,
+                                     y1_z2_id_auc_cpts,
+                                     yGamma1,
+                                     yBeta1,
+                                     bMat1,
+                                     bMat2,
+                                     bMat1_colshift,
+                                     bMat2_colshift,
+                                     intercept_type[1]);
         }
         else if (m == 2) {
           int bMat1_colshift = bK1_len[1];
           int bMat2_colshift = bK2_len[1];
-          eta_auc_tmp = evaluate_eta(y2_xq_auc, y2_z1q_auc, y2_z2q_auc, 
-                                 y2_z1q_id_auc, y2_z2q_id_auc, 
-                                 yGamma2, yBeta2, bMat1, bMat2, 
-                                 bMat1_colshift, bMat2_colshift, 
-                                 intercept_type[2]);
+          eta_auc_tmp = evaluate_eta(y2_x_auc_cpts,
+                                     y2_z1_auc_cpts,
+                                     y2_z2_auc_cpts,
+                                     y2_z1_id_auc_cpts,
+                                     y2_z2_id_auc_cpts,
+                                     yGamma2,
+                                     yBeta2,
+                                     bMat1,
+                                     bMat2,
+                                     bMat1_colshift,
+                                     bMat2_colshift,
+                                     intercept_type[2]);
         }
         else if (m == 3) {
           int bMat1_colshift = sum(bK1_len[1:2]);
           int bMat2_colshift = sum(bK2_len[1:2]);
-          eta_auc_tmp = evaluate_eta(y3_xq_auc, y3_z1q_auc, y3_z2q_auc, 
-                                 y3_z1q_id_auc, y3_z2q_id_auc, 
-                                 yGamma3, yBeta3, bMat1, bMat2, 
-                                 bMat1_colshift, bMat2_colshift, 
-                                 intercept_type[3]);
-        }       
+          eta_auc_tmp = evaluate_eta(y3_x_auc_cpts,
+                                     y3_z1_auc_cpts,
+                                     y3_z2_auc_cpts,
+                                     y3_z1_id_auc_cpts,
+                                     y3_z2_id_auc_cpts,
+                                     yGamma3,
+                                     yBeta3,
+                                     bMat1,
+                                     bMat2,
+                                     bMat1_colshift,
+                                     bMat2_colshift,
+                                     intercept_type[3]);
+        }
         mu_auc_tmp = evaluate_mu(eta_auc_tmp, family[m], link[m]);
         mark = mark + 1;
-        for (r in 1:nrow_y_Xq[m]) {
+        for (r in 1:y_nrow_cpts[m]) {
           vector[auc_qnodes] val_tmp;
           vector[auc_qnodes] wgt_tmp;
           val_tmp = mu_auc_tmp[((r-1) * auc_qnodes + 1):(r * auc_qnodes)];
-          wgt_tmp = auc_qwts[((r-1) * auc_qnodes + 1):(r * auc_qnodes)];
+          wgt_tmp = auc_qwts  [((r-1) * auc_qnodes + 1):(r * auc_qnodes)];
           val[r] = sum(wgt_tmp .* val_tmp);
         }
         e_eta = e_eta + a_beta[mark] * (val - a_xbar[mark]);

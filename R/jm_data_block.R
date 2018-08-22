@@ -1097,54 +1097,54 @@ handle_e_mod <- function(formula, data, qnodes, basehaz, id_var, y_id_list) {
   qq <- get_quadpoints(nodes = qnodes)
   qp <- qq$points
   qw <- qq$weights
-  
+
+  # event times & ids (for events only)
+  epts <- t_end[event] # event times
+  eids <- ids  [event] # subject ids
+    
   # quadrature points & weights, evaluated for each row of data
   qpts <- uapply(qp, unstandardise_qpts, t_beg, t_end)
   qwts <- uapply(qw, unstandardise_qwts, t_beg, t_end)
   qids <- rep(ids, qnodes)
   
-  # quadrature points & weights, evaluated for rows with interval censoring
+  # quadrature points & weights, evaluated at upper limit of rows w/ interval censoring
   if (nicens) {
-    qpts_upper <- uapply(qp, unstandardise_qpts, t_beg[icens], t_upper) # qpts for upper limit
-    qwts_upper <- uapply(qw, unstandardise_qwts, t_beg[icens], t_upper) # qwts for upper limit
+    ipts <- uapply(qp, unstandardise_qpts, t_beg[icens], t_upper)
+    iwts <- uapply(qw, unstandardise_qwts, t_beg[icens], t_upper)
+    iids <- rep(ids[icens], qnodes)
   } else {
-    qpts_upper <- rep(0,0)
-    qwts_upper <- rep(0,0)
+    ipts <- rep(0,0)
+    iwts <- rep(0,0)
+    iids <- rep(0,0)
   }
   
-  # quadrature points & weights, evaluated for rows with delayed entry
-  if (ndelayed) {
-    qpts_delayed <- uapply(qp, unstandardise_qpts, 0, t_delayed) # qpts for entry time
-    qwts_delayed <- uapply(qw, unstandardise_qwts, 0, t_delayed) # qwts for entry time
-  } else {
-    qpts_delayed <- rep(0,0)
-    qwts_delayed <- rep(0,0)
-  }
-  
-  # event times & ids (for failures only)
-  epts <- t_end[status == 1] # event times
-  eids <- ids  [status == 1] # subject ids
+  # # quadrature points & weights, evaluated for rows with delayed entry
+  # if (ndelayed) {
+  #   qpts_delayed <- uapply(qp, unstandardise_qpts, 0, t_delayed) # qpts for entry time
+  #   qwts_delayed <- uapply(qw, unstandardise_qwts, 0, t_delayed) # qwts for entry time
+  # } else {
+  #   qpts_delayed <- rep(0,0)
+  #   qwts_delayed <- rep(0,0)
+  # }
   
   # dimensions
-  qrows    <- length(qpts)
-  qicens   <- length(qpts_upper)
-  qdelayed <- length(qpts_delayed)  
-  
+  len_epts <- length(epts)
+  len_qpts <- length(qpts)
+  len_ipts <- length(ipts)
+
   # basis terms for baseline hazard
-  basis_events       <- make_basis(t_event,      basehaz)
-  basis_qpts         <- make_basis(qpts,         basehaz)
-  basis_qpts_upper   <- make_basis(qpts_upper,   basehaz)
-  basis_qpts_delayed <- make_basis(qpts_delayed, basehaz)
+  basis_cpts <- rbind(make_basis(epts, basehaz), 
+                      make_basis(qpts, basehaz), 
+                      make_basis(ipts, basehaz))
   
   # predictor matrices
   x <- make_x(formula$tf_form, mf)$x
-  x_events  <- keep_rows(x, event)
-  x_delayed <- keep_rows(x, delayed)
-  x_qpts         <- rep_rows(x,         times = qnodes)
-  x_qpts_upper   <- rep_rows(x_upper,   times = qnodes)
-  x_qpts_delayed <- rep_rows(x_delayed, times = qnodes)
   K <- ncol(x)
   
+  x_cpts <- rbind(keep_rows(x, event), 
+                  rep_rows (x, times = qnodes), 
+                  rep_rows (keep_rows(x, icens), times = qnodes))
+
   # fit a cox model
   mod <- survival::coxph(formula$formula, data = data, x = TRUE)
   
@@ -1168,30 +1168,21 @@ handle_e_mod <- function(formula, data, qnodes, basehaz, id_var, y_id_list) {
         nlcens,
         nicens,
         ndelayed,
-        qnodes,
-        qrows,
-        qicens,
-        qdelayed,
+        len_epts,
+        len_qpts,
+        len_ipts,
         epts, 
-        eids,
         qpts, 
+        ipts, 
         qwts, 
+        iwts, 
+        eids,
         qids,
-        qpts_upper, 
-        qwts_upper, 
-        qids_upper,
-        qpts_delayed, 
-        qwts_delayed, 
-        qids_delayed,
-        basis_events,
-        basis_qpts,
-        basis_qpts_upper,
-        basis_qpts_delayed,
+        iids,
+        basis_cpts,
         x,
-        x_events,
-        x_qpts,
-        x_qpts_upper,
-        x_qpts_delayed,
+        x_cpts,
+        x_bar = colMeans(x),
         K)
 }
 
@@ -1955,8 +1946,8 @@ handle_assocmod <- function(data, assoc, y_mod, e_mod, grp_stuff, meta_stuff) {
                grp_stuff    = grp_stuff, 
                meta_stuff   = meta_stuff, 
                assoc        = assoc,
-               ids          = e_mod$cids),
-               times        = e_mod$cpts))
+               ids          = e_mod$cids,
+               times        = e_mod$cpts)
  
   do.call(make_assoc_parts, args)
 }
@@ -2568,11 +2559,11 @@ standata_add_assoc_xz <- function(standata, a_mod, assoc, meta_stuff) {
           Z1_tmp_id <- aa(integer(0)) 
           Z2_tmp_id <- aa(integer(0)) 
         }
-        standata[[paste0("y", m, "_x_",     i, "_", j)]] <- X_tmp
-        standata[[paste0("y", m, "_z1_",    i, "_", j)]] <- Z1_tmp
-        standata[[paste0("y", m, "_z2_",    i, "_", j)]] <- Z2_tmp
-        standata[[paste0("y", m, "_z1_id_", i, "_", j)]] <- Z1_tmp_id
-        standata[[paste0("y", m, "_z2_id_", i, "_", j)]] <- Z2_tmp_id              
+        standata[[paste0("y", m, "_x_",     i)]] <- X_tmp
+        standata[[paste0("y", m, "_z1_",    i)]] <- Z1_tmp
+        standata[[paste0("y", m, "_z2_",    i)]] <- Z2_tmp
+        standata[[paste0("y", m, "_z1_id_", i)]] <- Z1_tmp_id
+        standata[[paste0("y", m, "_z2_id_", i)]] <- Z2_tmp_id              
       }
     }             
   }

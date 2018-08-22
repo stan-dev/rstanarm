@@ -574,14 +574,17 @@ stan_jm.fit <- function(formulaLong          = NULL,
     standata$ipts             <- aa(e_mod$ipts)
     standata$qwts             <- aa(e_mod$qwts)
     standata$iwts             <- aa(e_mod$iwts)
-    standata$e_x_cpts         <- e_mod$x_cpts
-    standata$e_xbar           <- aa(e_mod$Xbar)
+    standata$eids             <- aa(e_mod$eids)
+    standata$qids             <- aa(e_mod$qids)
+    standata$iids             <- aa(e_mod$iids)
+    standata$e_x              <- e_mod$x_cpts
+    standata$e_xbar           <- aa(e_mod$x_bar)
 
     # baseline hazard
-    standata$basehaz_type       <- ai(basehaz$type)
-    standata$basehaz_nvars      <- ai(basehaz$nvars)
-    standata$basis_cpts         <- e_mod$basis_cpts
-    standata$norm_const         <- e_mod$norm_const
+    standata$basehaz_type     <- ai(basehaz$type)
+    standata$basehaz_nvars    <- ai(basehaz$nvars)
+    standata$basis_cpts       <- e_mod$basis_cpts
+    standata$norm_const       <- e_mod$norm_const
     
     # priors
     standata$e_prior_dist              <- e_prior_stuff$prior_dist
