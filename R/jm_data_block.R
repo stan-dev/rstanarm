@@ -60,6 +60,7 @@ validate_arg <- function(arg, type, validate_length = NULL) {
     arg <- lapply(arg, as.data.frame)
   if ("family" %in% type)
     arg <- lapply(arg, validate_family)
+  
   arg
 }
 
@@ -555,7 +556,7 @@ rename_t_and_cauchy <- function(prior_stuff, has) {
 #     intercept required for the glmer submodel.
 #   has_aux: logical specifying whether the glmer submodel 
 #     requires an auxiliary parameter.
-handle_y_mod <- function(formula, data, family) {
+handle_y_mod <- function(formula, data, family, stub) {
   mf <- stats::model.frame(lme4::subbars(formula), data)
   if (!length(formula) == 3L)
     stop2("An outcome variable must be specified.")
@@ -584,10 +585,8 @@ handle_y_mod <- function(formula, data, family) {
   has_aux <- check_for_aux(family)
   family <- append_mvmer_famlink(family, is_bernoulli)
   
-  out <- nlist(y, x, z, reTrms, model_frame = mf, formula, terms, 
-               family, intercept_type, has_aux)
-  
-  structure(out, class = c("ymodinfo", "list"))
+  nlist(y, x, z, reTrms, model_frame = mf, formula, terms, 
+        family, intercept_type, has_aux, stub)
 }
 
 # Return the response vector for passing to Stan
@@ -1018,12 +1017,18 @@ validate_observation_times <-function(data, exittime, id_var, time_var) {
 #     subject ID variable also included.
 #   tvc: Logical, if TRUE then a counting type Surv() object was used
 #     in the fitted Cox model (ie. time varying covariates). 
-handle_e_mod <- function(formula, data, qnodes, basehaz, id_var, y_id_list) {
+handle_e_mod <- function(formula, data, meta_stuff) {
   
   if (!requireNamespace("survival"))
     stop("the 'survival' package must be installed to use this function")
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
+  
+  id_var      <- meta_stuff$id_var
+  id_list     <- meta_stuff$id_list
+  qnodes      <- meta_stuff$qnodes
+  basehaz     <- meta_stuff$basehaz
+  basehaz_ops <- meta_stuff$basehaz_ops
   
   # parse formula, create model data & frame
   formula   <- parse_formula(formula, data)
@@ -1038,7 +1043,7 @@ handle_e_mod <- function(formula, data, qnodes, basehaz, id_var, y_id_list) {
   ids <- factor(mf[[id_var]])
   
   # error checks for the id variable
-  validate_jm_ids(y_ids = y_ids, e_ids = ids)
+  validate_jm_ids(y_ids = id_list, e_ids = ids)
 
   # entry and exit times for each row of data
   t_beg <- make_t(mf, type = "beg") # entry time
@@ -1150,44 +1155,42 @@ handle_e_mod <- function(formula, data, qnodes, basehaz, id_var, y_id_list) {
   # fit a cox model
   mod <- survival::coxph(formula$formula, data = data, x = TRUE)
   
-  out <- nlist(mod, 
-               basehaz,
-               has_intercept,
-               model_frame = mf,
-               entrytime,
-               exittime,
-               t_beg, 
-               t_end,
-               t_upp,
-               t_event,
-               t_rcens,
-               t_lcens,
-               t_lower,
-               t_upper,
-               status,
-               nevent,
-               nrcens,
-               nlcens,
-               nicens,
-               ndelayed,
-               len_epts,
-               len_qpts,
-               len_ipts,
-               epts, 
-               qpts, 
-               ipts, 
-               qwts, 
-               iwts, 
-               eids,
-               qids,
-               iids,
-               basis_cpts,
-               x,
-               x_cpts,
-               x_bar = colMeans(x),
-               K)
-  
-  structure(out, class = c("emodinfo", "list"))
+  nlist(mod, 
+        basehaz,
+        has_intercept,
+        model_frame = mf,
+        entrytime,
+        exittime,
+        t_beg, 
+        t_end,
+        t_upp,
+        t_event,
+        t_rcens,
+        t_lcens,
+        t_lower,
+        t_upper,
+        status,
+        nevent,
+        nrcens,
+        nlcens,
+        nicens,
+        ndelayed,
+        len_epts,
+        len_qpts,
+        len_ipts,
+        epts, 
+        qpts, 
+        ipts, 
+        qwts, 
+        iwts, 
+        eids,
+        qids,
+        iids,
+        basis_cpts,
+        x,
+        x_cpts,
+        x_bar = colMeans(x),
+        K)
 }
 
 # Check that the ids in the longitudinal and survival models match
@@ -1316,18 +1319,16 @@ handle_basehaz <- function(basehaz,
     
   }  
     
-  out <- nlist(type_name = basehaz, 
-               type = basehaz_for_stan(basehaz), 
-               nvars, 
-               iknots, 
-               bknots, 
-               basis,
-               df = nvars,
-               user_df = nvars,
-               knots = if (basehaz == "bs") iknots else c(bknots[1], iknots, bknots[2]),
-               bs_basis = basis)
-  
-  structure(out, class = c("basehazinfo", "list"))
+  nlist(type_name = basehaz, 
+        type = basehaz_for_stan(basehaz), 
+        nvars, 
+        iknots, 
+        bknots, 
+        basis,
+        df = nvars,
+        user_df = nvars,
+        knots = if (basehaz == "bs") iknots else c(bknots[1], iknots, bknots[2]),
+        bs_basis = basis)
 }
 
 # Return the integer respresentation for the baseline hazard, used by Stan

@@ -1877,32 +1877,23 @@ get_ranef_name <- function(cnms, flevels) {
 
 # Return the name for the mean_PPD
 get_ppd_name <- function(x, ...) {
-  UseMethod("get_int_name")
-}
-get_ppd_name.ymodinfo <- function(x, ...) {
   paste0(x$stub, "|mean_PPD")
 }
 
 # Return the name for the intercept parameter
-get_int_name <- function(x, ...) {
-  UseMethod("get_int_name")
-}
-get_int_name.basehazinfo <- function(x, ...) {
+get_int_name_basehaz <- function(x, ...) {
   if (has_intercept(x)) "(Intercept)" else NULL
 }
-get_int_name.ymodinfo <- function(x, ...) {
+get_int_name_ymod <- function(x, ...) {
   if (x$intercept_type$number) paste0(x$stub, "|(Intercept)") else NULL
 }
-get_int_name.emodinfo <- function(x, basehaz, ...) {
+get_int_name_emod <- function(x, basehaz, ...) {
   nm <- get_int_name(basehaz)
   if (!is.null(nm)) paste0("Event|", nm) else NULL
 }
 
 # Return the names for the auxiliary parameters
-get_aux_name <- function(x, ...) {
-  UseMethod("get_aux_name")
-}
-get_aux_name.basehazinfo <- function(x, ...) {
+get_aux_name_basehaz <- function(x, ...) {
   switch(get_basehaz_name(x),
          exp       = NULL,
          weibull   = "weibull-shape",
@@ -1912,7 +1903,7 @@ get_aux_name.basehazinfo <- function(x, ...) {
          piecewise = paste0("piecewise-coef", seq(x$nvars)),
          NA)
 }
-get_aux_name.ymodinfo <- function(x, ...) {
+get_aux_name_ymod <- function(x, ...) {
   switch(x$family$family,
          gaussian         = paste0(x$stub, "|sigma"),
          Gamma            = paste0(x$stub, "|shape"),
@@ -1920,20 +1911,17 @@ get_aux_name.ymodinfo <- function(x, ...) {
          neg_binomial_2   = paste0(x$stub, "|reciprocal_dispersion"),
          NULL)
 }
-get_aux_name.emodinfo <- function(x, basehaz, ...) {
+get_aux_name_emod <- function(x, basehaz, ...) {
   nms <- get_aux_name(basehaz)
   if (!is.null(nms)) paste0("Event|", nms) else NULL
 }
 
 # Return the names for the coefficients
-get_beta_name <- function(x, ...) {
-  UseMethod("get_beta_name")
-}
-get_beta_name.ymodinfo <- function(x, ...) {
-  nms <- colnames(fetch(x, "x", "xtemp"))
+get_beta_name_ymod <- function(x) {
+  nms <- colnames(x$x$xtemp)
   if (!is.null(nms)) paste0(x$stub, "|", nms) else NULL
 }
-get_beta_name.emodinfo <- function(x, ...) {
+get_beta_name_emod <- function(x, ...) {
   nms <- colnames(x$Xq)
   if (!is.null(nms)) paste0("Event|", nms) else NULL
 }

@@ -88,7 +88,6 @@ stan_jm.fit <- function(formulaLong          = NULL,
   
   # Determine whether a joint longitudinal-survival model was specified
   is_jm <- supplied_together(formulaLong, formulaEvent)
-  stub  <- ifelse(is_jm, "Long", "y")
 
   if (is_jm && is.null(time_var))
     stop("'time_var' must be specified.")
@@ -124,10 +123,17 @@ stan_jm.fit <- function(formulaLong          = NULL,
   priorLong_intercept <- broadcast_prior(priorLong_intercept, M)
   
   # Combine meta information
+  stub  <- ifelse(is_jm, "Long", "y")
+  stubs <- paste0(stub, seq(M))
   meta_stuff <- nlist(is_jm,
                       id_var,
                       time_var,
+                      basehaz,
+                      basehaz_ops,
                       epsilon,
+                      qnodes,
+                      stub, 
+                      stubs,
                       auc_qnodes = 15L)
   
   #--------------------------
@@ -135,7 +141,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
   #--------------------------
   
   # info for separate longitudinal submodels
-  y_mod <- xapply(formulaLong, dataLong, family, FUN = handle_y_mod)
+  y_mod <- xapply(formulaLong, dataLong, family, stubs, FUN = handle_y_mod)
   
   # construct single cnms list for all longitudinal submodels
   cnms <- get_common_cnms(y_mod, stub = stub)
@@ -148,6 +154,8 @@ stan_jm.fit <- function(formulaLong          = NULL,
     id_var  <- check_id_var (y_mod,   id_var)
     id_list <- check_id_list(y_mod,   id_var)
     weights <- check_weights(weights, id_var)
+    meta_stuff$id_var  <- id_var
+    meta_stuff$id_list <- id_list
   }
   
   # observation weights
@@ -181,21 +189,21 @@ stan_jm.fit <- function(formulaLong          = NULL,
            nvars = y_nvars, 
            link  = y_links,
            FUN   = handle_glm_prior, 
-           args  = list(default_scale = 2.5, ok_dists = ok_dists))
+           args  = list(default_scale = 2.5, 
+                        ok_dists = ok_dists))
   
   y_user_prior_intercept_stuff <- y_prior_intercept_stuff <- 
     xapply(priorLong_intercept,
-           nvars = 1,
            link  = y_links, 
            FUN   = handle_glm_prior,
-           args  = list(default_scale = 10, ok_dists = ok_dists_int))
+           args  = list(nvars = 1, default_scale = 10, 
+                        ok_dists = ok_dists_int))
   
   y_user_prior_aux_stuff <- y_prior_aux_stuff <- 
     xapply(priorLong_aux,
-           nvars = 1,
-           link  = NULL,
            FUN   = handle_glm_prior, 
-           args  = list(default_scale = 5, ok_dists = ok_dists_aux))  
+           args  = list(nvars = 1, default_scale = 5, link  = NULL, 
+                        ok_dists = ok_dists_aux))  
   
   b_user_prior_stuff <- b_prior_stuff <- 
     handle_cov_prior(prior_covariance, cnms = cnms, ok_dists = ok_dists_cov)
@@ -472,13 +480,13 @@ stan_jm.fit <- function(formulaLong          = NULL,
   
   
   # Names for longitudinal submodel parameters
-  y_nms_beta <- uapply(y_mod, get_beta_name)
-  y_nms_int  <- uapply(y_mod, get_int_name)
-  y_nms_aux  <- uapply(y_mod, get_aux_name)
+  y_nms_beta <- uapply(y_mod, get_beta_name_ymod)
+  y_nms_int  <- uapply(y_mod, get_int_name_ymod)
+  y_nms_aux  <- uapply(y_mod, get_aux_name_ymod)
   y_nms_ppd  <- uapply(y_mod, get_ppd_name)
   
   # Names for group specific coefficients ("b pars")
-  b_nms <- get_ranef_nms(cnms, flevels)
+  b_nms <- get_ranef_name(cnms, flevels)
 
   # Names for Sigma matrix
   y_nms_sigma <- get_Sigma_nms(cnms)
@@ -490,11 +498,9 @@ stan_jm.fit <- function(formulaLong          = NULL,
   if (is_jm) { # begin jm block
 
     # fit separate event submodel
-    e_mod <- handle_e_mod(formula   = formulaEvent, 
-                          data      = dataEvent, 
-                          qnodes    = qnodes,
-                          id_var    = id_var, 
-                          y_id_list = id_list)
+    e_mod <- handle_e_mod(formula    = formulaEvent, 
+                          data       = dataEvent, 
+                          meta_stuff = meta_stuff)
     
     basehaz <- e_mod$basehaz  
     
@@ -511,7 +517,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
     #----------- Prior distributions -----------# 
     
     # valid prior distributions
-    ok_e_aux_dists <- ok_dists[1:3]
+    ok_dists_e_aux <- ok_dists[1:3]
   
     # note: *_user_prior_*_stuff objects are stored unchanged for constructing 
     # prior_summary, while *_prior_*_stuff objects are autoscaled
@@ -529,14 +535,14 @@ stan_jm.fit <- function(formulaLong          = NULL,
                        nvars         = 1, 
                        default_scale = 20,
                        link          = NULL, 
-                       ok_dists      = ok_intercept_dists)  
+                       ok_dists      = ok_dists_int)  
     
     e_user_prior_aux_stuff <- e_prior_aux_stuff <-
       handle_glm_prior(priorEvent_aux, 
                        nvars         = basehaz$nvars,
                        default_scale = get_default_aux_scale(basehaz),
                        link          = NULL, 
-                       ok_dists      = ok_e_aux_dists)
+                       ok_dists      = ok_dists_e_aux)
 
     # stop null priors if prior_PD is TRUE
     if (prior_PD) {
@@ -861,9 +867,9 @@ stan_jm.fit <- function(formulaLong          = NULL,
     stanfit <- evaluate_Sigma(stanfit, cnms)
   
   if (is_jm) {
-    e_nms_beta  <- get_beta_name (e_mod)
-    e_nms_int   <- get_int_name  (e_mod, basehaz)
-    e_nms_aux   <- get_aux_name  (e_mod, basehaz)
+    e_nms_beta  <- get_beta_name_emod(e_mod)
+    e_nms_int   <- get_int_name_emod (e_mod, basehaz)
+    e_nms_aux   <- get_aux_name_emod (e_mod, basehaz)
     e_nms_assoc <- get_assoc_name(a_mod, assoc)
   } else {
     e_nms_beta  <- NULL

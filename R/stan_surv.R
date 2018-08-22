@@ -614,8 +614,8 @@ stan_surv <- function(formula,
   nms_beta   <- colnames(x) # may be NULL
   nms_tde    <- get_smooth_name(s_events, type = "smooth_coefs") # may be NULL
   nms_smooth <- get_smooth_name(s_events, type = "smooth_sd")    # may be NULL
-  nms_int    <- get_int_name(basehaz)
-  nms_aux    <- get_aux_name(basehaz)
+  nms_int    <- get_int_name_basehaz(basehaz)
+  nms_aux    <- get_aux_name_basehaz(basehaz)
   nms_all    <- c(nms_int,
                   nms_beta,
                   nms_tde,
