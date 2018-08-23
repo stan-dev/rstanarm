@@ -31,57 +31,57 @@ stanmvreg <- function(object) {
   is_jm      <- is.jm(object)
   stub       <- if (is_jm) "Long" else "y"
   
-  if (opt) {
+  if (opt)
     stop("Optimisation not implemented for stanmvreg objects.")
-  } else {
-    stan_summary <- make_stan_summary(stanfit)
-    nms <- collect_nms(rownames(stan_summary), M, stub = get_stub(object))
-    coefs <- list()
-    ses <- list()
-    
-    # Coefs and SEs for longitudinal submodel(s)                    
-    if (is_mvmer) {
-      y_coefs <- lapply(1:M, function(m)
-        stan_summary[c(nms$y[[m]], nms$y_b[[m]]), select_median(object$algorithm)])
-      y_stanmat <- lapply(1:M, function(m) 
-        as.matrix(stanfit)[, c(nms$y[[m]], nms$y_b[[m]]), drop = FALSE])
-      y_ses <- lapply(y_stanmat, function(m) apply(m, 2L, mad))
-      y_covmat <- lapply(y_stanmat, cov)
-      for (m in 1:M) {
-        rownames(y_covmat[[m]]) <- colnames(y_covmat[[m]]) <- 
-          rownames(stan_summary)[c(nms$y[[m]], nms$y_b[[m]])]
-      }
-      # Remove padding
-      coefs[1:M] <- list_nms(lapply(y_coefs, unpad_reTrms.default), M, stub = stub)
-      ses[1:M]   <- list_nms(lapply(y_ses, unpad_reTrms.default), M, stub = stub)
-    }
 
-    # Coefs and SEs for event submodel    
-    if (is_surv) {
-      e_coefs <- stan_summary[c(nms$e, nms$a), select_median(object$algorithm)]        
-      if (length(e_coefs) == 1L) 
-        names(e_coefs) <- rownames(stan_summary)[c(nms$e, nms$a)[1L]]
-      e_stanmat <- as.matrix(stanfit)[, c(nms$e, nms$a), drop = FALSE]
-      e_ses <- apply(e_stanmat, 2L, mad)    
-      e_covmat <- cov(e_stanmat)
-      rownames(e_covmat) <- colnames(e_covmat) <- 
-        rownames(stan_summary)[c(nms$e, nms$a)]
-      coefs$Event <- e_coefs
-      ses$Event <- e_ses
+  
+  stan_summary <- make_stan_summary(stanfit)
+  nms <- collect_nms(rownames(stan_summary), M, stub = get_stub(object))
+  coefs <- list()
+  ses <- list()
+  
+  # Coefs and SEs for longitudinal submodel(s)                    
+  if (is_mvmer) {
+    y_coefs <- lapply(1:M, function(m)
+      stan_summary[c(nms$y[[m]], nms$y_b[[m]]), select_median(object$algorithm)])
+    y_stanmat <- lapply(1:M, function(m) 
+      as.matrix(stanfit)[, c(nms$y[[m]], nms$y_b[[m]]), drop = FALSE])
+    y_ses <- lapply(y_stanmat, function(m) apply(m, 2L, mad))
+    y_covmat <- lapply(y_stanmat, cov)
+    for (m in 1:M) {
+      rownames(y_covmat[[m]]) <- colnames(y_covmat[[m]]) <- 
+        rownames(stan_summary)[c(nms$y[[m]], nms$y_b[[m]])]
     }
-    
-    # Covariance matrix for fixed effects                    
-    stanmat <- as.matrix(stanfit)[, c(nms$alpha, nms$beta), drop = FALSE]
-    covmat <- cov(stanmat)
-    
-    if (object$algorithm == "sampling") { # for MCMC fits only
-      # Check Rhats for all parameters
-      check_rhats(stan_summary[, "Rhat"])    
-      # Run time (mins)
-      times <- round((rstan::get_elapsed_time(object$stanfit))/60, digits = 1)
-      times <- cbind(times, total = rowSums(times))      
-    } 
+    # Remove padding
+    coefs[1:M] <- list_nms(lapply(y_coefs, unpad_reTrms.default), M, stub = stub)
+    ses[1:M]   <- list_nms(lapply(y_ses, unpad_reTrms.default), M, stub = stub)
   }
+  
+  # Coefs and SEs for event submodel    
+  if (is_surv) {
+    e_coefs <- stan_summary[c(nms$e, nms$a), select_median(object$algorithm)]        
+    if (length(e_coefs) == 1L) 
+      names(e_coefs) <- rownames(stan_summary)[c(nms$e, nms$a)[1L]]
+    e_stanmat <- as.matrix(stanfit)[, c(nms$e, nms$a), drop = FALSE]
+    e_ses <- apply(e_stanmat, 2L, mad)    
+    e_covmat <- cov(e_stanmat)
+    rownames(e_covmat) <- colnames(e_covmat) <- 
+      rownames(stan_summary)[c(nms$e, nms$a)]
+    coefs$Event <- e_coefs
+    ses$Event <- e_ses
+  }
+  
+  # Covariance matrix for fixed effects                    
+  stanmat <- as.matrix(stanfit)[, c(nms$alpha, nms$beta), drop = FALSE]
+  covmat <- cov(stanmat)
+  
+  if (object$algorithm == "sampling") { # for MCMC fits only
+    # Check Rhats for all parameters
+    check_rhats(stan_summary[, "Rhat"])    
+    # Run time (mins)
+    times <- round((rstan::get_elapsed_time(object$stanfit))/60, digits = 1)
+    times <- cbind(times, total = rowSums(times))      
+  } 
 
   out <- nlist(
     formula       = list_nms(object$formula, M, stub),
@@ -114,10 +114,9 @@ stanmvreg <- function(object) {
     out$id_var    <- object$id_var
     out$time_var  <- object$time_var
     out$n_subjects<- object$n_subjects
-    out$n_events  <- sum(object$survmod$status > 0)
+    out$n_events  <- sum(object$survmod$status == 1)
     out$eventtime <- object$survmod$eventtime
     out$status    <- object$survmod$status > 0
-    out$basehaz   <- object$basehaz
     out$survmod   <- object$survmod
     out$qnodes    <- object$qnodes
     out$epsilon   <- object$epsilon    

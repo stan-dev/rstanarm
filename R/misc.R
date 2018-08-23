@@ -1888,7 +1888,7 @@ get_int_name_ymod <- function(x, ...) {
   if (x$intercept_type$number) paste0(x$stub, "|(Intercept)") else NULL
 }
 get_int_name_emod <- function(x, ...) {
-  nm <- get_int_name(x$basehaz)
+  nm <- get_int_name_basehaz(x$basehaz)
   if (!is.null(nm)) paste0("Event|", nm) else NULL
 }
 
@@ -1912,7 +1912,7 @@ get_aux_name_ymod <- function(x, ...) {
          NULL)
 }
 get_aux_name_emod <- function(x, ...) {
-  nms <- get_aux_name(x$basehaz)
+  nms <- get_aux_name_basehaz(x$basehaz)
   if (!is.null(nms)) paste0("Event|", nms) else NULL
 }
 
@@ -1933,6 +1933,9 @@ get_assoc_name <- function(a_mod, assoc, ...) {
   ev   <- "etavalue"
   es   <- "etaslope"
   ea   <- "etaauc"
+  mv   <- "muvalue"
+  ms   <- "muslope"
+  ma   <- "muauc"
   evd  <- "etavalue_data"
   esd  <- "etaslope_data"
   mvd  <- "muvalue_data"

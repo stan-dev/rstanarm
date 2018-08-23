@@ -929,6 +929,6 @@ stan_jm.fit <- function(formulaLong          = NULL,
                 flevels,
                 grp_stuff)
   
-  do.call("structure", remove_null(args, recursive = FALSE))
+  do.call("structure", rm_null(args, recursive = FALSE))
 }
 
