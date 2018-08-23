@@ -447,7 +447,7 @@ allow_special_parnames <- function(object, pars) {
 # @param x stanreg object
 # @param ... Optionally include m to specify which submodel for stanmvreg models
 family_plus_link <- function(x, ...) {
-  if (is.surv(x)) {
+  if (is.stansurv(x)) {
     return(NULL)
   }
   fam <- family(x, ...)

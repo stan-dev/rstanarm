@@ -852,7 +852,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
   # report type of model to user
   txt1 <- if (M == 1) "uni"   else "multi"
   txt2 <- if (is_jm)  "joint" else "glmer"
-  txt3 <- paste0("Fitting a ", txt1, "variate", txt2, "model.\n\n")
+  txt3 <- paste0("Fitting a ", txt1, "variate ", txt2, " model.\n\n")
   txt4 <- "Please note the warmup may be much slower than later iterations!\n"
   
   # fit model using stan
@@ -889,7 +889,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
   
   if (is_jm) {
     e_nms_beta  <- get_beta_name_emod(e_mod)
-    e_nms_int   <- get_int_name_emod (e_mod)
+    e_nms_int   <- get_int_name_emod (e_mod, is_jm = TRUE)
     e_nms_aux   <- get_aux_name_emod (e_mod)
     e_nms_assoc <- get_assoc_name(a_mod, assoc)
   } else {

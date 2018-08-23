@@ -700,14 +700,6 @@ get_default_aux_scale <- function(basehaz) {
   if (nm %in% c("weibull", "gompertz")) 2 else 20
 }
 
-# Extract the name of baseline hazard from the list returned by 'handle_basehaz'.
-#
-# @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
-# @return A character string.
-get_basehaz_name <- function(basehaz) {
-  if (is.character(basehaz)) basehaz else basehaz$type_name
-}
-
 # Check if the type of baseline hazard has a closed form
 #
 # @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
@@ -995,7 +987,7 @@ make_t <- function(model_frame, type = c("beg", "end", "gap", "upp")) {
                   "interval2" = rep(0, nrow(model_frame)),
                   "counting"  = as.vector(resp[, "start"]),
                   stop(err))
-  
+
   t_end <- switch(surv,
                   "right"     = as.vector(resp[, "time"]),
                   "interval"  = as.vector(resp[, "time1"]),
@@ -1009,7 +1001,7 @@ make_t <- function(model_frame, type = c("beg", "end", "gap", "upp")) {
                   "interval"  = as.vector(resp[, "time2"]),
                   "interval2" = as.vector(resp[, "time2"]),
                   stop(err))
-    
+
   switch(type,
          "beg" = t_beg,
          "end" = t_end,

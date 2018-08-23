@@ -40,16 +40,11 @@ print.stanmvreg <- function(x, digits = 3, ...) {
   
   if (surv) {
     cat("\n formula (Event):", formula_string(formula(x, m = "Event")))
-    cat("\n baseline hazard:", x$basehaz$type_name) 
+    cat("\n baseline hazard:", get_basehaz_name(x)) 
   }
   
   if (jm) {
-    sel <- grep("^which", rownames(x$assoc), invert = TRUE, value = TRUE)
-    assoc <- lapply(1:M, function(m) {
-      vals <- sel[which(x$assoc[sel,m] == TRUE)]     
-      paste0(vals, " (Long", m, ")")
-    })
-    cat("\n assoc:          ", comma(unlist(assoc)))
+    cat("\n assoc:          ", assoc_string(x))
   }
   
   cat("\n------\n")
@@ -295,5 +290,17 @@ print.summary.stanmvreg <- function(x, digits = max(1, attr(x, "print.digits")),
         " (at convergence Rhat=1).\n", sep = '')
   }
   invisible(x)
+}
+
+# Print string showing the type of association structure
+#
+# @param x A stanjm object
+assoc_string <- function(x) {
+  sel <- grep("^which", rownames(x$assoc), invert = TRUE, value = TRUE)
+  assoc <- lapply(1:ncol(x$assoc), function(m) {
+    vals <- sel[which(x$assoc[sel,m] == TRUE)]     
+    paste0(vals, " (Long", m, ")")
+  })
+  comma(unlist(assoc))
 }
 

@@ -1881,14 +1881,14 @@ get_ppd_name <- function(x, ...) {
 }
 
 # Return the name for the intercept parameter
-get_int_name_basehaz <- function(x, ...) {
-  if (has_intercept(x)) "(Intercept)" else NULL
+get_int_name_basehaz <- function(x, is_jm = FALSE, ...) {
+  if (is_jm || has_intercept(x)) "(Intercept)" else NULL
 }
 get_int_name_ymod <- function(x, ...) {
   if (x$intercept_type$number) paste0(x$stub, "|(Intercept)") else NULL
 }
-get_int_name_emod <- function(x, ...) {
-  nm <- get_int_name_basehaz(x$basehaz)
+get_int_name_emod <- function(x, is_jm = FALSE, ...) {
+  nm <- get_int_name_basehaz(x$basehaz, is_jm = is_jm)
   if (!is.null(nm)) paste0("Event|", nm) else NULL
 }
 
@@ -1966,19 +1966,33 @@ get_assoc_name <- function(a_mod, assoc, ...) {
     if (a[msd, ][[m]]) nms <- c(nms, p(stub, ms, ":", cnms(msd,  m)         ))  
     if (a[ma,  ][[m]]) nms <- c(nms, p(stub, ma                             ))
   }
-  # --> shared_b and shared_coef have been removed so next part is not used
-  # if (sum(standata$size_which_b)) {
-  #   temp_g_nms <- lapply(1:M, FUN = function(m) {
-  #     all_nms <- paste0(paste0("Long", m, "|b["), y_mod[[m]]$z$group_cnms[[id_var]], "]")
-  #     all_nms[assoc["which_b_zindex",][[m]]]})
-  #   nms <- c(nms, paste0("Assoc|", unlist(temp_g_nms)))
-  # }
-  # if (sum(standata$size_which_coef)) {
-  #   temp_g_nms <- lapply(1:M, FUN = function(m) {
-  #     all_nms <- paste0(paste0("Long", m, "|coef["), y_mod[[m]]$z$group_cnms[[id_var]], "]")
-  #     all_nms[assoc["which_coef_zindex",][[m]]]})
-  #   nms <- c(nms, paste0("Assoc|", unlist(temp_g_nms)))
-  # }
+  nms
+}
+
+# Return the list with summary information about the baseline hazard
+#
+# @return A named list.
+get_basehaz <- function(x) {
+  if (is.stansurv(x))
+    return(x$basehaz)
+  if (is.stanjm(x))
+    return(x$survmod$basehaz)
+  stop("Bug found: could not find basehaz.")
+}
+
+# Return the name of the baseline hazard
+#
+# @return A character string.
+get_basehaz_name <- function(x) {
+  if (is.character(x)) 
+    return(x)
+  if (is.stansurv(x))
+    return(x$basehaz$type_name)
+  if (is.stanjm(x))
+    return(x$survmod$basehaz$type_name)
+  if (is.character(x$type_name))
+    return(x$type_name)
+  stop("Bug found: could not resolve basehaz name.")
 }
 
 # Add the variables in ...'s to the RHS of a model formula
