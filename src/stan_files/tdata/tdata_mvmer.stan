@@ -46,10 +46,10 @@
       if (p[i] > 1) {
         for (j in 1:p[i]) {
           delta[pos] = b_prior_concentration[j];
-          pos = pos + 1;
+          pos += 1;
         }
       }
-      for (j in 3:p[i]) len_z_T = len_z_T + p[i] - 1;
+      for (j in 3:p[i]) len_z_T += p[i] - 1;
     }
   }
 

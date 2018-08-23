@@ -458,7 +458,7 @@ test_that("posterior_sample_size works", {
   expect_equal(pss(fit2), ITER * CHAINS / 2)
   expect_equal(pss(fitvb), 1000)
   expect_equal(pss(fitvb2), 1000)
-  expect_null(pss(fito))
+  expect_equal(pss(fito), nrow(as.matrix(fito)))
   
   SW(capture.output(
     fit3 <- stan_glm(mpg ~ wt, data = mtcars, iter = 20, chains = 1, thin = 2)

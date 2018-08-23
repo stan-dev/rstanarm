@@ -45,7 +45,7 @@ transformed parameters {
   else if (family > 6) {
     aux = prior_scale_for_aux * aux_unscaled[1];
     if (prior_dist_for_aux <= 2) // normal or student_t
-      aux = aux + prior_mean_for_aux;
+      aux += prior_mean_for_aux;
   }
  
   if (t > 0) {
@@ -76,17 +76,20 @@ model {
 #include /model/eta_add_Zb.stan
   }
   if (has_intercept == 1) {
-    if (link == 1) eta = eta + gamma[1];
-    else eta = eta - min(eta) + gamma[1];
+    if (link == 1) eta += gamma[1];
+    else eta += gamma[1] - min(eta);
   }
   else {
 #include /model/eta_no_intercept.stan
   }
   
   if (family == 8) {
-    if      (link == 1) eta = eta + log(aux) + log(noise[1]);
-    else if (link == 2) eta = eta * aux .* noise[1];
-    else                eta = eta + sqrt(aux) + sqrt(noise[1]);
+    if      (link == 1) eta += log(aux) + log(noise[1]);
+    else if (link == 2) {
+      eta *= aux;
+      eta .*= noise[1];
+    }
+    else                eta += sqrt(aux) + sqrt(noise[1]);
   }
   
   // Log-likelihood 
@@ -122,52 +125,59 @@ model {
   // Log-prior for noise
   if (family == 8) target += gamma_lpdf(noise[1] | aux, 1);
   
-  if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
-                      regularization, delta, shape, t, p);
+  if (t > 0) {
+    real dummy = decov_lp(z_b, z_T, rho, zeta, tau, 
+                          regularization, delta, shape, t, p);
+  }
 }
 generated quantities {
+  real mean_PPD = compute_mean_PPD ? 0 : negative_infinity();
   real alpha[has_intercept];
-  real mean_PPD = 0;
+  
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
   }
-  {
+  
+  if (compute_mean_PPD) {
     vector[N] nu;
 #include /model/make_eta.stan
     if (t > 0) {
 #include /model/eta_add_Zb.stan
     }
     if (has_intercept == 1) {
-      if (link == 1) eta = eta + gamma[1];
+      if (link == 1) eta += gamma[1];
       else {
         real shift = min(eta);
-        eta = eta - shift + gamma[1];
-        alpha[1] = alpha[1] - shift;
+        eta += gamma[1] - shift;
+        alpha[1] -= shift;
       }
     }
     else {
 #include /model/eta_no_intercept.stan
     }
-    
+
     if (family == 8) {
-      if      (link == 1) eta = eta + log(aux) + log(noise[1]);
-      else if (link == 2) eta = eta * aux .* noise[1];
-      else                eta = eta + sqrt(aux) + sqrt(noise[1]);
+      if      (link == 1) eta += log(aux) + log(noise[1]);
+      else if (link == 2) {
+        eta *= aux;
+        eta .*= noise[1];
+      }
+      else                eta += sqrt(aux) + sqrt(noise[1]);
     }
     nu = linkinv_count(eta, link);
     if (family != 7) for (n in 1:N) {
-        if (nu[n] < poisson_max) mean_PPD = mean_PPD + poisson_rng(nu[n]);
-        else mean_PPD = mean_PPD + normal_rng(nu[n], sqrt(nu[n]));
+        if (nu[n] < poisson_max) mean_PPD += poisson_rng(nu[n]);
+        else mean_PPD += normal_rng(nu[n], sqrt(nu[n]));
     }
     else for (n in 1:N) {
         real gamma_temp;
         if (is_inf(aux)) gamma_temp = nu[n];
         else gamma_temp = gamma_rng(aux, aux / nu[n]);
         if (gamma_temp < poisson_max)
-          mean_PPD = mean_PPD + poisson_rng(gamma_temp);
-        else mean_PPD = mean_PPD + normal_rng(gamma_temp, sqrt(gamma_temp));
+          mean_PPD += poisson_rng(gamma_temp);
+        else mean_PPD += normal_rng(gamma_temp, sqrt(gamma_temp));
     }
-    mean_PPD = mean_PPD / N;
+    mean_PPD /= N;
   }
 }

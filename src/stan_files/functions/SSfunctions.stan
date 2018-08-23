@@ -142,7 +142,7 @@ matrix reshape_vec(vector x, int Rows, int Cols) {
   if (rows(x) != Rows * Cols) reject("x is the wrong length");
   for (c in 1:Cols) for (r in 1:Rows) {
     out[r,c] = x[pos];
-    pos = pos + 1;
+    pos += 1;
   }
   return out;
 }

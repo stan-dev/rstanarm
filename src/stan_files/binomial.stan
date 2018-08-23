@@ -61,8 +61,8 @@ model {
 #include /model/eta_add_Zb.stan
   }
   if (has_intercept == 1) {
-    if (link != 4) eta = eta + gamma[1];
-    else eta = gamma[1] + eta - max(eta);
+    if (link != 4) eta += gamma[1];
+    else eta += gamma[1] - max(eta);
   }
   else {
 #include /model/eta_no_intercept.stan
@@ -70,36 +70,39 @@ model {
   
   // Log-likelihood 
   if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
-    real dummy;  // irrelevant but useful for testing
-    dummy = ll_binom_lp(y, trials, eta, link);
+    real dummy = ll_binom_lp(y, trials, eta, link);
   }
   else if (prior_PD == 0) 
     target += dot_product(weights, pw_binom(y, trials, eta, link));
   
 #include /model/priors_glm.stan
   
-  if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
-                      regularization, delta, shape, t, p);
+  if (t > 0) {
+    real dummy = decov_lp(z_b, z_T, rho, zeta, tau, 
+                          regularization, delta, shape, t, p);
+  }
 }
 generated quantities {
+  real mean_PPD = compute_mean_PPD ? 0 : negative_infinity();
   real alpha[has_intercept];
-  real mean_PPD = 0;
+  
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
   }
-  {
+  
+  if (compute_mean_PPD) {
     vector[N] pi;
 #include /model/make_eta.stan
     if (t > 0) {
 #include /model/eta_add_Zb.stan
     }
     if (has_intercept == 1) {
-      if (link != 4) eta = eta + gamma[1];
+      if (link != 4) eta += gamma[1];
       else {
         real shift = max(eta);
-        eta = gamma[1] + eta - shift;
-        alpha[1] = alpha[1] - shift;
+        eta += gamma[1] - shift;
+        alpha[1] -= shift;
       }
     }
     else {
@@ -107,7 +110,7 @@ generated quantities {
     }
     
     pi = linkinv_binom(eta, link);
-    for (n in 1:N) mean_PPD = mean_PPD + binomial_rng(trials[n], pi[n]);
-    mean_PPD = mean_PPD / N;
+    for (n in 1:N) mean_PPD += binomial_rng(trials[n], pi[n]);
+    mean_PPD /= N;
   }
 }

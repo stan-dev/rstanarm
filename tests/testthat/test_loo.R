@@ -165,7 +165,7 @@ test_that("kfold works on some examples", {
   mtcars2 <- mtcars
   mtcars2$wt[1] <- NA # make sure kfold works if NAs are dropped from original data
   SW(
-    fit_gaus <- stan_glm(mpg ~ wt, data = mtcars2, seed = 12345, refresh = 0,
+    fit_gaus <- stan_glm(mpg ~ wt, data = mtcars2, seed = SEED, refresh = 0,
                          chains = 1, iter = 100)
   )
   SW(kf <- kfold(fit_gaus, 4))

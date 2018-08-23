@@ -40,6 +40,7 @@ stan_glm.fit <-
            group = list(),
            prior_PD = FALSE, 
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
+           mean_PPD = algorithm != "optimizing",
            adapt_delta = NULL, 
            QR = FALSE, 
            sparse = FALSE) {
@@ -260,6 +261,7 @@ stan_glm.fit <-
     has_offset = length(offset) > 0,
     has_intercept,
     prior_PD,
+    compute_mean_PPD = mean_PPD,
     prior_dist,
     prior_mean,
     prior_scale,
@@ -563,7 +565,7 @@ stan_glm.fit <-
         data = standata, 
         pars = pars, 
         show_messages = FALSE)
-      stanfit <- do.call(sampling, sampling_args)
+      stanfit <- do.call(rstan::sampling, sampling_args)
     } else {
       # meanfield or fullrank vb
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,

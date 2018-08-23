@@ -81,8 +81,8 @@ transformed data {
     successes[j] = 0;
     failures[j] = 0;
   }
-  if (J > 0) for (i in 1:N[2]) successes[strata[i]] = successes[strata[i]] + 1;
-  if (J > 0) for (i in (N[2] + 1):NN) failures[strata[i]] =  failures[strata[i]] + 1;
+  if (J > 0) for (i in 1:N[2]) successes[strata[i]] += 1;
+  if (J > 0) for (i in (N[2] + 1):NN) failures[strata[i]] +=  1;
   for (j in 1:J) observations[j] = failures[j] + successes[j];
 }
 parameters {
@@ -116,13 +116,13 @@ model {
 #include /model/make_eta_bern.stan
   if (has_intercept == 1) {
     if (link != 4) {
-      eta0 = gamma[1] + eta0;
-      eta1 = gamma[1] + eta1;
+      eta0 += gamma[1];
+      eta1 += gamma[1];
     }
     else {
       real shift = fmax(max(eta0), max(eta1));
-      eta0 = gamma[1] + eta0 - shift;
-      eta1 = gamma[1] + eta1 - shift;
+      eta0 += gamma[1] - shift;
+      eta1 += gamma[1] - shift;
     }
   }
   // Log-likelihood
@@ -138,41 +138,45 @@ model {
   }
   
 #include /model/priors_glm.stan
-  if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
-                      regularization, delta, shape, t, p);
+  if (t > 0) {
+    real dummy = decov_lp(z_b, z_T, rho, zeta, tau, 
+                          regularization, delta, shape, t, p);
+  }
 }
 generated quantities {
+  real mean_PPD = compute_mean_PPD ? 0 : negative_infinity();
   real alpha[has_intercept];
-  real mean_PPD = 0;
+  
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
   }
-  {
+  
+  if (compute_mean_PPD) {
     vector[N[1]] pi0;
     vector[N[2]] pi1;
     // defines eta0, eta1
 #include /model/make_eta_bern.stan
     if (has_intercept == 1) {
       if (link != 4) {
-        eta0 = gamma[1] + eta0;
-        eta1 = gamma[1] + eta1;
+        eta0 += gamma[1];
+        eta1 += gamma[1];
       }      
       else {
         real shift;
         shift = fmax(max(eta0), max(eta1));
-        eta0 = gamma[1] + eta0 - shift;
-        eta1 = gamma[1] + eta1 - shift;
-        alpha[1] = alpha[1] - shift;
+        eta0 += gamma[1] - shift;
+        eta1 += gamma[1] - shift;
+        alpha[1] -= shift;
       }
     }
-    if (clogit) for (j in 1:J) mean_PPD = mean_PPD + successes[j]; // fixed by design
+    if (clogit) for (j in 1:J) mean_PPD += successes[j]; // fixed by design
     else {
       pi0 = linkinv_bern(eta0, link);
       pi1 = linkinv_bern(eta1, link);
-      for (n in 1:N[1]) mean_PPD = mean_PPD + bernoulli_rng(pi0[n]);
-      for (n in 1:N[2]) mean_PPD = mean_PPD + bernoulli_rng(pi1[n]);
+      for (n in 1:N[1]) mean_PPD += bernoulli_rng(pi0[n]);
+      for (n in 1:N[2]) mean_PPD += bernoulli_rng(pi1[n]);
     }
-    mean_PPD = mean_PPD / NN;
+    mean_PPD /= NN;
   }
 }

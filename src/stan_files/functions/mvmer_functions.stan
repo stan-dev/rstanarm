@@ -43,7 +43,7 @@
     for (r in 1:dim) {
       for (c in r:dim) {
         indices[mark] = (r - 1) * dim + c;
-        mark = mark + 1;
+        mark += 1;
       }
     }
     return indices;
@@ -66,7 +66,7 @@
     else {
       aux = prior_scale * aux_unscaled;
       if (prior_dist <= 2) // normal or student_t
-        aux = aux + prior_mean;
+        aux += prior_mean;
     }
     return aux;
   }
@@ -131,8 +131,8 @@
     int theta_L_mark = 1;
     if (i > 1) {
       for (j in 1:(i-1)) {
-        theta_L_mark = theta_L_mark + p[j] + choose(p[j], 2);
-        b_mark = b_mark + p[j] * l[j];
+        theta_L_mark += p[j] + choose(p[j], 2);
+        b_mark += p[j] * l[j];
       }
     }
     if (nc == 1) {
@@ -144,16 +144,16 @@
       matrix[nc,nc] T_i = rep_matrix(0, nc, nc);
       for (c in 1:nc) {
         T_i[c,c] = theta_L[theta_L_mark];
-        theta_L_mark = theta_L_mark + 1;
+        theta_L_mark += 1;
         for(r in (c+1):nc) {
           T_i[r,c] = theta_L[theta_L_mark];
-          theta_L_mark = theta_L_mark + 1;
+          theta_L_mark += 1;
         }
       }
       for (j in 1:l[i]) {
         vector[nc] temp = T_i * segment(z_b, b_mark, nc);
         b_matrix[,j] = temp;
-        b_mark = b_mark + nc;
+        b_mark += nc;
       }
     }
     return b_matrix';
@@ -191,20 +191,20 @@
     else eta = rep_vector(0.0, N);
 
     if (intercept_type > 0) { // submodel has an intercept
-      if (intercept_type == 1) eta = eta + gamma[1];
-      else if (intercept_type == 2) eta = eta + gamma[1] - max(eta);
-      else if (intercept_type == 3) eta = eta + gamma[1] - min(eta);
+      if (intercept_type == 1) eta += gamma[1];
+      else if (intercept_type == 2) eta += gamma[1] - max(eta);
+      else if (intercept_type == 3) eta += gamma[1] - min(eta);
     }
 
     if (p1 > 0) { // submodel includes group factor 1
       for (k in 1:p1)
         for (n in 1:N)
-          eta[n] = eta[n] + (b1Mat[Z1_id[n], k+b1Mat_colshift]) * Z1[k,n];
+          eta[n] += (b1Mat[Z1_id[n], k+b1Mat_colshift]) * Z1[k,n];
     }
     if (p2 > 0) { // submodel includes group factor 2
       for (k in 1:p2)
         for (n in 1:N)
-          eta[n] = eta[n] + (b2Mat[Z2_id[n], k+b2Mat_colshift]) * Z2[k,n];
+          eta[n] += (b2Mat[Z2_id[n], k+b2Mat_colshift]) * Z2[k,n];
     }
 
     return eta;
@@ -385,19 +385,19 @@
     real mean_PPD = 0;
     if (family == 1) { // gaussian
       for (n in 1:N)
-        mean_PPD = mean_PPD + normal_rng(mu[n], aux[1]);
+        mean_PPD += normal_rng(mu[n], aux[1]);
     }
     else if (family == 2) {  // gamma
       for (n in 1:N)
-        mean_PPD = mean_PPD + gamma_rng(aux[1], aux[1] / mu[n]);
+        mean_PPD += gamma_rng(aux[1], aux[1] / mu[n]);
     }
     else if (family == 3) {  // inverse gaussian
       for (n in 1:N)
-        mean_PPD = mean_PPD + inv_gaussian_rng(mu[n], aux[1]);
+        mean_PPD += inv_gaussian_rng(mu[n], aux[1]);
     }
     else if (family == 4) {  // bernoulli
       for (n in 1:N)
-        mean_PPD = mean_PPD + bernoulli_rng(mu[n]);
+        mean_PPD += bernoulli_rng(mu[n]);
     }
     else if (family == 5) {  // binomial
       reject("Binomial with >1 trials not allowed.");
@@ -406,9 +406,9 @@
       real poisson_max = pow(2.0, 30.0);
       for (n in 1:N) {  // poisson or poisson-gamma
         if (mu[n] < poisson_max)
-          mean_PPD = mean_PPD + poisson_rng(mu[n]);
+          mean_PPD += poisson_rng(mu[n]);
         else
-          mean_PPD = mean_PPD + normal_rng(mu[n], sqrt(mu[n]));
+          mean_PPD += normal_rng(mu[n], sqrt(mu[n]));
       }
     }
     else if (family == 7) {
@@ -420,9 +420,9 @@
         else
           gamma_temp = gamma_rng(aux[1], aux[1] / mu[n]);
         if (gamma_temp < poisson_max)
-          mean_PPD = mean_PPD + poisson_rng(gamma_temp);
+          mean_PPD += poisson_rng(gamma_temp);
         else
-          mean_PPD = mean_PPD + normal_rng(gamma_temp, sqrt(gamma_temp));
+          mean_PPD += normal_rng(gamma_temp, sqrt(gamma_temp));
       }
     }
     return mean_PPD / N;

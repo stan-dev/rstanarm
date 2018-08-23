@@ -87,7 +87,7 @@ transformed parameters {
   else {
     aux = prior_scale_for_aux * aux_unscaled;
     if (prior_dist_for_aux <= 2) // normal or student_t
-      aux = aux + prior_mean_for_aux;
+      aux += prior_mean_for_aux;
   }
 
   if (t > 0) {
@@ -115,17 +115,16 @@ model {
 #include /model/eta_add_Zb.stan
   }
   if (has_intercept == 1) {
-    if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta = eta + gamma[1];
-    else if (family == 4 && link == 5) eta = eta - max(eta) + gamma[1];
-    else eta = eta - min(eta) + gamma[1];
+    if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta += gamma[1];
+    else if (family == 4 && link == 5) eta += gamma[1] - max(eta);
+    else eta += gamma[1] - min(eta);
   }
   else {
 #include /model/eta_no_intercept.stan
   }
 
   if (SSfun > 0) { // nlmer
-    matrix[len_y, K] P;
-    P = reshape_vec(eta, len_y, K);
+    matrix[len_y, K] P = reshape_vec(eta, len_y, K);
     if (SSfun < 5) {
       if (SSfun <= 2) {
         if (SSfun == 1) target += normal_lpdf(y | SS_asymp(input, P), aux);
@@ -133,7 +132,7 @@ model {
       }
       else if (SSfun == 3) target += normal_lpdf(y | SS_asympOrig(input, P), aux);
       else {
-        for (i in 1:len_y) P[i,1] = P[i,1] + exp(P[i,3]); // ordering constraint
+        for (i in 1:len_y) P[i,1] += exp(P[i,3]); // ordering constraint
         target += normal_lpdf(y | SS_biexp(input, P), aux);
       }
     }
@@ -155,10 +154,10 @@ model {
     // adjust eta_z according to links
     if (has_intercept_z == 1) {
       if (link_phi > 1) {
-        eta_z = eta_z - min(eta_z) + gamma_z[1];
+        eta_z += gamma_z[1] - min(eta_z);
       }
       else {
-        eta_z = eta_z + gamma_z[1];
+        eta_z += gamma_z[1];
       }
     }
     else { // has_intercept_z == 0
@@ -216,13 +215,16 @@ model {
     
 #include /model/priors_glm.stan
 #include /model/priors_betareg.stan
-  if (t > 0) decov_lp(z_b, z_T, rho, zeta, tau, 
-                      regularization, delta, shape, t, p);
+  if (t > 0) {
+    real dummy = decov_lp(z_b, z_T, rho, zeta, tau, 
+                          regularization, delta, shape, t, p);
+  }
 }
 generated quantities {
+  real mean_PPD = compute_mean_PPD ? 0 : negative_infinity();
   real alpha[has_intercept];
   real omega_int[has_intercept_z];
-  real mean_PPD = 0;
+  
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
@@ -230,7 +232,8 @@ generated quantities {
   if (has_intercept_z == 1) { 
     omega_int[1] = gamma_z[1] - dot_product(zbar, omega);  // adjust betareg intercept 
   }
-  {
+  
+  if (compute_mean_PPD) {
     vector[N] eta_z;
 #include /model/make_eta.stan
     if (t > 0) {
@@ -238,16 +241,16 @@ generated quantities {
     }
     if (has_intercept == 1) {
       if (make_lower(family,link) == negative_infinity() &&
-          make_upper(family,link) == positive_infinity()) eta = eta + gamma[1];
+          make_upper(family,link) == positive_infinity()) eta += gamma[1];
       else if (family == 4 && link == 5) {
         real max_eta = max(eta);
-        alpha[1] = alpha[1] - max_eta;
-        eta = eta - max_eta + gamma[1];
+        alpha[1] -= max_eta;
+        eta += gamma[1] - max_eta;
       }
       else {
         real min_eta = min(eta);
-        alpha[1] = alpha[1] - min_eta;
-        eta = eta - min_eta + gamma[1];
+        alpha[1] -= min_eta;
+        eta += gamma[1] - min_eta;
       }
     }
     else {
@@ -257,11 +260,11 @@ generated quantities {
     // adjust eta_z according to links
     if (has_intercept_z == 1) {
       if (link_phi > 1) {
-        omega_int[1] = omega_int[1] - min(eta_z);
-        eta_z = eta_z - min(eta_z) + gamma_z[1];
+        omega_int[1] -= min(eta_z);
+        eta_z += gamma_z[1] - min(eta_z);
       }
       else {
-        eta_z = eta_z + gamma_z[1];
+        eta_z += gamma_z[1];
       }
     }
     else { // has_intercept_z == 0
@@ -292,42 +295,42 @@ generated quantities {
           else eta_nlmer = SS_weibull(input, P);
         }
       }
-      for (n in 1:len_y) mean_PPD = mean_PPD + normal_rng(eta_nlmer[n], aux);
+      for (n in 1:len_y) mean_PPD += normal_rng(eta_nlmer[n], aux);
     }
     else if (family == 1) {
-      if (link > 1) eta = linkinv_gauss(eta, link);
-      for (n in 1:len_y) mean_PPD = mean_PPD + normal_rng(eta[n], aux);
+      vector[N] mu = link > 1 ? linkinv_gauss(eta, link) : eta;
+      for (n in 1:len_y) mean_PPD += normal_rng(mu[n], aux);
     }
     else if (family == 2) {
-      if (link > 1) eta = linkinv_gamma(eta, link);
-      for (n in 1:len_y) mean_PPD = mean_PPD + gamma_rng(aux, aux / eta[n]);
+      vector[N] mu = link > 1 ? linkinv_gamma(eta, link) : eta;
+      for (n in 1:len_y) mean_PPD += gamma_rng(aux, aux / mu[n]);
     }
     else if (family == 3) {
-      if (link > 1) eta = linkinv_inv_gaussian(eta, link);
-      for (n in 1:len_y) mean_PPD = mean_PPD + inv_gaussian_rng(eta[n], aux);
+      vector[N] mu = link > 1 ? linkinv_inv_gaussian(eta, link) : eta;
+      for (n in 1:len_y) mean_PPD += inv_gaussian_rng(mu[n], aux);
     }
     else if (family == 4 && link_phi == 0) { 
-      eta = linkinv_beta(eta, link);
+      vector[N] mu = linkinv_beta(eta, link);
       for (n in 1:N) {
-        real eta_n = eta[n];
-        if (aux <= 0) mean_PPD = mean_PPD + bernoulli_rng(0.5);
-        else if (eta_n >= 1) mean_PPD = mean_PPD + 1;
-        else if (eta_n > 0)
-          mean_PPD = mean_PPD + beta_rng(eta[n] * aux, (1 - eta[n]) * aux);
+        real mu_n = mu[n];
+        if (aux <= 0) mean_PPD += bernoulli_rng(0.5);
+        else if (mu_n >= 1) mean_PPD += 1;
+        else if (mu_n > 0)
+          mean_PPD += beta_rng(mu_n * aux, (1 - mu_n) * aux);
       }
     }
     else if (family == 4 && link_phi > 0) {
-      eta = linkinv_beta(eta, link);
-      eta_z = linkinv_beta_z(eta_z, link_phi);
+      vector[N] mu = linkinv_beta(eta, link);
+      vector[N] phi = linkinv_beta_z(eta_z, link_phi);
       for (n in 1:N) {
-        real eta_n = eta[n];
-        real aux_n = eta_z[n];
-        if (aux_n <= 0) mean_PPD = mean_PPD + bernoulli_rng(0.5);
-        else if (eta_n >= 1) mean_PPD = mean_PPD + 1;
-        else if (eta_n > 0)
-          mean_PPD = mean_PPD + beta_rng(eta_n * aux_n, (1 - eta_n) * aux_n);
+        real mu_n = mu[n];
+        real aux_n = phi[n];
+        if (aux_n <= 0) mean_PPD += bernoulli_rng(0.5);
+        else if (mu_n >= 1) mean_PPD += 1;
+        else if (mu_n > 0)
+          mean_PPD += beta_rng(mu_n * aux_n, (1 - mu_n) * aux_n);
       }
     }
-    mean_PPD = mean_PPD / len_y;
+    mean_PPD /= len_y;
   }
 }

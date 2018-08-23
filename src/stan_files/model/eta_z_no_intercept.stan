@@ -1,6 +1,6 @@
   if (link_phi > 1) {
-    eta_z = eta_z - min(eta_z) + dot_product(zbar, omega);
+    eta_z += dot_product(zbar, omega) - min(eta_z);
   }
   else {
-    eta_z = eta_z + dot_product(zbar, omega);
+    eta_z += dot_product(zbar, omega);
   }

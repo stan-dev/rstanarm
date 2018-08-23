@@ -213,11 +213,11 @@ if (require(MASS))
     fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                      family = neg_binomial_2(links[i]), 
                      seed = SEED, chains = 1, iter = 100,
-                     prior_PD = TRUE, QR = TRUE, refresh = 100)
+                     QR = TRUE, refresh = 100)
     fit2 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                         link = links[i],
                         seed = SEED, chains = 1, iter = 100,
-                        prior_PD = TRUE, QR = TRUE, refresh = 100)
+                        QR = TRUE, refresh = 100)
     expect_stanreg(fit1)
     expect_stanreg(fit2)
     expect_equal(as.matrix(fit1), as.matrix(fit2))
@@ -270,7 +270,7 @@ test_that("stan_glm returns expected result for bernoulli", {
     expect_stanreg(fit)
     
     val <- coef(fit)
-    ans <- coef(glm(y ~ x, family = fam, start = val))
+    ans <- coef(glm(y ~ x, family = fam, start = rep(0, length(val))))
     if (links[i] != "log") expect_equal(val, ans, 0.03, info = links[i])
     else expect_equal(val[-1], ans[-1], 0.06, info = links[i])
   }
@@ -283,7 +283,6 @@ test_that("stan_glm returns expected result for binomial example", {
   trials <- rpois(N, lambda = 30)
   trials <<- trials
   X <- cbind(1, matrix(rnorm(N * 3, sd = 0.5), N, 3))
-  X <<- X
   for (i in 1:length(links)) {
     fam <- binomial(links[i])
     if (i == 4) {
@@ -302,7 +301,7 @@ test_that("stan_glm returns expected result for binomial example", {
     expect_stanreg(fit)
     
     val <- coef(fit)
-    ans <- coef(glm(y ~ X[,-1], family = fam, start = val))
+    ans <- coef(glm(y ~ X[,-1], family = fam, start = b))
     if (links[i] != "log") expect_equal(val, ans, 0.017, info = links[i])
     else expect_equal(val[-1], ans[-1], 0.008, info = links[i])
 
@@ -324,7 +323,7 @@ context("stan_glm (other tests)")
 test_that("model with hs prior doesn't error", {
   expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = hs(4, 2, .5), 
                          seed = SEED, algorithm = "meanfield", QR = TRUE), 
-                regexp = "Begin stochastic gradient ascent")
+                regexp = "approximate posterior")
   expect_output(print(prior_summary(fit)), "~ hs(df = ", fixed = TRUE)
 })
 
@@ -332,14 +331,14 @@ context("stan_glm (other tests)")
 # test_that("model with hs_plus prior doesn't error", { # this works except on 32bit Windows 
 #   expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = hs_plus(4, 1, 2, .5), 
 #                                 seed = SEED, algorithm = "meanfield", QR = TRUE), 
-#                 regexp = "Begin stochastic gradient ascent")
+#                 regexp = "approximate posterior")
 #   expect_output(print(prior_summary(fit)), "~ hs_plus(df1 = ", fixed = TRUE)
 # })
 
 test_that("model with laplace prior doesn't error", {
   expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = laplace(), 
                          seed = SEED, algorithm = "meanfield", QR = FALSE), 
-                regexp = "Begin stochastic gradient ascent")
+                regexp = "approximate posterior")
   expect_output(print(prior_summary(fit)), 
                 "~ laplace(", fixed = TRUE)
 })
@@ -347,7 +346,7 @@ test_that("model with laplace prior doesn't error", {
 test_that("model with lasso prior doesn't error", {
   expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = lasso(), 
                          seed = SEED, algorithm = "meanfield", QR = FALSE), 
-                regexp = "Begin stochastic gradient ascent")
+                regexp = "approximate posterior")
   expect_output(print(prior_summary(fit)), 
                 "~ lasso(", fixed = TRUE)
 }) 
@@ -356,7 +355,7 @@ test_that("model with product_normal prior doesn't error", {
   expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, 
                                 prior = product_normal(df = 3, scale = 0.5), 
                                 seed = SEED, algorithm = "meanfield", QR = FALSE), 
-                regexp = "Begin stochastic gradient ascent")
+                regexp = "approximate posterior")
   expect_output(print(prior_summary(fit)), "~ product_normal(df = ", fixed = TRUE)
 })
 
