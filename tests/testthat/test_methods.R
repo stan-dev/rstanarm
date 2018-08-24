@@ -37,7 +37,7 @@ remove(N, x, y, z, mu, phi)
 
 capture.output(
   stan_glm1 <- SW(stan_glm(mpg ~ wt + cyl, data = mtcars, iter = ITER,
-                           chains = CHAINS, seed = SEED, refresh = REFRESH)),
+                           chains = CHAINS, seed = SEED, refresh = 0)),
   stan_glm_opt1 <- stan_glm(mpg ~ wt + cyl, data = mtcars, algorithm = "optimizing",
                             seed = SEED),
   stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", QR = TRUE, iter = 10000),
@@ -47,19 +47,19 @@ capture.output(
   stan_lmer1 <- SW(stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin,
                              prior_intercept = normal(0, 50, autoscale = FALSE),
                              prior_aux = normal(0, 10),
-                             iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH)),
+                             iter = ITER, chains = CHAINS, seed = SEED, refresh = 0)),
   lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy),
   stan_lmer2 <- SW(stan_lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy,
                              iter = ITER, chains = CHAINS, seed = SEED,
-                             refresh = REFRESH)),
+                             refresh = 0)),
   
   stan_polr1 <- SW(stan_polr(tobgp ~ agegp, data = esoph, prior = R2(0.2, "mean"),
                              init_r = 0.1, iter = ITER, chains = CHAINS,
-                             seed = SEED, refresh = REFRESH)),
+                             seed = SEED, refresh = 0)),
   polr1 <- polr(tobgp ~ agegp, data = esoph, Hess = TRUE),
   
   stan_gamm41 <- SW(stan_gamm4(mpg ~ s(wt) + cyl, data = mtcars, iter = ITER,
-                               chains = CHAINS, seed = SEED, refresh = REFRESH)),
+                               chains = CHAINS, seed = SEED, refresh = 0)),
 
   stan_betareg1 <- SW(stan_betareg(y ~ x | z, data = fake_dat, 
                                    link = "logit", link.phi = "log",

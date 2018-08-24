@@ -29,7 +29,7 @@ source(test_path("helpers", "expect_stanreg.R"))
 source(test_path("helpers", "SW.R"))
 
 SW(fit <- stan_lm(mpg ~ ., data = mtcars, prior = R2(location = 0.75), 
-                  chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH))
+                  chains = CHAINS, iter = ITER, seed = SEED, refresh = 0))
 
 context("stan_lm")
 test_that("stan_lm returns expected result for mtcars example", {
@@ -43,7 +43,7 @@ test_that("stan_lm returns expected result for mtcars example", {
 test_that("stan_lm returns expected result for trees example", {
   # example using trees dataset
   SW(fit <- stan_lm(log(Volume) ~ log(Girth) + log(Height), data = trees, 
-                  prior = R2(location = 0.9, what = "mean"), refresh = REFRESH,
+                  prior = R2(location = 0.9, what = "mean"), refresh = 0,
                   chains = CHAINS, iter = ITER, seed = SEED, adapt_delta = 0.999))
   expect_stanreg(fit)
   
@@ -103,7 +103,7 @@ context("stan_aov")
 test_that("stan_aov returns expected result for npk example", {
   SW(fit <- stan_aov(yield ~ block + N*P*K, data = npk, contrasts = "contr.poly",
                      prior = R2(0.5), chains = CHAINS, iter = ITER, seed = SEED, 
-                     refresh = REFRESH))
+                     refresh = 0))
   expect_stanreg(fit)
   
   fit_sigma <- fit$stan_summary["sigma", "mean"]

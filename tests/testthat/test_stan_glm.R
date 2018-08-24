@@ -31,7 +31,7 @@ source(test_path("helpers", "SW.R"))
 SW(
   fit_gaus <- stan_glm(mpg ~ wt, data = mtcars, 
                        chains = CHAINS, iter = ITER,
-                       seed = SEED, refresh = REFRESH)
+                       seed = SEED, refresh = 0)
 )
 dat <- data.frame(ldose = rep(0:5, 2),
                   sex = factor(rep(c("M", "F"), c(6, 6))))
@@ -40,7 +40,7 @@ SF <- cbind(numdead, numalive = 20-numdead)
 SW(
   fit_binom <- stan_glm(SF ~ sex*ldose, data = dat, family = binomial,
                         chains = CHAINS, iter = ITER, seed = SEED,
-                        refresh = REFRESH)
+                        refresh = 0)
 )
 dead <- rbinom(length(numdead), 1, prob = 0.5)
 SW(fit_binom2 <- update(fit_binom, formula = factor(dead) ~ .))
@@ -49,7 +49,7 @@ d.AD <- data.frame(treatment = gl(3,3), outcome =  gl(3,1,9),
                    counts = c(18,17,15,20,10,20,25,13,12))
 SW(fit_pois <- stan_glm(counts ~ outcome + treatment, data = d.AD,
                         family = poisson, chains = CHAINS, iter = ITER,
-                        seed = SEED, refresh = REFRESH))
+                        seed = SEED, refresh = 0))
 SW(fit_negbin <- update(fit_pois, family = neg_binomial_2))
 
 clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
@@ -57,7 +57,7 @@ clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
                        lot2 = c(69,35,26,21,18,16,13,12,12))
 SW(fit_gamma <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma,
                          chains = CHAINS, iter = ITER, seed = SEED,
-                         refresh = REFRESH))
+                         refresh = 0))
 SW(fit_igaus <- update(fit_gamma, family = inverse.gaussian))
 
 test_that("loo/waic for stan_glm works", {
@@ -213,11 +213,11 @@ if (require(MASS))
     fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                      family = neg_binomial_2(links[i]), 
                      seed = SEED, chains = 1, iter = 100,
-                     QR = TRUE, refresh = 100)
+                     QR = TRUE, refresh = 0)
     fit2 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                         link = links[i],
                         seed = SEED, chains = 1, iter = 100,
-                        QR = TRUE, refresh = 100)
+                        QR = TRUE, refresh = 0)
     expect_stanreg(fit1)
     expect_stanreg(fit2)
     expect_equal(as.matrix(fit1), as.matrix(fit2))
@@ -363,7 +363,7 @@ test_that("model with product_normal prior doesn't error", {
 
 test_that("prior_aux argument is detected properly", {
   fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
-                  refresh = -1, prior_aux = exponential(5), 
+                  refresh = 0, prior_aux = exponential(5), 
                   prior = normal(autoscale=FALSE), 
                   prior_intercept = normal(autoscale=FALSE))
   expect_identical(
@@ -382,7 +382,7 @@ test_that("prior_aux argument is detected properly", {
 
 test_that("prior_aux can be NULL", {
   fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
-                  refresh = -1, prior_aux = NULL)
+                  refresh = 0, prior_aux = NULL)
   expect_output(print(prior_summary(fit)), 
                 "~ flat", fixed = TRUE)
 })
@@ -445,7 +445,7 @@ test_that("posterior_predict compatible with glms", {
   mtcars2$offs <- runif(nrow(mtcars))
   fit2 <- SW(stan_glm(mpg ~ wt + offset(offs), data = mtcars2,
                       prior_intercept = NULL, prior = NULL, prior_aux = NULL,
-                      iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
+                      iter = ITER, chains = CHAINS, seed = SEED, refresh = 0))
   expect_warning(posterior_predict(fit2, newdata = mtcars2[1:5, ]), 
                  "offset")
   check_for_error(fit_gaus, data = mtcars2, offset = mtcars2$offs)

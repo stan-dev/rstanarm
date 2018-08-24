@@ -207,7 +207,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     SW(fit_logit <- stan_betareg(yield ~ batch + temp | temp, data = GasolineYield,
                                  link = "logit",
                                  chains = CHAINS, iter = ITER,
-                                 seed = SEED, refresh = REFRESH))
+                                 seed = SEED, refresh = 0))
     expect_equivalent_loo(fit_logit)
     expect_identical(ll_fun(fit_logit), rstanarm:::.ll_beta_i)
   })
@@ -220,7 +220,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     data("GasolineYield", package = "betareg")
     fit <- SW(stan_betareg(yield ~ pressure + temp | temp, data = GasolineYield,
                            iter = ITER*5, chains = 2*CHAINS, seed = SEED, 
-                           refresh = REFRESH))
+                           refresh = 0))
     check_for_error(fit)
     # expect_linpred_equal(fit)
   })
@@ -228,7 +228,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   test_that("compatible with stan_betareg without z", {
     data("GasolineYield", package = "betareg")
     fit <- SW(stan_betareg(yield ~ temp, data = GasolineYield, 
-                           iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
+                           iter = ITER, chains = CHAINS, seed = SEED, refresh = 0))
     check_for_error(fit)
     # expect_linpred_equal(fit)
   })
@@ -237,9 +237,9 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     GasolineYield2 <- GasolineYield
     GasolineYield2$offs <- runif(nrow(GasolineYield2))
     fit <- SW(stan_betareg(yield ~ temp, data = GasolineYield2, offset = offs,
-                           iter = ITER*5, chains = CHAINS, seed = SEED, refresh = REFRESH))
+                           iter = ITER*5, chains = CHAINS, seed = SEED, refresh = 0))
     fit2 <- SW(stan_betareg(yield ~ temp + offset(offs), data = GasolineYield2,
-                            iter = ITER*5, chains = CHAINS, seed = SEED, refresh = REFRESH))
+                            iter = ITER*5, chains = CHAINS, seed = SEED, refresh = 0))
     
     expect_warning(posterior_predict(fit, newdata = GasolineYield), 
                    "offset")
@@ -263,7 +263,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     betaregfit <- betareg(y ~ x | z, data = dat)
     SW(capture.output(
       stanfit <- stan_betareg(y ~ x | z, data = dat, chains = CHAINS,
-                              iter = ITER, seed = SEED, refresh = REFRESH)
+                              iter = ITER, seed = SEED, refresh = 0)
     ))
     
     pb <- predict(betaregfit, type = "response")

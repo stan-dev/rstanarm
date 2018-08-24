@@ -126,7 +126,7 @@ test_that("lme4 tests work similarly", {
   # multiple groups
   lfit <- lmer(diameter ~ (1|plate) + (1|sample), Penicillin)
   sfit <- SW(stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin, 
-                    iter = 400, chains = CHAINS, seed = SEED, refresh = REFRESH))
+                    iter = 400, chains = CHAINS, seed = SEED, refresh = 0))
  
   nd <- with(Penicillin, expand.grid(plate=unique(plate), sample=unique(sample)))
   p1 <- posterior_predict(sfit, re.form = NA, seed = SEED)
@@ -237,7 +237,7 @@ test_that("pp_binomial_trials works", {
   
   # bernoulli
   fit <- SW(stan_glm(I(mpg > 25) ~ wt, data = mtcars, family = binomial, 
-                     iter = ITER, refresh = REFRESH, chains = CHAINS, 
+                     iter = ITER, refresh = 0, chains = CHAINS, 
                      seed = SEED))
   expect_equal(ppbt(fit), rep(1, nrow(mtcars)))
   # expect_equal(ppbt(fit, newdata = mtcars[1:5, ]), rep(1, 5))

@@ -237,7 +237,7 @@ test_that("check_constant_vars works", {
   esoph2$agegp[1:nrow(esoph2)] <- "75+"
   expect_error(stan_polr(tobgp ~ agegp, data = esoph2, iter = 10,
                          prior = R2(0.2, "mean"), init_r = 0.1, seed = SEED, 
-                         refresh = 10), 
+                         refresh = 0), 
                regexp = "agegp")
 })
 
@@ -261,9 +261,9 @@ test_that("linear_predictor methods work", {
 # fits to use in multiple calls to test_that below
 capture.output(
   fit <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
-                     chains = CHAINS, seed = SEED, refresh = REFRESH)),
+                     chains = CHAINS, seed = SEED, refresh = 0)),
   fit2 <- SW(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
-                        iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH)),
+                        iter = ITER, chains = CHAINS, seed = SEED, refresh = 0)),
   fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED),
   fitvb <- update(fito, algorithm = "meanfield", seed = SEED),
   fitvb2 <- update(fitvb, algorithm = "fullrank", seed = SEED)
@@ -409,7 +409,7 @@ test_that("linkinv methods work", {
     fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "loglog",
                           prior = R2(0.2, "mean"), init_r = 0.1, 
                           chains = CHAINS, iter = ITER, seed = SEED, 
-                          refresh = REFRESH)
+                          refresh = 0)
   ))
   expect_identical(linkinv.stanreg(fit_polr), rstanarm:::pgumbel)
   expect_identical(linkinv.character(fit_polr$family), rstanarm:::pgumbel)

@@ -35,7 +35,7 @@ source(test_path("helpers", "expect_stanreg.R"))
 source(test_path("helpers", "SW.R"))
 
 SW(fit <- stan_lmer(Reaction / 10 ~ Days + (Days | Subject), 
-                    data = sleepstudy, refresh = REFRESH,
+                    data = sleepstudy, refresh = 0,
                     init_r = 0.05, chains = CHAINS, iter = ITER, seed = SEED))
 
 context("stan_glmer")
@@ -50,7 +50,7 @@ test_that("stan_glmer returns expected result for binomial cbpp example", {
   i <- 1L # it seems only logit gives results similar to glmer with same link 
     fmla <- cbind(incidence, size - incidence) ~ period + (1 | herd)
     SW(fit <- stan_glmer(fmla, data = cbpp, family = binomial(links[i]),
-                      chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH))
+                      chains = CHAINS, iter = ITER, seed = SEED, refresh = 0))
     expect_stanreg(fit)
     
     ans <- glmer(fmla, data = cbpp, family = binomial(links[i]))
@@ -92,7 +92,7 @@ test_that("stan_lmer returns expected result for slepstudy example", {
 test_that("stan_lmer returns expected result for Penicillin example", {
   fmla <- as.formula(diameter ~ (1|plate) + (1|sample))
   SW(fit <- stan_lmer(fmla, data = Penicillin, chains = CHAINS, iter = ITER, 
-                      seed = SEED, refresh = REFRESH, sparse = TRUE))
+                      seed = SEED, refresh = 0, sparse = TRUE))
   expect_stanreg(fit)
   
   ans <- lmer(fmla, data = Penicillin)
@@ -124,7 +124,7 @@ test_that("stan_gamm4 returns stanreg object", {
   sleepstudy$y <- sleepstudy$Reaction / 10
   SW(fit <- stan_gamm4(y ~ s(Days), data = sleepstudy, sparse = TRUE,
                        random = ~(1|Subject), chains = CHAINS, iter = ITER, 
-                       seed = SEED, refresh = REFRESH))
+                       seed = SEED, refresh = 0))
   expect_stanreg(fit)
   # ans <- gamm4(Reaction / 10 ~ s(Days), data = sleepstudy, 
   #              random = ~(1|Subject))$mer
@@ -156,7 +156,7 @@ test_that("stan_gamm4 returns expected result for sleepstudy example", {
   sleepstudy$y <- sleepstudy$Reaction / 10
   fit <- SW(stan_gamm4(y ~ s(Days), data = sleepstudy,
                        random = ~(1|Subject), chains = CHAINS, iter = ITER, 
-                       seed = SEED, refresh = REFRESH))
+                       seed = SEED, refresh = 0))
   expect_silent(yrep1 <- posterior_predict(fit))
   # expect_equal(dim(yrep1), c(nrow(as.data.frame(fit)), nobs(fit)))
   expect_silent(yrep2 <- posterior_predict(fit, draws = 1))
@@ -182,7 +182,7 @@ test_that("compatible with stan_(g)lmer with transformation in formula", {
   d <- mtcars
   d$cyl <- as.factor(d$cyl)
   args <- list(formula = mpg ~ log1p(wt) + (1|cyl) + (1|gear), data = d, 
-               iter = ITER, chains = CHAINS,  seed = SEED, refresh = REFRESH)
+               iter = ITER, chains = CHAINS,  seed = SEED, refresh = 0)
   fit1 <- SW(do.call("stan_lmer", args))
   fit2 <- SW(do.call("stan_glmer", args))
   nd <- d[6:10, ]
@@ -202,7 +202,7 @@ test_that("compatible with stan_lmer with offset", {
   offs <- rnorm(nrow(mtcars))
   fit <- SW(stan_lmer(mpg ~ wt + (1|cyl) + (1 + wt|gear), data = mtcars, 
                       prior = normal(0,1), iter = ITER, chains = CHAINS,
-                      seed = SEED, refresh = REFRESH, offset = offs))
+                      seed = SEED, refresh = 0, offset = offs))
   
   expect_warning(posterior_predict(fit, newdata = mtcars[1:2, ], offset = offs),
                  "STATS")
@@ -219,7 +219,7 @@ test_that("posterior_predict close to predict.merMod for gaussian", {
   
   lfit1 <- lmer(mod1, data = mtcars)
   sfit1 <- stan_glmer(mod1, data = mtcars, iter = 400,
-                      chains = CHAINS, seed = SEED, refresh = REFRESH)
+                      chains = CHAINS, seed = SEED, refresh = 0)
   lfit2 <- update(lfit1, formula = mod2)
   sfit2 <- update(sfit1, formula = mod2)
   lfit3 <- update(lfit1, formula = mod3)
