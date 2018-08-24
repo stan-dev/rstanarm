@@ -182,6 +182,7 @@ test_that("validate_glm_formula works", {
 })
 
 test_that("validate_data works", {
+  validate_data <- rstanarm:::validate_data
   expect_error(validate_data(list(1)), 
                "'data' must be a data frame")
   expect_warning(d <- validate_data(if_missing = 3), 

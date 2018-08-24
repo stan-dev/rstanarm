@@ -331,6 +331,7 @@ test_that("coef ok if any 'ranef' missing from 'fixef'", {
 # as.matrix,as.data.frame,as.array ----------------------------------------
 
 test_that("as.matrix, as.data.frame, as.array methods work for MCMC", {
+  last_dimnames <- rstanarm:::last_dimnames
   # glm
   mat <- as.matrix(stan_glm1)
   df <- as.data.frame(stan_glm1)
@@ -360,7 +361,7 @@ test_that("as.matrix, as.data.frame, as.array methods work for MCMC", {
   expect_identical(df, as.data.frame(mat))
   expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
   nc <- length(c(fixef(example_model), unlist(ranef(example_model)))) + 1L
-  nr <- posterior_sample_size(example_model)
+  nr <- rstanarm:::posterior_sample_size(example_model)
   nms <- rownames(summary(example_model))[seq_len(nc)]
   expect_equal(dim(mat), c(nr, nc))
   expect_equal(dim(arr), c(nr / 2, 2, nc))
