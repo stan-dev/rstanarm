@@ -485,6 +485,7 @@ test_that("last_dimnames works", {
 test_that("validate_newdata works", {
   nd1 <- NULL
   nd2 <- data.frame(a = 1:4, b = c(NA, 1:3))
+  validate_newdata <- rstanarm:::validate_newdata
   expect_null(validate_newdata(nd1))
   expect_identical(validate_newdata(nd2[-1,]), nd2[-1, ])
   expect_error(validate_newdata(nd2), "NAs are not allowed")
