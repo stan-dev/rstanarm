@@ -270,9 +270,11 @@ test_that("stan_glm returns expected result for bernoulli", {
     expect_stanreg(fit)
     
     val <- coef(fit)
-    ans <- coef(glm(y ~ x, family = fam, start = rep(0, length(val))))
-    if (links[i] != "log") expect_equal(val, ans, 0.03, info = links[i])
-    else expect_equal(val[-1], ans[-1], 0.06, info = links[i])
+    if (links[i] != "log") {
+      ans <- coef(glm(y ~ x, family = fam, etastart = theta))
+      expect_equal(val, ans, 0.03, info = links[i])
+    }
+    # else expect_equal(val[-1], ans[-1], 0.06, info = links[i])
   }
 })
 
