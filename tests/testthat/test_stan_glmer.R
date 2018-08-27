@@ -40,8 +40,10 @@ SW(fit <- stan_lmer(Reaction / 10 ~ Days + (Days | Subject),
 
 context("stan_glmer")
 test_that("draws from stan_glmer (gaussian) same as from stan_lmer", {
-  SW(fit1 <- stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, iter = 10, chains = 1, seed = SEED))
-  SW(fit2 <- stan_lmer(mpg ~ wt + (1|cyl), data = mtcars, iter = 10, chains = 1, seed = SEED))
+  SW(fit1 <- stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
+                        iter = 10, chains = 1, seed = SEED, refresh = 0))
+  SW(fit2 <- stan_lmer(mpg ~ wt + (1|cyl), data = mtcars, 
+                       iter = 10, chains = 1, seed = SEED, refresh = 0))
   expect_identical(as.matrix(fit1), as.matrix(fit2))
 })
 test_that("stan_glmer returns expected result for binomial cbpp example", {
@@ -68,7 +70,7 @@ test_that("stan_glmer.nb ok", {
   mu <- 5*(-4 + with(dd, as.integer(f1) + 4*as.numeric(f2)))
   dd$y <- rnbinom(nrow(dd), mu = mu, size = 0.5)
   fmla <- as.formula(y ~ f1*f2 + (1|g))
-  SW(fit <- stan_glmer.nb(formula = fmla, data = dd, init_r = 1,
+  SW(fit <- stan_glmer.nb(formula = fmla, data = dd, init_r = 1, refresh = 0,
                           iter = ITER, seed = SEED, algorithm = "meanfield"))
   expect_stanreg(fit)
   
@@ -101,7 +103,8 @@ test_that("stan_lmer returns expected result for Penicillin example", {
   expect_identical(ngrps(fit), ngrps(ans))
 })
 test_that("stan_lmer ok if global intercept forced to 0", {
-  SW(fit <- stan_lmer(mpg ~ 0 + (1|cyl), data = mtcars, iter = 10, seed = SEED))
+  SW(fit <- stan_lmer(mpg ~ 0 + (1|cyl), data = mtcars, iter = 10, 
+                      seed = SEED, refresh = 0))
   expect_stanreg(fit)
 })
 test_that("stan_lmer returns an error when multiple group-specific terms are specified", {

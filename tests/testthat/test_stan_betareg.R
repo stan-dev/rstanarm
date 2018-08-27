@@ -66,14 +66,14 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   
   test_that("QR works when number of x and/or z predictors is >= 1", {
     SW(fit1 <- stan_betareg(y ~ x + z, link = "logit", seed = SEED, QR = TRUE,
-                                     prior = NULL, prior_intercept = NULL,
-                                     data = dat, algorithm = "optimizing"))
+                            prior = NULL, prior_intercept = NULL, refresh = 0,
+                            data = dat, algorithm = "optimizing"))
     expect_stanreg(fit1)
     expect_output(print(prior_summary(fit1)), "Q-space")
     
     SW(fit2 <- stan_betareg(y ~ x + z | z, link = "logit", seed = SEED, QR = TRUE,
-                                     prior = NULL, prior_intercept = NULL,
-                                     data = dat, algorithm = "optimizing"))
+                            prior = NULL, prior_intercept = NULL, refresh = 0,
+                            data = dat, algorithm = "optimizing"))
     expect_stanreg(fit2)
   })
   
@@ -81,7 +81,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     for (i in 1:length(link1)) {
       SW(fit <- stan_betareg(y ~ x, link = link1[i], seed = SEED,
                              prior = NULL, prior_intercept = NULL,
-                             prior_phi = NULL,
+                             prior_phi = NULL, refresh = 0,
                              data = dat, algorithm = "optimizing"))
       expect_stanreg(fit)
       val <- coef(fit)
@@ -93,7 +93,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   test_that("stan_betareg works with QR = TRUE and algorithm = 'optimizing'", {
     SW(fit <- stan_betareg(y ~ x + z, link = "logit", seed = SEED, QR = TRUE,
                            prior = NULL, prior_intercept = NULL,
-                           prior_phi = NULL,
+                           prior_phi = NULL, refresh = 0,
                            data = dat, algorithm = "optimizing"))
     expect_stanreg(fit)
     val <- coef(fit)
@@ -104,7 +104,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   test_that("stan_betareg works with QR = TRUE and algorithm = 'sampling'", {
     SW(fit <- stan_betareg(y ~ x + z, link = "logit", QR = TRUE,
                            prior = NULL, prior_intercept = NULL, 
-                           prior_phi = NULL,
+                           prior_phi = NULL, refresh = 0,
                            iter = 100, chains = 2, data = dat))
     expect_stanreg(fit)
     val <- coef(fit)
@@ -121,7 +121,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     
     for (i in 1:length(link1)) {
       SW(fit <- stan_betareg(y ~ x | z, link = link1[i], link.phi = link2[1], 
-                             seed = SEED,
+                             seed = SEED, refresh = 0,
                              prior = NULL, prior_intercept = NULL,
                              prior_z = NULL, prior_intercept_z = NULL,
                              data = dat, algorithm = "optimizing"))
@@ -145,7 +145,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
                              prior = NULL, prior_intercept = NULL,
                              prior_z = NULL, prior_intercept_z = NULL,
                              data = dat, algorithm = "optimizing", 
-                             seed = SEED))
+                             seed = SEED, refresh = 0))
       expect_stanreg(fit)
       val <- coef(fit)
       ans <- coef(betareg(y ~ x | z, link = link1[i], link.phi = link2[2], data = dat))
@@ -163,7 +163,8 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
       dat$y <- rbeta(N, mu * phi, (1 - mu) * phi)
   
       SW(fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], 
-                             data = dat, algorithm = "sampling", chains = 1, iter = 1)) 
+                             data = dat, algorithm = "sampling", 
+                             chains = 1, iter = 1, refresh = 0)) 
       expect_stanreg(fit)
     }
   })
@@ -180,7 +181,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     SW(fit <- stan_betareg(y ~ x, link = "logit", seed = SEED,
                            prior = NULL, prior_intercept = NULL, prior_phi = NULL,
                            data = dat, weights = weights, offset = offset, 
-                           algorithm = "optimizing", iter = 2000))
+                           algorithm = "optimizing", iter = 2000, refresh = 0))
     expect_stanreg(fit)
     val <- coef(fit)
     ans <- coef(betareg(y ~ x, link = "logit", weights = weights, offset = offset, data = dat))
@@ -188,15 +189,15 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   })
   
   test_that("heavy tailed priors work with stan_betareg", {
-    expect_output(stan_betareg(y ~ x | z, data = dat, 
+    expect_stanreg(stan_betareg(y ~ x | z, data = dat, 
                                prior = product_normal(), prior_z = product_normal(), 
-                               chains = 1, iter = 1))
-    expect_output(stan_betareg(y ~ x | z, data = dat, 
+                               chains = 1, iter = 1, refresh = 0))
+    expect_stanreg(stan_betareg(y ~ x | z, data = dat, 
                                prior = laplace(), prior_z = laplace(), 
-                               chains = 1, iter = 1))
-    expect_output(stan_betareg(y ~ x | z, data = dat, 
+                               chains = 1, iter = 1, refresh = 0))
+    expect_stanreg(stan_betareg(y ~ x | z, data = dat, 
                                prior = lasso(), prior_z = lasso(), 
-                               chains = 1, iter = 1))
+                               chains = 1, iter = 1, refresh = 0))
   })
   
   test_that("loo/waic for stan_betareg works", {

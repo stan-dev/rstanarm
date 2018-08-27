@@ -33,6 +33,6 @@ test_that("pp_validate runs for very quick example", {
     fit <- stan_glm(mpg ~ wt, data = mtcars, seed = SEED, refresh = 0, 
                     init_r = 0.1, iter = 500)
   )
-  expect_output(gg <- pp_validate(fit, nreps = 2, seed = SEED), "Elapsed Time")
+  gg <- pp_validate(fit, nreps = 2, seed = SEED)
   expect_s3_class(gg, "ggplot")
 })

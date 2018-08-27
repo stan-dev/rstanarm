@@ -136,7 +136,8 @@ context("kfold")
 
 test_that("kfold throws error for non mcmc models", {
   SW(
-    fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",seed = SEED)
+    fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
+                     seed = SEED, refresh = 0)
   )
   expect_error(kfold(fito), "MCMC")
 })

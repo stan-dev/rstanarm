@@ -143,7 +143,7 @@ test_that("validate_weights works", {
                regexp = "negative", ignore.case = TRUE)
   
   capture.output(fit <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED,
-                                 weights = rexp(nrow(mtcars))))
+                                 weights = rexp(nrow(mtcars)), refresh = 0))
   expect_stanreg(fit)
 })
 
@@ -226,9 +226,9 @@ test_that("check_constant_vars works", {
   expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
 
   capture.output(
-    fit1 <- stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED),
+    fit1 <- stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED, refresh = 0),
     fit2 <- stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)), seed = SEED,
-                     offset = rep(1, nrow(mf)), algorithm = "optimizing")
+                     offset = rep(1, nrow(mf)), algorithm = "optimizing", refresh = 0)
   )
   expect_stanreg(fit1)
   expect_stanreg(fit2)
@@ -336,7 +336,7 @@ test_that("get_x, get_y, get_z work", {
   expect_equivalent(as.matrix(get_z(fit2)), z_ans2)
   
   SW(capture.output(
-    fit3 <- stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, 
+    fit3 <- stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, refresh = 0,
                        iter = 10, chains = 1, refresh = 5, seed = SEED)
   ))
   z_ans3 <- mat.or.vec(nr = nrow(mtcars), nc = 6)
@@ -462,7 +462,7 @@ test_that("posterior_sample_size works", {
   expect_equal(pss(fito), nrow(as.matrix(fito)))
   
   SW(capture.output(
-    fit3 <- stan_glm(mpg ~ wt, data = mtcars, iter = 20, chains = 1, thin = 2)
+    fit3 <- stan_glm(mpg ~ wt, data = mtcars, iter = 20, chains = 1, thin = 2, refresh = 0)
   ))
   expect_equal(pss(fit3), nrow(as.matrix(fit3)))
 })
@@ -470,6 +470,7 @@ test_that("posterior_sample_size works", {
 test_that("last_dimnames works", {
   a <- array(rnorm(300), dim = c(10, 3, 10), 
              dimnames = list(A = NULL, B = NULL, C = letters[1:10]))
+  last_dimnames <- rstanarm:::last_dimnames
   expect_identical(last_dimnames(a), letters[1:10])
   
   m <- a[1,,, drop=TRUE]

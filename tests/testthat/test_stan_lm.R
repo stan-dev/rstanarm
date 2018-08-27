@@ -59,15 +59,15 @@ test_that("stan_lm doesn't break with less common priors", {
   expect_stanreg(fit)
   
   # prior_intercept = normal()
-  expect_output(fit <- stan_lm(mpg ~ ., data = mtcars, 
-                               prior = R2(0.75), prior_intercept = normal(),
-                               iter = 10, chains = 1, seed = SEED), regexp = "SAMPLING")
+  fit <- stan_lm(mpg ~ ., data = mtcars, refresh = 0,
+                 prior = R2(0.75), prior_intercept = normal(),
+                 iter = 10, chains = 1, seed = SEED)
   expect_stanreg(fit)
 })
 
 test_that("stan_lm doesn't break with vb algorithms", {
   expect_output(fit <- stan_lm(mpg ~ ., data = mtcars, 
-                               prior = R2(location = 0.75),
+                               prior = R2(location = 0.75), refresh = 0,
                                algorithm = "meanfield", seed = SEED), 
                 regexp = "approximate posterior")
   expect_stanreg(fit)
@@ -126,7 +126,7 @@ test_that("stan_biglm returns stanfit (not stanreg) object ", {
   ybar <- mean(y)
   s_y <- sd(y)
   SW(post <- stan_biglm.fit(b, R, SSR, N, xbar, ybar, s_y, prior = R2(.75),
-                           chains = 1, iter = 10, seed = SEED))
+                           chains = 1, iter = 10, seed = SEED, refresh = 0))
   expect_s4_class(post, "stanfit")
 })
 

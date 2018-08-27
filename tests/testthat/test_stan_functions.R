@@ -18,6 +18,18 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code
 
+# test that Rcpp::sourceCpp works
+Rcpp::sourceCpp(code='
+  #include <Rcpp.h>
+
+  // [[Rcpp::export]]
+  int fibonacci(const int x) {
+    if (x == 0) return(0);
+    if (x == 1) return(1);
+    return (fibonacci(x - 1)) + fibonacci(x - 2);
+  }'
+)
+
 set.seed(12345)
 
 MODELS_HOME <- "stan_files"

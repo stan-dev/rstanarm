@@ -120,7 +120,8 @@ test_that("pp_check throws error if 'group' variable not found", {
                "not found in model frame")
 })
 test_that("pp_check throws error for optimizing", {
-  SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED))
+  SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", 
+                      seed = SEED, refresh = 0))
   expect_error(pp_check(fito), regexp = "algorithm")
 })
 

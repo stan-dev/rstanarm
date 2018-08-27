@@ -41,7 +41,7 @@ test_that("posterior_predict errors if not a stanreg object", {
 })
 test_that("posterior_predict errors if model fit using optimization", {
   fit1 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", 
-                   seed = SEED)
+                   seed = SEED, refresh = 0)
   expect_error(posterior_predict(fit1), regexp = "optimizing")
   # What does this work for posterior_linpred() but not posterior_predict()?
   # expect_error(posterior_linpred(fit1), regexp = "optimizing")
@@ -63,8 +63,8 @@ test_that("posterior_predict errors if draws > posterior sample size", {
 context("posterior_predict ok for vb")
 test_that("errors for optimizing and silent for vb", {
   fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "meanfield", 
-                   seed = SEED)
-  fit2 <- update(fit1, algorithm = "fullrank")
+                   seed = SEED, refresh = 0)
+  fit2 <- update(fit1, algorithm = "fullrank", refresh = 0)
   expect_silent(posterior_predict(fit1))
   expect_silent(posterior_predict(fit2))
   expect_silent(posterior_linpred(fit1))
@@ -154,7 +154,8 @@ test_that("posterior_linpred not sensitive to spaces in factor levels", {
     int = rep(1:2, each = 5)
   )
   SW(capture.output(
-    fit1 <- stan_lmer(y ~ (1 | fac_nospace), data = df, seed = 123, chains = 2, iter = 25),
+    fit1 <- stan_lmer(y ~ (1 | fac_nospace), data = df, seed = 123, 
+                      chains = 2, iter = 25, refresh = 0),
     fit2 <- update(fit1, formula. = . ~ (1 | char_nospace)),
     fit3 <- update(fit1, formula. = . ~ (1 | fac_space)),
     fit4 <- update(fit1, formula. = . ~ (1 | char_space)),
@@ -201,7 +202,7 @@ test_that("posterior_linpred with spaces in factor levels ok with complicated fo
   
   SW(capture.output(
     fit1 <- stan_lmer(mpg ~ (1 + wt|cyl/gear), data = d,
-                      iter = 50, chains = 1, seed = 123),
+                      iter = 50, chains = 1, seed = 123, refresh = 0),
     fit2 <- update(fit1, formula. = . ~ (1 + wt|cyl_fac/gear_fac))
   ))
   expect_equal(posterior_linpred(fit1), posterior_linpred(fit2))

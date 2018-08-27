@@ -25,7 +25,7 @@ library(survival)
 ITER <- 1000
 CHAINS <- 1
 SEED <- 12345
-REFRESH <- ITER
+REFRESH <- 0L
 set.seed(SEED)
 if (interactive()) 
   options(mc.cores = parallel::detectCores())
@@ -69,7 +69,7 @@ fmLong1 <- logBili ~ year + (year | id)
 fmSurv1 <- Surv(futimeYears, death) ~ sex + trt
 jm1 <- stan_jm(
   fmLong1, pbcLong, fmSurv1, pbcSurv, time_var = "year", 
-  iter = 1, chains = 1, seed = SEED)
+  iter = 1, refresh = 0, chains = 1, seed = SEED)
 
 # multivariate joint model
 fmLong2 <- list(
@@ -78,7 +78,7 @@ fmLong2 <- list(
 fmSurv2 <- Surv(futimeYears, death) ~ sex + trt
 jm2 <- stan_jm(
   fmLong2, pbcLong, fmSurv2, pbcSurv, time_var = "year", 
-  iter = 1, chains = 1, seed = SEED)
+  iter = 1, refresh = 0, chains = 1, seed = SEED)
 
 #----  Tests for stan_jm arguments
 
