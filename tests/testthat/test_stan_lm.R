@@ -66,14 +66,12 @@ test_that("stan_lm doesn't break with less common priors", {
 })
 
 test_that("stan_lm doesn't break with vb algorithms", {
-  expect_output(fit <- stan_lm(mpg ~ ., data = mtcars, 
-                               prior = R2(location = 0.75), refresh = 0,
-                               algorithm = "meanfield", seed = SEED), 
-                regexp = "approximate posterior")
+  fit <- stan_lm(mpg ~ ., data = mtcars, 
+                 prior = R2(location = 0.75), refresh = 0,
+                 algorithm = "meanfield", seed = SEED)
   expect_stanreg(fit)
   
-  expect_output(fit2 <- update(fit, algorithm = "fullrank"), 
-                regexp = "approximate posterior")
+  fit2 <- update(fit, algorithm = "fullrank")
   expect_stanreg(fit2)
 })
 
