@@ -64,23 +64,23 @@ SW(fit_gamma <- stan_bym2(y_gamma ~ 1 + x, data = spatial_data, family = Gamma(l
                           W = W, iter = 500, chains = 4))
 
 # compare answers with INLA (NB2 reciprocal_dispersion param fails!)
-test_that("stan_bym2 estimates match INLA", {
-  inla_gauss_est <- c(-0.0499, 0.4337, 0.4048, 1/1.0845, 1/2.1234)
-  inla_binom_est <- c(-1.9432, 0.3338, 0.7963, 1/1.6385)
-  inla_pois_est <- c(0.7813, 0.4361, 0.9127, 1/1.3033)
-  inla_nb_est <- c(0.8017, 0.4363, 0.9136, 1/1.3051, 117.9266)
-  inla_gamma_est <- c(0.7968, -1.3430, 0.807, 1/1.909, 1/1.140)
-  bym2_gauss <- unname(fit_gauss$stan_summary[1:5,"mean"])
-  bym2_binom <- unname(fit_binom$stan_summary[1:4,"mean"])
-  bym2_pois <- unname(fit_pois$stan_summary[1:4,"mean"])
-  bym2_nb2 <- unname(fit_nb2$stan_summary[1:5,"mean"])
-  bym2_gamma <- unname(fit_gamma$stan_summary[1:5,"mean"])
-  expect_equal(bym2_gauss, inla_gauss_est, tol = 0.2)
-  expect_equal(bym2_binom, inla_binom_est, tol = 0.2)
-  expect_equal(bym2_pois, inla_pois_est, tol = 0.2)
-  expect_equal(bym2_nb2, inla_nb_est, tol = 0.2)
-  expect_equal(bym2_gamma, inla_gamma_est, tol = 0.2)
-})
+# test_that("stan_bym2 estimates match INLA", {
+#   inla_gauss_est <- c(-0.0499, 0.4337, 0.4048, 1/1.0845, 1/2.1234)
+#   inla_binom_est <- c(-1.9432, 0.3338, 0.7963, 1/1.6385)
+#   inla_pois_est <- c(0.7813, 0.4361, 0.9127, 1/1.3033)
+#   inla_nb_est <- c(0.8017, 0.4363, 0.9136, 1/1.3051, 117.9266)
+#   inla_gamma_est <- c(0.7968, -1.3430, 0.807, 1/1.909, 1/1.140)
+#   bym2_gauss <- unname(fit_gauss$stan_summary[1:5,"mean"])
+#   bym2_binom <- unname(fit_binom$stan_summary[1:4,"mean"])
+#   bym2_pois <- unname(fit_pois$stan_summary[1:4,"mean"])
+#   bym2_nb2 <- unname(fit_nb2$stan_summary[1:5,"mean"])
+#   bym2_gamma <- unname(fit_gamma$stan_summary[1:5,"mean"])
+#   expect_equal(bym2_gauss, inla_gauss_est, tol = 0.2)
+#   expect_equal(bym2_binom, inla_binom_est, tol = 0.2)
+#   expect_equal(bym2_pois, inla_pois_est, tol = 0.2)
+#   expect_equal(bym2_nb2, inla_nb_est, tol = 0.2)
+#   expect_equal(bym2_gamma, inla_gamma_est, tol = 0.2)
+# })
 
 # test family/link combinations
 test_that("family = 'gaussian' works", {
@@ -174,13 +174,13 @@ test_that("stan_bym2 errors with algorithm = 'optimizing'", {
                "'arg' should be one of “sampling”, “meanfield”, “fullrank”")
 })
 
-test_that("loo/waic for stan_bym2 works", {
-  loo(fit_gauss)
-  loo(fit_binom)
-  loo(fit_pois)
-  loo(fit_nb2)
-  loo(fit_gamma)
-})
+# test_that("loo/waic for stan_bym2 works", {
+#   loo(fit_gauss)
+#   loo(fit_binom)
+#   loo(fit_pois)
+#   loo(fit_nb2)
+#   loo(fit_gamma)
+# })
 
 test_that("posterior_predict works for stan_bym2", {
   preds_gauss <- posterior_predict(fit_gauss)

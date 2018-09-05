@@ -272,7 +272,7 @@ stan_spatial.fit <- function(x, y, w,
                     global_prior_scale,
                     global_prior_scale_for_intercept,
                     num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0))
-  
+
   if (stan_function == "stan_bym2")
     standata$scaling_factor <- create_scaling_factor(standata)
   else
