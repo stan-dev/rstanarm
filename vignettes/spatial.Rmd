@@ -196,22 +196,7 @@ Alternatively we can look at the conventional one-dimensional posterior predicti
 pp_check(fit_besag)
 ```
 
-We can also compare the model's predictive performance using the [loo](http://mc-stan.org/loo) package. 
-
-```{r loo-besag, results='hide'}
-library(loo)
-loo_besag <- loo(fit_besag)
-loo_besag_bad <- loo(fit_besag_bad)
-print(loo_besag)
-print(loo_besag_bad)
-```
-
-```{r loo-besag-compare}
-compare(loo_besag, loo_besag_bad)
-```
-
-
-The difference between these two models is negative indicating the correct model has higher predictive accuracy.
+In order to compare the predictive performance between the models we need to use the [loo](http://mc-stan.org/loo) package. Currently, however, this is not supported for CAR spatial models.
 
 ## Smoothing the Spatial Random Walk
 

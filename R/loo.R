@@ -133,6 +133,8 @@ loo.stanreg <- function(x, ..., k_threshold = NULL) {
     STOP_sampling_only("loo")
   if (model_has_weights(x))
     recommend_exact_loo(reason = "model has weights")
+  if (is(x,"car"))
+    stop("Currently, the loo method is not supported for CAR spatial models.", call. = FALSE)
 
   user_threshold <- !is.null(k_threshold)
   if (user_threshold) {

@@ -210,10 +210,10 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     ytilde <- do.call(fun, list(ytilde))
   if (is_polr(object) && !is_scobit(object))
     ytilde <- matrix(levels(get_y(object))[ytilde], nrow(ytilde), ncol(ytilde))
-  
+
   # fix me!
   if (is(object, "car")) {
-    if (is.null(newdata)) colnames(ytilde) <- rownames(model.frame(object, m = NULL))
+    if (is.null(newdata)) colnames(ytilde) <- rownames(model.frame(object))
     else colnames(ytilde) <- rownames(newdata)
   }
   else {
