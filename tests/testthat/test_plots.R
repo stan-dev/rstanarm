@@ -28,7 +28,7 @@ source(test_path("helpers", "SW.R"))
 source(test_path("helpers", "expect_gg.R"))
 
 fit <- example_model
-SW(fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED))
+SW(fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED, refresh = 0))
 SW(fitvb <- update(fito, algorithm = "meanfield"))
 
 # plot.stanreg ------------------------------------------------------------
@@ -38,7 +38,7 @@ test_that("plot.stanreg errors if chains = 1 but needs multiple", {
                             "hist_by_chain",
                             "dens_overlay",
                             "violin")
-  SW(fit_1chain <- stan_glm(mpg ~ wt, data = mtcars, chains = 1, iter = 100))
+  SW(fit_1chain <- stan_glm(mpg ~ wt, data = mtcars, chains = 1, iter = 100, refresh = 0))
   for (f in multiple_chain_plots) {
     expect_error(plot(fit_1chain, plotfun = f), info = f, 
                  regexp = "requires multiple chains")

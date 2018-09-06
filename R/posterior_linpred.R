@@ -31,7 +31,7 @@
 #' @param transform Should the linear predictor be transformed using the
 #'   inverse-link function? The default is \code{FALSE}, in which case the
 #'   untransformed linear predictor is returned.
-#' @param newdata,re.form,offset Same as for \code{\link{posterior_predict}}.
+#' @param newdata,draws,re.form,offset Same as for \code{\link{posterior_predict}}.
 #' @param XZ If \code{TRUE} then instead of computing the linear predictor the 
 #'   design matrix \code{X} (or \code{cbind(X,Z)} for models with group-specific
 #'   terms) constructed from \code{newdata} is returned. The default is 
@@ -74,44 +74,57 @@ posterior_linpred.stanreg <-
   function(object,
            transform = FALSE,
            newdata = NULL,
+           draws = NULL,
            re.form = NULL,
            offset = NULL,
            XZ = FALSE,
            ...) {
-    if (used.optimizing(object))
-      STOP_not_optimizing("posterior_linpred")
-    if (is.stanmvreg(object))
+
+    if (is.stanmvreg(object)) {
       STOP_if_stanmvreg("'posterior_linpred'")
+    }
     
     newdata <- validate_newdata(newdata)
     dat <- pp_data(object,
                    newdata = newdata,
                    re.form = re.form,
-                   offset = offset,
-                   ...)
+                   offset = offset)
     if (XZ) {
       XZ <- dat[["x"]]
       if (is.mer(object))
         XZ <- cbind(XZ, t(dat[["Zt"]]))
       return(XZ)
     }
-    eta <- pp_eta(object, data = dat, draws = NULL, ...)[["eta"]]
-    if (is.null(newdata)) colnames(eta) <- rownames(model.frame(object, ...))
-    else colnames(eta) <- rownames(newdata)
     
-    if (!transform || is.nlmer(object)) 
-      return(eta)
-    
-    g <- linkinv(object)
-    if (is_clogit(object)) {
-      if (!is.null(newdata)) {
-        y <- eval(formula(object)[[2L]], newdata)
-        strata <- as.factor(eval(object$call$strata, newdata))
-        formals(g)$g <- strata
-        formals(g)$successes <- aggregate(y, by = list(strata), FUN = sum)$x
-      }
-      return(t(apply(eta, 1, FUN = g)))
+    eta <- pp_eta(object, data = dat, draws = draws)[["eta"]]
+    if (is.null(newdata)) {
+      colnames(eta) <- rownames(model.frame(object))
+    } else {
+      colnames(eta) <- rownames(newdata)
     }
     
+    if (!transform || is.nlmer(object)) {
+      return(eta)
+    }
+    
+    if (is_clogit(object)) {
+      return(clogit_linpred_transform(object, newdata = newdata, eta = eta))
+    }
+    
+    g <- linkinv(object)
     return(g(eta))
   }
+
+
+
+# internal ----------------------------------------------------------------
+clogit_linpred_transform <- function(object, newdata = NULL, eta = NULL) {
+  g <- linkinv(object)
+  if (!is.null(newdata)) {
+    y <- eval(formula(object)[[2L]], newdata)
+    strata <- as.factor(eval(object$call$strata, newdata))
+    formals(g)$g <- strata
+    formals(g)$successes <- aggregate(y, by = list(strata), FUN = sum)$x
+  }
+  return(t(apply(eta, 1, FUN = g)))
+}

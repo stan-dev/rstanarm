@@ -18,8 +18,9 @@
 
 #' Bayesian ordinal regression models via Stan
 #'
-#' Bayesian inference for ordinal (or binary) regression models under
-#' a proportional odds assumption.
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
+#' Bayesian inference for ordinal (or binary) regression models under a
+#' proportional odds assumption.
 #'
 #' @export
 #' @templateVar fun stan_polr
@@ -115,6 +116,7 @@
 #' \emph{American Journal of Political Science}. 230 -- 255.
 #'
 #' @seealso The vignette for \code{stan_polr}.
+#'   \url{http://mc-stan.org/rstanarm/articles/}
 #'
 #' @examples
 #' if (!grepl("^sparc",  R.version$platform)) {
@@ -137,15 +139,18 @@ stan_polr <- function(formula, data, weights, ..., subset,
                       adapt_delta = NULL,
                       do_residuals = NULL) {
 
-  data <- validate_data(data)
+  data <- validate_data(data, if_missing = environment(formula))
   algorithm <- match.arg(algorithm)
   if (is.null(do_residuals)) 
     do_residuals <- algorithm == "sampling"
   call <- match.call(expand.dots = TRUE)
   m <- match.call(expand.dots = FALSE)
   method <- match.arg(method)
-  if (is.matrix(eval.parent(m$data)))
+  if (is.matrix(eval.parent(m$data))) {
     m$data <- as.data.frame(data)
+  } else {
+    m$data <- data
+  }
   m$method <- m$model <- m$... <- m$prior <- m$prior_counts <-
     m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- 
     m$do_residuals <- NULL
@@ -183,12 +188,24 @@ stan_polr <- function(formula, data, weights, ..., subset,
   # y <- unclass(y)
   q <- llev - 1L
 
-  stanfit <- stan_polr.fit(x, y, wt, offset, method,
-                           prior = prior, prior_counts = prior_counts,
-                           shape = shape, rate = rate,
-                           prior_PD = prior_PD, algorithm = algorithm,
-                           adapt_delta = adapt_delta, do_residuals=do_residuals, ...)
-
+  stanfit <-
+    stan_polr.fit(
+      x = x,
+      y = y,
+      wt = wt,
+      offset = offset,
+      method = method,
+      prior = prior,
+      prior_counts = prior_counts,
+      shape = shape,
+      rate = rate,
+      prior_PD = prior_PD,
+      algorithm = algorithm,
+      adapt_delta = adapt_delta,
+      do_residuals = do_residuals,
+      ...
+    )
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   inverse_link <- linkinv(method)
 
   if (llev == 2L) { # actually a Bernoulli model

@@ -116,7 +116,8 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
       init = init_fun, data = standata, pars = pars, show_messages = FALSE)
     stanfit <- do.call(sampling, sampling_args)
   }
-  check_stanfit(stanfit)
+  check <- check_stanfit(stanfit)
+  if (!isTRUE(check)) return(standata)
   if (K == 1)
     stanfit@sim$samples <- lapply(stanfit@sim$samples, FUN = function(x) {
       x$`R2[1]` <- (x$`R2[1]`)^2

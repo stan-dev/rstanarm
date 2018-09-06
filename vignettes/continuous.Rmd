@@ -26,8 +26,8 @@ params:
 
 This vignette explains how to estimate linear and generalized linear models 
 (GLMs) for continuous response variables using the `stan_glm` function in the
-__rstanarm__ package. For GLMs for discrete outcomes see the vigettes for
-binary/binomial and count outcomes.
+__rstanarm__ package. For GLMs for discrete outcomes see the vignettes for
+[binary/binomial](binomial.html) and [count](count.html) outcomes.
 
 ```{r, child="children/four_steps.txt"}
 ```
@@ -86,11 +86,11 @@ $$f\left(\boldsymbol{\beta} | \mathbf{y},\mathbf{X}\right) \propto
   \prod_{i=1}^N {f(y_i|\eta_i)},$$
   
 where $\mathbf{X}$ is the matrix of predictors and $\eta$ the linear predictor. 
-This is posterior distribution that `stan_glm` will draw from when using MCMC.
+This is the posterior distribution that `stan_glm` will draw from when using MCMC.
   
 # Linear Regression Example
 
-The `stan_lm` function, which has its own [vignette](lm.stan), fits regularized linear 
+The `stan_lm` function, which has its own [vignette](lm.html), fits regularized linear
 models using a novel means of specifying priors for the regression coefficients.
 Here we focus using the `stan_glm` function, which can be used to estimate 
 linear models with independent priors on the regression coefficients.
@@ -174,7 +174,7 @@ ggplot(kidiq, aes(x = mom_iq, y = kid_score)) +
 
 For the third and fourth models, each of which uses both predictors, we can plot
 the continuous `mom_iq` on the x-axis and use color to indicate which 
-points correspond to the different subpopulatations defined by `mom_hs`. We also 
+points correspond to the different subpopulations defined by `mom_hs`. We also
 now plot two regression lines, one for each subpopulation:
 
 ```{r, continuous-kidiq-plot3}
@@ -219,7 +219,7 @@ loo4 <- loo(post4)
 ```
 
 In this case the fourth model is preferred as it has the highest 
-expected log predicted density (`elpd`) or, equivalently, the lowest 
+expected log predicted density (`elpd_loo`) or, equivalently, the lowest
 value of the LOO Information Criterion (`looic`). The fourth model
 is preferred by a lot over the first model
 
@@ -365,7 +365,7 @@ summary(glm(lot1 ~ log(u), data = clotting, family = Gamma))
 summary(glm(lot2 ~ log(u), data = clotting, family = Gamma))
 ```
 
-To fit the analagous Bayesian models we can simply substitute `stan_glm` for
+To fit the analogous Bayesian models we can simply substitute `stan_glm` for
 `glm` above. However, instead of fitting separate models we can also reshape the
 data slightly and fit a model interacting lot with plasma concentration:
 

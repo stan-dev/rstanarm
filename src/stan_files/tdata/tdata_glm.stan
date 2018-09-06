@@ -10,13 +10,12 @@
   else if (prior_dist == 4) hs = 4;
   else hs = 0;
   
-  pos = 1;
   for (i in 1:t) {
     if (p[i] > 1) {
       for (j in 1:p[i]) {
         delta[pos] = concentration[j];
-        pos = pos + 1;
+        pos += 1;
       }
     }
-    for (j in 3:p[i]) len_z_T = len_z_T + p[i] - 1;
+    for (j in 3:p[i]) len_z_T += p[i] - 1;
   }

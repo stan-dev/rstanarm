@@ -24,7 +24,7 @@ make_cc <- function(file) {
   cppcode <- sub("(class[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*: public prob_grad \\{)",
                  paste("#include <meta_header.hpp>\n", "\\1"), cppcode)
 
-  cat(readLines(file.path("stan_files", "pre", "license.stan")),
+  cat(readLines(dir("stan_files", pattern = "license.stan", recursive = TRUE, full.names = TRUE)),
       "#ifndef MODELS_HPP", "#define MODELS_HPP", "#define STAN__SERVICES__COMMAND_HPP",
       "#include <rstan/rstaninc.hpp>",
       cppcode, "#endif", file = sub("\\.stan$", ".hpp", file),

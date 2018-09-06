@@ -150,20 +150,24 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
 
   dots <- list(...)
   if (is.stanmvreg(object)) {
-    m <- dots[["m"]]
+    m <- dots[["m"]]             # submodel to predict for
+    stanmat <- dots[["stanmat"]] # possibly incl. new b pars (dynamic preds)
     if (is.null(m))
       STOP_arg_required_for_stanmvreg(m)
     if (!is.null(offset))
       stop2("'offset' cannot be specified for stanmvreg objects.")
-  } else m <- NULL
+  } else {
+    m <- NULL
+    stanmat <- NULL
+  }
 
   newdata <- validate_newdata(newdata)
-  dat <-
-    pp_data(object,
-            newdata = newdata,
-            re.form = re.form,
-            offset = offset,
-            ...)
+  pp_data_args <- c(list(object,
+                         newdata = newdata,
+                         re.form = re.form,
+                         offset = offset),
+                    dots)
+  dat <- do.call("pp_data", pp_data_args)
   if (is_scobit(object)) {
     data <- pp_eta(object, dat, NULL)
     if (!is.null(draws)) {
@@ -180,6 +184,10 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     } else {
       ppargs <- pp_args(object, data, m = m)
     }
+  } else if (is.stanjm(object)) {
+    ppargs <- pp_args(object, data = pp_eta(object, dat, draws, m = m,
+                                            stanmat = stanmat), m = m)
+
   } else {
     if (!is.null(newdata) && is_clogit(object)) {
       y <- eval(formula(object)[[2L]], newdata)
@@ -218,9 +226,9 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   }
   else {
     if (is.null(newdata)) colnames(ytilde) <- rownames(model.frame(object, m = m))
-    else colnames(ytilde) <- rownames(newdata) 
+    else colnames(ytilde) <- rownames(newdata)
   }
-  
+
   # if function is called from posterior_traj then add mu as attribute
   fn <- tryCatch(sys.call(-3)[[1]], error = function(e) NULL)
   if (!is.null(fn) && grepl("posterior_traj", deparse(fn), fixed = TRUE))
@@ -352,8 +360,9 @@ pp_args <- function(object, data, m = NULL) {
       args$alpha <- stanmat[, "alpha"]
     return(args)
   }
-  else if (is_clogit(object))
+  else if (is_clogit(object)) {
     return(list(mu = inverse_link(eta)))
+  }
 
   args <- list(mu = inverse_link(eta))
   famname <- family(object, m = m)$family
@@ -367,15 +376,9 @@ pp_args <- function(object, data, m = NULL) {
   } else if (is.nb(famname)) {
     args$size <- stanmat[, paste0(m_stub, "reciprocal_dispersion")]
   } else if (is.beta(famname)) {
-    # create a condition for presence of z vars
-    z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
-    omega <- stanmat[,z_vars]
-    if (length(z_vars) == 1 && z_vars == "(phi)") {
-      args$phi <- stanmat[, "(phi)"]
-    } else {
-      inverse_link_phi <- linkinv(object$family_phi)
-      args$phi <- linear_predictor(as.matrix(omega), as.matrix(object$z), data$offset)
-      args$phi <- inverse_link_phi(args$phi)
+    args$phi <- data$phi
+    if (is.null(args$phi)) {
+      args$phi <- linkinv(object$family_phi)(data$phi_linpred)
     }
   }
   args
@@ -383,14 +386,19 @@ pp_args <- function(object, data, m = NULL) {
 
 # create eta and stanmat (matrix of posterior draws)
 #
-# @param object stanreg or stanmvreg object
-# @param data output from pp_data()
-# @param draws number of draws
-# @param m optional integer specifying the submodel for stanmvreg objects
-# @return linear predictor "eta" and matrix of posterior draws stanmat"
-pp_eta <- function(object, data, draws = NULL, m = NULL) {
+# @param object A stanreg or stanmvreg object
+# @param data Output from pp_data()
+# @param draws Number of draws
+# @param m Optional integer specifying the submodel for stanmvreg objects
+# @param stanmat Optionally pass a stanmat that has been amended to include
+#   new b parameters for individuals in the prediction data but who were not
+#   included in the model estimation; relevant for dynamic predictions for
+#   stan_jm objects only
+# @return Linear predictor "eta" and matrix of posterior draws "stanmat". For
+#   some stan_betareg models "" is also included in the list.
+pp_eta <- function(object, data, draws = NULL, m = NULL, stanmat = NULL) {
   x <- data$x
-  S <- posterior_sample_size(object)
+  S <- if (is.null(stanmat)) posterior_sample_size(object) else nrow(stanmat)
   if (is.null(draws))
     draws <- S
   if (draws > S) {
@@ -405,8 +413,10 @@ pp_eta <- function(object, data, draws = NULL, m = NULL) {
     if (is.null(m)) STOP_arg_required_for_stanmvreg(m)
     M <- get_M(object)
   }
-  stanmat <- if (is.null(data$Zt))
-    as.matrix.stanreg(object) else as.matrix(object$stanfit)
+  if (is.null(stanmat)) {
+    stanmat <- if (is.null(data$Zt))
+      as.matrix.stanreg(object) else as.matrix(object$stanfit)
+  }
   nms <- if (is.stanmvreg(object))
     collect_nms(colnames(stanmat), M, stub = get_stub(object)) else NULL
   beta_sel <- if (is.null(nms)) seq_len(ncol(x)) else nms$y[[m]]
@@ -431,6 +441,7 @@ pp_eta <- function(object, data, draws = NULL, m = NULL) {
     else eta <- linkinv(object)(eta, data$arg1, data$arg2)
     eta <- t(eta)
   }
+
   if (is(object, "car")) {
     psi_indx <- grep("psi", colnames(stanmat))
     psi <- stanmat[, psi_indx, drop = FALSE]
@@ -438,7 +449,21 @@ pp_eta <- function(object, data, draws = NULL, m = NULL) {
       psi <- psi[samp, , drop = FALSE]
     eta <- eta + psi
   }
-  nlist(eta, stanmat)
+#  nlist(eta, stanmat)
+
+  out <- nlist(eta, stanmat)
+
+  if (inherits(object, "betareg")) {
+    z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
+    omega <- stanmat[, z_vars]
+    if (length(z_vars) == 1 && z_vars == "(phi)") {
+      out$phi <- stanmat[, "(phi)"]
+    } else {
+      out$phi_linpred <- linear_predictor(as.matrix(omega), as.matrix(data$z_betareg), data$offset)
+    }
+  }
+
+  return(out)
 }
 
 pp_b_ord <- function(b, Z_names) {
@@ -451,6 +476,7 @@ pp_b_ord <- function(b, Z_names) {
       stop("multiple matches bug")
     m <- grep(paste0("b[", sub(" (.*):.*$", " \\1:_NEW_\\1", x), "]"),
               colnames(b), fixed = TRUE)
+    len <- length(m)
     if (len == 1)
       return(m)
     if (len > 1)
@@ -479,10 +505,19 @@ pp_b_ord <- function(b, Z_names) {
 
 # Number of trials for binomial models
 pp_binomial_trials <- function(object, newdata = NULL, m = NULL) {
-  if (is.stanmvreg(object) && is.null(m)) STOP_arg_required_for_stanmvreg(m)
-  y <- if (is.null(newdata))
-      get_y(object, m) else eval(formula(object, m = m)[[2L]], newdata)
-  if (NCOL(y) == 2L)
-    return(rowSums(y))
-  rep(1, NROW(y))
+  if (is.stanmvreg(object) && is.null(m)) {
+    STOP_arg_required_for_stanmvreg(m)
+  }
+
+  y <- get_y(object, m)
+  is_bernoulli <- NCOL(y) == 1L
+
+  if (is_bernoulli) {
+    trials <- if (is.null(newdata))
+      rep(1, NROW(y)) else rep(1, NROW(newdata))
+  } else {
+    trials <- if (is.null(newdata))
+      rowSums(y) else rowSums(eval(formula(object, m = m)[[2L]], newdata))
+  }
+  return(trials)
 }

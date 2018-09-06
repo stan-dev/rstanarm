@@ -19,6 +19,7 @@
 #' Bayesian multivariate generalized linear models with correlated 
 #' group-specific terms via Stan
 #' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Bayesian inference for multivariate GLMs with group-specific coefficients 
 #' that are assumed to be correlated across the GLM submodels.
 #' 
@@ -33,9 +34,15 @@
 #' 
 #' @param formula A two-sided linear formula object describing both the 
 #'   fixed-effects and random-effects parts of the longitudinal submodel  
-#'   (see \code{\link[lme4]{glmer}} for details). For a multivariate GLM this 
-#'   should be a list of such formula objects, with each element
-#'   of the list providing the formula for one of the GLM submodels.
+#'   similar in vein to formula specification in the \strong{lme4} package
+#'   (see \code{\link[lme4]{glmer}} or the \strong{lme4} vignette for details). 
+#'   Note however that the double bar (\code{||}) notation is not allowed 
+#'   when specifying the random-effects parts of the formula, and neither
+#'   are nested grouping factors (e.g. \code{(1 | g1/g2))} or 
+#'   \code{(1 | g1:g2)}, where \code{g1}, \code{g2} are grouping factors. 
+#'   For a multivariate GLM this should be a list of such formula objects, 
+#'   with each element of the list providing the formula for one of the 
+#'   GLM submodels.
 #' @param data A data frame containing the variables specified in
 #'   \code{formula}. For a multivariate GLM, this can
 #'   be either a single data frame which contains the data for all 
@@ -146,6 +153,8 @@ stan_mvmer <- function(formula, data, family = gaussian, weights,
   
   # Formula
   formula <- validate_arg(formula, "formula"); M <- length(formula)
+	if (M > 3L)
+	  stop("'stan_mvmer' is currently limited to a maximum of 3 outcomes.")
   
   # Data
   data <- validate_arg(data, "data.frame", validate_length = M)  
@@ -181,7 +190,7 @@ stan_mvmer <- function(formula, data, family = gaussian, weights,
                          algorithm = algorithm, adapt_delta = adapt_delta, 
                          max_treedepth = max_treedepth, init = init, 
                          QR = QR, sparse = sparse, ...)
-
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   y_mod <- attr(stanfit, "y_mod")
   cnms  <- attr(stanfit, "cnms")
   flevels <- attr(stanfit, "flevels")

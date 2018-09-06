@@ -43,13 +43,14 @@ predict.stanreg <- function(object,
                             newdata = NULL,
                             type = c("link", "response"),
                             se.fit = FALSE) {
-  if (is.mer(object))
+  if (is.mer(object)) {
     stop(
       "'predict' is not available for models fit with ",
-      object$call[[1]],
+      object$stan_function,
       ". Please use the 'posterior_predict' function instead.",
       call. = FALSE
     )
+  }
   
   type <- match.arg(type)
   if (!se.fit && is.null(newdata)) {
@@ -64,6 +65,15 @@ predict.stanreg <- function(object,
       "function to draw \nfrom the posterior predictive distribution.",
       call. = FALSE
     )
+  
+  if (isTRUE(object$stan_function == "stan_betareg") && 
+      !is.null(newdata)) {
+    # avoid false positive warnings about missing z variables in newdata
+    zvars <- all.vars(object$terms$precision)
+    for (var in zvars) {
+      if (!var %in% colnames(newdata)) newdata[[var]] <- NA
+    }
+  }
   
   dat <- pp_data(object, newdata)
   stanmat <- as.matrix.stanreg(object)

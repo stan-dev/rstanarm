@@ -1,5 +1,6 @@
   // flag indicating whether to draw from the prior
   int<lower=0,upper=1> prior_PD;  // 1 = yes
+  int<lower=0,upper=1> compute_mean_PPD; // 1 = yes
   
   // intercept
   int<lower=0,upper=1> has_intercept;  // 1 = yes

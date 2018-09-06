@@ -416,11 +416,12 @@ collect_pars <- function(x, pars = NULL, regex_pars = NULL) {
 # Get the posterior sample size
 #
 # @param x A stanreg object
-# @return NULL if used.optimizing(x), otherwise the posterior sample size
+# @return the posterior sample size (or size of sample from approximate posterior)
 posterior_sample_size <- function(x) {
   validate_stanreg_object(x)
-  if (used.optimizing(x)) 
-    return(NULL)
+  if (used.optimizing(x)) {
+    return(NROW(x$asymptotic_sampling_dist))
+  }
   pss <- x$stanfit@sim$n_save
   if (used.variational(x))
     return(pss)
@@ -683,25 +684,6 @@ model_has_weights <- function(x) {
   }
 }
 
-
-# Validate newdata argument for posterior_predict, log_lik, etc.
-#
-# Doesn't check if the correct variables are included (that's done in pp_data),
-# just that newdata is either NULL or a data frame with no missing values.
-# @param x User's 'newdata' argument
-# @return Either NULL or a data frame
-#
-validate_newdata <- function(x) {
-  if (is.null(x))
-    return(NULL)
-  if (!is.data.frame(x))
-    stop("If 'newdata' is specified it must be a data frame.", call. = FALSE)
-  if (any(is.na(x)))
-    stop("NAs are not allowed in 'newdata'.", call. = FALSE)
-
-  as.data.frame(x)
-}
-
 # Check that a stanfit object (or list returned by rstan::optimizing) is valid
 #
 check_stanfit <- function(x) {
@@ -719,22 +701,30 @@ check_stanfit <- function(x) {
 
 # Validate data argument
 #
-# Make sure that, if specified, data is a data frame.
-# 
+# Make sure that, if specified, data is a data frame. If data is not missing
+# then dimension reduction is also performed on variables (i.e., a one column
+# matrix inside a data frame is converted to a vector).
+#
 # @param data User's data argument
 # @param if_missing Object to return if data is missing/null
-# @return If no error is thrown, data itself is returned if not missing/null, 
+# @return If no error is thrown, data itself is returned if not missing/null,
 #   otherwise if_missing is returned.
-# 
+#
+drop_redundant_dims <- function(data) {
+  drop_dim <- sapply(data, function(v) is.matrix(v) && NCOL(v) == 1)
+  data[, drop_dim] <- lapply(data[, drop_dim, drop=FALSE], drop)
+  return(data)
+}
 validate_data <- function(data, if_missing = NULL) {
   if (missing(data) || is.null(data)) {
     warn_data_arg_missing()
     return(if_missing)
   }
-  if (!is.data.frame(data))
+  if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
+  }
   
-  return(data)
+  drop_redundant_dims(data)
 }
 
 # Throw a warning if 'data' argument to modeling function is missing
@@ -747,6 +737,32 @@ warn_data_arg_missing <- function() {
     call. = FALSE
   )
 }
+
+# Validate newdata argument for posterior_predict, log_lik, etc.
+#
+# Doesn't check if the correct variables are included (that's done in pp_data),
+# just that newdata is either NULL or a data frame with no missing values. Also
+# drops any unused dimensions in variables (e.g. a one column matrix inside a
+# data frame is converted to a vector).
+# 
+# @param x User's 'newdata' argument
+# @return Either NULL or a data frame
+#
+validate_newdata <- function(x) {
+  if (is.null(x)) {
+    return(NULL)
+  }
+  if (!is.data.frame(x)) {
+    stop("If 'newdata' is specified it must be a data frame.", call. = FALSE)
+  }
+  if (any(is.na(x))) {
+    stop("NAs are not allowed in 'newdata'.", call. = FALSE)
+  }
+  
+  x <- as.data.frame(x)
+  drop_redundant_dims(x)
+}
+
 
 
 #---------------------- for stan_{mvmer,jm} only -----------------------------
@@ -882,21 +898,21 @@ is.stanjm <- function(x) {
 #
 # @param x An object to be tested.
 is.jm <- function(x) {
-  x$stan_function == "stan_jm"
+  isTRUE(x$stan_function == "stan_jm")
 }
 
 # Test if object contains a multivariate GLM
 #
 # @param x An object to be tested.
 is.mvmer <- function(x) {
-  x$stan_function %in% c("stan_mvmer", "stan_jm")
+  isTRUE(x$stan_function %in% c("stan_mvmer", "stan_jm"))
 }
 
 # Test if object contains a survival model
 #
 # @param x An object to be tested.
 is.surv <- function(x) {
-  x$stan_function %in% c("stan_jm")
+  isTRUE(x$stan_function %in% c("stan_jm"))
 }
 
 # Throw error if object isn't a stanmvreg object
@@ -997,7 +1013,7 @@ collect_nms <- function(x, M, stub = "Long", ...) {
   b <- b_names(x, ...)
   y_b <- lapply(1:M, function(m) b_names_M(x, m, stub = stub, ...))
   alpha <- grep("^.{5}\\|\\(Intercept\\)", x, ...)      
-  alpha <- c(alpha, grep("^", stub, ".{1}\\|\\(Intercept\\)", x, ...))      
+  alpha <- c(alpha, grep(pattern=paste0("^", stub, ".{1}\\|\\(Intercept\\)"), x=x, ...))
   beta <- setdiff(c(unlist(y), e, a), alpha)  
   nlist(y, y_extra, y_b, e, e_extra, a, b, alpha, beta, ppd) 
 }
@@ -1196,6 +1212,13 @@ STOP_no_var <- function(var) {
   stop2("Variable '", var, "' cannot be found in the data frame.")
 }
 
+# Error message for dynamic predictions
+#
+# @param what A reason why the dynamic predictions are not allowed
+STOP_dynpred <- function(what) {
+  stop2(paste("Dynamic predictions are not yet implemented for", what))
+}
+
 # Check if individuals in ids argument were also used in model estimation
 #
 # @param object A stanmvreg object
@@ -1226,9 +1249,11 @@ check_pp_ids <- function(object, ids, m = 1) {
 # @param newdataEvent A data frame
 # @param duplicate_ok A logical. If FALSE then only one row per individual is
 #   allowed in the newdataEvent data frame
+# @param response A logical specifying whether the longitudinal response
+#   variable must be included in the new data frame
 # @return A list of validated data frames
 validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
-                              duplicate_ok = FALSE) {
+                              duplicate_ok = FALSE, response = TRUE) {
   validate_stanmvreg_object(object)
   id_var <- object$id_var
   newdatas <- list()
@@ -1238,8 +1263,14 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
     dfcheck <- sapply(newdataLong, is.data.frame)
     if (!all(dfcheck))
       stop("'newdataLong' must be a data frame or list of data frames.", call. = FALSE)
-    nacheck <- sapply(seq_along(newdataLong), function(m)
-      all(!is.na(get_all_vars(formula(object, m = m), newdataLong[[m]]))))
+    nacheck <- sapply(seq_along(newdataLong), function(m) {
+      if (response) { # newdataLong needs the reponse variable
+        fmL <- formula(object, m = m)
+      } else { # newdataLong only needs the covariates
+        fmL <- formula(object, m = m)[c(1,3)]
+      }
+      all(!is.na(get_all_vars(fmL, newdataLong[[m]]))) 
+    })
     if (!all(nacheck))
       stop("'newdataLong' cannot contain NAs.", call. = FALSE)
     newdatas <- c(newdatas, newdataLong)
@@ -1247,7 +1278,12 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
   if (!is.null(newdataEvent)) {
     if (!is.data.frame(newdataEvent))
       stop("'newdataEvent' must be a data frame.", call. = FALSE)
-    dat <- get_all_vars(formula(object, m = "Event"), newdataEvent)
+    if (response) { # newdataEvent needs the reponse variable
+      fmE <- formula(object, m = "Event")
+    } else { # newdataEvent only needs the covariates
+      fmE <- formula(object, m = "Event")[c(1,3)]
+    }
+    dat <- get_all_vars(fmE, newdataEvent)
     dat[[id_var]] <- newdataEvent[[id_var]] # include ID variable in event data
     if (any(is.na(dat)))
       stop("'newdataEvent' cannot contain NAs.", call. = FALSE)
@@ -1277,6 +1313,8 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
 # @param ids A vector of ids indicating which individuals to keep
 # @return A data frame, or a list of data frames, depending on the input
 subset_ids <- function(object, data, ids) {
+  if (is.null(data))
+    return(NULL)
   validate_stanmvreg_object(object)
   id_var <- object$id_var
   is_list <- is(data, "list")

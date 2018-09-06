@@ -102,7 +102,7 @@ correlation between the $k$th column of $\mathbf{Q}$ and the outcome, $\sigma_Y$
 is the standard deviation of the outcome, and $\frac{1}{\sqrt{N-1}}$ is the
 standard deviation of the $k$ column of $\mathbf{Q}$. Then let 
 $\boldsymbol{\rho} = \sqrt{R^2}\mathbf{u}$ where $\mathbf{u}$ is a unit vector
-that is uniformally distributed on the surface of a hypersphere. Consequently,
+that is uniformly distributed on the surface of a hypersphere. Consequently,
 $R^2 = \boldsymbol{\rho}^\top \boldsymbol{\rho}$ is the familiar coefficient of
 determination for the linear model.
 
@@ -294,8 +294,8 @@ measures. Thus, with only $24$ observations, they should not be considered
 reliable. The more complicated prior derived above is stronger --- as 
 evidenced by the fact that the effective number of parameters is about half
 of that in the simpler approach and $12$ for the maximum likelihood estimator 
---- and only has $4$ out of $24$ shape estimates in the "danger zone". We 
-might want to reexamine these observations
+--- and only has a few of the $24$ Pareto shape estimates in the "danger zone". 
+We might want to reexamine these observations
 
 ```{r lm-clouds-plot-loo}
 plot(loo_post, label_points = TRUE)
@@ -340,8 +340,8 @@ output of the `biglm` function in the __biglm__ package, which utilizes an
 incremental QR decomposition that does not require the entire dataset to be
 loaded into memory simultaneously. However, the `biglm` function needs to be
 called in a particular way in order to work with `stan_biglm`. In particular,
-The meansof the columns of the design matrix, the sample mean of the outcome, and 
-the sample standard deviation of the outocme all need to be passed to the `stan_biglm` 
+The means of the columns of the design matrix, the sample mean of the outcome, and
+the sample standard deviation of the outcome all need to be passed to the `stan_biglm`
 function, as well as a flag indicating whether the model really does include an
 intercept. Also, the number of columns of the design matrix currently cannot 
 exceed the number of rows. Although `stan_biglm` should run fairly quickly and

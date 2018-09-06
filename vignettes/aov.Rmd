@@ -51,7 +51,7 @@ model where each of the $K$ predictors in $\mathbf{x}$ is a dummy variable
 indicating membership in a group. An equivalent linear predictor can be written
 as $\mu_j = \alpha + \alpha_j$, which expresses the conditional expectation of
 the outcome in the $j$-th group as the sum of a common mean, $\alpha$, and a
-group-specfic deviation from the common mean, $\alpha_j$.
+group-specific deviation from the common mean, $\alpha_j$.
 
 # Priors
 

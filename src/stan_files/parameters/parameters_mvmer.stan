@@ -1,13 +1,13 @@
   // intercepts
   real<lower=lb(intercept_type[1]),upper=ub(intercept_type[1])>
     yGamma1[intercept_type[1] > 0];
-  real<lower=lb(intercept_type[2]),upper=ub(intercept_type[2])> 
-    yGamma2[intercept_type[2] > 0]; 
-  real<lower=lb(intercept_type[3]),upper=ub(intercept_type[3])> 
+  real<lower=lb(intercept_type[2]),upper=ub(intercept_type[2])>
+    yGamma2[intercept_type[2] > 0];
+  real<lower=lb(intercept_type[3]),upper=ub(intercept_type[3])>
     yGamma3[intercept_type[3] > 0];
-  
-  // population level primitive params  
-  vector[yK[1]] z_yBeta1; 
+
+  // population level primitive params
+  vector[yK[1]] z_yBeta1;
   vector[yK[2]] z_yBeta2;
   vector[yK[3]] z_yBeta3;
 
@@ -20,25 +20,25 @@
 
   // group level params for first grouping factor
     // group-level sds
-    vector<lower=0>[prior_dist_for_cov == 2 ? bK1 : 0] bSd1; 
-    // unscaled group-level params 
-    matrix[prior_dist_for_cov == 2 && bK1 >  0 ? bK1 : 0, bK1 >  0 ? bN1 : 0] z_bMat1; 
+    vector<lower=0>[prior_dist_for_cov == 2 ? bK1 : 0] bSd1;
+    // unscaled group-level params
+    matrix[prior_dist_for_cov == 2 && bK1 >  0 ? bK1 : 0, bK1 >  0 ? bN1 : 0] z_bMat1;
     // cholesky factor of corr matrix (if > 1 random effect)
-    cholesky_factor_corr[prior_dist_for_cov == 2 && bK1 > 1 ? bK1 : 0] bCholesky1;  
-  
+    cholesky_factor_corr[prior_dist_for_cov == 2 && bK1 > 1 ? bK1 : 0] bCholesky1;
+
   // group level params for second grouping factor
     // group-level sds
-    vector<lower=0>[prior_dist_for_cov == 2 ? bK2 : 0] bSd2; 
-    // unscaled group-level params 
+    vector<lower=0>[prior_dist_for_cov == 2 ? bK2 : 0] bSd2;
+    // unscaled group-level params
     matrix[prior_dist_for_cov == 2 && bK2 >  0 ? bK2 : 0, bK2 >  0 ? bN2 : 0] z_bMat2;
     // cholesky factor of corr matrix (if > 1 random effect)
-    cholesky_factor_corr[prior_dist_for_cov == 2 && bK2 > 1 ? bK2 : 0] bCholesky2;  
-  
+    cholesky_factor_corr[prior_dist_for_cov == 2 && bK2 > 1 ? bK2 : 0] bCholesky2;
+
   // auxiliary params, interpretation depends on family
-  real<lower=0> yAux1_unscaled[has_aux[1]]; 
-  real<lower=0> yAux2_unscaled[has_aux[2]]; 
-  real<lower=0> yAux3_unscaled[has_aux[3]]; 
-  
+  real<lower=0> yAux1_unscaled[has_aux[1]];
+  real<lower=0> yAux2_unscaled[has_aux[2]];
+  real<lower=0> yAux3_unscaled[has_aux[3]];
+
   // params for priors
   real<lower=0> yGlobal1[yHs1];
   real<lower=0> yGlobal2[yHs2];

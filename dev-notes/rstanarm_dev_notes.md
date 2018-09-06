@@ -252,9 +252,27 @@ A brief description of what (generally) goes into each the various files/folders
 
 * Contains all the model functions and corresponding .fit functions (e.g. `stan_glm` and `stan_glm.fit`).  
 
-**`/exec`** and **`/inst/chunks`**
+**`/src/stan_files`**
 
-* The `/inst/chunks` folder contains reusable snippits of Stan code. The `/exec` folder contains the Stan models that are used in the relevant R function. For example, `continuous.stan` contains all the models that can be declared by `stan_glm` (as well as some others). You can view the compiled model in R by executing `rstanarm:::stanmodels$continuous`.
+* The root of the `/src/stan_files` folder contains Stan programs that include snippits of Stan code from its subfolders: 
+
+  * `data`: Things that are included in the data block of Stan programs
+  * `functions`: Things that are included in the functions block of Stan programs
+  * `gqs`: Things that are included in the generated quantities block of Stan programs
+  * `model`: Things that are included in the model block of Stan programs
+  * `parameters`: Things that are included in the parameters block of Stan programs
+  * `pre`: Things that are included before the functions block of Stan programs like
+    licensing, copyrights, etc.
+  * `tdata`: Things that are included in the transformed data block of Stan programs
+  * `tparameters`: Things that are included in the transformed parameters block of Stan programs
+
+For example, `continuous.stan` contains all the models that can be declared by `stan_glm` (as well as some others). You can view the compiled model in R by executing `rstanarm:::stanmodels$continuous`.
+
+**`inst/include/` **
+
+This folder can include separate header files (ending with `.hpp`) that implement custom C++
+functions. If you add something, be sure to include it in `meta_header.hpp` and test it inside
+`tests.cpp`.
 
 **`data`**
 
@@ -272,6 +290,3 @@ A brief description of what (generally) goes into each the various files/folders
 
 * Tests run using the [testthat](http://r-pkgs.had.co.nz/tests.html) package.
 
-**`R/misc.R`**
-
-* Contains a bunch of helper functions.

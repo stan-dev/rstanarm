@@ -17,6 +17,7 @@
 
 #' Bayesian beta regression models via Stan
 #'
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Beta regression modeling with optional prior distributions for the 
 #' coefficients, intercept, and auxiliary parameter \code{phi} (if applicable).
 #'
@@ -78,6 +79,7 @@
 #'   latter directly.
 #'   
 #' @seealso The vignette for \code{stan_betareg}.
+#'   \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' @references Ferrari, SLP and Cribari-Neto, F (2004). Beta regression for 
 #'   modeling rates and proportions. \emph{Journal of Applied Statistics}.
@@ -94,9 +96,12 @@
 #' hist(y, col = "dark grey", border = FALSE, xlim = c(0,1))
 #' fake_dat <- data.frame(y, x, z)
 #' 
-#' fit <- stan_betareg(y ~ x | z, data = fake_dat, 
-#'                     link = "logit", link.phi = "log", 
-#'                     algorithm = "optimizing")
+#' fit <- stan_betareg(
+#'   y ~ x | z, data = fake_dat, 
+#'   link = "logit", 
+#'   link.phi = "log", 
+#'   algorithm = "optimizing" # just for speed of example
+#'  ) 
 #' print(fit, digits = 2)
 #'
 stan_betareg <-
@@ -125,8 +130,9 @@ stan_betareg <-
     if (!requireNamespace("betareg", quietly = TRUE))
       stop("Please install the betareg package before using 'stan_betareg'.")
     
-    data <- validate_data(data, if_missing = environment(formula))
     mc <- match.call(expand.dots = FALSE)
+    data <- validate_data(data, if_missing = environment(formula))
+    mc$data <- data
     mc$model <- mc$y <- mc$x <- TRUE
     
     # NULLify any Stan specific arguments in mc
@@ -165,7 +171,7 @@ stan_betareg <-
                        prior_phi = prior_phi, prior_PD = prior_PD,
                        algorithm = algorithm, adapt_delta = adapt_delta, 
                        QR = QR)
-    
+    if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
     if (is.null(link.phi) && is.null(Z))
       link_phi <- "identity"
     sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
@@ -186,6 +192,7 @@ stan_betareg <-
       xlev <- if (is.factor(x) || is.character(x)) levels(x) else NULL
       xlev[!vapply(xlev, is.null, NA)]
     })
+    out$levels <- br$levels
     if (!x)
       out$x <- NULL
     if (!y)

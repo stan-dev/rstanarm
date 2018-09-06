@@ -17,6 +17,7 @@
 
 #' Bayesian regularized linear but big models via Stan
 #' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' This is the same model as with \code{\link{stan_lm}} but it utilizes the
 #' output from \code{\link[biglm]{biglm}} in the \pkg{biglm} package in order to
 #' proceed when the data is too large to fit in memory.
@@ -34,12 +35,7 @@
 #' @param prior Must be a call to \code{\link{R2}} with its \code{location}
 #'   argument specified or \code{NULL}, which would indicate a standard uniform
 #'   prior for the \eqn{R^2}.
-#' @param prior_intercept Either \code{NULL} (the default) or a call to 
-#'   \code{\link{normal}}. If a \code{\link{normal}} prior is specified without
-#'   a \code{scale}, then the standard deviation is taken to be the marginal
-#'   standard deviation of the outcome divided by the square root of the sample
-#'   size, which is legitimate because the marginal standard deviation of the
-#'   outcome is a primitive parameter being estimated.
+#' @inheritParams stan_lm
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta

@@ -1,6 +1,6 @@
   vector[a_K] a_z_beta; // primitive assoc params
 
-  // parameters for priors on assoc params 
+  // parameters for priors on assoc params
   real<lower=0> a_global[a_hs];
   vector<lower=0>[(a_hs>0)*a_K] a_local[a_hs];
   real<lower=0> a_caux[a_hs > 0];

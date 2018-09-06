@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2017 Sam Brilleman
+# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,30 +15,27 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Example joint longitudinal and time-to-event model
+#' Example model
 #' 
-#' A model for use in the \pkg{rstanarm} examples related to \code{\link{stan_jm}}. 
+#' A model for use in \pkg{rstanarm} examples. 
 #' 
-#' @name example_jm
-#' @format Calling \code{example("example_jm")} will run the model in the 
-#'   Examples section, below, and the resulting stanmvreg object will then be
+#' @name example_model
+#' @format Calling \code{example("example_model")} will run the model in the 
+#'   Examples section, below, and the resulting stanreg object will then be
 #'   available in the global environment. The \code{chains} and \code{iter}
 #'   arguments are specified to make this example be small in size. In practice,
 #'   we recommend that they be left unspecified in order to use the default
-#'   values or increased if there are convergence problems. The \code{cores} 
-#'   argument is optional and on a multicore system, the user may well want 
-#'   to set that equal to the number of chains being executed.
+#'   values (4 and 2000 respectively) or increased if there are convergence
+#'   problems. The \code{cores} argument is optional and on a multicore system,
+#'   the user may well want to set that equal to the number of chains being
+#'   executed.
 #'   
+#' @seealso \code{\link[lme4]{cbpp}} for a description of the data.
 #' @examples
-#'   set.seed(123)
-#'   example_jm <- 
-#'      stan_jm(formulaLong = logBili ~ year + (1 | id), 
-#'              dataLong = pbcLong[1:101,],
-#'              formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
-#'              dataEvent = pbcSurv[1:15,],
-#'              time_var = "year",
+#' example_model <- 
+#'   stan_glmer(cbind(incidence, size - incidence) ~ size + period + (1|herd),
+#'              data = lme4::cbpp, family = binomial, QR = TRUE,
 #'              # this next line is only to keep the example small in size!
-#'              chains = 1, seed = 12345, iter = 200)
-#' 
-#' 
+#'              chains = 2, cores = 1, seed = 12345, iter = 500, refresh = 0)
+#' example_model
 NULL

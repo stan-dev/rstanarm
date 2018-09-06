@@ -50,10 +50,10 @@ test_that("predict ok for binomial", {
   glmfit <- glm(SF ~ sex*ldose, family = binomial)
   SW(capture.output(
     stanfit <- stan_glm(SF ~ sex*ldose, family = binomial, chains = CHAINS, 
-                        iter = ITER, seed = SEED, refresh = REFRESH),
+                        iter = ITER, seed = SEED, refresh = 0),
     stanfit_opt <- stan_glm(SF ~ sex*ldose, family = binomial, 
                             prior = NULL, prior_intercept = NULL, 
-                            seed = SEED, refresh = REFRESH, QR = TRUE,
+                            seed = SEED, refresh = 0, QR = TRUE,
                             algorithm = "optimizing")
   ))
   
@@ -85,10 +85,10 @@ test_that("predict ok for gaussian", {
   glmfit <- glm(mpg ~ wt, data = mtcars)
   SW(capture.output(
     stanfit <- stan_glm(mpg ~ wt, data = mtcars, chains = CHAINS,
-                        iter = 2 * ITER, seed = SEED, refresh = REFRESH),
+                        iter = 2 * ITER, seed = SEED, refresh = 0),
     stanfit_opt <- stan_glm(mpg ~ wt, data = mtcars,
                             prior = NULL, prior_intercept = NULL,
-                            iter = 2 * ITER, seed = SEED, refresh = REFRESH, 
+                            iter = 2 * ITER, seed = SEED, refresh = 0, 
                             algorithm = "optimizing")
   ))
   
@@ -120,9 +120,9 @@ test_that("predict ok for Poisson", {
   glmfit <- glm(counts ~ outcome + treatment, data = dat, family = poisson())
   SW(capture.output(
     stanfit <- stan_glm(counts ~ outcome + treatment, data = dat, family = poisson(), 
-                        chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH),
+                        chains = CHAINS, iter = ITER, seed = SEED, refresh = 0),
     stanfit_opt <- stan_glm(counts ~ outcome + treatment, data = dat, family = poisson(), 
-                            iter = ITER, seed = SEED, refresh = REFRESH, algorithm = "optimizing")
+                            iter = ITER, seed = SEED, refresh = 0, algorithm = "optimizing")
   ))
   pg <- plink(glmfit)
   ps <- plink(stanfit)

@@ -18,6 +18,7 @@
 
 #' Bayesian joint longitudinal and time-to-event models via Stan
 #' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Fits a shared parameter joint model for longitudinal and time-to-event 
 #' (e.g. survival) data under a Bayesian framework using Stan.
 #' 
@@ -31,10 +32,15 @@
 #' @template args-sparse
 #' 
 #' @param formulaLong A two-sided linear formula object describing both the 
-#'   fixed-effects and random-effects parts of the longitudinal submodel  
-#'   (see \code{\link[lme4]{glmer}} for details). For a multivariate joint 
-#'   model (i.e. more than one longitudinal marker) this should 
-#'   be a list of such formula objects, with each element
+#'   fixed-effects and random-effects parts of the longitudinal submodel,
+#'   similar in vein to formula specification in the \strong{lme4} package
+#'   (see \code{\link[lme4]{glmer}} or the \strong{lme4} vignette for details). 
+#'   Note however that the double bar (\code{||}) notation is not allowed 
+#'   when specifying the random-effects parts of the formula, and neither
+#'   are nested grouping factors (e.g. \code{(1 | g1/g2))} or 
+#'   \code{(1 | g1:g2)}, where \code{g1}, \code{g2} are grouping factors. 
+#'   For a multivariate joint model (i.e. more than one longitudinal marker) 
+#'   this should be a list of such formula objects, with each element
 #'   of the list providing the formula for one of the longitudinal submodels.
 #' @param dataLong A data frame containing the variables specified in
 #'   \code{formulaLong}. If fitting a multivariate joint model, then this can
@@ -210,6 +216,7 @@
 #'   the output for the fitted model, but this just corresponds to the 
 #'   necessary post-estimation adjustment in the linear predictor due to the
 #'   centering of the predictiors in the event submodel.
+#'   
 #' @param priorLong_aux The prior distribution for the "auxiliary" parameters
 #'   in the longitudinal submodels (if applicable). 
 #'   The "auxiliary" parameter refers to a different parameter 
@@ -554,6 +561,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
 
   # Formula
   formulaLong <- validate_arg(formulaLong, "formula"); M <- length(formulaLong)
+	if (M > 3L)
+	  stop("'stan_jm' is currently limited to a maximum of 3 longitudinal outcomes.")
   
   # Data
   dataLong <- validate_arg(dataLong, "data.frame", validate_length = M)  
@@ -595,7 +604,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                          prior_covariance = prior_covariance, prior_PD = prior_PD, 
                          algorithm = algorithm, adapt_delta = adapt_delta, 
                          max_treedepth = max_treedepth, QR = QR, sparse = sparse, ...)
-
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   y_mod <- attr(stanfit, "y_mod")
   e_mod <- attr(stanfit, "e_mod")
   a_mod <- attr(stanfit, "a_mod")

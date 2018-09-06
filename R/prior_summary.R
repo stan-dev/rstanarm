@@ -56,16 +56,21 @@
 #'   \sim N(\mu, \sigma)}{\theta ~ N(\mu, \sigma)} the corresponding prior on
 #'   \eqn{\beta} is \eqn{\beta \sim MVN(R\mu, R'R\sigma^2)}{\beta ~ MVN(R\mu,
 #'   R'R\sigma)}, where \eqn{\mu} and \eqn{\sigma} are vectors of the
-#'   appropriate length. Technically \pkg{rstanarm} uses a scaled \eqn{QR}
+#'   appropriate length. Technically, \pkg{rstanarm} uses a scaled \eqn{QR}
 #'   decomposition to ensure that the columns of the predictor matrix used to
-#'   fit the model all have unit scale. The matrices actually used are
+#'   fit the model all have unit scale, when the \code{autoscale} argument
+#'   to the function passed to the \code{prior} argument is \code{TRUE} (the
+#'   default), in which case the matrices actually used are
 #'   \eqn{Q^\ast = Q \sqrt{n-1}}{Q* = Q (n-1)^0.5} and \eqn{R^\ast =
-#'   \frac{1}{\sqrt{n-1}} R}{R* = (n-1)^(-0.5) R} (see the documentation for the
+#'   \frac{1}{\sqrt{n-1}} R}{R* = (n-1)^(-0.5) R}. If \code{autoscale = FALSE}
+#'   we instead scale such that the lower-right element of \eqn{R^\ast}{R*} is
+#'   \eqn{1}, which is useful if you want to specify a prior on the coefficient
+#'   of the last predictor in its original units (see the documentation for the
 #'   \code{\link[=stan_glm]{QR}} argument).
 #'
 #'   If you are interested in the prior on \eqn{\beta} implied by the prior on
-#'   \eqn{\theta}, we recommend visualizing it as described above in the
-#'   \strong{Description} section, which is simpler than working it out
+#'   \eqn{\theta}, we strongly recommend visualizing it as described above in
+#'   the \strong{Description} section, which is simpler than working it out
 #'   analytically.
 #'
 #' @return A list of class "prior_summary.stanreg", which has its own print
@@ -162,7 +167,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
       if (!is.null(x[["prior_intercept"]][[m]]))
         .print_scalar_prior(
           x[["prior_intercept"]][[m]],
-          txt = paste0(if (M > 1) "\n", "y", m, "|Intercept", if (!sparse)
+          txt = paste0(if (m > 1) "\n", "y", m, "|Intercept", if (!sparse)
             " (after predictors centered)"),
           formatters
         )
@@ -203,7 +208,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
       if (!is.null(x[["priorLong_intercept"]][[m]]))
         .print_scalar_prior(
           x[["priorLong_intercept"]][[m]],
-          txt = paste0(if (M > 1) "\n", "Long", m, "|Intercept", if (!sparse)
+          txt = paste0(if (m > 1) "\n", "Long", m, "|Intercept", if (!sparse)
             " (after predictors centered)"),
           formatters
         )
@@ -420,15 +425,34 @@ used.sparse <- function(x) {
     cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
 }
 .print_covariance_prior <- function(p, txt = "Covariance", formatters = list()) {
-  .f1 <- formatters[[1]]
-  p$regularization <- .format_pars(p$regularization, .f1)
-  p$concentration <- .format_pars(p$concentration, .f1)
-  p$shape <- .format_pars(p$shape, .f1)
-  p$scale <- .format_pars(p$scale, .f1)
-  cat(paste0("\n", txt, "\n ~"),
-      paste0(p$dist, "(",
-             "reg. = ", .f1(p$regularization),
-             ", conc. = ", .f1(p$concentration), ", shape = ", .f1(p$shape),
-             ", scale = ", .f1(p$scale), ")")
-  )
+  if (p$dist == "decov") {
+    .f1 <- formatters[[1]]
+    p$regularization <- .format_pars(p$regularization, .f1)
+    p$concentration <- .format_pars(p$concentration, .f1)
+    p$shape <- .format_pars(p$shape, .f1)
+    p$scale <- .format_pars(p$scale, .f1)
+    cat(paste0("\n", txt, "\n ~"),
+        paste0(p$dist, "(",
+               "reg. = ",    .f1(p$regularization),
+               ", conc. = ", .f1(p$concentration),
+               ", shape = ", .f1(p$shape),
+               ", scale = ", .f1(p$scale), ")")
+    )
+  } else if (p$dist == "lkj") {
+    .f1 <- formatters[[1]]
+    .f2 <- formatters[[2]]
+    p$regularization <- .format_pars(p$regularization, .f1)
+    p$df <- .format_pars(p$df, .f1)
+    p$scale <- .format_pars(p$scale, .f1)
+    if (!is.null(p$adjusted_scale))
+      p$adjusted_scale <- .format_pars(p$adjusted_scale, .f2)
+    cat(paste0("\n", txt, "\n ~"),
+        paste0(p$dist, "(",
+               "reg. = ",    .f1(p$regularization),
+               ", df = ",    .f1(p$df),
+               ", scale = ", .f1(p$scale), ")")
+    )
+    if (!is.null(p$adjusted_scale))
+      cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
+  }
 }

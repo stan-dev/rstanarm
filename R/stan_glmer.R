@@ -17,6 +17,7 @@
 
 #' Bayesian generalized linear models with group-specific terms via Stan
 #' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Bayesian inference for GLMs with group-specific coefficients that have 
 #' unknown covariance matrices with flexible priors.
 #' 
@@ -37,12 +38,16 @@
 #' @template args-QR
 #' @template args-sparse
 #' @template reference-gelman-hill
+#' @template reference-muth
 #' 
-#' @param formula,data,family Same as for \code{\link[lme4]{glmer}}. \emph{We
+#' @param formula,data Same as for \code{\link[lme4]{glmer}}. \emph{We
 #'   strongly advise against omitting the \code{data} argument}. Unless 
 #'   \code{data} is specified (and is a data frame) many post-estimation 
 #'   functions (including \code{update}, \code{loo}, \code{kfold}) are not 
 #'   guaranteed to work properly.
+#' @param family Same as for \code{\link[lme4]{glmer}} except it is also
+#'   possible to use \code{family=mgcv::betar} to estimate a Beta regression
+#'   with \code{stan_glmer}.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
 #'   specified.
@@ -71,7 +76,7 @@
 #'   
 #'   
 #' @seealso The vignette for \code{stan_glmer} and the \emph{Hierarchical 
-#'   Partial Pooling} vignette.
+#'   Partial Pooling} vignette. \url{http://mc-stan.org/rstanarm/articles/}
 #'    
 #' @examples
 #' # see help(example_model) for details on the model below
@@ -79,7 +84,7 @@
 #' print(example_model, digits = 1)
 #' 
 #' @importFrom lme4 glFormula
-#' @importFrom Matrix Matrix t cBind
+#' @importFrom Matrix Matrix t
 stan_glmer <- 
   function(formula,
            data = NULL,
@@ -106,6 +111,7 @@ stan_glmer <-
   family <- validate_family(family)
   mc[[1]] <- quote(lme4::glFormula)
   mc$control <- make_glmerControl()
+  mc$data <- data
   mc$prior <- mc$prior_intercept <- mc$prior_covariance <- mc$prior_aux <-
     mc$prior_PD <- mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <-
     mc$adapt_delta <- mc$... <- mc$QR <- mc$sparse <- NULL
@@ -116,7 +122,12 @@ stan_glmer <-
     y <- as.vector(y)
 
   offset <- model.offset(glmod$fr) %ORifNULL% double(0)
-  weights <- validate_weights(weights)
+  weights <- validate_weights(as.vector(model.weights(glmod$fr)))
+  if (binom_y_prop(y, family, weights)) {
+    y1 <- as.integer(as.vector(y) * weights)
+    y <- cbind(y1, y0 = weights - y1)
+    weights <- double(0)
+  }
   if (is.null(prior)) 
     prior <- list()
   if (is.null(prior_intercept)) 
@@ -142,8 +153,7 @@ stan_glmer <-
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
   
   fit <- nlist(stanfit, family, formula, offset, weights, 
-               x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
-               y = y, data, call, terms = NULL, model = NULL, 
+               x = cbind(X, Z), y = y, data, call, terms = NULL, model = NULL,
                na.action = attr(glmod$fr, "na.action"), contrasts, algorithm, glmod, 
                stan_function = "stan_glmer")
   out <- stanreg(fit)
@@ -172,8 +182,12 @@ stan_lmer <-
            algorithm = c("sampling", "meanfield", "fullrank"),
            adapt_delta = NULL,
            QR = FALSE) {
-  if ("family" %in% names(list(...)))
-    stop("'family' should not be specified.")
+  if ("family" %in% names(list(...))) {
+    stop(
+      "'family' should not be specified. ", 
+      "To specify a family use stan_glmer instead of stan_lmer."
+    )
+  }
   mc <- call <- match.call(expand.dots = TRUE)
   if (!"formula" %in% names(call))
     names(call)[2L] <- "formula"
