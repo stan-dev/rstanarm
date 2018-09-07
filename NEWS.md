@@ -1,3 +1,19 @@
+# rstanarm 2.18.1
+
+### Bug fixes
+
+* `stan_clogit()` now works even when there are no common predictors
+* `prior.info()` works better with models produced by `stan_jm()` and
+  `stan_mvmer()`
+
+### New features and improvements
+
+* `stan_glm()` (only) gets a `mean_PPD` argument that when `FALSE`
+  avoids drawing from the posterior predictive distribution in the
+  Stan code
+* `posterior_linpred()` now works even if the model was estimated with
+  `algorithm = "optimizing"`
+
 # rstanarm 2.17.4
 
 ### Bug fixes
