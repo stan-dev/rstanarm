@@ -10,7 +10,8 @@ params:
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{stan_betareg: Models for Rate/Proportion Data}
+%\VignetteEncoding{UTF-8}
+%\VignetteIndexEntry{stan_spatial: Models for Spatial Data}
 -->
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
