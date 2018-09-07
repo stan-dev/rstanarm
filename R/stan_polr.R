@@ -155,7 +155,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
     m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- 
     m$do_residuals <- NULL
   m[[1L]] <- quote(stats::model.frame)
-  m$drop.unused.levels <- TRUE
+  m$drop.unused.levels <- FALSE
   m <- eval.parent(m)
   m <- check_constant_vars(m)
   Terms <- attr(m, "terms")
@@ -167,10 +167,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
   if (xint > 0L) {
     x <- x[, -xint, drop = FALSE]
     pc <- pc - 1L
-  } else {
-    stop("Specifying '~0' or '~-1' in the model formula not allowed",
-         " for stan_polr.", call. = FALSE)
-  }
+  } else warning("an intercept is needed and assumed")
   K <- ncol(x)
   wt <- model.weights(m)
   if (!length(wt))
