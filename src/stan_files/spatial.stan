@@ -11,14 +11,14 @@ data {
   int<lower=0> N;                 // number of regions
   int<lower=0> K;                 // number of predictors (inc intercept)
   matrix[N,K] X;                  // model matrix
-  int<lower=1,upper=5> family;
+  int<lower=1,upper=8> family;    // 1 gaussian, 2 poisson, 3 neg_binomial, 4 binomial, 5 gamma
   int link;
   int<lower=0,upper=1> is_continuous;
   int<lower=0,upper=1> has_aux;
   int<lower=1,upper=3> model_type;       // Besag = 1; BYM = 2; BYM2 = 3
   int<lower=0,upper=1> has_intercept;
   vector[K] xbar;
-  int<lower=0> trials[family == 4 ? N : 0];
+  int<lower=0> trials[family == 5 ? N : 0];
   int y_int[is_continuous == 1 ? 0 : N];
   vector[is_continuous == 1 ? N : 0] y_real;
   // pairwise difference version of CAR
@@ -146,8 +146,14 @@ transformed parameters {
 model {
   vector[N] eta;   // linear predictor + spatial random effects
   // deal with intercept
-  if (has_intercept == 1)
+  if (has_intercept == 1) {
     eta = gamma[1] + X * beta + psi;
+    // if ((family == 5 & link == 4) || (family == 7 & link == 2))  // binomial and neg_binomial
+    //   eta -= max(eta);
+    // else if ((family == 6 & link = 2) || (family == 2 & (link == 1 | link == 3))) // poisson and gamma
+    //   eta -= min(eta);
+    // else if ()
+  }
   else
     eta = X * beta + psi;
   // likelihoods
@@ -155,19 +161,19 @@ model {
     eta = linkinv_gauss(eta, link);
     target+= normal_lpdf(y_real | eta, aux);
   }
-  else if (family == 2) {
+  else if (family == 6) {
     eta = linkinv_count(eta, link);
     target+= poisson_lpmf(y_int | eta);
   }
-  else if (family == 3) {
+  else if (family == 7) {
     eta = linkinv_count(eta, link);
     target += neg_binomial_2_lpmf(y_int | eta, aux);
   }
-  else if (family == 4) {
+  else if (family == 5) {
     eta = linkinv_binom(eta, link);
     target+= binomial_lpmf(y_int | trials, eta);
   }
-  else if (family == 5) {
+  else if (family == 2) {
     target += GammaReg(y_real, eta, aux, link, sum_log_y);
   }
   // prior on spatial parameter vector (GMRF)
@@ -280,7 +286,7 @@ generated quantities {
       eta = linkinv_gauss(eta, link);
       for (n in 1:N) mean_PPD = mean_PPD + normal_rng(eta[n], aux);
     }
-    else if (family == 2) {
+    else if (family == 6) {
       eta = linkinv_count(eta, link);
       for (n in 1:N) {
         if (eta[n] < poisson_max)
@@ -289,7 +295,7 @@ generated quantities {
           mean_PPD = mean_PPD + normal_rng(eta[n], sqrt(eta[n]));
       }
     }
-    else if (family == 3) {
+    else if (family == 7) {
       eta = linkinv_count(eta, link);
       for (n in 1:N) {
           real gamma_temp;
@@ -300,11 +306,11 @@ generated quantities {
           else mean_PPD = mean_PPD + normal_rng(gamma_temp, sqrt(gamma_temp));
       }
     }
-    else if (family == 4) {
+    else if (family == 5) {
       eta = linkinv_binom(eta, link);
       for (n in 1:N) mean_PPD = mean_PPD + binomial_rng(trials[n], inv_logit(eta[n]));
     }
-    else if (family == 5) {
+    else if (family == 2) {
       if (link > 1) eta = linkinv_gamma(eta, link);
       for (n in 1:N) mean_PPD = mean_PPD + gamma_rng(aux, aux / eta[n]);
     }

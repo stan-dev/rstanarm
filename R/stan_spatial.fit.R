@@ -55,10 +55,10 @@ stan_spatial.fit <- function(x, y, w,
   
   family_num <- switch(family$family,
                        gaussian = 1,
-                       poisson = 2,
-                       neg_binomial_2 = 3,
-                       binomial = 4,
-                       Gamma = 5)
+                       poisson = 6,
+                       neg_binomial_2 = 7,
+                       binomial = 5,
+                       Gamma = 2)
   
   # for when consistent-family-numbers gets merged
   # family_num <- switch(family$family,
