@@ -70,6 +70,7 @@ transformed data {
 }
 parameters {
   real<lower=make_lower(family, link), upper=make_upper(family,link)> gamma[has_intercept];
+  // real<lower=negative_infinity(), upper=0> gamma[has_intercept];
   vector[K] z_beta;
   vector[model_type == 1? 0 : N] theta_raw;
   vector[N-1] phi_raw;
@@ -147,12 +148,12 @@ model {
   vector[N] eta;   // linear predictor + spatial random effects
   // deal with intercept
   if (has_intercept == 1) {
-    eta = gamma[1] + X * beta + psi;
-    // if ((family == 5 & link == 4) || (family == 7 & link == 2))  // binomial and neg_binomial
-    //   eta -= max(eta);
-    // else if ((family == 6 & link = 2) || (family == 2 & (link == 1 | link == 3))) // poisson and gamma
-    //   eta -= min(eta);
-    // else if ()
+    eta = X * beta + psi;
+    if ((family == 5 && link == 4) || (family == 7 && link == 2))  // binomial and neg_binomial
+      eta -= max(eta);
+    else if ((family == 6 && link == 2) || (family == 2 && (link == 1 || link == 3))) // poisson and gamma
+      eta -= min(eta);
+    eta += gamma[1];
   }
   else
     eta = X * beta + psi;
@@ -272,27 +273,30 @@ model {
 generated quantities {
   real mean_PPD = 0;
   real alpha[has_intercept];
-  if (has_intercept)
-    alpha[1] = gamma[1] - dot_product(beta, xbar);
   {
+    vector[N] lp_tf;
     vector[N] eta;
+    eta = X * beta + psi;
     if (has_intercept == 1) {
-      eta = alpha[1] + X * beta + psi;
-    }
-    else {
-      eta = X * beta + psi;
+      alpha[1] = gamma[1] - dot_product(beta, xbar);
+      if ((family == 5 && link == 4) || (family == 7 && link == 2))  // binomial and neg_binomial
+        eta -= max(eta);
+      else if ((family == 6 && link == 2) || (family == 2 && (link == 1 || link == 3))) // poisson and gamma
+        eta -= min(eta);
+      eta += gamma[1];
     }
     if (family == 1) {
       eta = linkinv_gauss(eta, link);
-      for (n in 1:N) mean_PPD = mean_PPD + normal_rng(eta[n], aux);
+      for (n in 1:N) mean_PPD += normal_rng(eta[n], aux);
     }
     else if (family == 6) {
       eta = linkinv_count(eta, link);
+      if (link == 2)
       for (n in 1:N) {
         if (eta[n] < poisson_max)
-          mean_PPD = mean_PPD + poisson_rng(eta[n]);
+          mean_PPD += poisson_rng(eta[n]);
         else
-          mean_PPD = mean_PPD + normal_rng(eta[n], sqrt(eta[n]));
+          mean_PPD += normal_rng(eta[n], sqrt(eta[n]));
       }
     }
     else if (family == 7) {
@@ -302,17 +306,17 @@ generated quantities {
           if (is_inf(aux)) gamma_temp = eta[n];
           else gamma_temp = gamma_rng(aux, aux / eta[n]);
           if (gamma_temp < poisson_max)
-            mean_PPD = mean_PPD + poisson_rng(gamma_temp);
-          else mean_PPD = mean_PPD + normal_rng(gamma_temp, sqrt(gamma_temp));
+            mean_PPD += poisson_rng(gamma_temp);
+          else mean_PPD += normal_rng(gamma_temp, sqrt(gamma_temp));
       }
     }
     else if (family == 5) {
-      eta = linkinv_binom(eta, link);
-      for (n in 1:N) mean_PPD = mean_PPD + binomial_rng(trials[n], inv_logit(eta[n]));
+      lp_tf = linkinv_binom(eta, link);
+      for (n in 1:N) mean_PPD += binomial_rng(trials[n], lp_tf[n]);
     }
     else if (family == 2) {
       if (link > 1) eta = linkinv_gamma(eta, link);
-      for (n in 1:N) mean_PPD = mean_PPD + gamma_rng(aux, aux / eta[n]);
+      for (n in 1:N) mean_PPD += gamma_rng(aux, aux / eta[n]);
     }
   }
   mean_PPD = mean_PPD / N;
