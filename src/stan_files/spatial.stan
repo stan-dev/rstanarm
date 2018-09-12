@@ -149,9 +149,11 @@ model {
   // deal with intercept
   if (has_intercept == 1) {
     eta = X * beta + psi;
-    if ((family == 5 && link == 4) || (family == 7 && link == 2))  // binomial and neg_binomial
+    if ((family == 5 && link == 4))  // binomial
       eta -= max(eta);
-    else if ((family == 6 && link == 2) || (family == 2 && (link == 1 || link == 3))) // poisson and gamma
+    else if ((family == 6 && link != 1) ||
+      (family == 7 && link != 1) ||
+      (family == 2 && (link == 1 || link == 3))) // poisson, neg_binomial_2, and gamma
       eta -= min(eta);
     eta += gamma[1];
   }
@@ -279,10 +281,16 @@ generated quantities {
     eta = X * beta + psi;
     if (has_intercept == 1) {
       alpha[1] = gamma[1] - dot_product(beta, xbar);
-      if ((family == 5 && link == 4) || (family == 7 && link == 2))  // binomial and neg_binomial
+      if ((family == 5 && link == 4)) { // binomial
         eta -= max(eta);
-      else if ((family == 6 && link == 2) || (family == 2 && (link == 1 || link == 3))) // poisson and gamma
+        alpha[1] -= max(eta);
+      }
+      else if ((family == 6 && link != 1) ||
+        (family == 7 && link != 1) ||
+        (family == 2 && (link == 1 || link == 3))) {// poisson, neg_binomial_2, and gamma
         eta -= min(eta);
+        alpha[1] -= min(eta);
+      }
       eta += gamma[1];
     }
     if (family == 1) {

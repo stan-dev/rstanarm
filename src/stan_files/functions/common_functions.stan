@@ -283,7 +283,8 @@
       if (link == 2) return negative_infinity(); // log
       return 0;
     }
-    if (family == 6 && link == 2) return 0;  // poisson(link="idenity")
+    if (family == 6 && link != 1) return 0;  // poisson
+    if (family == 7 && link != 1) return 0;  // neg_binomial_2
     if (family == 2 && (link == 1 || link == 3)) return 0; // gamma(link="idenity|inverse")
     return negative_infinity();
   }
@@ -298,6 +299,5 @@
   real make_upper(int family, int link) {
     if (family == 4 && link == 5) return 0;
     if (family == 5 && link == 4) return 0;  // binomial(link="log")
-    if (family == 7 && link == 2) return 0;  // neg_binomial(link="log")
     return positive_infinity();
   }
