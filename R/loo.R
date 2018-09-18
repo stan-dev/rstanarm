@@ -480,20 +480,6 @@ kfold.stanreg <- function(x, K = 10, ..., save_fits = FALSE, folds = NULL) {
             formula = loo_model_formula(x))
 }
 
-#' Various print methods
-#'
-#' @keywords internal
-#' @export
-#' @method print kfold
-#' @param x,digits,... See \code{\link{print}}.
-print.kfold <- function(x, digits = 1, ...) {
-  cat("\n", paste0(attr(x, "K"), "-fold"), "cross-validation\n\n")
-  out <- data.frame(Estimate = x$elpd_kfold, SE = x$se_elpd_kfold,
-                    row.names = "elpd_kfold")
-  .printfr(out, digits)
-  invisible(x)
-}
-
 
 #' @rdname loo.stanreg
 #' @export
@@ -576,7 +562,6 @@ loo_compare.stanreg_list <- function(x, ..., detail = FALSE) {
   )
 }
 
-#' @rdname print.kfold
 #' @keywords internal
 #' @export
 #' @method print compare_rstanarm_loos
