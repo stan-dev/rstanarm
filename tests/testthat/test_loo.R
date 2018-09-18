@@ -189,8 +189,8 @@ test_that("kfold works on some examples", {
   expect_length(kf$fits[[2, "omitted"]], 16)
 })
 
-# compare_models ----------------------------------------------------------
-test_that("compare_models throws correct errors", {
+# loo_compare ----------------------------------------------------------
+test_that("loo_compare throws correct errors", {
   SW(capture.output({
     mtcars$mpg <- as.integer(mtcars$mpg)
     fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 5, chains = 2, refresh = 0)
@@ -208,30 +208,30 @@ test_that("compare_models throws correct errors", {
   }))
 
 
-  expect_error(compare_models(l1, l2),
+  expect_error(loo_compare(l1, l2),
                "Not all models have the same y variable")
-  expect_error(compare_models(l1, l3),
+  expect_error(loo_compare(l1, l3),
                "Not all models have the same y variable")
-  expect_error(compare_models(loos = list(l4, l2, l3)),
+  expect_error(loo_compare(loos = list(l4, l2, l3)),
                "Not all models have the same y variable")
-  expect_error(compare_models(l1, l4),
+  expect_error(loo_compare(l1, l4),
                "Discrete and continuous observation models can't be compared")
 
 
-  expect_error(compare_models(l1, fit1),
+  expect_error(loo_compare(l1, fit1),
                "All objects must have class 'loo'")
-  expect_error(compare_models(l1, k1),
+  expect_error(loo_compare(l1, k1),
                "Can't mix objects computed using 'loo', 'waic', and 'kfold'.")
-  expect_error(compare_models(k1, w1, k1, w1),
+  expect_error(loo_compare(k1, w1, k1, w1),
                "Can't mix objects computed using 'loo', 'waic', and 'kfold'.")
 
-  expect_error(compare_models(l1, loos = list(l2, l3)),
+  expect_error(loo_compare(l1, loos = list(l2, l3)),
                "'...' and 'loos' can't both be specified")
-  expect_error(compare_models(l1),
+  expect_error(loo_compare(l1),
                "At least two objects are required for model comparison")
 })
 
-test_that("compare_models works", {
+test_that("loo_compare works", {
   suppressWarnings(capture.output({
     mtcars$mpg <- as.integer(mtcars$mpg)
     fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 40, chains = 2, refresh = 0)
@@ -240,11 +240,11 @@ test_that("compare_models works", {
     fit4 <- update(fit1, family = "poisson")
     fit5 <- update(fit1, family = "neg_binomial_2")
     
-    l1 <- loo(fit1, cores = LOO.CORES)
-    l2 <- loo(fit2, cores = LOO.CORES)
-    l3 <- loo(fit3, cores = LOO.CORES)
-    l4 <- loo(fit4, cores = LOO.CORES)
-    l5 <- loo(fit5, cores = LOO.CORES)
+    fit1$loo <- loo(fit1, cores = LOO.CORES)
+    fit2$loo <- loo(fit2, cores = LOO.CORES)
+    fit3$loo <- loo(fit3, cores = LOO.CORES)
+    fit4$loo <- loo(fit4, cores = LOO.CORES)
+    fit5$loo <- loo(fit5, cores = LOO.CORES)
     
     k1 <- kfold(fit1, K = 2)
     k2 <- kfold(fit2, K = 2)
@@ -253,39 +253,41 @@ test_that("compare_models works", {
     k5 <- kfold(fit5, K = 2)
   }))
   
-  expect_false(attr(l1, "discrete"))
-  expect_false(attr(l2, "discrete"))
-  expect_false(attr(l3, "discrete"))
+  expect_false(attr(fit1$loo, "discrete"))
+  expect_false(attr(fit2$loo, "discrete"))
+  expect_false(attr(fit3$loo, "discrete"))
   
-  comp1 <- compare_models(l1, l2)
-  comp2 <- compare_models(l1, l2, l3)
-  comp1_detail <- compare_models(l1, l2, detail=TRUE)
-  comp2_detail <- compare_models(l1, l2, l3, detail=TRUE)
+  comp1 <- loo_compare(fit1, fit2)
+  comp2 <- loo_compare(fit1, fit2, fit3)
+  comp1_detail <- loo_compare(fit1, fit2, detail=TRUE)
+  comp2_detail <- loo_compare(fit1, fit2, fit3, detail=TRUE)
   
   expect_output(print(comp1_detail), "Model formulas")
   expect_output(print(comp2_detail), "Model formulas")
   
-  expect_named(comp1, c("elpd_diff", "se"))
+  expect_true(is.matrix(comp1))
   expect_true(is.matrix(comp2))
-  expect_equal(ncol(comp2), 7)
+  expect_equal(colnames(comp1)[1:2], c("elpd_diff", "se_diff"))
   expect_s3_class(comp1, "compare.loo")
   expect_s3_class(comp2, "compare.loo")
-  expect_identical(comp1, compare_models(loos = list(l1, l2)))
-  expect_identical(comp2, compare_models(loos = list(l1, l2, l3)))
+  expect_equal(comp1[, "elpd_diff"], loo_compare(list(fit1$loo, fit2$loo))[, "elpd_diff"])
+  expect_equal(comp2[, "elpd_diff"], loo_compare(list(fit1$loo, fit2$loo, fit3$loo))[, "elpd_diff"])
   
-  comp3 <- compare_models(k1, k2, k3)
+  expect_equivalent(comp2, loo_compare(stanreg_list(fit1, fit2, fit3)))
+  
+  comp3 <- loo_compare(k1, k2, k3)
   expect_equal(ncol(comp3), 3)
   expect_s3_class(comp3, "compare.loo")
   
   expect_true(attr(l4, "discrete"))
   expect_true(attr(l5, "discrete"))
-  expect_silent(comp4 <- compare_models(l4, l5))
-  expect_silent(compare_models(loos = list(l4, l5)))
+  expect_silent(comp4 <- loo_compare(l4, l5))
+  expect_silent(loo_compare(loos = list(l4, l5)))
   expect_s3_class(comp4, "compare.loo")
   
   expect_true(attr(k4, "discrete"))
   expect_true(attr(k5, "discrete"))
-  expect_s3_class(compare_models(k4, k5), "compare.loo")
+  expect_s3_class(loo_compare(k4, k5), "compare.loo")
 })
 
 
