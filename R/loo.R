@@ -344,7 +344,10 @@ waic.stanreg <- function(x, ...) {
 # K-fold CV
 #
 #' @rdname loo.stanreg
-#' @export
+#' @importFrom loo kfold
+#' @export kfold
+#' @export kfold.stanreg
+#' 
 #' @param K For \code{kfold}, the number of subsets (folds)
 #'   into which the data will be partitioned for performing
 #'   \eqn{K}-fold cross-validation. The model is refit \code{K} times, each time
@@ -380,7 +383,7 @@ waic.stanreg <- function(x, ...) {
 #'   equivalent to exact leave-one-out cross-validation (to which \code{loo} is
 #'   an efficient approximation).
 #'
-kfold <- function(x, K = 10, save_fits = FALSE, folds = NULL) {
+kfold.stanreg <- function(x, K = 10, ..., save_fits = FALSE, folds = NULL) {
   validate_stanreg_object(x)
   stopifnot(K > 1, K <= nobs(x))
   if (!used.sampling(x)) {
