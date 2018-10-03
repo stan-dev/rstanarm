@@ -42,7 +42,7 @@ expect_equivalent_loo <- function(fit) {
   expect_s3_class(w, "loo")
   expect_s3_class(w, "waic")
   
-  att_names <- c("names", "dims", "class", "name", "discrete", "yhash", "formula")
+  att_names <- c("names", "dims", "class", "model_name", "discrete", "yhash", "formula")
   expect_named(attributes(l), att_names)
   expect_named(attributes(w), att_names)
   
@@ -172,7 +172,7 @@ test_that("kfold works on some examples", {
   SW(kf <- kfold(fit_gaus, 4))
   SW(kf2 <- kfold(example_model, 2))
 
-  expect_named(attributes(kf), c("names", "class", "K", "name", "discrete", "yhash", "formula"))
+  expect_named(attributes(kf), c("names", "class", "K", "model_name", "discrete", "yhash", "formula"))
   expect_s3_class(kf, c("kfold", "loo"))
   expect_identical(invisible(print(kf)), kf)
   expect_output(print(kf), "4-fold cross-validation")

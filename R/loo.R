@@ -127,6 +127,7 @@
 #' print(loo2)
 #'
 #' # when comparing models the loo objects can be passed to loo_compare
+#' # as individual arguments or as a list of loo objects
 #' loo_compare(loo1, loo2)
 #' loo_compare(list(loo1, loo2))
 #' 
@@ -457,14 +458,15 @@ kfold.stanreg <- function(x, K = 10, ..., save_fits = FALSE, folds = NULL) {
   elpds <- rep(NA, length(elpds_unord))
   elpds[obs_order] <- elpds_unord
 
-  out <- list(
-    elpd_kfold = sum(elpds),
-    se_elpd_kfold = sqrt(N * var(elpds)),
-    pointwise = cbind(elpd_kfold = elpds)
-  )
 
-  # for compatibility with new structure of loo package objects
-  out$estimates <- cbind(Estimate = out$elpd_kfold, SE = out$se_elpd_kfold)
+  elpd_kfold <- sum(elpds)
+  se_elpd_kfold <- sqrt(N * var(elpds))
+  out <- list(
+    estimates = cbind(Estimate = elpd_kfold, SE = se_elpd_kfold),
+    pointwise = cbind(elpd_kfold = elpds),
+    elpd_kfold = elpd_kfold,
+    se_elpd_kfold = se_elpd_kfold
+  )
   rownames(out$estimates) <- c("elpd_kfold")
 
   if (save_fits) {
@@ -482,7 +484,9 @@ kfold.stanreg <- function(x, K = 10, ..., save_fits = FALSE, folds = NULL) {
 
 
 #' @rdname loo.stanreg
-#' @export
+#' @importFrom loo loo_compare
+#' @export loo_compare
+#' @export loo_compare.stanreg
 #'
 #' @param detail For \code{loo_compare.stanreg} and
 #'   \code{loo_compare.stanreg_list}, if \code{TRUE} then extra information
@@ -509,49 +513,23 @@ kfold.stanreg <- function(x, K = 10, ..., save_fits = FALSE, folds = NULL) {
 #'   \code{\link[loo]{loo_compare}} page in the \pkg{loo} package for more
 #'   information.
 #'
-compare_models <- function(..., loos = list(), detail = FALSE) {
-  .Deprecated("loo_compare")
-  
-  dots <- list(...)
-  if (length(dots) && length(loos)) {
-    stop("'...' and 'loos' can't both be specified.", call. = FALSE)
-  } else if (length(dots)) {
-    loos <- dots
-  } else {
-    stopifnot(is.list(loos))
-  }
-
-  loos <- validate_loos(loos)
-  comp <- loo::compare(x = loos)
-  structure(
-    comp,
-    class = c("compare_rstanarm_loos", class(comp)),
-    model_names = names(loos),
-    formulas = if (!detail) NULL else lapply(loos, attr, "formula")
-  )
-}
-
-#' @rdname loo.stanreg
-#' @importFrom loo loo_compare
-#' @export loo_compare
-#' @export loo_compare.stanreg
-#' 
 loo_compare.stanreg <- function(x, ..., detail = FALSE) {
   dots <- list(...)
   fits <- c(list(x), dots)
-  .loo_comparison(fits, detail = detail)
+  .loo_comparison(fits, detail = detail, criterion = "loo")
 }
 
 #' @rdname loo.stanreg
 #' @export
 loo_compare.stanreg_list <- function(x, ..., detail = FALSE) {
-  .loo_comparison(x, detail = detail)
+  .loo_comparison(x, detail = detail, criterion = "loo")
 }
 
-.loo_comparison <- function(fits, detail = FALSE) {
-  loos <- lapply(fits, function(object) object[["loo"]])
+.loo_comparison <- function(fits, detail = FALSE, criterion = c("loo", "kfold", "waic")) {
+  criterion <- match.arg(criterion)
+  loos <- lapply(fits, "[[", criterion)
   if (any(sapply(loos, is.null))) {
-    stop("Not all objects have a 'loo' component.")
+    stop("Not all objects have a ", criterion," component.")
   }
   comp <- loo::loo_compare(x = loos)
   structure(
@@ -908,3 +886,32 @@ loo_model_formula <- function(x) {
   }
   return(form)
 }
+
+
+
+# deprecated --------------------------------------------------------------
+
+#' @export 
+compare_models <- function(..., loos = list(), detail = FALSE) {
+  .Deprecated("loo_compare")
+  
+  dots <- list(...)
+  if (length(dots) && length(loos)) {
+    stop("'...' and 'loos' can't both be specified.", call. = FALSE)
+  } else if (length(dots)) {
+    loos <- dots
+  } else {
+    stopifnot(is.list(loos))
+  }
+  
+  loos <- validate_loos(loos)
+  comp <- loo::compare(x = loos)
+  structure(
+    comp,
+    class = c("compare_rstanarm_loos", class(comp)),
+    model_names = names(loos),
+    formulas = if (!detail) NULL else lapply(loos, attr, "formula")
+  )
+}
+
+
