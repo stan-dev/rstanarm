@@ -960,6 +960,8 @@ validate_observation_times <-function(data, exittime, id_var, time_var) {
 # @param ok_basehaz A list of admissible baseline hazards
 # @param times A numeric vector with eventtimes for each individual
 # @param status A numeric vector with event indicators for each individual
+# @param upper_times A numeric vector (or NULL) with the upper limit for any
+#   observations with interval censoring.
 # @return A named list with the following elements:
 #   type: integer specifying the type of baseline hazard, 1L = weibull,
 #     2L = b-splines, 3L = piecewise.
@@ -978,7 +980,8 @@ handle_basehaz <- function(basehaz,
                            ok_basehaz     = c("weibull", "bs", "piecewise"),
                            ok_basehaz_ops = c("df", "knots"),
                            times, 
-                           status) {
+                           status,
+                           upper_times) {
   
   if (!basehaz %in% ok_basehaz)
     stop2("'basehaz' should be one of: ", comma(ok_basehaz))
@@ -1021,7 +1024,7 @@ handle_basehaz <- function(basehaz,
       df <- 5L # default df for B-splines, assuming no intercept
     # NB this is ignored if the user specified knots
     
-    bknots <- get_bknots(times)
+    bknots <- get_bknots(c(times, upper_times))
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- get_basis(tt, iknots = iknots, bknots = bknots, type = "bs")      
     nvars  <- ncol(basis)  # number of aux parameters, basis terms
@@ -1040,7 +1043,7 @@ handle_basehaz <- function(basehaz,
       # NB this is ignored if the user specified knots
     }
     
-    bknots <- get_bknots(times)
+    bknots <- get_bknots(c(times, upper_times))
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- get_basis(tt, iknots = iknots, bknots = bknots, type = "ms")      
     nvars  <- ncol(basis)  # number of aux parameters, basis terms
@@ -1059,7 +1062,7 @@ handle_basehaz <- function(basehaz,
       # NB this is ignored if the user specified knots
     }
     
-    bknots <- get_bknots(times)
+    bknots <- get_bknots(c(times, upper_times))
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- NULL               # spline basis
     nvars  <- length(iknots) + 1 # number of aux parameters, dummy indicators
@@ -1821,7 +1824,13 @@ get_prefit_inits <- function(init_fit, e_mod, standata) {
 generate_init_function <- function(e_mod_stuff, standata) {
   
   # Initial values for intercepts, coefficients and aux parameters
-  e_beta <- e_mod_stuff$mod$coef
+  if (e_mod_stuff$surv_type %in% c("right", "counting")) {
+    e_beta <- e_mod_stuff$mod$coef
+  } else if (e_mod_stuff$surv_type %in% c("interval", "interval2")) {
+    e_beta <- -drop_intercept(e_mod_stuff$mod$coef) * e_mod_stuff$mod$scale
+  } else {
+    stop("Bug found: Invalid Surv type.")
+  }
   e_aux <- if (standata$basehaz_type == 1L) runif(1, 0.5, 3) else rep(0, standata$basehaz_nvars)
   e_z_beta       <- standardise_coef(x        = e_beta, 
                                      location = standata$e_prior_mean, 

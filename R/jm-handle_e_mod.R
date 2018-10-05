@@ -129,7 +129,8 @@ handle_e_mod <- function(formula, data, meta) {
                             ok_basehaz     = ok_basehaz,
                             ok_basehaz_ops = ok_basehaz_ops,
                             times          = t_end, 
-                            status         = event)
+                            status         = event,
+                            upper_times    = t_upp)
   nvars <- basehaz$nvars # number of basehaz aux parameters
   
   # flag if intercept is required for baseline hazard
@@ -193,12 +194,19 @@ handle_e_mod <- function(formula, data, meta) {
                   rep_rows (keep_rows(x, icens), times = qnodes))
   
   # fit a cox model
-  mod <- survival::coxph(formula$formula, data = data, x = TRUE)
+  if (formula$surv_type %in% c("right", "counting")) {
+    mod <- survival::coxph(formula$formula, data = data, x = TRUE)
+  } else if (formula$surv_type %in% c("interval", "interval2")) {
+    mod <- survival::survreg(formula$formula, data = data, x = TRUE)
+  } else {
+    stop("Bug found: Invalid Surv type.")
+  }
   
   # calculate mean log incidence, used as a shift in log baseline hazard
   norm_const <- log(nevent / sum(t_end - t_beg))
   
   nlist(mod,
+        surv_type = formula$surv_type,
         qnodes,
         basehaz,
         has_intercept,

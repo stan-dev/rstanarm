@@ -263,7 +263,7 @@ stan_jm.fit <- function(formulaLong          = NULL,
   standata$yNobs <- 
     fetch_array(y_mod, "x", "N", pad_length = 3)
   standata$yNeta <- 
-    fetch_array(y_mod, "x", "N", pad_length = 3) # same as Nobs for stan_mvmer
+    fetch_array(y_mod, "x", "N", pad_length = 3) # == Nobs for stan_mvmer models
   standata$yK <- 
     fetch_array(y_mod, "x", "K", pad_length = 3)
   
@@ -663,17 +663,18 @@ stan_jm.fit <- function(formulaLong          = NULL,
                            "muvalue", 
                            "muvalue_data")  
     
-    grp_basic <- xapply(FUN = get_basic_grp_info, y_mod = y_mod, id_var = id_var)
-    grp_stuff <- xapply(FUN = get_extra_grp_info,
+    grp_basic <- xapply(FUN    = get_basic_grp_info, 
+                        y_mod  = y_mod, 
+                        id_var = id_var)
+    grp_stuff <- xapply(FUN    = get_extra_grp_info,
                         basic_info = grp_basic, 
-                        flist = fetch(y_mod, "z", "group_list"),
-                        args = nlist(id_var, grp_assoc, ok_assoc_grp))
+                        flist  = fetch(y_mod, "z", "group_list"),
+                        args   = nlist(id_var, grp_assoc, ok_assoc_grp))
+    
     has_grp <- fetch_(grp_stuff, "has_grp")
-
     if (not.null(grp_assoc) && !any(has_grp))
       stop2("'grp_assoc' can only be specified when there is a grouping ",
             "factor clustered within patients.")  
-    
     if (any(has_grp))
       validate_assoc_with_grp(grp_stuff, assoc, ok_assoc_with_grp)
     

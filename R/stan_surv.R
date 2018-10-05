@@ -796,6 +796,18 @@ parse_formula <- function(formula, data) {
     dvar     <- as.character(lhs[[4L]])
     min_t    <- min(surv[, "start"])
     max_t    <- max(surv[, "stop"])
+  } else if (type == "interval") {
+    tvar_beg <- NULL
+    tvar_end <- as.character(lhs[[2L]])
+    dvar     <- as.character(lhs[[4L]])
+    min_t    <- 0
+    max_t    <-  max(surv[, c("time1", "time2")])
+  } else if (type == "interval2") {
+    tvar_beg <- NULL
+    tvar_end <- as.character(lhs[[2L]])
+    dvar     <- as.character(lhs[[3L]])
+    min_t    <- 0
+    max_t    <- max(surv[, c("time1", "time2")])
   }
 
   sel <- attr(rhs_terms, "specials")$tde
@@ -901,15 +913,12 @@ validate_formula <- function(formula, needs_response = TRUE) {
 #
 # @param x A Surv object; the LHS of a formula evaluated in a data frame environment.
 # @param ok_types A character vector giving the allowed types of Surv object.
-validate_surv <- function(x, ok_types = c("right", "counting")) {
-  
-  if (!inherits(x, "Surv")) {
+validate_surv <- function(x, ok_types = c("right", "counting",
+                                          "interval", "interval2")) {
+  if (!inherits(x, "Surv"))
     stop2("LHS of 'formula' must be a 'Surv' object.")
-  }
-  
-  if (!attr(x, "type") %in% ok_types) {
+  if (!attr(x, "type") %in% ok_types)
     stop2("Surv object type must be one of: ", comma(ok_types))
-  }
   x
 }
 
