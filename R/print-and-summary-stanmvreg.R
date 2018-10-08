@@ -118,7 +118,8 @@ print.stanmvreg <- function(x, digits = 3, ...) {
   }
   
   cat("\n------\n")
-  cat("For info on the priors used see help('prior_summary.stanreg').")
+  cat("* For help interpreting the printed output see ?print.stanreg")
+  cat("* For info on the priors used see ?prior_summary.stanreg")
   
   invisible(x)
 }

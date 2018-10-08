@@ -132,6 +132,15 @@ print.stanreg <- function(x, digits = 1, ...) {
     if (mer) {
       estimates <- estimates[!grepl("^Sigma\\[", rownames(estimates)),, drop=FALSE]
     }
+    if (surv) {
+      nms_int  <- get_int_name_basehaz(x$basehaz)
+      nms_aux  <- get_aux_name_basehaz(x$basehaz)
+      nms_beta <- setdiff(rownames(estimates), c(nms_int, nms_aux))
+      estimates <- cbind(estimates, 
+                         "exp(Median)" = c(rep(NA, length(nms_int)),
+                                           exp(estimates[nms_beta, "Median"]), 
+                                           rep(NA, length(nms_aux))))
+    }
     .printfr(estimates, digits, ...)
     
     if (length(aux_nms)) {
@@ -156,7 +165,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     if (is(x, "aov")) {
       print_anova_table(x, digits, ...)
     }
-    if (!no_mean_PPD(x) && !is_clogit(x)) {
+    if (!no_mean_PPD(x) && !is_clogit(x) && !is.stansurv(x)) {
       ppd_mat <- mat[, ppd_nms, drop = FALSE]
       ppd_estimates <- .median_and_madsd(ppd_mat)
       
@@ -478,7 +487,7 @@ formula_string <- function(formula, break_and_indent = TRUE) {
 # get name of aux parameter based on family
 .aux_name <- function(object) {
   aux <- character()
-  if (!is_polr(object)) {
+  if (!is_polr(object) && !is.stansurv(object)) {
     aux <- .rename_aux(family(object))
     if (is.na(aux)) {
       aux <- character()

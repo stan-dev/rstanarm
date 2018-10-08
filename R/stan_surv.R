@@ -305,7 +305,8 @@ stan_surv <- function(formula,
                             basehaz_ops = basehaz_ops, 
                             ok_basehaz = ok_basehaz,
                             ok_basehaz_ops = ok_basehaz_ops,
-                            times = t_end, status = event)
+                            times = t_end, status = event,
+                            upper_times = NULL)
   nvars <- basehaz$nvars # number of basehaz aux parameters
   
   # flag if intercept is required for baseline hazard
