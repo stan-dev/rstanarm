@@ -900,8 +900,13 @@ log_basehaz_pw <- function(x, coefs, knots) {
 
 evaluate_log_haz <- function(times, basehaz, betas, aux, intercept = NULL, x) {
   eta  <- linear_predictor(betas, x)
-  args <- nlist(times, basehaz, aux,  intercept)
+  args <- nlist(times, basehaz, aux, intercept)
   do.call(evaluate_log_basehaz, args) + eta
+}
+
+evaluate_basehaz <- function(times, basehaz, aux, intercept = NULL) {
+  exp(evaluate_log_basehaz(times = times, basehaz = basehaz, 
+                           aux = aux, intercept = intercept))
 }
 
 #-------------

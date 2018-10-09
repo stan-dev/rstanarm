@@ -341,8 +341,12 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       warning2("'pars' is ignored when plotting the baseline hazard.")
     if (!is.null(regex_pars))
       warning2("'regex_pars' is ignored when plotting the baseline hazard.")
-    
-    basehaz <- evaluate_basehaz(times, x$basehaz, stanpars$bhcoef, stanpars$alpha)
+
+    args <- nlist(times     = times,
+                  basehaz   = x$basehaz,
+                  aux       = stanpars$bhcoef,
+                  intercept = stanpars$alpha)
+    basehaz <- do.call(evaluate_basehaz, args)
     basehaz <- median_and_bounds(basehaz, prob, na.rm = TRUE)
     plotdat <- data.frame(times, basehaz)
     
