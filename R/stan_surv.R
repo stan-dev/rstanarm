@@ -422,11 +422,13 @@ stan_surv <- function(formula,
       s_qpts_delayed <- matrix(0,0,ncol(s_events)) # dud entry for stan
     }
     smooth_map <- get_smooth_name(s_events, type = "smooth_map")
+    smooth_idx <- get_idx_array(table(smooth_map))
     S <- ncol(s_events) # num. of tde spline coefficients
   } else { # model does not have tde
     s_events       <- matrix(0,nevents ,0)
     s_qpts         <- matrix(0,qrows   ,0)
     s_qpts_delayed <- matrix(0,qdelayed,0)
+    smooth_idx     <- matrix(0,0,2)
     smooth_map     <- integer(0)
     S              <- 0L
   } 
@@ -454,6 +456,7 @@ stan_surv <- function(formula,
     s_qpts,
     s_qpts_delayed,
     smooth_map,
+    smooth_idx,
     basis_events,
     basis_censor,
     basis_delayed,

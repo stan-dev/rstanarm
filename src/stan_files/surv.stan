@@ -245,11 +245,15 @@ functions {
   *   for the smoothing sds
   * @return nothing
   */
-  void smooth_lp(vector z_beta_tde, vector smooth_sd_raw, int dist, vector df) {
-    //int K = length(z_beta_tde);
-    //matrix[K,K] mat = penalty_matrix(K);
-    //target += multi_normal_prec_lpdf(z_beta_tde | 0, mat)
-    target += normal_lpdf(z_beta_tde | 0, 1);
+  void smooth_lp(vector z_beta_tde, int[] smooth_idx,
+                 vector smooth_sd_raw, int dist, vector df) {
+    int J = rows(smooth_idx);
+    for (j in 1:J) {
+      int K = smooth_idx[j,2] - smooth_idx[j,1] + 1;
+      vector[K] z_beta_tde_tmp = z_beta_tde[smooth_idx[j,1]:smooth_idx[j,2]];
+      matrix[K,K] mat = crossprod(penalty_matrix(K)) + diag(rep_vector(1e-6,K));
+      target += multi_normal_prec_lpdf(z_beta_tde_tmp | 0, mat);
+    }
     if (dist > 0) {
       real log_half = -0.693147180559945286;
       if (dist == 1)
@@ -295,6 +299,7 @@ data {
   int<lower=0> qdelayed;   // num. rows used for quadrature for delayed entry
   int<lower=0> nvars;      // num. aux parameters for baseline hazard
   int<lower=1> smooth_map[S]; // indexing of smooth sds for tde spline coefs
+  int<lower=0> smooth_idx[S > 0 ? max(smooth_map) : 0, 2];
 
   // response and time variables
   vector[nevents]  t_events;     // time of events
@@ -415,6 +420,7 @@ transformed data {
 
   real sum_t_events = sum(t_events);         // sum of time of events
   real sum_log_t_events = sum(log_t_events); // sum of log time of events
+  
 }
 
 parameters {
@@ -730,7 +736,8 @@ model {
 
   // log priors for tde spline coefficients and their smoothing parameters
   if (S > 0) {
-    smooth_lp(z_beta_tde, smooth_sd_raw, prior_dist_for_smooth, prior_df_for_smooth);
+    smooth_lp(z_beta_tde, smooth_idx, smooth_sd_raw, 
+              prior_dist_for_smooth, prior_df_for_smooth);
   }
 
 }
