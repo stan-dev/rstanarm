@@ -883,7 +883,7 @@ log_basehaz_exponential <- function(x, log_scale) {
   linear_predictor(log_scale, rep(1, length(x)))
 }
 log_basehaz_weibull  <- function(x, shape, log_scale) {
-  as.vector(log_scale + log(shape)) + linear_predictor(log(shape) - 1, log(x))
+  as.vector(log_scale + log(shape)) + linear_predictor(shape - 1, log(x))
 }
 log_basehaz_gompertz <- function(x, scale, log_shape) {
   as.vector(log_shape) + linear_predictor(scale, x)

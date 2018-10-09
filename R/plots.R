@@ -325,6 +325,7 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
   validate_stansurv_object(x)
   
   if (plotfun %in% c("basehaz", "tde")) {
+    
     stanpars <- extract_pars(x)
     has_intercept <- check_for_intercept(x$basehaz)
     
