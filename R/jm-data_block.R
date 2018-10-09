@@ -457,19 +457,21 @@ summarize_jm_prior <-
           df = if (prior_dist_name %in% "student_t")
             prior_df else NULL
         ))
-      e_aux_name <- .rename_e_aux(basehaz) 
-      prior_list$priorEvent_aux <-
-        with(user_priorEvent_aux, list(
-          dist = prior_dist_name,
-          location = prior_mean,
-          scale = prior_scale,
-          adjusted_scale = if (rescaled_auxEvent)
-            adjusted_priorEvent_aux_scale else NULL,
-          df = if (!is.na(prior_dist_name) && 
-                   prior_dist_name %in% "student_t")
-            prior_df else NULL, 
-          aux_name = e_aux_name
-        ))      
+      e_aux_name <- .rename_e_aux(basehaz)
+      if (!is.na(e_aux_name)) {
+        prior_list$priorEvent_aux <-
+          with(user_priorEvent_aux, list(
+            dist = prior_dist_name,
+            location = prior_mean,
+            scale = prior_scale,
+            adjusted_scale = if (rescaled_auxEvent)
+              adjusted_priorEvent_aux_scale else NULL,
+            df = if (!is.na(prior_dist_name) && 
+                     prior_dist_name %in% "student_t")
+              prior_df else NULL, 
+            aux_name = e_aux_name
+          ))
+      }
     }
     
     if (!is.null(user_priorEvent_assoc)) {
