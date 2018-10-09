@@ -235,37 +235,6 @@ functions {
   }
 
   /**
-  * Log-prior for tde spline coefficients and their smoothing parameters
-  *
-  * @param z_beta_tde Vector of unscaled spline coefficients
-  * @param smooth_sd_raw Vector (potentially of length 1) of smoothing sds
-  * @param dist Integer specifying the type of prior distribution for the
-  *   smoothing sds
-  * @param df Vector of reals specifying the df for the prior distribution
-  *   for the smoothing sds
-  * @return nothing
-  */
-  void smooth_lp(vector z_beta_tde, int[] smooth_idx,
-                 vector smooth_sd_raw, int dist, vector df) {
-    int J = rows(smooth_idx);
-    for (j in 1:J) {
-      int K = smooth_idx[j,2] - smooth_idx[j,1] + 1;
-      vector[K] z_beta_tde_tmp = z_beta_tde[smooth_idx[j,1]:smooth_idx[j,2]];
-      matrix[K,K] mat = crossprod(penalty_matrix(K)) + diag(rep_vector(1e-6,K));
-      target += multi_normal_prec_lpdf(z_beta_tde_tmp | 0, mat);
-    }
-    if (dist > 0) {
-      real log_half = -0.693147180559945286;
-      if (dist == 1)
-        target += normal_lpdf(smooth_sd_raw | 0, 1) - log_half;
-      else if (dist == 2)
-        target += student_t_lpdf(smooth_sd_raw | df, 0, 1) - log_half;
-      else if (dist == 3)
-        target += exponential_lpdf(smooth_sd_raw | 1);
-    }
-  }
-
-  /**
   * Return a second order penalty matrix
   *
   * @param K Integer specifying the number of rows in the penalty matrix
@@ -282,6 +251,37 @@ functions {
     m[1,1] = 1;
     m[K,K] = 1;
     return m;
+  }
+  
+  /**
+  * Log-prior for tde spline coefficients and their smoothing parameters
+  *
+  * @param z_beta_tde Vector of unscaled spline coefficients
+  * @param smooth_sd_raw Vector (potentially of length 1) of smoothing sds
+  * @param dist Integer specifying the type of prior distribution for the
+  *   smoothing sds
+  * @param df Vector of reals specifying the df for the prior distribution
+  *   for the smoothing sds
+  * @return nothing
+  */
+  void smooth_lp(vector z_beta_tde, int[,] smooth_idx,
+                 vector smooth_sd_raw, int dist, vector df) {
+    int J = size(smooth_idx);
+    for (j in 1:J) {
+      int K = smooth_idx[j,2] - smooth_idx[j,1] + 1;
+      vector[K] z_beta_tde_tmp = z_beta_tde[smooth_idx[j,1]:smooth_idx[j,2]];
+      matrix[K,K] mat = crossprod(penalty_matrix(K)) + diag_matrix(rep_vector(1e-6,K));
+      target += multi_normal_prec_lpdf(z_beta_tde_tmp | rep_vector(0.0,K), mat);
+    }
+    if (dist > 0) {
+      real log_half = -0.693147180559945286;
+      if (dist == 1)
+        target += normal_lpdf(smooth_sd_raw | 0, 1) - log_half;
+      else if (dist == 2)
+        target += student_t_lpdf(smooth_sd_raw | df, 0, 1) - log_half;
+      else if (dist == 3)
+        target += exponential_lpdf(smooth_sd_raw | 1);
+    }
   }
 
 }
