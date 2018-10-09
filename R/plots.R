@@ -316,7 +316,6 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 # plot method for stansurv ----------------------------------------------
 
 #' @rdname plot.stanreg
-#' @method plot stansurv
 #' @export
 #' 
 plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
@@ -325,91 +324,90 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
   
   validate_stansurv_object(x)
   
-  if (!plotfun %in% c("basehaz", "tde"))
-    NextMethod("plot")
-  
-  stanpars <- extract_pars(x)
-  has_intercept <- check_for_intercept(x$basehaz)
-  
-  t_min <- min(x$entrytime)
-  t_max <- max(x$exittime)
-  times <- seq(t_min, t_max, by = (t_max - t_min) / 200)
-  
-  if (plotfun == "basehaz") { 
+  if (plotfun %in% c("basehaz", "tde")) {
+    stanpars <- extract_pars(x)
+    has_intercept <- check_for_intercept(x$basehaz)
     
-    if (!is.null(pars))
-      warning2("'pars' is ignored when plotting the baseline hazard.")
-    if (!is.null(regex_pars))
-      warning2("'regex_pars' is ignored when plotting the baseline hazard.")
-
-    args <- nlist(times     = times,
-                  basehaz   = x$basehaz,
-                  aux       = stanpars$bhcoef,
-                  intercept = stanpars$alpha)
-    basehaz <- do.call(evaluate_basehaz, args)
-    basehaz <- median_and_bounds(basehaz, prob, na.rm = TRUE)
-    plotdat <- data.frame(times, basehaz)
+    t_min <- min(x$entrytime)
+    t_max <- max(x$exittime)
+    times <- seq(t_min, t_max, by = (t_max - t_min) / 200)
     
-    ylab <- "Baseline hazard rate"
-    xlab <- "Time"
+    if (plotfun == "basehaz") { 
+      
+      if (!is.null(pars))
+        warning2("'pars' is ignored when plotting the baseline hazard.")
+      if (!is.null(regex_pars))
+        warning2("'regex_pars' is ignored when plotting the baseline hazard.")
+      
+      args <- nlist(times     = times,
+                    basehaz   = x$basehaz,
+                    aux       = stanpars$bhcoef,
+                    intercept = stanpars$alpha)
+      basehaz <- do.call(evaluate_basehaz, args)
+      basehaz <- median_and_bounds(basehaz, prob, na.rm = TRUE)
+      plotdat <- data.frame(times, basehaz)
+      
+      ylab <- "Baseline hazard rate"
+      xlab <- "Time"
+      
+    } else if (plotfun == "tde") {
+      
+      smooth_map   <- get_smooth_name(x$s_events, type = "smooth_map")
+      smooth_vars  <- get_smooth_name(x$s_events, type = "smooth_vars")
+      smooth_coefs <- get_smooth_name(x$s_events, type = "smooth_coefs")
+      
+      if (is.null(pars))
+        pars <- smooth_vars
+      if (length(pars) > 1L)
+        stop2("Only one variable can be specified in 'pars' .")
+      if (!pars %in% smooth_vars)
+        stop2("Cannot find variable '", pars, "' amongst the tde terms.")
+      
+      sel1 <- which(smooth_vars == pars)
+      sel2 <- smooth_coefs[smooth_map == sel1]
+      
+      betas_tf <- stanpars$beta    [, pars, drop = FALSE]
+      betas_td <- stanpars$beta_tde[, sel2, drop = FALSE]
+      betas    <- cbind(betas_tf, betas_td)
+      
+      times__ <- times
+      basis   <- eval(parse(text = x$formula$td_basis[sel1]))
+      basis   <- add_intercept(basis)
+      log_hr  <- linear_predictor(betas, basis)
+      plotdat <- median_and_bounds(exp(log_hr), prob, na.rm = TRUE)
+      plotdat <- data.frame(times, plotdat)
+      
+      ylab <- "Hazard ratio"
+      xlab <- "Time"
+      
+    }
     
-  } else if (plotfun == "tde") {
-    
-    smooth_map   <- get_smooth_name(x$s_events, type = "smooth_map")
-    smooth_vars  <- get_smooth_name(x$s_events, type = "smooth_vars")
-    smooth_coefs <- get_smooth_name(x$s_events, type = "smooth_coefs")
-    
-    if (is.null(pars))
-      pars <- smooth_vars
-    if (length(pars) > 1L)
-      stop2("Only one variable can be specified in 'pars' .")
-    if (!pars %in% smooth_vars)
-      stop2("Cannot find variable '", pars, "' amongst the tde terms.")
-    
-    sel1 <- which(smooth_vars == pars)
-    sel2 <- smooth_coefs[smooth_map == sel1]
-    
-    betas_tf <- stanpars$beta    [, pars, drop = FALSE]
-    betas_td <- stanpars$beta_tde[, sel2, drop = FALSE]
-    betas    <- cbind(betas_tf, betas_td)
-    
-    times__ <- times
-    basis   <- eval(parse(text = x$formula$td_basis[sel1]))
-    basis   <- add_intercept(basis)
-    log_hr  <- linear_predictor(betas, basis)
-    plotdat <- median_and_bounds(exp(log_hr), prob, na.rm = TRUE)
-    plotdat <- data.frame(times, plotdat)
-    
-    ylab <- "Hazard ratio"
-    xlab <- "Time"
-    
+    geom_defs <- list(color = "black")  # default plot args
+    geom_args <- set_geom_args(geom_defs, ...)  
+    geom_ylab <- ggplot2::ylab(ylab)
+    geom_xlab <- ggplot2::xlab(xlab)
+    geom_maps <- list(aes_string(x = "times", y = "med"), method = "loess", se = FALSE)
+    geom_base <- ggplot(plotdat) + geom_ylab + geom_xlab + theme_bw()
+    geom_plot <- geom_base + do.call(ggplot2::geom_smooth, c(geom_maps, geom_args))
+    if (ci) {
+      lim_defs <- list(alpha = 0.3) # default plot args for ci
+      lim_args <- c(defaults = list(lim_defs), ci_geom_args)
+      lim_args <- do.call("set_geom_args", lim_args)
+      lim_maps <- list(mapping = aes_string(x = "times", ymin = "lb", ymax = "ub"))
+      lim_tmp  <- geom_base + 
+        ggplot2::stat_smooth(aes_string(x = "times", y = "lb"), method = "loess") +
+        ggplot2::stat_smooth(aes_string(x = "times", y = "ub"), method = "loess")
+      lim_build<- ggplot2::ggplot_build(lim_tmp)
+      lim_data <- list(data = data.frame(times = lim_build$data[[1]]$x,
+                                         lb    = lim_build$data[[1]]$y,
+                                         ub    = lim_build$data[[2]]$y))
+      lim_plot <- do.call(ggplot2::geom_ribbon, c(lim_data, lim_maps, lim_args))
+    } else {
+      lim_plot <- NULL
+    }
+    return(geom_plot + lim_plot)
   }
-  
-  geom_defs <- list(color = "black")  # default plot args
-  geom_args <- set_geom_args(geom_defs, ...)  
-  geom_ylab <- ggplot2::ylab(ylab)
-  geom_xlab <- ggplot2::xlab(xlab)
-  geom_maps <- list(aes_string(x = "times", y = "med"), method = "loess", se = FALSE)
-  geom_base <- ggplot(plotdat) + geom_ylab + geom_xlab + theme_bw()
-  geom_plot <- geom_base + do.call(ggplot2::geom_smooth, c(geom_maps, geom_args))
-  if (ci) {
-    lim_defs <- list(alpha = 0.3) # default plot args for ci
-    lim_args <- c(defaults = list(lim_defs), ci_geom_args)
-    lim_args <- do.call("set_geom_args", lim_args)
-    lim_maps <- list(mapping = aes_string(x = "times", ymin = "lb", ymax = "ub"))
-    lim_tmp  <- geom_base + 
-      ggplot2::stat_smooth(aes_string(x = "times", y = "lb"), method = "loess") +
-      ggplot2::stat_smooth(aes_string(x = "times", y = "ub"), method = "loess")
-    lim_build<- ggplot2::ggplot_build(lim_tmp)
-    lim_data <- list(data = data.frame(times = lim_build$data[[1]]$x,
-                                       lb    = lim_build$data[[1]]$y,
-                                       ub    = lim_build$data[[2]]$y))
-    lim_plot <- do.call(ggplot2::geom_ribbon, c(lim_data, lim_maps, lim_args))
-  } else {
-    lim_plot <- NULL
-  }
-  return(geom_plot + lim_plot)
-  
+  NextMethod("plot")
 }
 
 
