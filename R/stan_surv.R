@@ -272,30 +272,39 @@ stan_surv <- function(formula,
   mt <- mf_stuff$mt # model terms
   
   #----- dimensions and response vectors
-
+  
   # entry and exit times for each row of data
-  t_end <- make_t(mf, type = "end") # end time
-  t_beg <- make_t(mf, type = "beg") # beg time
+  t_beg <- make_t(mf, type = "beg") # entry time
+  t_end <- make_t(mf, type = "end") # exit  time
+  t_upp <- make_t(mf, type = "upp") # upper time for interval censoring
   
   # event indicator for each row of data
-  d <- make_d(mf)
-  event <- as.logical(d == 1)
+  status <- make_d(mf)
+  
+  if (any(status < 0 || status > 3))
+    stop2("Invalid status indicator in Surv object.")
 
-  # interval censoring indicator for each row of data
-  interval <- as.logical(d == 3)
-    
   # delayed entry indicator for each row of data
-  delayed <- (!t_beg == 0)
+  delayed  <- as.logical(!t_beg == 0)
   
   # time variables for stan
-  t_events  <- t_end[event]
-  t_censor  <- t_end[!event]
-  t_delayed <- t_beg[delayed]
-
+  t_event   <- t_end[status == 1] # exact event time
+  t_rcens   <- t_end[status == 0] # right censoring time
+  t_lcens   <- t_end[status == 2] # left  censoring time
+  t_icensl  <- t_end[status == 3] # lower limit of interval censoring time
+  t_icensu  <- t_upp[status == 3] # upper limit of interval censoring time
+  t_delayed <- t_beg[delayed]     # delayed entry time
+  
+  # min entry and max exit times
+  mintime <- min(t_beg)
+  maxtime <- max(c(t_end,t_upp))
+  
   # dimensions
-  nevents  <- length(t_events)
-  ncensor  <- length(t_censor)
-  ndelayed <- length(t_delayed)
+  nevent   <- sum(status == 1)
+  nrcens   <- sum(status == 0)
+  nlcens   <- sum(status == 2)
+  nicens   <- sum(status == 3)
+  ndelayed <- sum(delayed)
   
   #----- baseline hazard
 
@@ -305,8 +314,8 @@ stan_surv <- function(formula,
                             basehaz_ops = basehaz_ops, 
                             ok_basehaz = ok_basehaz,
                             ok_basehaz_ops = ok_basehaz_ops,
-                            times = t_end, status = event,
-                            upper_times = NULL)
+                            times = t_end, status = status,
+                            upper_times = t_upp)
   nvars <- basehaz$nvars # number of basehaz aux parameters
   
   # flag if intercept is required for baseline hazard
@@ -363,14 +372,36 @@ stan_surv <- function(formula,
   # basis terms at event times; used regardless of quadrature
   basis_events  <- make_basis(t_events, basehaz)
   ibasis_events <- make_basis(t_events, basehaz, integrate = TRUE)
-  
-  # basis terms at censoring times; used only without quadrature
+ 
+  # basis terms at left censoring times; used only without quadrature
   if (has_quadrature) {
-    basis_censor  <- matrix(0,0,nvars) # dud entries for stan
-    ibasis_censor <- matrix(0,0,nvars)
+    basis_lcens  <- matrix(0,0,nvars) # dud entries for stan
+    ibasis_lcens <- matrix(0,0,nvars)
   } else {
-    basis_censor  <- make_basis(t_censor, basehaz)
-    ibasis_censor <- make_basis(t_censor, basehaz, integrate = TRUE)
+    basis_lcens  <- make_basis(t_lcens, basehaz)
+    ibasis_lcens <- make_basis(t_lcens, basehaz, integrate = TRUE)
+  }  
+   
+  # basis terms at right censoring times; used only without quadrature
+  if (has_quadrature) {
+    basis_rcens  <- matrix(0,0,nvars) # dud entries for stan
+    ibasis_rcens <- matrix(0,0,nvars)
+  } else {
+    basis_rcens  <- make_basis(t_rcens, basehaz)
+    ibasis_rcens <- make_basis(t_rcens, basehaz, integrate = TRUE)
+  }
+  
+  # basis terms at interval censoring times; used only without quadrature
+  if (has_quadrature) {
+    basis_icensl  <- matrix(0,0,nvars) # dud entries for stan
+    basis_icensu  <- matrix(0,0,nvars)
+    ibasis_icensl <- matrix(0,0,nvars)
+    ibasis_icensu <- matrix(0,0,nvars)
+  } else {
+    basis_icensl  <- make_basis(t_icensl, basehaz)
+    basis_icensu  <- make_basis(t_icensu, basehaz)
+    ibasis_icensl <- make_basis(t_icensl, basehaz, integrate = TRUE)
+    ibasis_icensu <- make_basis(t_icensu, basehaz, integrate = TRUE)
   }
 
   # basis terms at delayed entry times; used only without quadrature
@@ -395,12 +426,15 @@ stan_surv <- function(formula,
   
   # time-fixed predictor matrix
   x <- make_x(formula$tf_form, mf)$x
-  x_events  <- keep_rows(x, event)
-  x_censor  <- keep_rows(x, !event)
+  x_events  <- keep_rows(x, status == 1)
+  x_rcens   <- keep_rows(x, status == 0)
+  x_lcens   <- keep_rows(x, status == 2)
+  x_icensl  <- keep_rows(x, status == 3)
+  x_icensu  <- keep_rows(x, status == 3)
   x_delayed <- keep_rows(x, delayed)
   K <- ncol(x)
   if (has_quadrature) {
-    x_qpts         <- rep_rows(x, times = qnodes)
+    x_qpts         <- rep_rows(x,         times = qnodes)
     x_qpts_delayed <- rep_rows(x_delayed, times = qnodes)
   } else {
     x_qpts         <- matrix(0,0,K) # dud entries for stan
@@ -438,17 +472,26 @@ stan_surv <- function(formula,
   standata <- nlist(
     K, S,
     nevents,
-    ncensor  = if (has_quadrature) 0L else ncensor,
+    nlcens   = if (has_quadrature) 0L else nlcens,
+    nrcens   = if (has_quadrature) 0L else nrcens,
+    nicensl  = if (has_quadrature) 0L else nicens,
+    nicensu  = if (has_quadrature) 0L else nicens,
     ndelayed = if (has_quadrature) 0L else ndelayed,
     qnodes,
     qrows,
     qdelayed,
     nvars,
     t_events,
-    t_censor  = if (has_quadrature) rep(0,0) else t_censor,
+    t_lcens   = if (has_quadrature) rep(0,0) else t_lcens,
+    t_rcens   = if (has_quadrature) rep(0,0) else t_rcens,
+    t_icensl  = if (has_quadrature) rep(0,0) else t_icensl,
+    t_icensu  = if (has_quadrature) rep(0,0) else t_icensu,
     t_delayed = if (has_quadrature) rep(0,0) else t_delayed,
     x_events,
-    x_censor  = if (has_quadrature) matrix(0,0,K) else x_censor,
+    x_lcens   = if (has_quadrature) matrix(0,0,K) else x_lcens,
+    x_rcens   = if (has_quadrature) matrix(0,0,K) else x_rcens,
+    x_icensl  = if (has_quadrature) matrix(0,0,K) else x_icensl,
+    x_icensu  = if (has_quadrature) matrix(0,0,K) else x_icensu,
     x_delayed = if (has_quadrature) matrix(0,0,K) else x_delayed,
     x_qpts,
     x_qpts_delayed,
@@ -458,7 +501,10 @@ stan_surv <- function(formula,
     smooth_map,
     smooth_idx,
     basis_events,
-    basis_censor,
+    basis_lcens,
+    basis_rcens,
+    basis_icensl,
+    basis_icensu,
     basis_delayed,
     basis_qpts,
     basis_qpts_delayed,
