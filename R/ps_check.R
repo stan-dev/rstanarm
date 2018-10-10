@@ -103,8 +103,10 @@ ps_check <- function(object, check = "survival",
   # Obtain the formula for KM curve
   type <- attr(response, "type")
   form <- switch(type,
-                 right    = formula(survival::Surv(time, status)      ~ 1),
-                 counting = formula(survival::Surv(start, stop, time) ~ 1),
+                 right    = formula(survival::Surv(time, status, type = type) ~ 1),
+                 counting = formula(survival::Surv(start, stop,  status, type = type) ~ 1),
+                 interval = formula(survival::Surv(time1, time2, status, type = 'interval') ~ 1),
+                 interval2= formula(survival::Surv(time1, time2, status, type = 'interval') ~ 1),
                  stop("Bug found: invalid type of survival object."))
   
   # Obtain the KM estimates

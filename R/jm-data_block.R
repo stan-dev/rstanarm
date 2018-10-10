@@ -962,8 +962,8 @@ validate_observation_times <-function(data, exittime, id_var, time_var) {
 # @param ok_basehaz A list of admissible baseline hazards
 # @param times A numeric vector with eventtimes for each individual
 # @param status A numeric vector with event indicators for each individual
-# @param upper_times A numeric vector (or NULL) with the upper limit for any
-#   observations with interval censoring.
+# @param min_t Scalar, the minimum entry time across all individuals
+# @param max_t Scalar, the maximum event or censoring time across all individuals
 # @return A named list with the following elements:
 #   type: integer specifying the type of baseline hazard, 1L = weibull,
 #     2L = b-splines, 3L = piecewise.
@@ -983,15 +983,13 @@ handle_basehaz <- function(basehaz,
                            ok_basehaz_ops = c("df", "knots"),
                            times, 
                            status,
-                           upper_times) {
+                           min_t, max_t) {
   
   if (!basehaz %in% ok_basehaz)
     stop2("'basehaz' should be one of: ", comma(ok_basehaz))
   
   if (!all(names(basehaz_ops) %in% ok_basehaz_ops))
     stop2("'basehaz_ops' can only include: ", comma(ok_basehaz_ops))
-  
-  tt <- times[(status == 1)] # uncensored event times
   
   if (basehaz == "exp") {
     
@@ -1026,7 +1024,14 @@ handle_basehaz <- function(basehaz,
       df <- 5L # default df for B-splines, assuming no intercept
     # NB this is ignored if the user specified knots
     
-    bknots <- get_bknots(c(times, upper_times))
+    tt <- times[status == 1] # uncensored event times
+    if (is.null(knots) && !length(tt)) {
+      warning2("No observed events found in the data. Censoring times will ",
+               "be used to evaluate default knot locations for splines.")
+      tt <- times
+    }
+        
+    bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- get_basis(tt, iknots = iknots, bknots = bknots, type = "bs")      
     nvars  <- ncol(basis)  # number of aux parameters, basis terms
@@ -1040,12 +1045,20 @@ handle_basehaz <- function(basehaz,
       stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
     }
     
+    tt <- times[status == 1] # uncensored event times
     if (is.null(df)) {
       df <- 5L # default df for B-splines, assuming no intercept
       # NB this is ignored if the user specified knots
     }
-    
-    bknots <- get_bknots(c(times, upper_times))
+
+    tt <- times[status == 1] # uncensored event times
+    if (is.null(knots) && !length(tt)) {
+      warning2("No observed events found in the data. Censoring times will ",
+               "be used to evaluate default knot locations for splines.")
+      tt <- times
+    }    
+        
+    bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- get_basis(tt, iknots = iknots, bknots = bknots, type = "ms")      
     nvars  <- ncol(basis)  # number of aux parameters, basis terms
@@ -1063,8 +1076,14 @@ handle_basehaz <- function(basehaz,
       df <- 6L # default number of segments for piecewise constant
       # NB this is ignored if the user specified knots
     }
-    
-    bknots <- get_bknots(c(times, upper_times))
+
+    if (is.null(knots) && !length(tt)) {
+      warning2("No observed events found in the data. Censoring times will ",
+               "be used to evaluate default knot locations for piecewise basehaz.")
+      tt <- times
+    }    
+        
+    bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- NULL               # spline basis
     nvars  <- length(iknots) + 1 # number of aux parameters, dummy indicators

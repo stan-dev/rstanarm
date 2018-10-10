@@ -288,19 +288,15 @@ stan_surv <- function(formula,
   delayed  <- as.logical(!t_beg == 0)
   
   # time variables for stan
-  t_event   <- t_end[status == 1] # exact event time
+  t_events  <- t_end[status == 1] # exact event time
   t_rcens   <- t_end[status == 0] # right censoring time
   t_lcens   <- t_end[status == 2] # left  censoring time
   t_icensl  <- t_end[status == 3] # lower limit of interval censoring time
   t_icensu  <- t_upp[status == 3] # upper limit of interval censoring time
   t_delayed <- t_beg[delayed]     # delayed entry time
-  
-  # min entry and max exit times
-  mintime <- min(t_beg)
-  maxtime <- max(c(t_end,t_upp))
-  
+
   # dimensions
-  nevent   <- sum(status == 1)
+  nevents  <- sum(status == 1)
   nrcens   <- sum(status == 0)
   nlcens   <- sum(status == 2)
   nicens   <- sum(status == 3)
@@ -310,12 +306,14 @@ stan_surv <- function(formula,
 
   ok_basehaz <- c("exp", "weibull", "gompertz", "ms", "bs")
   ok_basehaz_ops <- get_ok_basehaz_ops(basehaz)
-  basehaz <- handle_basehaz(basehaz = basehaz, 
-                            basehaz_ops = basehaz_ops, 
-                            ok_basehaz = ok_basehaz,
+  basehaz <- handle_basehaz(basehaz        = basehaz, 
+                            basehaz_ops    = basehaz_ops, 
+                            ok_basehaz     = ok_basehaz,
                             ok_basehaz_ops = ok_basehaz_ops,
-                            times = t_end, status = status,
-                            upper_times = t_upp)
+                            times          = t_end, 
+                            status         = status,
+                            min_t          = min(t_beg),
+                            max_t          = max(c(t_end,t_upp), na.rm = TRUE))
   nvars <- basehaz$nvars # number of basehaz aux parameters
   
   # flag if intercept is required for baseline hazard
@@ -427,10 +425,9 @@ stan_surv <- function(formula,
   # time-fixed predictor matrix
   x <- make_x(formula$tf_form, mf)$x
   x_events  <- keep_rows(x, status == 1)
-  x_rcens   <- keep_rows(x, status == 0)
   x_lcens   <- keep_rows(x, status == 2)
-  x_icensl  <- keep_rows(x, status == 3)
-  x_icensu  <- keep_rows(x, status == 3)
+  x_rcens   <- keep_rows(x, status == 0)
+  x_icens   <- keep_rows(x, status == 3)
   x_delayed <- keep_rows(x, delayed)
   K <- ncol(x)
   if (has_quadrature) {
@@ -445,7 +442,7 @@ stan_surv <- function(formula,
   if (has_tde) { 
     tdfm  <- formula$td_form 
     xlevs <- .getXlevels(mt, mf)
-    data_events <- keep_rows(data, event)
+    data_events <- keep_rows(data, status == 1)
     data_qpts   <- rep_rows(data, times = qnodes)
     s_events    <- make_s(tdfm, data_events, times = t_events, xlevs = xlevs)
     s_qpts      <- make_s(tdfm, data_qpts,   times = qpts,     xlevs = xlevs)
@@ -474,8 +471,7 @@ stan_surv <- function(formula,
     nevents,
     nlcens   = if (has_quadrature) 0L else nlcens,
     nrcens   = if (has_quadrature) 0L else nrcens,
-    nicensl  = if (has_quadrature) 0L else nicens,
-    nicensu  = if (has_quadrature) 0L else nicens,
+    nicens   = if (has_quadrature) 0L else nicens,
     ndelayed = if (has_quadrature) 0L else ndelayed,
     qnodes,
     qrows,
@@ -490,8 +486,7 @@ stan_surv <- function(formula,
     x_events,
     x_lcens   = if (has_quadrature) matrix(0,0,K) else x_lcens,
     x_rcens   = if (has_quadrature) matrix(0,0,K) else x_rcens,
-    x_icensl  = if (has_quadrature) matrix(0,0,K) else x_icensl,
-    x_icensu  = if (has_quadrature) matrix(0,0,K) else x_icensu,
+    x_icens   = if (has_quadrature) matrix(0,0,K) else x_icens,
     x_delayed = if (has_quadrature) matrix(0,0,K) else x_delayed,
     x_qpts,
     x_qpts_delayed,
@@ -509,7 +504,10 @@ stan_surv <- function(formula,
     basis_qpts,
     basis_qpts_delayed,
     ibasis_events,
-    ibasis_censor,
+    ibasis_lcens,
+    ibasis_rcens,
+    ibasis_icensl,
+    ibasis_icensu,
     ibasis_delayed,
     type = basehaz$type,
     qwts,
@@ -688,14 +686,18 @@ stan_surv <- function(formula,
                x,
                s_events         = if (has_tde) s_events else NULL,
                t_beg, 
-               t_end, 
-               event, 
+               t_end,
+               status,
+               event            = as.logical(status == 1),
                delayed,
                basehaz,
                nobs             = nrow(mf),
-               nevents          = length(t_events),
-               ncensor          = length(t_censor),
-               ndelayed         = length(t_delayed),
+               nevents,
+               nlcens,
+               nrcens,
+               nicens,
+               ncensor          = nlcens + nrcens + nicens,
+               ndelayed,
                prior_info,
                qnodes           = if (has_quadrature) qnodes else NULL,
                algorithm,

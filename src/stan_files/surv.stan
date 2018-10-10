@@ -252,7 +252,7 @@ functions {
     m[K,K] = 1;
     return m;
   }
-  
+
   /**
   * Log-prior for tde spline coefficients and their smoothing parameters
   *
@@ -283,7 +283,7 @@ functions {
         target += exponential_lpdf(smooth_sd_raw | 1);
     }
   }
-  
+
   /**
   * Raise each element of x to the power of y
   *
@@ -294,11 +294,11 @@ functions {
   vector pow_vec(vector x, real y) {
     int N = rows(x);
     vector[N] res;
-    for (i in 1:N) 
+    for (n in 1:N)
       res[n] = pow(x[n], y);
     return res;
   }
-  
+
   /**
   * Log hazard, survival and CDF for exponential distribution
   *
@@ -309,25 +309,25 @@ functions {
   vector exponential_log_haz(vector eta) {
     return eta;
   }
-  
+
   vector exponential_log_cumhaz(vector eta, vector t) {
     vector[rows(eta)] res;
     res = log(t) + eta;
     return res;
   }
-  
+
   vector exponential_log_surv(vector eta, vector t) {
     vector[rows(eta)] res;
     res = - t .* exp(eta);
     return res;
   }
-  
+
   vector exponential_log_cdf(vector eta, vector t) {
     vector[rows(eta)] res;
     res = log(1 - exp(-t .* exp(eta)));
     return res;
   }
-  
+
   vector exponential_log_cdf2(vector eta, vector t_lower, vector t_upper) {
     int N = rows(eta);
     vector[N] exp_eta = exp(eta);
@@ -337,7 +337,7 @@ functions {
     res = log(surv_lower - surv_upper);
     return res;
   }
-  
+
   /**
   * Log hazard, survival and CDF for Weibull distribution
   *
@@ -345,31 +345,31 @@ functions {
   * @param t Vector, event or censoring times
   * @param shape Real, Weibull shape
   * @return nothing
-  */  
+  */
   vector weibull_log_haz(vector eta, vector t, real shape) {
     vector[rows(eta)] res;
     res = log(shape) + (shape - 1) * log(t) + eta;
     return res;
-  }   
-   
+  }
+
   vector weibull_log_cumhaz(vector eta, vector t, real shape) {
     vector[rows(eta)] res;
     res = shape * log(t) + eta;
     return res;
   }
-  
+
   vector weibull_log_surv(vector eta, vector t, real shape) {
     vector[rows(eta)] res;
     res = - pow_vec(t, shape) .* exp(eta);
     return res;
   }
-  
+
   vector weibull_log_cdf(vector eta, vector t, real shape) {
     vector[rows(eta)] res;
     res = log(1 - exp(- pow_vec(t, shape) .* exp(eta)));
     return res;
   }
-  
+
   vector weibull_log_cdf2(vector eta, vector t_lower, vector t_upper, real shape) {
     int N = rows(eta);
     vector[N] exp_eta = exp(eta);
@@ -379,7 +379,7 @@ functions {
     res = log(surv_lower - surv_upper);
     return res;
   }
-  
+
   /**
   * Log hazard, survival and CDF for M-spline model
   *
@@ -387,31 +387,31 @@ functions {
   * @param t Vector, event or censoring times
   * @param coefs Vector, M-spline coefficients
   * @return nothing
-  */    
+  */
   vector mspline_log_haz(vector eta, matrix basis, vector coefs) {
     vector[rows(eta)] res;
     res = log(basis * coefs) + eta;
     return res;
-  }   
-   
+  }
+
   vector mspline_log_cumhaz(vector eta, matrix ibasis, vector coefs) {
     vector[rows(eta)] res;
     res = log(ibasis * coefs) + eta;
     return res;
   }
-  
+
   vector mspline_log_surv(vector eta, matrix ibasis, vector coefs) {
     vector[rows(eta)] res;
     res = - (ibasis * coefs) .* exp(eta);
     return res;
   }
-  
+
   vector mspline_log_cdf(vector eta, matrix ibasis, vector coefs) {
     vector[rows(eta)] res;
     res = log(1 - exp(-(ibasis * coefs) .* exp(eta)));
     return res;
   }
-  
+
   vector mspline_log_cdf2(vector eta, matrix ibasis_lower, matrix ibasis_upper, vector coefs) {
     int N = rows(eta);
     vector[N] exp_eta = exp(eta);
@@ -421,7 +421,7 @@ functions {
     res = log(surv_lower - surv_upper);
     return res;
   }
-  
+
 }
 
 data {
@@ -571,7 +571,7 @@ transformed data {
 
   real sum_t_events = sum(t_events);         // sum of time of events
   real sum_log_t_events = sum(log_t_events); // sum of log time of events
-  
+
 }
 
 parameters {
@@ -592,8 +592,8 @@ parameters {
 
   // unscaled tde spline coefficients
   vector[S] z_beta_tde;
-	
-	// hyperparameter, the prior sd for the tde spline coefs
+
+  // hyperparameter, the prior sd for the tde spline coefs
   vector<lower=0>[S > 0 ? max(smooth_map) : 0] smooth_sd_raw;
 
   // parameters for priors
@@ -639,11 +639,11 @@ transformed parameters {
 model {
 
   if (prior_PD == 0) {
-  
+
     //-------- models without quadrature
-  
+
     if (has_quadrature == 0) {
-  
+
       vector[nevents]  eta_events;  // linear predictor for events
       vector[nlcens]   eta_lcens;   // linear predictor for left censored
       vector[nrcens]   eta_rcens;   // linear predictor for right censored
@@ -665,7 +665,7 @@ model {
         if (nicens   > 0) eta_icens   = rep_vector(0.0, nicens);
         if (ndelayed > 0) eta_delayed = rep_vector(0.0, ndelayed);
       }
-  
+
       // add intercept
       if (has_intercept == 1) {
         if (nevents  > 0) eta_events  = eta_events  + gamma[1];
@@ -674,7 +674,7 @@ model {
         if (nicens   > 0) eta_icens   = eta_icens   + gamma[1];
         if (ndelayed > 0) eta_delayed = eta_delayed + gamma[1];
       }
-  
+
       // evaluate log hazard and log survival
       if (type == 5) { // exponential model
         if (nevents  > 0) target +=  exponential_log_haz (eta_events);
@@ -709,20 +709,20 @@ model {
         reject("Bug found: invalid baseline hazard (without quadrature).");
       }
     }
-    
+
     //-------- models with quadrature
 
     else {
-  
+
       vector[nevents]  eta_events;       // linear pred at event times
       vector[qrows]    eta_qpts;         // linear pred at quadpoints
       vector[qdelayed] eta_qpts_delayed; // linear pred at quadpoints for entry times
-  
+
       real lsur  = 0;        // summation of log surv at event & censoring times
       real lsur_delayed = 0; // summation of log surv at entry times
-  
+
       real lhaz = 0; // summation of log hazard at event times
-  
+
       // linear predictor (time-fixed part)
       if (K > 0) {
         if (nevents > 0)
@@ -740,7 +740,7 @@ model {
         if (qdelayed > 0)
           eta_qpts_delayed = rep_vector(0.0, qdelayed);
       }
-  
+
       // add on time-varying part of linear predictor
       if (S > 0) {
         if (nevents > 0)
@@ -750,7 +750,7 @@ model {
         if (qdelayed > 0)
           eta_qpts_delayed = eta_qpts_delayed + s_qpts_delayed * beta_tde;
       }
-  
+
       // add intercept
       if (has_intercept == 1) {
         if (nevents > 0)
@@ -760,7 +760,7 @@ model {
         if (qdelayed > 0)
           eta_qpts_delayed = eta_qpts_delayed + gamma[1];
       }
-  
+
       // evaluate log hazard and log survival
       if (type == 5) { // exponential model
         if (nevents > 0) {
@@ -838,7 +838,8 @@ model {
       else {
         reject("Bug found: invalid baseline hazard (with quadrature).");
       }
-      
+    }
+
   }
 
   //-------- log priors
@@ -862,7 +863,7 @@ model {
 
   // log priors for tde spline coefficients and their smoothing parameters
   if (S > 0) {
-    smooth_lp(z_beta_tde, smooth_idx, smooth_sd_raw, 
+    smooth_lp(z_beta_tde, smooth_idx, smooth_sd_raw,
               prior_dist_for_smooth, prior_df_for_smooth);
   }
 

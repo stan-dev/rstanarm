@@ -2194,10 +2194,10 @@ safe_deparse <- function(expr) deparse(expr, 500L)
 eval_string <- function(x) eval(parse(text = x))
 
 # Mutate, similar to dplyr (ie. append a new variable(s) to the data frame)
-mutate <- function(x, ..., names_eval = FALSE) {
+mutate <- function(x, ..., names_eval = FALSE, n = 4) {
   dots <- list(...)
   if (names_eval) { # evaluate names in parent frame
-    nms <- sapply(names(dots), function(x) eval.parent(as.name(x)))
+    nms <- sapply(names(dots), function(x) eval.parent(as.name(x), n = n))
   } else {
     nms <- names(dots)
   }
@@ -2205,7 +2205,7 @@ mutate <- function(x, ..., names_eval = FALSE) {
     x[[nms[[i]]]] <- dots[[i]]
   x
 }
-mutate_ <- function(x, ...) mutate(x, ..., names_eval = TRUE)
+mutate_ <- function(x, ...) mutate(x, ..., names_eval = TRUE, n = 5)
 
 # Sort the rows of a data frame based on the variables specified in dots.
 # (For convenience, any variables in ... that are not in the data frame
