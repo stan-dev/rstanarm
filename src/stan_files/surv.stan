@@ -838,6 +838,9 @@ model {
       else {
         reject("Bug found: invalid baseline hazard (with quadrature).");
       }
+
+      // increment target
+      target += lhaz + lsur - lsur_delayed;
     }
 
   }
