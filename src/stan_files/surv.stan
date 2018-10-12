@@ -606,7 +606,7 @@ transformed parameters {
   // define tde spline coefficients using random walk
   if (S > 0) {
     smooth_sd = smooth_sd_raw .* prior_scale_for_smooth + prior_mean_for_smooth;
-    for (i in 1:max(smooth)) {
+    for (i in 1:max(smooth_map)) {
       int beg = smooth_idx[i,1];        // index of first spline coef
       int end = smooth_idx[i,2];        // index of last  spline coef
       beta_tde[beg] = z_beta_tde[beg];  // define first spline coef
