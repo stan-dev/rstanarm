@@ -235,25 +235,6 @@ functions {
   }
 
   /**
-  * Return a second order penalty matrix
-  *
-  * @param K Integer specifying the number of rows in the penalty matrix
-  * @return A square matrix
-  */
-  matrix penalty_matrix(int K) {
-    matrix[K,K] m;
-    for (r in 1:K) {
-      for (c in 1:K) {
-        int diff = abs(r - c);
-        m[r,c] = (diff == 0) ? 2 : ((diff == 1) ? -1 : 0);
-      }
-    }
-    m[1,1] = 1;
-    m[K,K] = 1;
-    return m;
-  }
-
-  /**
   * Log-prior for tde spline coefficients and their smoothing parameters
   *
   * @param z_beta_tde Vector of unscaled spline coefficients
