@@ -245,15 +245,8 @@ functions {
   *   for the smoothing sds
   * @return nothing
   */
-  void smooth_lp(vector z_beta_tde, int[,] smooth_idx,
-                 vector smooth_sd_raw, int dist, vector df) {
-    int J = size(smooth_idx);
-    for (j in 1:J) {
-      int K = smooth_idx[j,2] - smooth_idx[j,1] + 1;
-      vector[K] z_beta_tde_tmp = z_beta_tde[smooth_idx[j,1]:smooth_idx[j,2]];
-      matrix[K,K] mat = crossprod(penalty_matrix(K)) + diag_matrix(rep_vector(1e-6,K));
-      target += multi_normal_prec_lpdf(z_beta_tde_tmp | rep_vector(0.0,K), mat);
-    }
+  void smooth_lp(vector z_beta_tde, vector smooth_sd_raw, int dist, vector df) {
+    target += normal_lpdf(z_beta_tde | 0, 1);
     if (dist > 0) {
       real log_half = -0.693147180559945286;
       if (dist == 1)
@@ -610,11 +603,21 @@ transformed parameters {
     coefs = z_coefs .* prior_scale_for_aux;
   }
 
-  // define tde spline coefficients
+  // define tde spline coefficients using random walk
   if (S > 0) {
     smooth_sd = smooth_sd_raw .* prior_scale_for_smooth + prior_mean_for_smooth;
-    beta_tde = z_beta_tde .* smooth_sd[smooth_map];
+    for (i in 1:max(smooth)) {
+      int beg = smooth_idx[i,1];        // index of first spline coef
+      int end = smooth_idx[i,2];        // index of last  spline coef
+      beta_tde[beg] = z_beta_tde[beg];  // define first spline coef
+      if (end > beg) {                  // define subsequent spline coefs
+        for (j in (beg+1):end) { 
+          beta_tde[j] = beta_tde[j-1] + z_beta_tde[j] * smooth_sd[smooth_map[j]];
+        }        
+      }
+    }
   }
+  
 }
 
 model {
@@ -847,8 +850,7 @@ model {
 
   // log priors for tde spline coefficients and their smoothing parameters
   if (S > 0) {
-    smooth_lp(z_beta_tde, smooth_idx, smooth_sd_raw,
-              prior_dist_for_smooth, prior_df_for_smooth);
+    smooth_lp(z_beta_tde, smooth_sd_raw, prior_dist_for_smooth, prior_df_for_smooth);
   }
 
 }
