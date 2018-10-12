@@ -4,6 +4,8 @@
 
 functions {
 
+#include /functions/hazard_functions.stan
+
   /**
    * Hierarchical shrinkage parameterization
    *
@@ -274,22 +276,12 @@ functions {
   }
 
   /**
-  * Log hazard, survival and CDF for exponential distribution
+  * Log survival and log CDF for exponential distribution
   *
   * @param eta Vector, linear predictor
   * @param t Vector, event or censoring times
-  * @return nothing
+  * @return A vector
   */
-  vector exponential_log_haz(vector eta) {
-    return eta;
-  }
-
-  vector exponential_log_cumhaz(vector eta, vector t) {
-    vector[rows(eta)] res;
-    res = log(t) + eta;
-    return res;
-  }
-
   vector exponential_log_surv(vector eta, vector t) {
     vector[rows(eta)] res;
     res = - t .* exp(eta);
@@ -313,25 +305,13 @@ functions {
   }
 
   /**
-  * Log hazard, survival and CDF for Weibull distribution
+  * Log survival and log CDF for Weibull distribution
   *
   * @param eta Vector, linear predictor
   * @param t Vector, event or censoring times
   * @param shape Real, Weibull shape
-  * @return nothing
+  * @return A vector
   */
-  vector weibull_log_haz(vector eta, vector t, real shape) {
-    vector[rows(eta)] res;
-    res = log(shape) + (shape - 1) * log(t) + eta;
-    return res;
-  }
-
-  vector weibull_log_cumhaz(vector eta, vector t, real shape) {
-    vector[rows(eta)] res;
-    res = shape * log(t) + eta;
-    return res;
-  }
-
   vector weibull_log_surv(vector eta, vector t, real shape) {
     vector[rows(eta)] res;
     res = - pow_vec(t, shape) .* exp(eta);
@@ -355,25 +335,13 @@ functions {
   }
 
   /**
-  * Log hazard, survival and CDF for M-spline model
+  * Log survival and log CDF for M-spline model
   *
   * @param eta Vector, linear predictor
   * @param t Vector, event or censoring times
   * @param coefs Vector, M-spline coefficients
-  * @return nothing
+  * @return A vector
   */
-  vector mspline_log_haz(vector eta, matrix basis, vector coefs) {
-    vector[rows(eta)] res;
-    res = log(basis * coefs) + eta;
-    return res;
-  }
-
-  vector mspline_log_cumhaz(vector eta, matrix ibasis, vector coefs) {
-    vector[rows(eta)] res;
-    res = log(ibasis * coefs) + eta;
-    return res;
-  }
-
   vector mspline_log_surv(vector eta, matrix ibasis, vector coefs) {
     vector[rows(eta)] res;
     res = - (ibasis * coefs) .* exp(eta);
@@ -403,64 +371,59 @@ data {
   // dimensions
   int<lower=0> K;          // num. cols in predictor matrix (time-fixed)
   int<lower=0> S;          // num. cols in predictor matrix (time-varying)
-  int<lower=0> nevents;    // num. rows w/ an event (ie. not censored)
+  int<lower=0> nevent;     // num. rows w/ an event (ie. not censored)
   int<lower=0> nlcens;     // num. rows w/ left censoring
   int<lower=0> nrcens;     // num. rows w/ right censoring
   int<lower=0> nicens;     // num. rows w/ interval censoring
-  int<lower=0> ndelayed;   // num. rows w/ delayed entry
+  int<lower=0> ndelay;     // num. rows w/ delayed entry
   int<lower=0> qnodes;     // num. nodes for GK quadrature
-  int<lower=0> qrows;      // num. rows used for quadrature
-  int<lower=0> qdelayed;   // num. rows used for quadrature for delayed entry
+  int<lower=0> qevent;     // num. quadrature points for rows w/ an event
+  int<lower=0> qlcens;     // num. quadrature points for rows w/ left censoring
+  int<lower=0> qrcens;     // num. quadrature points for rows w/ right censoring
+  int<lower=0> qicens;     // num. quadrature points for rows w/ interval censoring
+  int<lower=0> qdelay;     // num. quadrature points for rows w/ delayed entry
   int<lower=0> nvars;      // num. aux parameters for baseline hazard
   int<lower=1> smooth_map[S]; // indexing of smooth sds for tde spline coefs
   int<lower=0> smooth_idx[S > 0 ? max(smooth_map) : 0, 2];
-
+  int<lower=0> len_cpts;
+	matrix<lower=0>[7,2] idx_cpts;
+	
   // response and time variables
-  vector[nevents]  t_events;     // time of events
-  vector[nlcens]   t_lcens;      // time of left censoring
-  vector[nrcens]   t_rcens;      // time of right censoring
-  vector[nicens]   t_icensl;     // time of lower limit for interval censoring
-  vector[nicens]   t_icensu;     // time of upper limit for interval censoring
-  vector[ndelayed] t_delayed;    // time of entry for delayed entry
-  vector[qrows]    qpts;         // time at quadpoints
-  vector[qdelayed] qpts_delayed; // time at quadpoints for delayed entry
+  vector[nevent] t_event;  // time of events
+  vector[nlcens] t_lcens;  // time of left censoring
+  vector[nrcens] t_rcens;  // time of right censoring
+  vector[nicens] t_icenl;  // time of lower limit for interval censoring
+  vector[nicens] t_icenu;  // time of upper limit for interval censoring
+  vector[ndelay] t_delay;  // time of entry for delayed entry
+  vector[len_cpts] cpts;   // time at events and all quadrature points
 
   // predictor matrices (time-fixed)
-  matrix[nevents, K] x_events;       // for rows with events
-  matrix[nlcens,  K] x_lcens;        // for rows with left censoring
-  matrix[nrcens,  K] x_rcens;        // for rows with right censoring
-  matrix[nicens,  K] x_icens;        // for rows with interval censoring
-  matrix[ndelayed,K] x_delayed;      // for rows with delayed entry
-  matrix[qrows,K]    x_qpts;         // for rows at quadpoints
-  matrix[qdelayed,K] x_qpts_delayed; // for rows at quadpoints for delayed entry
+  matrix[nevent,K] x_event; // for rows with events
+  matrix[nlcens,K] x_lcens; // for rows with left censoring
+  matrix[nrcens,K] x_rcens; // for rows with right censoring
+  matrix[nicens,K] x_icens; // for rows with interval censoring
+  matrix[ndelay,K] x_delay; // for rows with delayed entry
+  matrix[len_cpts,K] x_cpts; // for rows at events and all quadrature points
 
   // predictor matrices (time-varying)
-  matrix[nevents,S]  s_events;       // for rows with events
-  matrix[qrows,S]    s_qpts;         // for rows at quadpoints
-  matrix[qdelayed,S] s_qpts_delayed; // for rows at quadpoints for delayed entry
+  matrix[len_cpts,S] s_cpts; // for rows at events and all quadrature points
 
-  // design matrices for baseline hazard
-  matrix[nevents, nvars] basis_events;       // spline basis for rows with events
-  matrix[nlcens,  nvars] basis_lcens;        // spline basis for rows with left censoring
-  matrix[nrcens,  nvars] basis_rcens;        // spline basis for rows with right censoring
-  matrix[nicens,  nvars] basis_icensl;       // spline basis for at lower limit of interval censoring
-  matrix[nicens,  nvars] basis_icensu;       // spline basis for at upper limit of interval censoring
-  matrix[ndelayed,nvars] basis_delayed;      // spline basis for rows with delayed entry
-  matrix[qrows,   nvars] basis_qpts;         // spline basis for rows at quadpoints
-  matrix[qdelayed,nvars] basis_qpts_delayed; // spline basis for rows at quadpoints
-                                             //   for delayed entry
-  matrix[nevents, nvars] ibasis_events;      // integral of spline basis for rows with
-                                             //   events; only used for M-splines
-  matrix[nlcens,  nvars] ibasis_lcens;       // integral of spline basis for rows with
-                                             //   left censoring; only used for M-splines
-  matrix[nrcens,  nvars] ibasis_rcens;       // integral of spline basis for rows with
-                                             //   left censoring; only used for M-splines
-  matrix[nicens,  nvars] ibasis_icensl;      // integral of spline basis at lower limit of
-                                             //   interval censoring; only used for M-splines
-  matrix[nicens,  nvars] ibasis_icensu;      // integral of spline basis at upper limit of
-                                             //   interval censoring; only used for M-splines
-  matrix[ndelayed,nvars] ibasis_delayed;     // integral of spline basis for rows with
-                                             //   delayed entry; only used for M-splines
+  // basis matrices for M-splines
+  matrix[nevent,nvars] basis_event; // at event time
+  matrix[nlcens,nvars] basis_lcens; // at left  censoring time
+  matrix[nrcens,nvars] basis_rcens; // at right censoring time
+  matrix[nicens,nvars] basis_icenl; // at lower limit of interval censoring
+  matrix[nicens,nvars] basis_icenu; // at upper limit of interval censoring
+  matrix[ndelay,nvars] basis_delay; // at delayed entry time
+  matrix[len_cpts,nvars] basis;     // at event times and all quadrature points
+
+  // basis matrices for I-splines
+  matrix[nevent,nvars] ibasis_event; // at event time
+  matrix[nlcens,nvars] ibasis_lcens; // at left  censoring time
+  matrix[nrcens,nvars] ibasis_rcens; // at right censoring time
+  matrix[nicens,nvars] ibasis_icenl; // at lower limit of interval censoring
+  matrix[nicens,nvars] ibasis_icenu; // at upper limit of interval censoring
+  matrix[ndelay,nvars] ibasis_delay; // at delayed entry time
 
   // baseline hazard type:
   //   1 = weibull
@@ -472,8 +435,12 @@ data {
   int<lower=1,upper=7> type;
 
   // GK quadrature weights, with (b-a)/2 scaling already incorporated
-  vector[qrows]    qwts;
-  vector[qdelayed] qwts_delayed;
+  vector[qevent] qwts_event;
+  vector[qlcens] qwts_lcens;
+  vector[qrcens] qwts_rcens;
+  vector[qicens] qwts_icenl;
+  vector[qicens] qwts_icenu;
+  vector[qdelay] qwts_delay;
 
   // flags
   int<lower=0,upper=1> has_quadrature;// log surv is calculated using quadrature
@@ -536,15 +503,8 @@ data {
 }
 
 transformed data {
+
   int<lower=0> hs = get_nvars_for_hs(prior_dist);
-
-  vector[nevents]  log_t_events     = log(t_events);     // log time at event
-  vector[qrows]    log_qpts         = log(qpts);         // log time at qpts
-  vector[qdelayed] log_qpts_delayed = log(qpts_delayed); // log time at qpts
-                                                         // for delayed entry
-
-  real sum_t_events = sum(t_events);         // sum of time of events
-  real sum_log_t_events = sum(log_t_events); // sum of log time of events
 
 }
 
@@ -611,13 +571,13 @@ transformed parameters {
       int end = smooth_idx[i,2];        // index of last  spline coef
       beta_tde[beg] = z_beta_tde[beg];  // define first spline coef
       if (end > beg) {                  // define subsequent spline coefs
-        for (j in (beg+1):end) { 
+        for (j in (beg+1):end) {
           beta_tde[j] = beta_tde[j-1] + z_beta_tde[j] * smooth_sd[smooth_map[j]];
-        }        
+        }
       }
     }
   }
-  
+
 }
 
 model {
@@ -628,66 +588,66 @@ model {
 
     if (has_quadrature == 0) {
 
-      vector[nevents]  eta_events;  // linear predictor for events
-      vector[nlcens]   eta_lcens;   // linear predictor for left censored
-      vector[nrcens]   eta_rcens;   // linear predictor for right censored
-      vector[nicens]   eta_icens;   // linear predictor for interval censored
-      vector[ndelayed] eta_delayed; // linear predictor for delayed entry
+      vector[nevent] eta_event; // linear predictor for events
+      vector[nlcens] eta_lcens; // linear predictor for left censored
+      vector[nrcens] eta_rcens; // linear predictor for right censored
+      vector[nicens] eta_icens; // linear predictor for interval censored
+      vector[ndelay] eta_delay; // linear predictor for delayed entry
 
       // linear predictor
       if (K > 0) {
-        if (nevents  > 0) eta_events  = x_events  * beta;
-        if (nlcens   > 0) eta_lcens   = x_lcens   * beta;
-        if (nrcens   > 0) eta_rcens   = x_rcens   * beta;
-        if (nicens   > 0) eta_icens   = x_icens   * beta;
-        if (ndelayed > 0) eta_delayed = x_delayed * beta;
+        if (nevent > 0) eta_event = x_event * beta;
+        if (nlcens > 0) eta_lcens = x_lcens * beta;
+        if (nrcens > 0) eta_rcens = x_rcens * beta;
+        if (nicens > 0) eta_icens = x_icens * beta;
+        if (ndelay > 0) eta_delay = x_delay * beta;
       }
       else {
-        if (nevents  > 0) eta_events  = rep_vector(0.0, nevents);
-        if (nlcens   > 0) eta_lcens   = rep_vector(0.0, nlcens);
-        if (nrcens   > 0) eta_rcens   = rep_vector(0.0, nrcens);
-        if (nicens   > 0) eta_icens   = rep_vector(0.0, nicens);
-        if (ndelayed > 0) eta_delayed = rep_vector(0.0, ndelayed);
+        if (nevent > 0) eta_event = rep_vector(0.0, nevent);
+        if (nlcens > 0) eta_lcens = rep_vector(0.0, nlcens);
+        if (nrcens > 0) eta_rcens = rep_vector(0.0, nrcens);
+        if (nicens > 0) eta_icens = rep_vector(0.0, nicens);
+        if (ndelay > 0) eta_delay = rep_vector(0.0, ndelay);
       }
 
       // add intercept
       if (has_intercept == 1) {
-        if (nevents  > 0) eta_events  = eta_events  + gamma[1];
-        if (nlcens   > 0) eta_lcens   = eta_lcens   + gamma[1];
-        if (nrcens   > 0) eta_rcens   = eta_rcens   + gamma[1];
-        if (nicens   > 0) eta_icens   = eta_icens   + gamma[1];
-        if (ndelayed > 0) eta_delayed = eta_delayed + gamma[1];
+        if (nevent > 0) eta_event = eta_event + gamma[1];
+        if (nlcens > 0) eta_lcens = eta_lcens + gamma[1];
+        if (nrcens > 0) eta_rcens = eta_rcens + gamma[1];
+        if (nicens > 0) eta_icens = eta_icens + gamma[1];
+        if (ndelay > 0) eta_delay = eta_delay + gamma[1];
       }
 
       // evaluate log hazard and log survival
       if (type == 5) { // exponential model
-        if (nevents  > 0) target +=  exponential_log_haz (eta_events);
-        if (nevents  > 0) target +=  exponential_log_surv(eta_events,  t_events);
-        if (nlcens   > 0) target +=  exponential_log_cdf (eta_lcens,   t_lcens);
-        if (nrcens   > 0) target +=  exponential_log_surv(eta_rcens,   t_rcens);
-        if (nicens   > 0) target +=  exponential_log_cdf2(eta_icens ,  t_icensl, t_icensu);
-        if (ndelayed > 0) target += -exponential_log_surv(eta_delayed, t_delayed);
+        if (nevent > 0) target +=  exponential_log_haz (eta_event);
+        if (nevent > 0) target +=  exponential_log_surv(eta_event, t_event);
+        if (nlcens > 0) target +=  exponential_log_cdf (eta_lcens, t_lcens);
+        if (nrcens > 0) target +=  exponential_log_surv(eta_rcens, t_rcens);
+        if (nicens > 0) target +=  exponential_log_cdf2(eta_icens, t_icenl, t_icenu);
+        if (ndelay > 0) target += -exponential_log_surv(eta_delay, t_delay);
       }
       else if (type == 1) { // weibull model
         real shape = coefs[1];
-        if (nevents  > 0) target +=  weibull_log_haz (eta_events,  t_events, shape);
-        if (nevents  > 0) target +=  weibull_log_surv(eta_events,  t_events, shape);
-        if (nlcens   > 0) target +=  weibull_log_cdf (eta_lcens,   t_lcens,  shape);
-        if (nrcens   > 0) target +=  weibull_log_surv(eta_rcens,   t_rcens,  shape);
-        if (nicens   > 0) target +=  weibull_log_cdf2(eta_icens,   t_icensl, t_icensu, shape);
-        if (ndelayed > 0) target += -weibull_log_surv(eta_delayed, t_delayed, shape);
+        if (nevent > 0) target +=  weibull_log_haz (eta_event, t_event, shape);
+        if (nevent > 0) target +=  weibull_log_surv(eta_event, t_event, shape);
+        if (nlcens > 0) target +=  weibull_log_cdf (eta_lcens, t_lcens, shape);
+        if (nrcens > 0) target +=  weibull_log_surv(eta_rcens, t_rcens, shape);
+        if (nicens > 0) target +=  weibull_log_cdf2(eta_icens, t_icenl, t_icenu, shape);
+        if (ndelay > 0) target += -weibull_log_surv(eta_delay, t_delay, shape);
       }
       else if (type == 6) { // gompertz model
         real scale = coefs[1];
         reject("Gompertz temporarily removed.");
       }
       else if (type == 4) { // M-splines, on haz scale
-        if (nevents  > 0) target +=  mspline_log_haz (eta_events,  basis_events, coefs);
-        if (nevents  > 0) target +=  mspline_log_surv(eta_events,  ibasis_events, coefs);
-        if (nlcens   > 0) target +=  mspline_log_cdf (eta_lcens,   ibasis_lcens,  coefs);
-        if (nrcens   > 0) target +=  mspline_log_surv(eta_rcens,   ibasis_rcens,  coefs);
-        if (nicens   > 0) target +=  mspline_log_cdf2(eta_icens,   ibasis_icensl, ibasis_icensu, coefs);
-        if (ndelayed > 0) target += -mspline_log_surv(eta_delayed, ibasis_delayed, coefs);
+        if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, coefs);
+        if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, coefs);
+        if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, coefs);
+        if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, coefs);
+        if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, coefs);
+        if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, coefs);
       }
       else {
         reject("Bug found: invalid baseline hazard (without quadrature).");
@@ -698,133 +658,75 @@ model {
 
     else {
 
-      vector[nevents]  eta_events;       // linear pred at event times
-      vector[qrows]    eta_qpts;         // linear pred at quadpoints
-      vector[qdelayed] eta_qpts_delayed; // linear pred at quadpoints for entry times
+      vector[len_cpts] eta;  // linear predictor at event and quadrature times
+      vector[len_cpts] lhaz; // log hazard       at event and quadrature times
 
-      real lsur  = 0;        // summation of log surv at event & censoring times
-      real lsur_delayed = 0; // summation of log surv at entry times
-
-      real lhaz = 0; // summation of log hazard at event times
+      vector[nevent] lhaz_epts_event;
+      vector[qevent] lhaz_qpts_event;
+      vector[qlcens] lhaz_qpts_lcens;
+      vector[qrcens] lhaz_qpts_rcens;
+      vector[qicens] lhaz_qpts_icenl;
+      vector[qicens] lhaz_qpts_icenu;
+      vector[qdelay] lhaz_qpts_delay;
 
       // linear predictor (time-fixed part)
       if (K > 0) {
-        if (nevents > 0)
-          eta_events = x_events * beta;
-        if (qrows > 0)
-          eta_qpts = x_qpts * beta;
-        if (qdelayed > 0)
-          eta_qpts_delayed = x_qpts_delayed * beta;
+        eta = x * beta;
       }
       else {
-        if (nevents > 0)
-          eta_events = rep_vector(0.0, nevents);
-        if (qrows > 0)
-          eta_qpts = rep_vector(0.0, qrows);
-        if (qdelayed > 0)
-          eta_qpts_delayed = rep_vector(0.0, qdelayed);
+        eta = rep_vector(0.0, len_cpts);
       }
 
-      // add on time-varying part of linear predictor
+      // linear predictor (time-varying part)
       if (S > 0) {
-        if (nevents > 0)
-          eta_events = eta_events + s_events * beta_tde;
-        if (qrows > 0)
-          eta_qpts = eta_qpts + s_qpts * beta_tde;
-        if (qdelayed > 0)
-          eta_qpts_delayed = eta_qpts_delayed + s_qpts_delayed * beta_tde;
+        eta = s * beta_tde;
       }
 
       // add intercept
       if (has_intercept == 1) {
-        if (nevents > 0)
-          eta_events = eta_events + gamma[1];
-        if (qrows > 0)
-          eta_qpts = eta_qpts + gamma[1];
-        if (qdelayed > 0)
-          eta_qpts_delayed = eta_qpts_delayed + gamma[1];
+        eta = eta + gamma[1];
       }
 
-      // evaluate log hazard and log survival
-      if (type == 5) { // exponential model
-        if (nevents > 0) {
-          lhaz = sum(eta_events);
-        }
-        if (qrows > 0) {
-          lsur = - dot_product(qwts, exp(eta_qpts));
-        }
-        if (qdelayed > 0) {
-          lsur_delayed = - dot_product(qwts_delayed, exp(eta_qpts_delayed));
-        }
+      // evaluate log hazard
+      if (basehaz_type == 5) { // exponential model
+        lhaz = exponential_log_haz(eta);
       }
-      else if (type == 1) { // weibull model
+      else if (basehaz_type == 1) { // weibull model
         real shape = coefs[1];
-        real log_shape = log(shape);
-        if (nevents > 0) {
-          lhaz = (nevents * log_shape) + (shape - 1) * sum_log_t_events + sum(eta_events);
-        }
-        if (qrows > 0) {
-          vector[qrows] lhaz_qpts;
-          lhaz_qpts = log_shape + (shape - 1) * log_qpts + eta_qpts;
-          lsur = - dot_product(qwts, exp(lhaz_qpts));
-        }
-        if (qdelayed > 0) {
-          vector[qdelayed] lhaz_qpts_delayed;
-          lhaz_qpts_delayed = log_shape + (shape - 1) * log_qpts_delayed + eta_qpts_delayed;
-          lsur_delayed = - dot_product(qwts_delayed, exp(lhaz_qpts_delayed));
-        }
+        lhaz = weibull_log_haz(eta, cpts, shape);
       }
-      else if (type == 6) { // gompertz model
+      else if (basehaz_type == 6) { // gompertz model
         real scale = coefs[1];
-        if (nevents > 0) {
-          lhaz = scale * sum_t_events + sum(eta_events);
-        }
-        if (qrows > 0) {
-          vector[qrows] lhaz_qpts;
-          lhaz_qpts = scale * qpts + eta_qpts;
-          lsur = - dot_product(qwts, exp(lhaz_qpts));
-        }
-        if (qdelayed > 0) {
-          vector[qdelayed] lhaz_qpts_delayed;
-          lhaz_qpts_delayed = scale * qpts_delayed + eta_qpts_delayed;
-          lsur_delayed = - dot_product(qwts_delayed, exp(lhaz_qpts_delayed));
-        }
+        lhaz = weibull_log_haz(eta, cpts, scale);
       }
-      else if (type == 4) { // M-splines, on haz scale
-        if (nevents > 0)
-          lhaz = sum(log(basis_events * coefs) + eta_events);
-        if (qrows > 0) {
-          vector[qrows] lhaz_qpts;
-          lhaz_qpts = log(basis_qpts * coefs) + eta_qpts;
-          lsur = - dot_product(qwts, exp(lhaz_qpts));
-        }
-        if (qdelayed > 0) {
-          vector[qdelayed] lhaz_qpts_delayed;
-          lhaz_qpts_delayed = log(basis_qpts_delayed * coefs) + eta_qpts_delayed;
-          lsur_delayed = - dot_product(qwts_delayed, exp(lhaz_qpts_delayed));
-        }
+      else if (basehaz_type == 4) { // M-splines, on haz scale
+        lhaz = mspline_log_haz(eta, basis, coefs);
       }
-      else if (type == 2) { // B-splines, on log haz scale
-        if (nevents > 0) {
-          lhaz = sum(basis_events * coefs + eta_events);
-        }
-        if (qrows > 0) {
-          vector[qrows] lhaz_qpts;
-          lhaz_qpts = basis_qpts * coefs + eta_qpts;
-          lsur = - dot_product(qwts, exp(lhaz_qpts));
-        }
-        if (qdelayed > 0) {
-          vector[qdelayed] lhaz_qpts_delayed;
-          lhaz_qpts_delayed = basis_qpts_delayed * coefs + eta_qpts_delayed;
-          lsur_delayed = - dot_product(qwts_delayed, exp(lhaz_qpts_delayed));
-        }
+      else if (basehaz_type == 2) { // B-splines, on log haz scale
+        lhaz = bspline_log_haz(eta, basis, coefs);
       }
       else {
         reject("Bug found: invalid baseline hazard (with quadrature).");
       }
 
-      // increment target
-      target += lhaz + lsur - lsur_delayed;
+      // split log hazard vector based on event types
+      if (nevent > 0) lhaz_epts_event = lhaz[idx_cpts[1,1]:idx_cpts[1,2]];
+      if (nevent > 0) lhaz_qpts_event = lhaz[idx_cpts[2,1]:idx_cpts[2,2]];
+      if (nlcens > 0) lhaz_qpts_lcens = lhaz[idx_cpts[3,1]:idx_cpts[3,2]];
+      if (nrcens > 0) lhaz_qpts_rcens = lhaz[idx_cpts[4,1]:idx_cpts[4,2]];
+      if (nicens > 0) lhaz_qpts_icenl = lhaz[idx_cpts[5,1]:idx_cpts[5,2]];
+      if (nicens > 0) lhaz_qpts_icenu = lhaz[idx_cpts[6,1]:idx_cpts[6,2]];
+      if (ndelay > 0) lhaz_qpts_delay = lhaz[idx_cpts[7,1]:idx_cpts[7,2]];
+
+      // increment target with log-lik contributions for event submodel
+      if (nevent > 0) target +=  lhaz_epts_event;
+      if (nevent > 0) target +=  quadrature_log_surv(qwts_event, lhaz_qpts_event);
+      if (nlcens > 0) target +=  quadrature_log_cdf (qwts_lcens, lhaz_qpts_lcens, qnodes);
+      if (nrcens > 0) target +=  quadrature_log_surv(qwts_rcens, lhaz_qpts_rcens);
+      if (nicens > 0) target +=  quadrature_log_cdf2(qwts_icenl, lhaz_qpts_icenl,
+                                                     qwts_icenu, lhaz_qpts_icenu, qnodes);
+      if (ndelay > 0) target += -quadrature_log_surv(qwts_delay, lhaz_qpts_delay);
+
     }
 
   }

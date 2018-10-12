@@ -10,6 +10,7 @@ functions {
 #include /functions/continuous_likelihoods.stan
 #include /functions/count_likelihoods.stan
 #include /functions/mvmer_functions.stan
+#include /functions/hazard_functions.stan
 #include /functions/jm_functions.stan
 }
 data {
