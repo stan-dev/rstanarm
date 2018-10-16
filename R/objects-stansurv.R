@@ -67,7 +67,7 @@ stansurv <- function(object) {
     model_data    = object$model_data,
     model_frame   = object$model_frame,
     x             = object$x,
-    s_events      = object$s_events,
+    s_cpts        = object$s_cpts,
     entrytime     = object$t_beg, 
     exittime      = object$t_end, 
     event         = object$event,      

@@ -73,9 +73,9 @@
   * @param qnodes Integer, the number of quadrature points for each individual
   * @return A vector
   */
-  vector quadrature_log_surv(vector qwts, vector log_hazard) {
-    vector[rows(log_hazard)] res;
-    res = - dot_product(qwts, exp(log_hazard));
+  real quadrature_log_surv(vector qwts, vector log_hazard) {
+    real res;
+    res = - dot_product(qwts, exp(log_hazard)); // sum across all individuals
     return res;
   }
 
@@ -84,8 +84,9 @@
     int N = M / qnodes; // num of individuals
     vector[M] hazard = exp(log_hazard);
     matrix[N,qnodes] qwts_mat = to_matrix(qwts,   N, qnodes);
-    matrix[N,qnodes] haz_mat  = to_matrix(hazard, N, qnodes)
+    matrix[N,qnodes] haz_mat  = to_matrix(hazard, N, qnodes);
     vector[N] chaz = rows_dot_product(qwts_mat, haz_mat);
+    vector[N] res;
     res = log(1 - exp(- chaz));
     return res;
   }
@@ -99,12 +100,13 @@
     vector[M] hazard_upper = exp(log_hazard_upper);
     matrix[N,qnodes] qwts_lower_mat = to_matrix(qwts_lower,   N, qnodes);
     matrix[N,qnodes] qwts_upper_mat = to_matrix(qwts_lower,   N, qnodes);
-    matrix[N,qnodes] haz_lower_mat  = to_matrix(hazard_lower, N, qnodes)
-    matrix[N,qnodes] haz_upper_mat  = to_matrix(hazard_upper, N, qnodes)
+    matrix[N,qnodes] haz_lower_mat  = to_matrix(hazard_lower, N, qnodes);
+    matrix[N,qnodes] haz_upper_mat  = to_matrix(hazard_upper, N, qnodes);
     vector[N] chaz_lower = rows_dot_product(qwts_lower_mat, haz_lower_mat);
     vector[N] chaz_upper = rows_dot_product(qwts_upper_mat, haz_upper_mat);
     vector[N] surv_lower = exp(- chaz_lower);
     vector[N] surv_upper = exp(- chaz_upper);
+    vector[N] res;
     res = log(surv_lower - surv_upper);
     return res;
   }

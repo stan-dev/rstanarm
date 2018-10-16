@@ -564,36 +564,32 @@ stan_jm.fit <- function(formulaLong          = NULL,
     
     # dimensions
     standata$e_K              <- ai(e_mod$K)
-    standata$nevents          <- ai(e_mod$nevents)
-    #standata$Npat             <- ai(e_mod$Npat)
-    #standata$Nevents          <- ai(e_mod$Nevents)
+    standata$nevent           <- ai(e_mod$nevent)
+    standata$qevent           <- ai(e_mod$qevent)
+    standata$qlcens           <- ai(e_mod$qlcens)
+    standata$qrcens           <- ai(e_mod$qrcens)
+    standata$qicens           <- ai(e_mod$qicens)
+    standata$qdelay           <- ai(e_mod$qdelay)
     standata$qnodes           <- ai(e_mod$qnodes)
     standata$len_cpts         <- ai(e_mod$len_cpts)
-    standata$len_epts         <- ai(e_mod$len_epts)
-    standata$len_qpts         <- ai(e_mod$len_qpts)
-    standata$len_ipts         <- ai(e_mod$len_ipts)
     standata$idx_cpts         <- am(e_mod$idx_cpts)
     standata$e_has_intercept  <- ai(e_mod$has_intercept)
     
     # design matrices
     standata$cpts             <- aa(e_mod$cpts)
-    standata$epts             <- aa(e_mod$epts)
-    standata$qpts             <- aa(e_mod$qpts)
-    standata$ipts             <- aa(e_mod$ipts)
-    standata$qwts             <- aa(e_mod$qwts)
-    standata$iwts             <- aa(e_mod$iwts)
-    standata$eids             <- aa(e_mod$eids)
-    standata$qids             <- aa(e_mod$qids)
-    standata$iids             <- aa(e_mod$iids)
+    standata$qwts_event       <- aa(e_mod$qwts_event)
+    standata$qwts_lcens       <- aa(e_mod$qwts_lcens)
+    standata$qwts_rcens       <- aa(e_mod$qwts_rcens)
+    standata$qwts_icenl       <- aa(e_mod$qwts_icenl)
+    standata$qwts_icenu       <- aa(e_mod$qwts_icenu)
+    standata$qwts_delay       <- aa(e_mod$qwts_delay)
     standata$e_x              <- e_mod$x_cpts
     standata$e_xbar           <- aa(e_mod$x_bar)
 
     # baseline hazard
     standata$basehaz_type     <- ai(e_mod$basehaz$type)
     standata$basehaz_nvars    <- ai(e_mod$basehaz$nvars)
-    standata$basis_epts       <- e_mod$basis_epts
-    standata$basis_qpts       <- e_mod$basis_qpts
-    standata$basis_ipts       <- e_mod$basis_ipts
+    standata$basis_cpts       <- e_mod$basis_cpts
     standata$norm_const       <- e_mod$norm_const
     
     # priors

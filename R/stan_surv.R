@@ -182,8 +182,8 @@
 #' mod1b <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "bs")
 #' mod1c <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "exp")
 #' mod1d <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "weibull")
-#' mod1e <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "gompertz")
-#' do.call(cbind, lapply(list(mod1a, mod1b, mod1c, mod1d, mod1e), fixef))
+#' #mod1e <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "gompertz")
+#' do.call(cbind, lapply(list(mod1a, mod1b, mod1c, mod1d), fixef))
 #' bayesplot::bayesplot_grid(plot(mod1a), plot(mod1b), 
 #'                           plot(mod1c), plot(mod1d), 
 #'                           ylim = c(0, 0.8))
@@ -363,80 +363,39 @@ stan_surv <- function(formula,
     idx_cpts <- get_idx_array(sapply(cpts_list, length))
     cpts     <- unlist(cpts_list) # as vector for stan
     len_cpts <- length(cpts)
+
+    # number of quadrature points
+    qevent <- length(qwts_event)
+    qlcens <- length(qwts_lcens)
+    qrcens <- length(qwts_rcens)
+    qicens <- length(qwts_icenl)
+    qdelay <- length(qwts_delay)
+        
+  } else {
     
-  } else { # model does not use quadrature
-
-    qwts_event <- rep(0,0) # dud entries for stan
-    qwts_lcens <- rep(0,0)
-    qwts_rcens <- rep(0,0)
-    qwts_icenl <- rep(0,0)
-    qwts_icenu <- rep(0,0)
-    qwts_delay <- rep(0,0)
-    cpts       <- rep(0,0) 
-    len_cpts   <- 0L
-
+    cpts     <- rep(0,0)
+    len_cpts <- 0L
+    idx_cpts <- matrix(0,7,2)
+    
   }
-  
-  # dimensions
-  qevent <- length(qwts_event)
-  qlcens <- length(qwts_lcens)
-  qrcens <- length(qwts_rcens)
-  qicens <- length(qwts_icens)
-  qdelay <- length(qwts_delay)
 
   #----- basis terms for baseline hazard
 
-  # basis terms at event times; used regardless of quadrature
-  basis_events  <- make_basis(t_events, basehaz)
-  ibasis_events <- make_basis(t_events, basehaz, integrate = TRUE)
- 
-  # basis terms at left censoring times; used only without quadrature
   if (has_quadrature) {
-    basis_lcens  <- matrix(0,0,nvars) # dud entries for stan
-    ibasis_lcens <- matrix(0,0,nvars)
+    
+    basis_cpts <- make_basis(cpts, basehaz)   
+    
   } else {
-    basis_lcens  <- make_basis(t_lcens, basehaz)
+    
+    basis_event  <- make_basis(t_event, basehaz)
+    
+    ibasis_event <- make_basis(t_event, basehaz, integrate = TRUE)
     ibasis_lcens <- make_basis(t_lcens, basehaz, integrate = TRUE)
-  }  
-   
-  # basis terms at right censoring times; used only without quadrature
-  if (has_quadrature) {
-    basis_rcens  <- matrix(0,0,nvars) # dud entries for stan
-    ibasis_rcens <- matrix(0,0,nvars)
-  } else {
-    basis_rcens  <- make_basis(t_rcens, basehaz)
     ibasis_rcens <- make_basis(t_rcens, basehaz, integrate = TRUE)
-  }
-  
-  # basis terms at interval censoring times; used only without quadrature
-  if (has_quadrature) {
-    basis_icensl  <- matrix(0,0,nvars) # dud entries for stan
-    basis_icensu  <- matrix(0,0,nvars)
-    ibasis_icensl <- matrix(0,0,nvars)
-    ibasis_icensu <- matrix(0,0,nvars)
-  } else {
-    basis_icensl  <- make_basis(t_icensl, basehaz)
-    basis_icensu  <- make_basis(t_icensu, basehaz)
-    ibasis_icensl <- make_basis(t_icensl, basehaz, integrate = TRUE)
-    ibasis_icensu <- make_basis(t_icensu, basehaz, integrate = TRUE)
-  }
-
-  # basis terms at delayed entry times; used only without quadrature
-  if (has_quadrature) {
-    basis_delayed  <- matrix(0,0,nvars) # dud entries for stan
-    ibasis_delayed <- matrix(0,0,nvars)
-  } else {
-    basis_delayed  <- make_basis(t_delayed, basehaz)
-    ibasis_delayed <- make_basis(t_delayed, basehaz, integrate = TRUE)
-  }
-  
-  # basis terms at quadrature points; used only with quadrature
-  if (has_quadrature) {
-    basis_qpts         <- make_basis(qpts,         basehaz)
-    basis_qpts_delayed <- make_basis(qpts_delayed, basehaz)
-  } else {
-    basis_qpts         <- matrix(0,0,nvars) # dud entries for stan
-    basis_qpts_delayed <- matrix(0,0,nvars)
+    ibasis_icenl <- make_basis(t_icenl, basehaz, integrate = TRUE)
+    ibasis_icenu <- make_basis(t_icenu, basehaz, integrate = TRUE)
+    ibasis_delay <- make_basis(t_delay, basehaz, integrate = TRUE)
+ 
   }
     
   #----- predictor matrices
@@ -456,8 +415,6 @@ stan_surv <- function(formula,
                     rep_rows(x_rcens, times = qnodes),
                     rep_rows(x_icens, times = qnodes),
                     rep_rows(x_delay, times = qnodes))
-  } else {
-    x_cpts <- matrix(0,0,K) # dud entry for stan
   }
   
   # time-varying predictor matrix
@@ -481,68 +438,71 @@ stan_surv <- function(formula,
     smooth_idx <- get_idx_array(table(smooth_map))
     S <- ncol(s_cpts) # num. of tde spline coefficients
   } else { # model does not have tde
-    s_cpts         <- matrix(0,len_cpts,0)
-    smooth_idx     <- matrix(0,0,2)
-    smooth_map     <- integer(0)
-    S              <- 0L
+    s_cpts     <- matrix(0,len_cpts,0)
+    smooth_idx <- matrix(0,0,2)
+    smooth_map <- integer(0)
+    S          <- 0L
   }
 
   #----- stan data
   
   standata <- nlist(
-    K, S,
-    nevent,
-    nlcens = if (has_quadrature) 0L else nlcens,
-    nrcens = if (has_quadrature) 0L else nrcens,
-    nicens = if (has_quadrature) 0L else nicens,
-    ndelay = if (has_quadrature) 0L else ndelay,
-    qevent,
-    qlcens,
-    qrcens,
-    qicens,
-    qdelay,
+    K, S, 
+    nvars, 
+    has_intercept, 
+    has_quadrature,
     qnodes,
-    nvars,
-    t_event,
-    t_lcens = if (has_quadrature) rep(0,0) else t_lcens,
-    t_rcens = if (has_quadrature) rep(0,0) else t_rcens,
-    t_icenl = if (has_quadrature) rep(0,0) else t_icenl,
-    t_icenu = if (has_quadrature) rep(0,0) else t_icenu,
-    t_delay = if (has_quadrature) rep(0,0) else t_delay,
-    x_event,
-    x_lcens = if (has_quadrature) matrix(0,0,K) else x_lcens,
-    x_rcens = if (has_quadrature) matrix(0,0,K) else x_rcens,
-    x_icens = if (has_quadrature) matrix(0,0,K) else x_icens,
-    x_delay = if (has_quadrature) matrix(0,0,K) else x_delay,
-    x_cpts,
-    s_cpts,
+    smooth_map,
+    smooth_idx,
     cpts,
     len_cpts,
     idx_cpts,
-    smooth_map,
-    smooth_idx,
-    basis_event,
-    basis_lcens,
-    basis_rcens,
-    basis_icenl,
-    basis_icenu,
-    basis_delay,
-    basis_cpts,
-    ibasis_event,
-    ibasis_lcens,
-    ibasis_rcens,
-    ibasis_icenl,
-    ibasis_icenu,
-    ibasis_delay,
     type = basehaz$type,
-    qwts_event,
-    qwts_lcens,
-    qwts_rcens,
-    qwts_icenl,
-    qwts_icenu,
-    qwts_delay,
-    has_intercept,
-    has_quadrature
+    
+    nevent       = if (has_quadrature) 0L else nevent,
+    nlcens       = if (has_quadrature) 0L else nlcens,
+    nrcens       = if (has_quadrature) 0L else nrcens,
+    nicens       = if (has_quadrature) 0L else nicens,
+    ndelay       = if (has_quadrature) 0L else ndelay,
+    
+    t_event      = if (has_quadrature) rep(0,0) else t_event,
+    t_lcens      = if (has_quadrature) rep(0,0) else t_lcens,
+    t_rcens      = if (has_quadrature) rep(0,0) else t_rcens,
+    t_icenl      = if (has_quadrature) rep(0,0) else t_icenl,
+    t_icenu      = if (has_quadrature) rep(0,0) else t_icenu,
+    t_delay      = if (has_quadrature) rep(0,0) else t_delay,
+    
+    x_event      = if (has_quadrature) matrix(0,0,K) else x_event,
+    x_lcens      = if (has_quadrature) matrix(0,0,K) else x_lcens,
+    x_rcens      = if (has_quadrature) matrix(0,0,K) else x_rcens,
+    x_icens      = if (has_quadrature) matrix(0,0,K) else x_icens,
+    x_delay      = if (has_quadrature) matrix(0,0,K) else x_delay,
+    
+    basis_event  = if (has_quadrature) matrix(0,0,nvars) else basis_event,
+    ibasis_event = if (has_quadrature) matrix(0,0,nvars) else ibasis_event,
+    ibasis_lcens = if (has_quadrature) matrix(0,0,nvars) else ibasis_lcens,
+    ibasis_rcens = if (has_quadrature) matrix(0,0,nvars) else ibasis_rcens,
+    ibasis_icenl = if (has_quadrature) matrix(0,0,nvars) else ibasis_icenl,
+    ibasis_icenu = if (has_quadrature) matrix(0,0,nvars) else ibasis_icenu,
+    ibasis_delay = if (has_quadrature) matrix(0,0,nvars) else ibasis_delay,
+    
+    Nevent       = if (!has_quadrature) 0L else nevent,
+    qevent       = if (!has_quadrature) 0L else qevent,
+    qlcens       = if (!has_quadrature) 0L else qlcens,
+    qrcens       = if (!has_quadrature) 0L else qrcens,
+    qicens       = if (!has_quadrature) 0L else qicens,
+    qdelay       = if (!has_quadrature) 0L else qdelay,
+
+    x_cpts       = if (!has_quadrature) matrix(0,0,K)     else x_cpts,
+    s_cpts       = if (!has_quadrature) matrix(0,0,S)     else s_cpts,
+    basis_cpts   = if (!has_quadrature) matrix(0,0,nvars) else basis_cpts,
+    
+    qwts_event   = if (!has_quadrature) rep(0,0) else qwts_event,
+    qwts_lcens   = if (!has_quadrature) rep(0,0) else qwts_lcens,
+    qwts_rcens   = if (!has_quadrature) rep(0,0) else qwts_rcens,
+    qwts_icenl   = if (!has_quadrature) rep(0,0) else qwts_icenl,
+    qwts_icenu   = if (!has_quadrature) rep(0,0) else qwts_icenu,
+    qwts_delay   = if (!has_quadrature) rep(0,0) else qwts_delay
   )
   
   #----- priors and hyperparameters
@@ -689,8 +649,8 @@ stan_surv <- function(formula,
   
   # define new parameter names
   nms_beta   <- colnames(x) # may be NULL
-  nms_tde    <- get_smooth_name(s_events, type = "smooth_coefs") # may be NULL
-  nms_smooth <- get_smooth_name(s_events, type = "smooth_sd")    # may be NULL
+  nms_tde    <- get_smooth_name(s_cpts, type = "smooth_coefs") # may be NULL
+  nms_smooth <- get_smooth_name(s_cpts, type = "smooth_sd")    # may be NULL
   nms_int    <- get_int_name_basehaz(basehaz)
   nms_aux    <- get_aux_name_basehaz(basehaz)
   nms_all    <- c(nms_int,
@@ -713,7 +673,7 @@ stan_surv <- function(formula,
                terms            = mt,
                xlevels          = .getXlevels(mt, mf),
                x,
-               s_event          = if (has_tde) s_event else NULL,
+               s_cpts           = if (has_tde) s_cpts else NULL,
                t_beg, 
                t_end,
                status,
@@ -934,7 +894,7 @@ parse_formula <- function(formula, data) {
           dots[["knots"]] <- seq(min_t + dx, max_t - dx, dx)
         }
         dots[["Boundary.knots"]] <- c(min_t, max_t) 
-        sub("^list\\(", "bs\\(times__, ", deparse(dots))
+        sub("^list\\(", "bs\\(times__, ", safe_deparse(dots))
       }
       tde_calls <- eval(parse(text = x))
       sel_terms <- which(attr(rhs_terms, "factors")[x, ] > 0)
@@ -1086,8 +1046,8 @@ make_t <- function(model_frame, type = c("beg", "end", "gap", "upp")) {
                   stop(err))
 
   t_upp <- switch(surv,
-                  "right"     = rep(NA, nrow(model_frame)),
-                  "counting"  = rep(NA, nrow(model_frame)),
+                  "right"     = rep(NaN, nrow(model_frame)),
+                  "counting"  = rep(NaN, nrow(model_frame)),
                   "interval"  = as.vector(resp[, "time2"]),
                   "interval2" = as.vector(resp[, "time2"]),
                   stop(err))

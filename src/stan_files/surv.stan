@@ -335,6 +335,37 @@ functions {
   }
 
   /**
+  * Log survival and log CDF for Gompertz distribution
+  *
+  * @param eta Vector, linear predictor
+  * @param t Vector, event or censoring times
+  * @param scale Real, Gompertz scale
+  * @return A vector
+  */
+  vector gompertz_log_surv(vector eta, vector t, real scale) {
+    vector[rows(eta)] res;
+    res = inv(scale) * -(exp(scale * t) - 1) .* exp(eta);
+    return res;
+  }
+
+  vector gompertz_log_cdf(vector eta, vector t, real scale) {
+    vector[rows(eta)] res;
+    res = log(1 - exp(inv(scale) * -(exp(scale * t) - 1) .* exp(eta)));
+    return res;
+  }
+
+  vector gompertz_log_cdf2(vector eta, vector t_lower, vector t_upper, real scale) {
+    int N = rows(eta);
+    real inv_scale = inv(scale);
+    vector[N] exp_eta = exp(eta);
+    vector[N] surv_lower = exp(inv_scale * -(exp(scale * t_lower) - 1) .* exp_eta);
+    vector[N] surv_upper = exp(inv_scale * -(exp(scale * t_upper) - 1) .* exp_eta);
+    vector[N] res;
+    res = log(surv_lower - surv_upper);
+    return res;
+  }
+
+  /**
   * Log survival and log CDF for M-spline model
   *
   * @param eta Vector, linear predictor
@@ -377,6 +408,7 @@ data {
   int<lower=0> nicens;     // num. rows w/ interval censoring
   int<lower=0> ndelay;     // num. rows w/ delayed entry
   int<lower=0> qnodes;     // num. nodes for GK quadrature
+  int<lower=0> Nevent;     // num. rows w/ an event, used only in model w/ quadrature
   int<lower=0> qevent;     // num. quadrature points for rows w/ an event
   int<lower=0> qlcens;     // num. quadrature points for rows w/ left censoring
   int<lower=0> qrcens;     // num. quadrature points for rows w/ right censoring
@@ -385,9 +417,9 @@ data {
   int<lower=0> nvars;      // num. aux parameters for baseline hazard
   int<lower=1> smooth_map[S]; // indexing of smooth sds for tde spline coefs
   int<lower=0> smooth_idx[S > 0 ? max(smooth_map) : 0, 2];
+  int<lower=0> idx_cpts[7,2]; // index for breaking cpts into epts,qpts_event,etc
   int<lower=0> len_cpts;
-	matrix<lower=0>[7,2] idx_cpts;
-	
+
   // response and time variables
   vector[nevent] t_event;  // time of events
   vector[nlcens] t_lcens;  // time of left censoring
@@ -409,13 +441,8 @@ data {
   matrix[len_cpts,S] s_cpts; // for rows at events and all quadrature points
 
   // basis matrices for M-splines
-  matrix[nevent,nvars] basis_event; // at event time
-  matrix[nlcens,nvars] basis_lcens; // at left  censoring time
-  matrix[nrcens,nvars] basis_rcens; // at right censoring time
-  matrix[nicens,nvars] basis_icenl; // at lower limit of interval censoring
-  matrix[nicens,nvars] basis_icenu; // at upper limit of interval censoring
-  matrix[ndelay,nvars] basis_delay; // at delayed entry time
-  matrix[len_cpts,nvars] basis;     // at event times and all quadrature points
+  matrix[nevent,nvars] basis_event;  // at event time
+  matrix[len_cpts,nvars] basis_cpts; // at event times and all quadrature points
 
   // basis matrices for I-splines
   matrix[nevent,nvars] ibasis_event; // at event time
@@ -639,7 +666,12 @@ model {
       }
       else if (type == 6) { // gompertz model
         real scale = coefs[1];
-        reject("Gompertz temporarily removed.");
+        if (nevent > 0) target +=  gompertz_log_haz (eta_event, t_event, scale);
+        if (nevent > 0) target +=  gompertz_log_surv(eta_event, t_event, scale);
+        if (nlcens > 0) target +=  gompertz_log_cdf (eta_lcens, t_lcens, scale);
+        if (nrcens > 0) target +=  gompertz_log_surv(eta_rcens, t_rcens, scale);
+        if (nicens > 0) target +=  gompertz_log_cdf2(eta_icens, t_icenl, t_icenu, scale);
+        if (ndelay > 0) target += -gompertz_log_surv(eta_delay, t_delay, scale);
       }
       else if (type == 4) { // M-splines, on haz scale
         if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, coefs);
@@ -661,7 +693,7 @@ model {
       vector[len_cpts] eta;  // linear predictor at event and quadrature times
       vector[len_cpts] lhaz; // log hazard       at event and quadrature times
 
-      vector[nevent] lhaz_epts_event;
+      vector[Nevent] lhaz_epts_event;
       vector[qevent] lhaz_qpts_event;
       vector[qlcens] lhaz_qpts_lcens;
       vector[qrcens] lhaz_qpts_rcens;
@@ -671,61 +703,61 @@ model {
 
       // linear predictor (time-fixed part)
       if (K > 0) {
-        eta = x * beta;
+        eta = x_cpts * beta;
       }
       else {
         eta = rep_vector(0.0, len_cpts);
       }
 
-      // linear predictor (time-varying part)
+      // add on time-varying part to linear predictor
       if (S > 0) {
-        eta = s * beta_tde;
+        eta = eta + s_cpts * beta_tde;
       }
 
-      // add intercept
+      // add on intercept to linear predictor
       if (has_intercept == 1) {
         eta = eta + gamma[1];
       }
 
       // evaluate log hazard
-      if (basehaz_type == 5) { // exponential model
+      if (type == 5) { // exponential model
         lhaz = exponential_log_haz(eta);
       }
-      else if (basehaz_type == 1) { // weibull model
+      else if (type == 1) { // weibull model
         real shape = coefs[1];
         lhaz = weibull_log_haz(eta, cpts, shape);
       }
-      else if (basehaz_type == 6) { // gompertz model
+      else if (type == 6) { // gompertz model
         real scale = coefs[1];
-        lhaz = weibull_log_haz(eta, cpts, scale);
+        lhaz = gompertz_log_haz(eta, cpts, scale);
       }
-      else if (basehaz_type == 4) { // M-splines, on haz scale
-        lhaz = mspline_log_haz(eta, basis, coefs);
+      else if (type == 4) { // M-splines, on haz scale
+        lhaz = mspline_log_haz(eta, basis_cpts, coefs);
       }
-      else if (basehaz_type == 2) { // B-splines, on log haz scale
-        lhaz = bspline_log_haz(eta, basis, coefs);
+      else if (type == 2) { // B-splines, on log haz scale
+        lhaz = bspline_log_haz(eta, basis_cpts, coefs);
       }
       else {
         reject("Bug found: invalid baseline hazard (with quadrature).");
       }
 
       // split log hazard vector based on event types
-      if (nevent > 0) lhaz_epts_event = lhaz[idx_cpts[1,1]:idx_cpts[1,2]];
-      if (nevent > 0) lhaz_qpts_event = lhaz[idx_cpts[2,1]:idx_cpts[2,2]];
-      if (nlcens > 0) lhaz_qpts_lcens = lhaz[idx_cpts[3,1]:idx_cpts[3,2]];
-      if (nrcens > 0) lhaz_qpts_rcens = lhaz[idx_cpts[4,1]:idx_cpts[4,2]];
-      if (nicens > 0) lhaz_qpts_icenl = lhaz[idx_cpts[5,1]:idx_cpts[5,2]];
-      if (nicens > 0) lhaz_qpts_icenu = lhaz[idx_cpts[6,1]:idx_cpts[6,2]];
-      if (ndelay > 0) lhaz_qpts_delay = lhaz[idx_cpts[7,1]:idx_cpts[7,2]];
+      if (Nevent > 0) lhaz_epts_event = lhaz[idx_cpts[1,1]:idx_cpts[1,2]];
+      if (qevent > 0) lhaz_qpts_event = lhaz[idx_cpts[2,1]:idx_cpts[2,2]];
+      if (qlcens > 0) lhaz_qpts_lcens = lhaz[idx_cpts[3,1]:idx_cpts[3,2]];
+      if (qrcens > 0) lhaz_qpts_rcens = lhaz[idx_cpts[4,1]:idx_cpts[4,2]];
+      if (qicens > 0) lhaz_qpts_icenl = lhaz[idx_cpts[5,1]:idx_cpts[5,2]];
+      if (qicens > 0) lhaz_qpts_icenu = lhaz[idx_cpts[6,1]:idx_cpts[6,2]];
+      if (qdelay > 0) lhaz_qpts_delay = lhaz[idx_cpts[7,1]:idx_cpts[7,2]];
 
       // increment target with log-lik contributions for event submodel
-      if (nevent > 0) target +=  lhaz_epts_event;
-      if (nevent > 0) target +=  quadrature_log_surv(qwts_event, lhaz_qpts_event);
-      if (nlcens > 0) target +=  quadrature_log_cdf (qwts_lcens, lhaz_qpts_lcens, qnodes);
-      if (nrcens > 0) target +=  quadrature_log_surv(qwts_rcens, lhaz_qpts_rcens);
-      if (nicens > 0) target +=  quadrature_log_cdf2(qwts_icenl, lhaz_qpts_icenl,
+      if (Nevent > 0) target +=  lhaz_epts_event;
+      if (qevent > 0) target +=  quadrature_log_surv(qwts_event, lhaz_qpts_event);
+      if (qlcens > 0) target +=  quadrature_log_cdf (qwts_lcens, lhaz_qpts_lcens, qnodes);
+      if (qrcens > 0) target +=  quadrature_log_surv(qwts_rcens, lhaz_qpts_rcens);
+      if (qicens > 0) target +=  quadrature_log_cdf2(qwts_icenl, lhaz_qpts_icenl,
                                                      qwts_icenu, lhaz_qpts_icenu, qnodes);
-      if (ndelay > 0) target += -quadrature_log_surv(qwts_delay, lhaz_qpts_delay);
+      if (qdelay > 0) target += -quadrature_log_surv(qwts_delay, lhaz_qpts_delay);
 
     }
 

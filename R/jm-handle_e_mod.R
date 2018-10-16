@@ -95,19 +95,17 @@ handle_e_mod <- function(formula, data, meta) {
   
   if (any(status < 0 || status > 3))
     stop2("Invalid status indicator in Surv object.")
-  if (any(lcens))
-    stop2("Cannot handle left censoring.")  
-  
+ 
   # delayed entry indicator for each row of data
   delayed  <- as.logical(!t_beg == 0)
   
   # time variables for stan
-  t_event   <- t_end[event]   # exact event time
-  t_rcens   <- t_end[rcens]   # right censoring time
-  t_lcens   <- t_end[lcens]   # left  censoring time
-  t_lower   <- t_end[icens]   # lower limit of interval censoring time
-  t_upper   <- t_upp[icens]   # upper limit of interval censoring time
-  t_delayed <- t_beg[delayed] # delayed entry time
+  t_event <- t_end[event]   # exact event time
+  t_lcens <- t_end[lcens]   # left  censoring time
+  t_rcens <- t_end[rcens]   # right censoring time
+  t_icenl <- t_end[icens]   # lower limit of interval censoring time
+  t_icenu <- t_upp[icens]   # upper limit of interval censoring time
+  t_delay <- t_beg[delayed] # delayed entry time
   
   # entry and exit times for each individual
   t_tmp <- t_end; t_tmp[icens] <- t_upp[icens]
@@ -115,11 +113,11 @@ handle_e_mod <- function(formula, data, meta) {
   exittime  <- tapply(t_tmp, ids, max)
   
   # dimensions
-  nevent   <- sum(event)
-  nrcens   <- sum(rcens)
-  nlcens   <- sum(lcens)
-  nicens   <- sum(icens)
-  ndelayed <- sum(delayed)
+  nevent <- sum(event)
+  nrcens <- sum(rcens)
+  nlcens <- sum(lcens)
+  nicens <- sum(icens)
+  ndelay <- sum(delayed)
   
   # baseline hazard
   ok_basehaz <- c("weibull", "bs", "piecewise")
@@ -130,7 +128,8 @@ handle_e_mod <- function(formula, data, meta) {
                             ok_basehaz_ops = ok_basehaz_ops,
                             times          = t_end, 
                             status         = event,
-                            upper_times    = t_upp)
+                            min_t          = min(t_beg),
+                            max_t          = max(c(t_end,t_upp), na.rm = TRUE))
   nvars <- basehaz$nvars # number of basehaz aux parameters
   
   # flag if intercept is required for baseline hazard
@@ -141,57 +140,71 @@ handle_e_mod <- function(formula, data, meta) {
   qp <- qq$points
   qw <- qq$weights
   
-  # event times & ids (for events only)
-  epts <- t_end[event] # event times
-  eids <- ids  [event] # subject ids
-  
   # quadrature points & weights, evaluated for each row of data
-  qpts <- uapply(qp, unstandardise_qpts, t_beg, t_end)
-  qwts <- uapply(qw, unstandardise_qwts, t_beg, t_end)
-  qids <- rep(ids, qnodes)
+  qpts_event <- uapply(qp, unstandardise_qpts, 0, t_event)
+  qpts_lcens <- uapply(qp, unstandardise_qpts, 0, t_lcens)
+  qpts_rcens <- uapply(qp, unstandardise_qpts, 0, t_rcens)
+  qpts_icenl <- uapply(qp, unstandardise_qpts, 0, t_icenl)
+  qpts_icenu <- uapply(qp, unstandardise_qpts, 0, t_icenu)
+  qpts_delay <- uapply(qp, unstandardise_qpts, 0, t_delay)
   
-  # quadrature points & weights, evaluated at upper limit of rows w/ interval censoring
-  if (nicens) {
-    ipts <- uapply(qp, unstandardise_qpts, t_beg[icens], t_upper)
-    iwts <- uapply(qw, unstandardise_qwts, t_beg[icens], t_upper)
-    iids <- rep(ids[icens], qnodes)
-  } else {
-    ipts <- rep(0,0)
-    iwts <- rep(0,0)
-    iids <- rep(0,0)
-  }
-
-  cpts <- c(epts, qpts, ipts)
-  cids <- c(eids, qids, iids)
+  qwts_event <- uapply(qw, unstandardise_qwts, 0, t_event)
+  qwts_lcens <- uapply(qw, unstandardise_qwts, 0, t_lcens)
+  qwts_rcens <- uapply(qw, unstandardise_qwts, 0, t_rcens)
+  qwts_icenl <- uapply(qw, unstandardise_qwts, 0, t_icenl)
+  qwts_icenu <- uapply(qw, unstandardise_qwts, 0, t_icenu)
+  qwts_delay <- uapply(qw, unstandardise_qwts, 0, t_delay)
   
-  # # quadrature points & weights, evaluated for rows with delayed entry
-  # if (ndelayed) {
-  #   qpts_delayed <- uapply(qp, unstandardise_qpts, 0, t_delayed) # qpts for entry time
-  #   qwts_delayed <- uapply(qw, unstandardise_qwts, 0, t_delayed) # qwts for entry time
-  # } else {
-  #   qpts_delayed <- rep(0,0)
-  #   qwts_delayed <- rep(0,0)
-  # }
+  eids_event <- ids[event]
+  qids_event <- rep(ids[event],   times = qnodes)
+  qids_lcens <- rep(ids[lcens],   times = qnodes)
+  qids_rcens <- rep(ids[rcens],   times = qnodes)
+  qids_icens <- rep(ids[icens],   times = qnodes)
+  qids_delay <- rep(ids[delayed], times = qnodes)
   
-  # dimensions
-  len_epts <- length(epts)
-  len_qpts <- length(qpts)
-  len_ipts <- length(ipts)
+  # times at events and all quadrature points
+  cids <- c(eids_event,
+            qids_event,
+            qids_lcens,
+            qids_rcens,
+            qids_icens,
+            qids_icens,
+            qids_delay)
+  cpts_list <- list(t_event,
+                    qpts_event,
+                    qpts_lcens,
+                    qpts_rcens,
+                    qpts_icenl,
+                    qpts_icenu,
+                    qpts_delay)
+  idx_cpts <- get_idx_array(sapply(cpts_list, length))
+  cpts     <- unlist(cpts_list) # as vector for stan
   len_cpts <- length(cpts)
-  idx_cpts <- get_idx_array(c(len_epts, len_qpts, len_ipts))
   
+  # number of quadrature points
+  qevent <- length(qwts_event)
+  qlcens <- length(qwts_lcens)
+  qrcens <- length(qwts_rcens)
+  qicens <- length(qwts_icens)
+  qdelay <- length(qwts_delay)
+
   # basis terms for baseline hazard
-  basis_epts <-  make_basis(epts, basehaz)
-  basis_qpts <-  make_basis(qpts, basehaz)
-  basis_ipts <-  make_basis(ipts, basehaz)
+  basis_cpts <- make_basis(cpts, basehaz) 
   
   # predictor matrices
   x <- make_x(formula$tf_form, mf)$x
+  x_event <- keep_rows(x, status == 1)
+  x_lcens <- keep_rows(x, status == 2)
+  x_rcens <- keep_rows(x, status == 0)
+  x_icens <- keep_rows(x, status == 3)
+  x_delay <- keep_rows(x, delayed)
   K <- ncol(x)
-  
-  x_cpts <- rbind(keep_rows(x, event), 
-                  rep_rows (x, times = qnodes), 
-                  rep_rows (keep_rows(x, icens), times = qnodes))
+  x_cpts <- rbind(x_event,
+                  rep_rows(x_event, times = qnodes),
+                  rep_rows(x_lcens, times = qnodes),
+                  rep_rows(x_rcens, times = qnodes),
+                  rep_rows(x_icens, times = qnodes),
+                  rep_rows(x_delay, times = qnodes))
   
   # fit a cox model
   if (formula$surv_type %in% c("right", "counting")) {
@@ -203,7 +216,7 @@ handle_e_mod <- function(formula, data, meta) {
   }
   
   # calculate mean log incidence, used as a shift in log baseline hazard
-  norm_const <- log(nevent / sum(t_end - t_beg))
+  norm_const <- log(nevent / sum(exittime - entrytime))
   
   nlist(mod,
         surv_type = formula$surv_type,
@@ -221,34 +234,39 @@ handle_e_mod <- function(formula, data, meta) {
         t_event,
         t_rcens,
         t_lcens,
-        t_lower,
-        t_upper,
+        t_icenl,
+        t_icenu,
+        t_delay,
         status,
         nevent,
-        nrcens,
         nlcens,
+        nrcens,
         nicens,
-        ndelayed,
-        len_epts,
-        len_qpts,
-        len_ipts,
+        ndelay,
+        qevent,
+        qlcens,
+        qrcens,
+        qicens,
+        qdelay,
+        cids,
+        cpts,
         len_cpts,
         idx_cpts,
-        epts, 
-        qpts, 
-        ipts,
-        cpts,
-        qwts, 
-        iwts, 
-        eids,
-        qids,
-        iids,
-        cids,
-        basis_epts,
-        basis_qpts,
-        basis_ipts,
-        x,
+        qwts_event, 
+        qwts_lcens, 
+        qwts_rcens, 
+        qwts_icenl, 
+        qwts_icenu,
+        qwts_delay, 
+        eids_event,
+        qids_event,
+        qids_lcens,
+        qids_rcens,
+        qids_icens,
+        qids_delay,
+        x, 
         x_cpts,
+        basis_cpts,
         x_bar = colMeans(x),
         K)
 }

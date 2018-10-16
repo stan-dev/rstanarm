@@ -892,7 +892,7 @@ log_basehaz_ms <- function(x, coefs, basis) {
   log(linear_predictor(coefs, basis_matrix(x, basis = basis)))
 }
 log_basehaz_bs <- function(x, coefs, basis) {
-  linear_predictor(coefs, x)
+  linear_predictor(coefs, basis_matrix(x, basis = basis))
 }
 log_basehaz_pw <- function(x, coefs, knots) {
   linear_predictor(coefs, dummy_matrix(x, knots = knots))

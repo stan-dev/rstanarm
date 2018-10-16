@@ -1481,8 +1481,8 @@ extract_pars.stansurv <- function(object, stanmat = NULL, means = FALSE) {
   if (means) 
     stanmat <- t(colMeans(stanmat)) # return posterior means
   nms_beta <- colnames(object$x)
-  nms_tde  <- get_smooth_name(object$s_events, type = "smooth_coefs")
-  nms_smth <- get_smooth_name(object$s_events, type = "smooth_sd")
+  nms_tde  <- get_smooth_name(object$s_cpts, type = "smooth_coefs")
+  nms_smth <- get_smooth_name(object$s_cpts, type = "smooth_sd")
   nms_int  <- get_int_name_basehaz(object$basehaz)
   nms_aux  <- get_aux_name_basehaz(object$basehaz)
   alpha    <- stanmat[, nms_int,  drop = FALSE]

@@ -353,9 +353,9 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       
     } else if (plotfun == "tde") {
       
-      smooth_map   <- get_smooth_name(x$s_events, type = "smooth_map")
-      smooth_vars  <- get_smooth_name(x$s_events, type = "smooth_vars")
-      smooth_coefs <- get_smooth_name(x$s_events, type = "smooth_coefs")
+      smooth_map   <- get_smooth_name(x$s_cpts, type = "smooth_map")
+      smooth_vars  <- get_smooth_name(x$s_cpts, type = "smooth_vars")
+      smooth_coefs <- get_smooth_name(x$s_cpts, type = "smooth_coefs")
       
       if (is.null(pars))
         pars <- smooth_vars

@@ -14,23 +14,44 @@ functions {
 #include /functions/jm_functions.stan
 }
 data {
-  // declares: M, has_aux, has_weights, resp_type, intercept_type,
-  //   yNobs, yNeta, yK, t, p, l, q, len_theta_L, bN1, bK1, bK1_len
-  //   bK1_idx, bN2, bK2, bK2_len, bK2_idx
+  // declares:
+  //   M
+  //   resp_type
+  //   intercept_type
+  //   has_{aux,weights}
+  //   y{Nobs,Neta,K}
+  //   b{N1,N2}
+  //   b{K1,K2}
+  //   b{K1_len,K2_len}
+  //   b{K1_idx,bK2_idx}
+  //   t, p, l, q
+  //   len_theta_L
 #include /data/dimensions_mvmer.stan
 
-  // declares: yInt{1,2,3}, yReal{1,2,3}, yX{1,2,3}, yXbar{1,2,3},
-  //   family, link, y{1,2,3}_Z{1,2}, y{1,2,3}_Z{1,2}_id,
-  //   y_prior_dist{_for_intercept,_for_aux,_for_cov}, prior_PD
+  // declares:
+  //   yInt{1,2,3}
+  //   yReal{1,2,3}
+  //   yX{1,2,3}
+  //   yXbar{1,2,3}
+  //   y{1,2,3}_Z{1,2}
+  //   y{1,2,3}_Z{1,2}_id
+  //   y_prior_dist{_for_intercept,_for_aux,_for_cov}
+  //   family
+  //   link
+  //   prior_PD
 #include /data/data_mvmer.stan
 
   // declares:
   //   e_prior_dist{_for_intercept,_for_aux}
+  //   e_{K,x,basis,has_intercept}
+  //   qwts_{event,lcens,rcens,icenl,icenu,delay}
+  //   q{event,lcens,rcens,icenl,icenu,delay}
   //   qnodes
-  //   len_{epts,qpts,ipts}
-  //   epts,qpts,ipts
-  //   qwts,iwts
+  //   cpts
+  //   len_cpts
+  //   idx_cpts
   //   basehaz_type
+  //   norm_const
 #include /data/data_event.stan
 
   // declares:
@@ -39,11 +60,15 @@ data {
   //   {sum_}size_which_b, which_b_zindex
   //   {sum_}size_which_coef, which_coef_{zindex,xindex}
   //   {sum_,sum_size_}which_interactions
-  //   y_nrow{_auc}_cpts, auc_{qnodes,qwts}
-  //   a_K_data, has_grp, grp_assoc, idx_grp
+  //   y_nrow{_auc}_cpts
+  //   auc_{qnodes,qwts}
+  //   a_K_data
+  //   has_grp
+  //   grp_assoc
+  //   idx_grp
   //   idx_cpts
-  //   y{1,2,3}_x_        {eta,eps,auc}_cpts
-  //   y{1,2,3}_z{1,2}_   {eta,eps,auc}_cpts
+  //   y{1,2,3}_x_{eta,eps,auc}_cpts
+  //   y{1,2,3}_z{1,2}_{eta,eps,auc}_cpts
   //   y{1,2,3}_z{1,2}_id_{eta,eps,auc}_cpts
 #include /data/data_assoc.stan
 
@@ -61,13 +86,6 @@ data {
 transformed data {
   int<lower=0> e_hs = get_nvars_for_hs(e_prior_dist);
   int<lower=0> a_hs = get_nvars_for_hs(a_prior_dist);
-
-  vector[len_epts] log_epts  = log(epts); // log of event times
-  vector[len_qpts] log_qpts  = log(qpts); // log of quadrature points
-  vector[len_ipts] log_ipts  = log(ipts); // log of qpts for interval censoring
-
-  real sum_epts     = sum(epts);     // sum of event times
-  real sum_log_epts = sum(log_epts); // sum of log event times
 
   // declares:
   //   yHs{1,2,3}
@@ -93,7 +111,7 @@ parameters {
   //   bCholesky{1,2}
   //   yAux{1,2,3}_unscaled
   //   yGlobal{1,2,3}
-  //   yLocal{1,2,3},
+  //   yLocal{1,2,3}
   //   yOol{1,2,3}
   //   yMix{1,2,3}
 #include /parameters/parameters_mvmer.stan
@@ -122,16 +140,39 @@ transformed parameters {
 #include /tparameters/tparameters_mvmer.stan
 
   //---- Parameters for event submodel
-  e_beta = make_beta(e_z_beta, e_prior_dist, e_prior_mean,
-                     e_prior_scale, e_prior_df, e_global_prior_scale,
-                     e_global, e_local, e_ool, e_mix, rep_array(1.0, 0), 0,
-                     e_slab_scale, e_caux);
-  a_beta = make_beta(a_z_beta, a_prior_dist, a_prior_mean,
-                     a_prior_scale, a_prior_df, a_global_prior_scale,
-                     a_global, a_local, a_ool, a_mix, rep_array(1.0, 0), 0,
-                     a_slab_scale, a_caux);
-  e_aux  = make_basehaz_coef(e_aux_unscaled, e_prior_dist_for_aux,
-                             e_prior_mean_for_aux, e_prior_scale_for_aux);
+  e_beta = make_beta(e_z_beta,
+                     e_prior_dist,
+                     e_prior_mean,
+                     e_prior_scale,
+                     e_prior_df,
+                     e_global_prior_scale,
+                     e_global,
+                     e_local,
+                     e_ool,
+                     e_mix,
+                     rep_array(1.0, 0),
+                     0,
+                     e_slab_scale,
+                     e_caux);
+
+  a_beta = make_beta(a_z_beta,
+                     a_prior_dist,
+                     a_prior_mean,
+                     a_prior_scale,
+                     a_prior_df,
+                     a_global_prior_scale,
+                     a_global,
+                     a_local,
+                     a_ool,
+                     a_mix,
+                     rep_array(1.0, 0), 0,
+                     a_slab_scale,
+                     a_caux);
+
+  e_aux  = make_basehaz_coef(e_aux_unscaled,
+                             e_prior_dist_for_aux,
+                             e_prior_mean_for_aux,
+                             e_prior_scale_for_aux);
 }
 model {
 
@@ -159,8 +200,7 @@ model {
 
     {
     // declares (and increments target with event log-lik):
-    //   log_basehaz,
-    //   log_{haz_q,haz_etimes,surv_etimes,event}
+    //   log_{basehaz,haz_q,haz_etimes,surv_etimes,event}
 #include /model/event_lp.stan
     }
   }
