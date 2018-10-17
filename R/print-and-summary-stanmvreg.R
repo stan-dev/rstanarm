@@ -165,12 +165,12 @@ summary.stanmvreg <- function(object, pars = NULL, regex_pars = NULL,
   if (!is.null(pars)) {
     pars2 <- NA     
     if ("alpha" %in% pars) pars2 <- c(pars2, nms$alpha)
-    if ("beta" %in% pars) pars2 <- c(pars2, nms$beta)
-    if ("long" %in% pars) pars2 <- c(pars2, unlist(nms$y), unlist(nms$y_extra))
+    if ("beta"  %in% pars) pars2 <- c(pars2, nms$beta)
+    if ("long"  %in% pars) pars2 <- c(pars2, unlist(nms$y), unlist(nms$y_extra))
     if ("event" %in% pars) pars2 <- c(pars2, nms$e, nms$a, nms$e_extra)
     if ("assoc" %in% pars) pars2 <- c(pars2, nms$a)      
     if ("fixef" %in% pars) pars2 <- c(pars2, unlist(nms$y), nms$e, nms$a)
-    if ("b" %in% pars) pars2 <- c(pars2, nms$b)
+    if ("b"     %in% pars) pars2 <- c(pars2, nms$b)
     pars2 <- c(pars2, setdiff(pars, 
                               c("alpha", "beta", "varying", "b",
                                 "long", "event", "assoc", "fixef")))
@@ -202,23 +202,34 @@ summary.stanmvreg <- function(object, pars = NULL, regex_pars = NULL,
                nms_tmp_Sigma, nms_tmp_lp), , drop = FALSE]
   
   # Output object
-  if (mvmer)
-    out <- structure(
-      out, y_vars = y_vars, family = fam, n_markers = object$n_markers, 
-      n_yobs = object$n_yobs, n_grps = object$n_grps)
-  if (surv)
-    out <- structure(
-      out, n_subjects = object$n_subjects, n_events = object$n_events,
-      basehaz = object$basehaz) 
-  if (jm)
-    out <- structure(
-      out, id_var = object$id_var, time_var = object$time_var, assoc = assoc)
-  structure(
-    out, formula = object$formula, algorithm = object$algorithm,
-    stan_function = object$stan_function,
-    posterior_sample_size = posterior_sample_size(object),
-    runtime = object$runtime, print.digits = digits,
-    class = c("summary.stanmvreg", "summary.stanreg"))
+  if (mvmer) {
+    out <- structure(out, 
+                     y_vars     = y_vars, 
+                     family     = fam, 
+                     n_markers  = object$n_markers,
+                     n_yobs     = object$n_yobs, 
+                     n_grps     = object$n_grps)
+  }
+  if (surv) {
+    out <- structure(out, 
+                     n_subjects = object$n_subjects, 
+                     n_events   = object$n_events,
+                     basehaz    = object$survmod$basehaz) 
+  }
+  if (jm) {
+    out <- structure(out, 
+                     id_var     = object$id_var, 
+                     time_var   = object$time_var, 
+                     assoc      = assoc)
+  }
+  
+  structure(out, 
+            formula               = object$formula, 
+            algorithm             = object$algorithm,
+            stan_function         = object$stan_function,
+            posterior_sample_size = posterior_sample_size(object),
+            runtime               = object$runtime, print.digits = digits,
+            class                 = c("summary.stanmvreg", "summary.stanreg"))
 }
 
 
@@ -229,10 +240,11 @@ summary.stanmvreg <- function(object, pars = NULL, regex_pars = NULL,
 #' @method print summary.stanmvreg
 print.summary.stanmvreg <- function(x, digits = max(1, attr(x, "print.digits")), 
                                     ...) {
-  atts <- attributes(x)
+  atts  <- attributes(x)
   mvmer <- atts$stan_function %in% c("stan_mvmer", "stan_jm")
-  jm <- atts$stan_function == "stan_jm"
-  tab <- if (jm) "   " else ""
+  jm    <- atts$stan_function == "stan_jm"
+  tab   <- if (jm) "   " else ""
+  
   cat("\nModel Info:\n")
   cat("\n function:   ", tab, atts$stan_function)
   if (mvmer) {
@@ -244,10 +256,9 @@ print.summary.stanmvreg <- function(x, digits = max(1, attr(x, "print.digits")),
     }    
   }
   if (jm) {
+    assoc_fmt <- uapply(1:M, function(m) paste0(atts$assoc[[m]], " (Long", m, ")"))
     cat("\n formula (Event):", formula_string(atts$formula[["Event"]]))
-    cat("\n baseline hazard:", atts$basehaz$type_name)
-    assoc_fmt <- unlist(lapply(1:M, function(m)
-      paste0(atts$assoc[[m]], " (Long", m, ")")))
+    cat("\n baseline hazard:", get_basehaz_name(atts$basehaz))
     cat("\n assoc:          ", paste(assoc_fmt, collapse = ", "))
   }
   cat("\n algorithm:  ", tab, atts$algorithm)
