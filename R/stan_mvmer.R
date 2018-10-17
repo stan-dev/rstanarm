@@ -175,37 +175,50 @@ stan_mvmer <- function(formula, data, family = gaussian, weights,
   }
   
   # Is prior* already a list?
-  prior <- broadcast_prior(prior, M)
+  prior           <- broadcast_prior(prior, M)
   prior_intercept <- broadcast_prior(prior_intercept, M)
-  prior_aux <- broadcast_prior(prior_aux, M)
+  prior_aux       <- broadcast_prior(prior_aux, M)
   
   #-----------
   # Fit model
   #----------- 
   
-  stanfit <- stan_jm.fit(formulaLong = formula, dataLong = data, family = family,
-                         weights = weights, priorLong = prior, 
-                         priorLong_intercept = prior_intercept, priorLong_aux = prior_aux, 
-                         prior_covariance = prior_covariance, prior_PD = prior_PD, 
-                         algorithm = algorithm, adapt_delta = adapt_delta, 
-                         max_treedepth = max_treedepth, init = init, 
-                         QR = QR, sparse = sparse, ...)
-  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
-  y_mod <- attr(stanfit, "y_mod")
-  cnms  <- attr(stanfit, "cnms")
-  flevels <- attr(stanfit, "flevels")
-  prior_info <- attr(stanfit, "prior_info")
-  stanfit <- drop_attributes(stanfit, "y_mod", "cnms", "flevels", "prior_info")
+  fit <- stan_jm.fit(formulaLong         = formula, 
+                     dataLong            = data, 
+                     family              = family,
+                     weights             = weights, 
+                     priorLong           = prior, 
+                     priorLong_intercept = prior_intercept, 
+                     priorLong_aux       = prior_aux, 
+                     prior_covariance    = prior_covariance, 
+                     prior_PD            = prior_PD, 
+                     algorithm           = algorithm, 
+                     adapt_delta         = adapt_delta, 
+                     max_treedepth       = max_treedepth, 
+                     init                = init, 
+                     QR                  = QR, 
+                     sparse              = sparse, 
+                     ...)
   
-  terms <- fetch(y_mod, "terms")
-  n_yobs <- fetch_(y_mod, "x", "N")
-  n_grps <- sapply(flevels, n_distinct)
+  if (algorithm != "optimizing" && !is(fit$stanfit, "stanfit")) 
+    return(fit$stanfit)
   
-  fit <- nlist(stanfit, formula, family, weights, M, cnms, flevels, n_grps, n_yobs, 
-               algorithm, terms, glmod = y_mod, data, prior.info = prior_info, 
-               stan_function = "stan_mvmer", call = match.call(expand.dots = TRUE))
+  # rename arguments in returned list
+  fit_args <- list(stanfit       = fit$stanfit,
+                   glmod         = fit$y_mod,
+                   cnms          = fit$cnms,
+                   flevels       = fit$flevels,
+                   prior.info    = fit$prior_info,
+                   n_yobs        = fetch_(fit$y_mod, "x", "N"),
+                   n_grps        = sapply(fit$flevels, n_distinct))
   
-  out <- stanmvreg(fit)
+  # gather arguments from 'stan_mvmer' call to store  
+  add_args <- nlist(M, formula, data, family, weights, algorithm,
+                    stan_function = "stan_mvmer",
+                    terms         = fetch(fit$y_mod, "terms"),
+                    call          = match.call(expand.dots = TRUE))
+ 
+  out <- stanmvreg(c(fit_args, add_args))
   return(out)
 }
 

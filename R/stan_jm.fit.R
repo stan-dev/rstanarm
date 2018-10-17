@@ -912,20 +912,27 @@ stan_jm.fit <- function(formulaLong          = NULL,
   # substitute new parameter names into 'stanfit' object
   stanfit <- replace_stanfit_nms(stanfit, nms_all)
   
-  # combine elements to add to returned structure
-  if (!is_jm) e_mod <- a_mod <- assoc <- basehaz <- id_var <- grp_stuff <- NULL
-  args <- nlist(.Data = stanfit,
-                y_mod, 
-                e_mod,
-                a_mod,
-                assoc,
-                basehaz,
-                prior_info, 
-                id_var,
-                cnms, 
-                flevels,
-                grp_stuff)
+  # dud entries for return object if 'stan_mvmer' model
+  if (!is_jm) {
+    e_mod     <- NULL
+    a_mod     <- NULL
+    assoc     <- NULL
+    basehaz   <- NULL
+    id_var    <- NULL
+    grp_stuff <- NULL
+  }
   
-  do.call("structure", rm_null(args, recursive = FALSE))
+  # return list with necessary elements
+  out <- nlist(stanfit,
+               y_mod,
+               e_mod,
+               a_mod,
+               assoc,
+               id_var,
+               cnms,
+               flevels,
+               grp_stuff,
+               prior_info)
+  return(out)
 }
 

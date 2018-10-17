@@ -565,7 +565,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
 	  stop("'stan_jm' is currently limited to a maximum of 3 longitudinal outcomes.")
   
   # Data
-  dataLong <- validate_arg(dataLong, "data.frame", validate_length = M)  
+  dataLong  <- validate_arg(dataLong, "data.frame", validate_length = M)  
   dataEvent <- as.data.frame(dataEvent)
 
   # Family
@@ -580,59 +580,80 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   assoc <- validate_arg(assoc, ok_assoc_classes, validate_length = M)
 
   # Is priorLong* already a list?
-  priorLong <- broadcast_prior(priorLong, M)
+  priorLong           <- broadcast_prior(priorLong, M)
   priorLong_intercept <- broadcast_prior(priorLong_intercept, M)
-  priorLong_aux <- broadcast_prior(priorLong_aux, M)
+  priorLong_aux       <- broadcast_prior(priorLong_aux, M)
  
   #-----------
   # Fit model
   #-----------
   
-  stanfit <- stan_jm.fit(formulaLong = formulaLong, dataLong = dataLong, 
-                         formulaEvent = formulaEvent, dataEvent = dataEvent, 
-                         time_var = time_var, id_var = id_var, family = family,
-                         assoc = assoc, lag_assoc = lag_assoc, grp_assoc = grp_assoc, 
-                         epsilon = epsilon, basehaz = basehaz, basehaz_ops = basehaz_ops, 
-                         qnodes = qnodes, init = init, weights = weights, 
-                         priorLong = priorLong, 
-                         priorLong_intercept = priorLong_intercept, 
-                         priorLong_aux = priorLong_aux, 
-                         priorEvent = priorEvent, 
-                         priorEvent_intercept = priorEvent_intercept, 
-                         priorEvent_aux = priorEvent_aux, 
-                         priorEvent_assoc = priorEvent_assoc, 
-                         prior_covariance = prior_covariance, prior_PD = prior_PD, 
-                         algorithm = algorithm, adapt_delta = adapt_delta, 
-                         max_treedepth = max_treedepth, QR = QR, sparse = sparse, ...)
-  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
-  y_mod <- attr(stanfit, "y_mod")
-  e_mod <- attr(stanfit, "e_mod")
-  a_mod <- attr(stanfit, "a_mod")
-  cnms  <- attr(stanfit, "cnms")
-  flevels <- attr(stanfit, "flevels")
-  assoc <- attr(stanfit, "assoc")
-  id_var <- attr(stanfit, "id_var")
-  basehaz    <- attr(stanfit, "basehaz")
-  grp_stuff  <- attr(stanfit, "grp_stuff")
-  prior_info <- attr(stanfit, "prior_info")
-  stanfit <- drop_attributes(stanfit, "y_mod", "e_mod", "a_mod", "cnms", 
-                             "flevels", "assoc", "id_var", "basehaz", 
-                             "grp_stuff", "prior_info")
+  fit <- stan_jm.fit(formulaLong          = formulaLong, 
+                     formulaEvent         = formulaEvent, 
+                     dataLong             = dataLong, 
+                     dataEvent            = dataEvent, 
+                     time_var             = time_var, 
+                     id_var               = id_var, 
+                     family               = family,
+                     assoc                = assoc, 
+                     lag_assoc            = lag_assoc, 
+                     grp_assoc            = grp_assoc, 
+                     epsilon              = epsilon, 
+                     basehaz              = basehaz, 
+                     basehaz_ops          = basehaz_ops, 
+                     qnodes               = qnodes, 
+                     init                 = init, 
+                     weights              = weights, 
+                     priorLong            = priorLong, 
+                     priorLong_intercept  = priorLong_intercept, 
+                     priorLong_aux        = priorLong_aux, 
+                     priorEvent           = priorEvent, 
+                     priorEvent_intercept = priorEvent_intercept, 
+                     priorEvent_aux       = priorEvent_aux, 
+                     priorEvent_assoc     = priorEvent_assoc, 
+                     prior_covariance     = prior_covariance, 
+                     prior_PD             = prior_PD, 
+                     algorithm            = algorithm, 
+                     adapt_delta          = adapt_delta, 
+                     max_treedepth        = max_treedepth, 
+                     QR                   = QR, 
+                     sparse               = sparse, 
+                     ...)
   
-  terms <- c(fetch(y_mod, "terms"), list(terms(e_mod$mod)))
-  n_yobs <- fetch_(y_mod, "x", "N")
-  n_grps <- sapply(flevels, n_distinct)
-  n_subjects <- e_mod$Npat
+  if (algorithm != "optimizing" && !is(fit$stanfit, "stanfit")) 
+    return(fit$stanfit)
 
-  fit <- nlist(stanfit, formula = c(formulaLong, formulaEvent), family,
-               id_var, time_var, weights, qnodes, basehaz, assoc,
-               M, cnms, flevels, n_grps, n_subjects, n_yobs, epsilon,
-               algorithm, terms, glmod = y_mod, survmod = e_mod, 
-               assocmod = a_mod, grp_stuff, dataLong, dataEvent,
-               prior.info = prior_info, stan_function = "stan_jm", 
-               call = match.call(expand.dots = TRUE))
+  # rename arguments in returned list
+  fit_args <- list(stanfit       = fit$stanfit,
+                   glmod         = fit$y_mod,
+                   survmod       = fit$e_mod,
+                   assocmod      = fit$a_mod,
+                   assoc         = fit$assoc,
+                   grp_stuff     = fit$grp_stuff,
+                   cnms          = fit$cnms,
+                   flevels       = fit$flevels,
+                   prior.info    = fit$prior_info,
+                   id_var        = fit$id_var,
+                   n_subjects    = n_distinct(fit$e_mod$cids),
+                   n_yobs        = fetch_(fit$y_mod, "x", "N"),
+                   n_grps        = sapply(fit$flevels, n_distinct))
   
-  out <- stanmvreg(fit)
+  # gather arguments from 'stan_jm' call to store  
+  add_args <- nlist(M, 
+                    dataLong,
+                    dataEvent,
+                    family, 
+                    time_var,
+                    weights,
+                    qnodes,
+                    epsilon,
+                    algorithm,
+                    stan_function = "stan_jm",
+                    formula = c(formulaLong, formulaEvent),
+                    terms   = c(fetch(fit$y_mod, "terms"), list(terms(fit$e_mod$mod))),
+                    call    = match.call(expand.dots = TRUE))
+  
+  out <- stanmvreg(c(fit_args, add_args))
   return(out)
 }
 
