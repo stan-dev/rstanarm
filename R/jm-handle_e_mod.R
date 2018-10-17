@@ -185,7 +185,7 @@ handle_e_mod <- function(formula, data, meta) {
   qevent <- length(qwts_event)
   qlcens <- length(qwts_lcens)
   qrcens <- length(qwts_rcens)
-  qicens <- length(qwts_icens)
+  qicens <- length(qwts_icenl)
   qdelay <- length(qwts_delay)
 
   # basis terms for baseline hazard
