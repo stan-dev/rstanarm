@@ -1,43 +1,31 @@
 language: r
 sudo: false
-r: devel
 cache: packages
+dist: trusty
 
 latex: true
 r_build_args: '--no-build-vignettes'
-r_check_args: '--ignore-vignettes --no-examples'
+r_check_args: '--ignore-vignettes'
 
 r_github_packages:
   - jimhester/covr
 
-env:
-  matrix: 
-    - CXX_OLEVEL=2 CXX=clang++
-
 matrix:
   include:
     - os: linux
-      compiler: clang
       addons:
         apt:
-          sources: [ 'ubuntu-toolchain-r-test', 'llvm-toolchain-precise-5.0' ]        
+          sources:
+            - ubuntu-toolchain-r-test
           packages:
-            - llvm-5.0-dev
+            - g++-7
       env:
-        - CXX_OLEVEL=2 CXX=clang++
-
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
 
 before_install:
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo apt-get update -q
   - mkdir -p ~/.R/
-  - echo "CXX = `R CMD config CXX`" >> ~/.R/Makevars
-  - echo "CXXFLAGS = `R CMD config CXXFLAGS` -pedantic -g0 -flto -stdlib=libc++" >> ~/.R/Makevars
-  - echo "LDFLAGS += -flto -stdlib=libc++" >> ~/.R/Makevars
-  - export CLANG_EXTRA_ARG=""
-  - if [[ $CXX = "clang++" ]] ;  then export CLANG_EXTRA_ARG=" -Qunused-arguments -fcolor-diagnostics " ; fi
-  - sed -i.bak "s/ g++/ ${CXX}${CLANG_EXTRA_ARG}/" ~/.R/Makevars
-  - sed -i.bak "s/O[0-3]/O$CXX_OLEVEL/" ~/.R/Makevars
+  - echo "CXX14 = g++-7 -fPIC -flto=2" >> ~/.R/Makevars
+  - echo "CXX14FLAGS = -mtune=native -march=native -Wno-unused-variable -Wno-unused-function -Wno-unused-local-typedefs -Wno-ignored-attributes -Wno-deprecated-declarations -Wno-attributes -O3" >> ~/.R/Makevars
 
 script: 
   - |
