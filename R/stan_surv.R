@@ -1093,16 +1093,19 @@ make_model_data <- function(formula, data) {
 #
 # @param formula The parsed model formula.
 # @param data The model data frame.
-make_model_frame <- function(formula, data, times = NULL) {
+make_model_frame <- function(formula, data, times = NULL, check_constant = TRUE) {
 
   # construct terms object from formula 
   Terms <- terms(formula)
   
   # construct model frame
   mf <- model.frame(Terms, data)
-  mf <- check_constant_vars(mf)
   
-  # check terms
+  # check no constant vars
+  if (check_constant)
+    mf <- check_constant_vars(mf)
+  
+  # check for terms
   mt <- attr(mf, "terms")
   if (is.empty.model(mt)) 
     stop2("No intercept or predictors specified.")
@@ -1119,7 +1122,7 @@ make_model_frame <- function(formula, data, times = NULL) {
 #   xbar: the column means of the model matrix.
 #   N,K: number of rows (observations) and columns (predictors) in the
 #     fixed effects model matrix
-make_x <- function(formula, model_frame, xlevs = NULL) {
+make_x <- function(formula, model_frame, xlevs = NULL, check_constant = TRUE) {
 
   # uncentred predictor matrix, without intercept
   x <- model.matrix(formula, model_frame, xlevs = xlevs)
@@ -1130,7 +1133,7 @@ make_x <- function(formula, model_frame, xlevs = NULL) {
   
   # identify any column of x with < 2 unique values (empty interaction levels)
   sel <- (apply(x, 2L, n_distinct) < 2)
-  if (any(sel)) {
+  if (check_constant && any(sel)) {
     cols <- paste(colnames(x)[sel], collapse = ", ")
     stop2("Cannot deal with empty interaction levels found in columns: ", cols)
   }
@@ -1154,8 +1157,8 @@ make_s <- function(formula, data, times, xlevs = NULL) {
   data <- data.frame(data, times__ = times)
 
   # make model frame and predictor matrix
-  mf <- make_model_frame(formula, data, times)$mf
-  x  <- make_x(formula, mf, xlevs = xlevs)$x
+  mf <- make_model_frame(formula, data, times, check_constant = FALSE)$mf
+  x  <- make_x(formula, mf, xlevs = xlevs, check_constant = FALSE)$x
   return(x)
 }
 
