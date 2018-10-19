@@ -117,9 +117,9 @@ print.stanmvreg <- function(x, digits = 3, ...) {
     .printfr(ppd_estimates, digits, ...)
   }
   
-  cat("\n------\n")
-  cat("* For help interpreting the printed output see ?print.stanreg")
-  cat("* For info on the priors used see ?prior_summary.stanreg")
+  cat("\n------")
+  cat("\n* For help interpreting the printed output see ?print.stanreg")
+  cat("\n* For info on the priors used see ?prior_summary.stanreg")
   
   invisible(x)
 }
