@@ -510,10 +510,10 @@ stan_jm.fit <- function(formulaLong          = NULL,
   
     # check longitudinal observation times are not later than the event time
     lapply(dataLong, 
-           FUN      = validate_observation_times,  
-           exittime = e_mod$exittime, 
-           id_var   = id_var, 
-           time_var = time_var)
+           FUN        = validate_observation_times,  
+           eventtimes = e_mod$eventtime, 
+           id_var     = id_var, 
+           time_var   = time_var)
     
     #----------- Prior distributions -----------# 
     
