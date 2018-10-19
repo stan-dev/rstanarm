@@ -353,6 +353,9 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       
     } else if (plotfun == "tde") {
       
+      if (!x$has_tde)
+        stop2("Model does not have time-dependent effects.")
+      
       smooth_map   <- get_smooth_name(x$s_cpts, type = "smooth_map")
       smooth_vars  <- get_smooth_name(x$s_cpts, type = "smooth_vars")
       smooth_coefs <- get_smooth_name(x$s_cpts, type = "smooth_coefs")
