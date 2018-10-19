@@ -106,7 +106,7 @@ stanmvreg <- function(object) {
     out$n_grps    <- object$n_grps
     out$n_yobs    <- list_nms(object$n_yobs, M, stub)
     out$family    <- list_nms(object$family, M, stub)
-    out$glmod     <- list_nms(object$glmod, M, stub)
+    out$glmod     <- list_nms(object$glmod,  M, stub)
     out$data      <- if (!is_jm) list_nms(object$data, M, stub) else NULL
     classes <- c("stanmvreg", "stanreg", "lmerMod")
   }
@@ -115,9 +115,9 @@ stanmvreg <- function(object) {
     out$time_var  <- object$time_var
     out$n_subjects<- object$n_subjects
     out$n_events  <- sum(object$survmod$status == 1)
-    out$eventtime <- object$survmod$eventtime
-    out$status    <- object$survmod$status > 0
     out$survmod   <- object$survmod
+    out$eventtime <- object$survmod$eventtime
+    out$status    <- object$survmod$status
     out$qnodes    <- object$qnodes
     out$epsilon   <- object$epsilon    
     out$assoc     <- object$assoc
