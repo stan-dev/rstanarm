@@ -32,7 +32,7 @@ if (interactive())
   options(mc.cores = parallel::detectCores())
 
 TOLSCALES <- list(
-  hr_fixef = 0.25, # how many SEs can stan_surv HRs be from coxph/stpm2 HRs
+  hr_fixef  = 0.5, # how many SEs can stan_surv HRs be from coxph/stpm2 HRs
   tde_fixef = 0.5  # how many SEs can stan_surv tde HRs be from coxph/stpm2 tde HRs
 )
 
@@ -44,8 +44,8 @@ source(test_path("helpers", "expect_ppd.R"))
 source(test_path("helpers", "expect_equivalent_loo.R"))
 source(test_path("helpers", "SW.R"))
 # SW <- function(expr) eval(expr)
-source(test_path("helpers", "get_tols.R"))
-source(test_path("helpers", "recover_pars.R"))
+source(test_path("helpers", "get_tols_surv.R"))
+source(test_path("helpers", "recover_pars_surv.R"))
 
 eo <- function(...) { expect_output (...) }
 ee <- function(...) { expect_error  (...) }
@@ -135,3 +135,117 @@ test_that("basehaz argument works", {
   
 })
 
+
+#----  Compare parameter estimates: stan_surv vs coxph
+
+  compare_surv <- function(data, basehaz = "weibull", ...) {
+    require(survival)
+    fm <- Surv(eventtime, status) ~ X1 + X2
+    surv1 <- coxph(fm, data)
+    stan1 <- stan_surv(fm, data, basehaz = basehaz, 
+                       iter = 1000, chains = CHAINS, seed = SEED, ...) 
+    tols <- get_tols(surv1, tolscales = TOLSCALES)
+    pars_surv <- recover_pars(surv1)
+    pars_stan <- recover_pars(stan1)
+    for (i in names(tols$fixef))
+      expect_equal(pars_surv$fixef[[i]], pars_stan$fixef[[i]], 
+                   tol = tols$fixef[[i]], info = basehaz)     
+  }
+
+  #---- weibull data
+  
+  set.seed(543634)
+  covs <- data.frame(id = 1:300,
+                     X1 = rbinom(300, 1, 0.3),
+                     X2 = rnorm (300, 2, 2.0))
+  dat <- simsurv(dist    = "weibull",
+                 lambdas = 0.1,
+                 gammas  = 1.3,
+                 betas   = c(X1 = 0.3, X2 = -0.5),
+                 x       = covs)
+  dat <- merge(dat, covs)
+
+  compare_surv(data = dat, basehaz = "weibull")
+  compare_surv(data = dat, basehaz = "ms")
+
+  #---- gompertz data
+  
+  set.seed(45357)
+  covs <- data.frame(id = 1:300,
+                     X1 = rbinom(300, 1, 0.3),
+                     X2 = rnorm (300, 2, 2.0))
+  dat <- simsurv(dist    = "gompertz",
+                 lambdas = 0.1,
+                 gammas  = 0.05,
+                 betas   = c(X1 = -0.6, X2 = -0.4),
+                 x       = covs)
+  dat <- merge(dat, covs)
+
+  compare_surv(data = dat, basehaz = "gompertz")
+  compare_surv(data = dat, basehaz = "ms")
+  
+
+#--------  Check post-estimation functions work
+
+  # fit the models
+  o<-SW(f1  <- stan_surv(Surv(futimeYears, death) ~ sex + trt, 
+                         data = pbcSurv, basehaz = "ms",
+                         chains = 1, cores = 1, seed = 12345, iter = 10))
+  o<-SW(f2  <- update(f1, basehaz = "bs"))
+  o<-SW(f3  <- update(f1, basehaz = "exp"))
+  o<-SW(f4  <- update(f1, basehaz = "weibull"))
+  o<-SW(f5  <- update(f1, basehaz = "gompertz"))
+
+  # new data for predictions
+  nd1 <- pbcSurv[pbcSurv$id == 2,]
+  nd2 <- pbcSurv[pbcSurv$id %in% c(1,2),]
+
+  # test the models
+  for (j in c(1:30)) {
+    
+    mod <- try(get(paste0("f", j)), silent = TRUE)
+    
+    if (class(mod)[1L] == "try-error") {
+      
+      cat("Model not found:", paste0("f", j), "\n")
+    
+    } else {
+    
+      cat("Checking model:", paste0("f", j), "\n")
+      
+      test_that("log_lik works with estimation data", {
+        ll <- log_lik(mod)
+        expect_matrix(ll)
+      })
+      
+      test_that("log_lik works with new data (one individual)", {
+        ll <- log_lik(mod, newdata = nd1)
+        expect_matrix(ll)
+      })
+      
+      test_that("log_lik works with new data (multiple individuals)", {
+        ll <- log_lik(mod, newdata = nd2)
+        expect_matrix(ll)
+      })  
+  
+      test_that("loo and waic work", {
+        expect_equivalent_loo(mod)
+      })
+      
+      test_that("posterior_survfit works with estimation data", {
+        SW(ps <- posterior_survfit(mod))
+        expect_survfit(ps)
+      })
+      
+      test_that("posterior_survfit works with new data (one individual)", {
+        SW(ps <- posterior_survfit(mod, newdata = nd1))
+        expect_survfit(ps)
+      })  
+      
+      test_that("posterior_survfit works with new data (multiple individuals)", {
+        SW(ps <- posterior_survfit(mod, newdata = nd2))
+        expect_survfit(ps)
+      })
+      
+    }
+  }

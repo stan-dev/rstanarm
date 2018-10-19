@@ -46,8 +46,8 @@ source(test_path("helpers", "expect_ppd.R"))
 source(test_path("helpers", "expect_equivalent_loo.R"))
 source(test_path("helpers", "SW.R"))
 # SW <- function(expr) eval(expr)
-source(test_path("helpers", "get_tols.R"))
-source(test_path("helpers", "recover_pars.R"))
+source(test_path("helpers", "get_tols_jm.R"))
+source(test_path("helpers", "recover_pars_jm.R"))
 
 context("stan_jm")
 
