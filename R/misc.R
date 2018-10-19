@@ -1250,6 +1250,13 @@ STOP_no_var <- function(var) {
   stop2("Variable '", var, "' cannot be found in the data frame.")
 }
 
+# Error message when values for the time variable are negative
+#
+# @param var The name of the time variable
+STOP_negative_times <- function(var) {
+  stop2("Values for the time variable (", var, ") should not be negative.")
+}
+
 # Error message for dynamic predictions
 #
 # @param what A reason why the dynamic predictions are not allowed
