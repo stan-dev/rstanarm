@@ -935,7 +935,7 @@ use_predvars <- function(mod, keep_response = TRUE) {
 #   individual. The vector names should be the individual ids.
 # @param id_var,time_var The ID and time variable in the longitudinal data.
 # @return Nothing.
-validate_observation_times <-function(data, exittime, id_var, time_var) {
+validate_observation_times <-function(data, eventtimes, id_var, time_var) {
   if (!time_var %in% colnames(data)) 
     STOP_no_var(time_var)
   if (!id_var %in% colnames(data)) 
@@ -943,10 +943,10 @@ validate_observation_times <-function(data, exittime, id_var, time_var) {
   if (any(data[[time_var]] < 0))
     stop2("Values for the time variable (", time_var, ") should not be negative.")
   mt  <- tapply(data[[time_var]], factor(data[[id_var]]), max) # max observation time
-  nms <- names(exittime)                                       # patient IDs
+  nms <- names(eventtimes)                                     # patient IDs
   if (is.null(nms))
-    stop2("Bug found: cannot find names in the vector of exit times.")
-  sel <- which(sapply(nms, FUN = function(i) mt[i] > exittime[i]))
+    stop2("Bug found: cannot find names in the vector of event times.")
+  sel <- which(sapply(nms, FUN = function(i) mt[i] > eventtimes[i]))
   if (length(sel))
     stop2("The following individuals have observation times in the longitudinal ",
           "data that are later than their event time: ", comma(nms[sel]))     
@@ -2048,7 +2048,7 @@ check_weights <- function(weights, id_var) {
 # @param id_var The name of the ID variable
 handle_weights <- function(mod_stuff, weights, id_var) {
   
-  is_glmod <- (is.null(mod_stuff$exittime))
+  is_glmod <- (is.null(mod_stuff$eventtime))
   
   # No weights provided by user
   if (is.null(weights)) {
