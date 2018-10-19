@@ -86,14 +86,14 @@ handle_e_mod <- function(formula, data, meta) {
   t_upp <- make_t(mf, type = "upp") # upper time for interval censoring
   
   # event indicator for each row of data
-  status <- make_d(mf)
+  d <- make_d(mf)
   
-  event <- as.logical(status == 1)  
-  rcens <- as.logical(status == 0)
-  lcens <- as.logical(status == 2)
-  icens <- as.logical(status == 3)
+  event <- as.logical(d == 1)  
+  rcens <- as.logical(d == 0)
+  lcens <- as.logical(d == 2)
+  icens <- as.logical(d == 3)
   
-  if (any(status < 0 || status > 3))
+  if (any(d < 0 || d > 3))
     stop2("Invalid status indicator in Surv object.")
  
   # delayed entry indicator for each row of data
@@ -110,7 +110,8 @@ handle_e_mod <- function(formula, data, meta) {
   # entry and exit times for each individual
   t_tmp <- t_end; t_tmp[icens] <- t_upp[icens]
   entrytime <- tapply(t_beg, ids, min)
-  exittime  <- tapply(t_tmp, ids, max)
+  eventtime <- tapply(t_tmp, ids, max)
+  status    <- tapply(d,     ids, max)
   
   # dimensions
   nevent <- sum(event)
@@ -193,10 +194,10 @@ handle_e_mod <- function(formula, data, meta) {
   
   # predictor matrices
   x <- make_x(formula$tf_form, mf)$x
-  x_event <- keep_rows(x, status == 1)
-  x_lcens <- keep_rows(x, status == 2)
-  x_rcens <- keep_rows(x, status == 0)
-  x_icens <- keep_rows(x, status == 3)
+  x_event <- keep_rows(x, d == 1)
+  x_lcens <- keep_rows(x, d == 2)
+  x_rcens <- keep_rows(x, d == 0)
+  x_icens <- keep_rows(x, d == 3)
   x_delay <- keep_rows(x, delayed)
   K <- ncol(x)
   x_cpts <- rbind(x_event,
@@ -216,7 +217,7 @@ handle_e_mod <- function(formula, data, meta) {
   }
   
   # calculate mean log incidence, used as a shift in log baseline hazard
-  norm_const <- log(nevent / sum(exittime - entrytime))
+  norm_const <- log(nevent / sum(eventtime - entrytime))
   
   nlist(mod,
         surv_type = formula$surv_type,
@@ -226,7 +227,8 @@ handle_e_mod <- function(formula, data, meta) {
         has_icens = as.logical(nicens),
         model_frame = mf,
         entrytime,
-        exittime,
+        eventtime,
+        d, status,
         norm_const,
         t_beg, 
         t_end,
@@ -237,7 +239,6 @@ handle_e_mod <- function(formula, data, meta) {
         t_icenl,
         t_icenu,
         t_delay,
-        status,
         nevent,
         nlcens,
         nrcens,
