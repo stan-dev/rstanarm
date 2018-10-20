@@ -64,7 +64,7 @@ test_that("stan_polr runs for esoph example", {
 test_that("stan_polr throws error if formula excludes intercept", {
   expect_error(stan_polr(tobgp ~ 0 + agegp + alcgp, data = esoph, 
                          method = "loglog", prior = R2(0.4, "median")), 
-               regexp = "formula not allowed")
+               regexp = "an intercept is needed and assumed")
 })
 
 test_that("stan_polr throws error if shape,rate specified with >2 outcome levels", {

@@ -167,7 +167,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
   if (xint > 0L) {
     x <- x[, -xint, drop = FALSE]
     pc <- pc - 1L
-  } else warning("an intercept is needed and assumed")
+  } else stop("an intercept is needed and assumed")
   K <- ncol(x)
   wt <- model.weights(m)
   if (!length(wt))
