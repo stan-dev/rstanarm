@@ -18,6 +18,7 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code
 
+if (.Platform$OS.type == "windows") Sys.setenv(USE_CXX11 = 1) else Sys.setenv(USE_CXX14 = 1)
 set.seed(12345)
 
 MODELS_HOME <- "stan_files"
