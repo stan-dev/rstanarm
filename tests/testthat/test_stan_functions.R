@@ -18,7 +18,6 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code
 
-Sys.setenv(USE_CXX14 = 1)
 set.seed(12345)
 
 MODELS_HOME <- "stan_files"
