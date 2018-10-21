@@ -360,7 +360,8 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     draws$beta <- cbind(draws$beta, b)
   }
   if (is(object, "car")) {
-    psi_indx <- grep("psi", colnames(stanmat))
+    browser()
+    psi_indx <- grep("^psi\\[[[:digit:]]+\\]", colnames(stanmat))
     psi <- stanmat[, psi_indx, drop = FALSE]
     data$psi <- t(psi)
     out <- nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
@@ -407,7 +408,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 }
 .mu <- function(data, draws) {
   eta <- as.vector(linear_predictor(draws$beta, .xdata(data), data$offset))
-  if (!is.null(data$psi))
+  if (!is.null(data$psi))  # for CAR models (adding spatial effect)
     eta <- eta + as.vector(data$psi)
   draws$f$linkinv(eta)
 }
