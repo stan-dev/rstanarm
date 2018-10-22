@@ -360,7 +360,6 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     draws$beta <- cbind(draws$beta, b)
   }
   if (is(object, "car")) {
-    browser()
     psi_indx <- grep("^psi\\[[[:digit:]]+\\]", colnames(stanmat))
     psi <- stanmat[, psi_indx, drop = FALSE]
     data$psi <- t(psi)

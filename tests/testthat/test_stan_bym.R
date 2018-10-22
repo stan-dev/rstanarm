@@ -21,7 +21,7 @@
 library(rstanarm)
 SEED <- 12345
 set.seed(SEED)
-ITER <- 50
+ITER <- 25
 CHAINS <- 2
 
 context("stan_bym")
@@ -42,117 +42,98 @@ spatial_data <- grid_sim15@data
 SW(fit_gauss <- stan_bym(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(link = "identity"),
                          prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
                          prior_unstructured = normal(0,1), prior_structured = normal(0,1),
-                         W = W, iter = 100, chains = 4))
+                         W = W, iter = ITER, chains = CHAINS))
 SW(fit_binom <- stan_bym(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
                          prior_intercept = normal(0,1), prior = normal(0,1),
                          prior_unstructured = normal(0,1), prior_structured = normal(0,1),
                          family = binomial(link = "logit"),
-                         W = W, iter = 100, chains = 4))
+                         W = W, iter = ITER, chains = CHAINS))
 SW(fit_pois <- stan_bym(y_pois ~ 1 + x, data = spatial_data,
                         prior_intercept = normal(0,1), prior = normal(0,1),
                         prior_unstructured = normal(0,1), prior_structured = normal(0,1),
                         family = poisson(link = "log"),
-                        W = W, iter = 500, chains = 4))
+                        W = W, iter = ITER, chains = CHAINS))
 SW(fit_nb2 <- stan_bym(y_pois ~ 1 + x, data = spatial_data,
                        prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
                        prior_unstructured = normal(0,1), prior_structured = normal(0,1),
                        family = neg_binomial_2(link = "log"),
-                       W = W, iter = 500, chains = 4))
+                       W = W, iter = ITER, chains = CHAINS))
 SW(fit_gamma <- stan_bym(y_gamma ~ 1 + x, data = spatial_data, family = Gamma(link = "log"),
                          prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
                          prior_unstructured = normal(0,1), prior_structured = normal(0,1),
-                         W = W, iter = 500, chains = 4))
+                         W = W, iter = ITER, chains = CHAINS))
 
-# compare answers with INLA (NB2 reciprocal_dispersion param fails!)
-# test_that("stan_bym estimates match INLA", {
-#   inla_gauss_est <- c(-0.0469, 0.4327, 1/0.8603, 1/1.6159, 1/2.5314)
-#   inla_binom_est <- c(-1.9449, 0.3339, 1/0.5624, 1/13.5187)
-#   inla_pois_est <- c(0.7792, 0.4365, 1/0.3874, 1/52.7799)
-#   inla_nb_est <- c(0.8008, 0.4366, 1/0.3806, 1/66.9760, 35.4347)
-#   inla_gamma_est <- c(0.7881, -1.3443, 1/0.6516, 1/24.4265, 1/1.1556)
-#   bym_gauss <- unname(fit_gauss$stan_summary[1:4,"mean"])
-#   bym_binom <- unname(fit_binom$stan_summary[1:3,"mean"])
-#   bym_pois <- unname(fit_pois$stan_summary[1:3,"mean"])
-#   bym_nb2 <- unname(fit_nb2$stan_summary[1:4,"mean"])
-#   bym_gamma <- unname(fit_gamma$stan_summary[1:4,"mean"])
-#   expect_equal(bym_gauss, inla_gauss_est, tol = 0.2)
-#   expect_equal(bym_binom, inla_binom_est, tol = 0.2)
-#   expect_equal(bym_pois, inla_pois_est, tol = 0.2)
-#   expect_equal(bym_nb2, inla_nb_est, tol = 0.2)
-#   expect_equal(bym_gamma, inla_gamma_est, tol = 0.2)
+# # test family/link combinations
+# test_that("family = 'gaussian' works", {
+#   SW(fit_gauss_ident <- stan_bym(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(link = "identity"),
+#                                    W = W, iter = ITER, chains = CHAINS))
+#   SW(fit_gauss_log <- stan_bym(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(link = "log"),
+#                                  W = W, iter = ITER, chains = CHAINS))
+#   SW(fit_gauss_inv <- stan_bym(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(link = "inverse"),
+#                                  W = W, iter = ITER, chains = CHAINS))
+#   expect_stanreg(fit_gauss_ident)
+#   expect_stanreg(fit_gauss_log)
+#   expect_stanreg(fit_gauss_inv)
 # })
-
-# test family/link combinations
-test_that("family = 'gaussian' works", {
-  SW(fit_gauss_ident <- stan_bym(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(link = "identity"),
-                                   W = W, iter = ITER, chains = CHAINS))
-  SW(fit_gauss_log <- stan_bym(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(link = "log"),
-                                 W = W, iter = ITER, chains = CHAINS))
-  SW(fit_gauss_inv <- stan_bym(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(link = "inverse"),
-                                 W = W, iter = ITER, chains = CHAINS))
-  expect_stanreg(fit_gauss_ident)
-  expect_stanreg(fit_gauss_log)
-  expect_stanreg(fit_gauss_inv)
-})
-test_that("family = 'binomial' works", {
-  SW(fit_binom_logit <- stan_bym(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
-                                   family = binomial(link = "logit"),
-                                   W = W, iter = ITER, chains = CHAINS))
-  SW(fit_binom_probit <- stan_bym(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
-                                    family = binomial(link = "probit"),
-                                    W = W, iter = ITER, chains = CHAINS))
-  SW(fit_binom_cauchit <- stan_bym(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
-                                     family = binomial(link = "cauchit"),
-                                     W = W, iter = ITER, chains = CHAINS))
-  SW(fit_binom_log <- stan_bym(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
-                                 family = binomial(link = "log"),
-                                 W = W, iter = ITER, chains = CHAINS))
-  SW(fit_binom_cloglog <- stan_bym(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
-                                     family = binomial(link = "cloglog"),
-                                     W = W, iter = ITER, chains = CHAINS))
-  expect_stanreg(fit_binom_logit)
-  expect_stanreg(fit_binom_probit)
-  expect_stanreg(fit_binom_cauchit)
-  expect_stanreg(fit_binom_log)
-  expect_stanreg(fit_binom_cloglog)
-  
-})
-test_that("family = 'poisson' works", {
-  SW(fit_pois_log <- stan_bym(y_pois ~ 1 + x, data = spatial_data, family = poisson(link = "log"),
-                                W = W, iter = ITER, chains = CHAINS))
-  SW(fit_pois_ident <- stan_bym(y_pois ~ 1 + x, data = spatial_data, family = poisson(link = "identity"),
-                                  W = W, iter = ITER, chains = CHAINS))
-  SW(fit_pois_sqrt <- stan_bym(y_pois ~ 1 + x, data = spatial_data, family = poisson(link = "sqrt"),
-                                 W = W, iter = ITER, chains = CHAINS))
-  expect_stanreg(fit_pois_log)
-  expect_stanreg(fit_pois_ident)
-  expect_stanreg(fit_pois_sqrt)
-})
-
-# the Gamma and neg_binomial_2 likelihoods are buggy with identity/inverse links
-test_that("family = 'neg_binomial_2' works", {
-  SW(fit_nb2_log <- stan_bym(y_pois ~ 1 + x, data = spatial_data, family = neg_binomial_2(link = "log"),
-                               W = W, iter = ITER, chains = CHAINS))
-  SW(fit_nb2_ident <- stan_bym(y_pois ~ 1 + x, data = spatial_data, family = neg_binomial_2(link = "identity"),
-                                 W = W, iter = ITER, chains = CHAINS))
-  SW(fit_nb2_sqrt <- stan_bym(y_pois ~ 1 + x, data = spatial_data, family = neg_binomial_2(link = "sqrt"),
-                                W = W, iter = ITER, chains = CHAINS))
-  expect_stanreg(fit_nb2_log)
-  expect_stanreg(fit_nb2_ident)
-  expect_stanreg(fit_nb2_sqrt)
-})
-
-test_that("family = 'Gamma' works", {
-  SW(fit_gamma_log <- stan_bym(y_gamma ~ 1 + x, data = spatial_data, family = Gamma(link = "identity"),
-                                 W = W, iter = ITER, chains = CHAINS))
-  SW(fit_gamma_ident <- stan_bym(y_gamma ~ 1 + x, data = spatial_data, family = Gamma(link = "log"),
-                                   W = W, iter = ITER, chains = CHAINS))
-  SW(fit_gamma_sqrt <- stan_bym(y_gamma + 30 ~ 1 + x, data = spatial_data, family = Gamma(link = "inverse"),
-                                  W = W, iter = ITER, chains = CHAINS))
-  expect_stanreg(fit_gamma_log)
-  expect_stanreg(fit_gamma_ident)
-  expect_stanreg(fit_gamma_sqrt)
-})
+# test_that("family = 'binomial' works", {
+#   SW(fit_binom_logit <- stan_bym(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
+#                                    family = binomial(link = "logit"),
+#                                    W = W, iter = ITER, chains = CHAINS))
+#   SW(fit_binom_probit <- stan_bym(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
+#                                     family = binomial(link = "probit"),
+#                                     W = W, iter = ITER, chains = CHAINS))
+#   SW(fit_binom_cauchit <- stan_bym(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
+#                                      family = binomial(link = "cauchit"),
+#                                      W = W, iter = ITER, chains = CHAINS))
+#   SW(fit_binom_log <- stan_bym(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
+#                                  family = binomial(link = "log"),
+#                                  W = W, iter = ITER, chains = CHAINS))
+#   SW(fit_binom_cloglog <- stan_bym(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
+#                                      family = binomial(link = "cloglog"),
+#                                      W = W, iter = ITER, chains = CHAINS))
+#   expect_stanreg(fit_binom_logit)
+#   expect_stanreg(fit_binom_probit)
+#   expect_stanreg(fit_binom_cauchit)
+#   expect_stanreg(fit_binom_log)
+#   expect_stanreg(fit_binom_cloglog)
+#   
+# })
+# test_that("family = 'poisson' works", {
+#   SW(fit_pois_log <- stan_bym(y_pois ~ 1 + x, data = spatial_data, family = poisson(link = "log"),
+#                                 W = W, iter = ITER, chains = CHAINS))
+#   SW(fit_pois_ident <- stan_bym(y_pois ~ 1 + x, data = spatial_data, family = poisson(link = "identity"),
+#                                   W = W, iter = ITER, chains = CHAINS))
+#   SW(fit_pois_sqrt <- stan_bym(y_pois ~ 1 + x, data = spatial_data, family = poisson(link = "sqrt"),
+#                                  W = W, iter = ITER, chains = CHAINS))
+#   expect_stanreg(fit_pois_log)
+#   expect_stanreg(fit_pois_ident)
+#   expect_stanreg(fit_pois_sqrt)
+# })
+# 
+# # the Gamma and neg_binomial_2 likelihoods are buggy with identity/inverse links
+# test_that("family = 'neg_binomial_2' works", {
+#   SW(fit_nb2_log <- stan_bym(y_pois ~ 1 + x, data = spatial_data, family = neg_binomial_2(link = "log"),
+#                                W = W, iter = ITER, chains = CHAINS))
+#   SW(fit_nb2_ident <- stan_bym(y_pois ~ 1 + x, data = spatial_data, family = neg_binomial_2(link = "identity"),
+#                                  W = W, iter = ITER, chains = CHAINS))
+#   SW(fit_nb2_sqrt <- stan_bym(y_pois ~ 1 + x, data = spatial_data, family = neg_binomial_2(link = "sqrt"),
+#                                 W = W, iter = ITER, chains = CHAINS))
+#   expect_stanreg(fit_nb2_log)
+#   expect_stanreg(fit_nb2_ident)
+#   expect_stanreg(fit_nb2_sqrt)
+# })
+# 
+# test_that("family = 'Gamma' works", {
+#   SW(fit_gamma_log <- stan_bym(y_gamma ~ 1 + x, data = spatial_data, family = Gamma(link = "identity"),
+#                                  W = W, iter = ITER, chains = CHAINS))
+#   SW(fit_gamma_ident <- stan_bym(y_gamma ~ 1 + x, data = spatial_data, family = Gamma(link = "log"),
+#                                    W = W, iter = ITER, chains = CHAINS))
+#   SW(fit_gamma_sqrt <- stan_bym(y_gamma + 30 ~ 1 + x, data = spatial_data, family = Gamma(link = "inverse"),
+#                                   W = W, iter = ITER, chains = CHAINS))
+#   expect_stanreg(fit_gamma_log)
+#   expect_stanreg(fit_gamma_ident)
+#   expect_stanreg(fit_gamma_sqrt)
+# })
 
 # test QR 
 test_that("QR errors when number of predictors is <= 1", {
@@ -174,13 +155,13 @@ test_that("stan_bym errors with algorithm = 'optimizing'", {
                "'arg' should be one of “sampling”, “meanfield”, “fullrank”")
 })
 
-# test_that("loo/waic for stan_bym works", {
-#   loo(fit_gauss)
-#   loo(fit_binom)
-#   loo(fit_pois)
-#   loo(fit_nb2)
-#   loo(fit_gamma)
-# })
+test_that("loo/waic for stan_bym works", {
+  loo(fit_gauss)
+  loo(fit_binom)
+  loo(fit_pois)
+  loo(fit_nb2)
+  loo(fit_gamma)
+})
 
 test_that("posterior_predict works for stan_bym", {
   preds_gauss <- posterior_predict(fit_gauss)
@@ -208,4 +189,3 @@ test_that("predict errors if nrow(newdata) < number of spatial regions", {
   expect_error(predict(fit_gauss, newdata = data.frame(x = rnorm(10, 2, 1))),
                "'newdata' is less than the number of spatial regions.")
 })
-
