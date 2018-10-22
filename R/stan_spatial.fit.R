@@ -36,9 +36,16 @@ stan_spatial.fit <- function(x, y, w,
                              algorithm = c("sampling", "meanfield", "fullrank"),
                              adapt_delta = NULL,
                              QR = FALSE) {
+
+  w[upper.tri(w)] <- 0
+  
   # convert W to a sparse matrix if not already sparse.
   if(!is(w, "sparseMatrix"))
     w <- Matrix(w, sparse = TRUE)
+  
+  # pull out adjacency pairs from W
+  edges <- summary(w)  # analagous to `which(w == 1, arr.ind = TRUE)` on dense matrix
+  edges <- edges[,grep("^i$|^j$", colnames(edges))]
   
   algorithm <- match.arg(algorithm)
 
@@ -220,14 +227,6 @@ stan_spatial.fit <- function(x, y, w,
       xbar <- c(xbar %*% R_inv) 
     }
   }
-  
-  # pull out adjacency pairs from W
-  adj_fun <- function(W) {
-    W[upper.tri(W)] <- NA
-    out <- which(W == 1, arr.ind = TRUE)
-    return(out)
-  }
-  edges <- adj_fun(W)
 
   # need to use uncentered version
   standata <- nlist(N = nrow(xtemp),
@@ -280,7 +279,7 @@ stan_spatial.fit <- function(x, y, w,
   
   standata$order <- order
   if (order == 2) {
-    Q <- diag(rowSums(W)) - W
+    Q <- Matrix::diag(Matrix::rowSums(w)) - w
     Q <- Q %*% Q
     sparse_stuff <- rstan::extract_sparse_parts(Q)
     standata$Q_n <- as.array(length(sparse_stuff$w), dim = 1)

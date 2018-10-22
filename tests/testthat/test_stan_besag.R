@@ -38,27 +38,27 @@ data("lattice", package = "rstanarm")
 sp2weightmatrix <- function(spatialpolygon) {
   spdep::nb2mat(spdep::poly2nb(spatialpolygon, queen = TRUE), style = "B", zero.policy = TRUE)
 }
-W <- sp2weightmatrix(grid_sim15)
+neigh <- sp2weightmatrix(grid_sim15)
 spatial_data <- grid_sim15@data
 
 SW(fit_gauss <- stan_besag(y_gauss ~ 1 + x, data = spatial_data, family = gaussian(link = "identity"),
                            prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
-                           W = W, iter = ITER, chains = CHAINS))
+                           W = neigh, iter = ITER, chains = CHAINS))
 SW(fit_binom <- stan_besag(y_binom ~ 1 + x, trials = spatial_data$trials, data = spatial_data,
                            prior_intercept = normal(0,1), prior = normal(0,1),
                            family = binomial(link = "logit"),
-                           W = W, iter = ITER, chains = CHAINS))
+                           W = neigh, iter = ITER, chains = CHAINS))
 SW(fit_pois <- stan_besag(y_pois ~ 1 + x, data = spatial_data,
                           prior_intercept = normal(0,1), prior = normal(0,1),
                           family = poisson(link = "log"),
-                          W = W, iter = ITER, chains = CHAINS))
+                          W = neigh, iter = ITER, chains = CHAINS))
 SW(fit_nb2 <- stan_besag(y_pois ~ 1 + x, data = spatial_data,
                          prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
                          family = neg_binomial_2(link = "log"),
-                         W = W, iter = ITER, chains = CHAINS))
+                         W = neigh, iter = ITER, chains = CHAINS))
 SW(fit_gamma <- stan_besag(y_gamma ~ 1 + x, data = spatial_data, family = Gamma(link = "log"),
                            prior_intercept = normal(0,1), prior = normal(0,1), prior_aux = normal(0,1),
-                           W = W, iter = ITER, chains = CHAINS))
+                           W = neigh, iter = ITER, chains = CHAINS))
 
 # # test family/link combinations
 # test_that("family = 'gaussian' works", {

@@ -125,7 +125,7 @@ stan_besag <- function(formula,
   mt <- terms(formula, data = data)
   Y <- array1D_check(model.response(mf, type = "any"))
   X <- model.matrix(formula, data)
-  
+
   stanfit <- stan_spatial.fit(x = X, y = Y, w = W,
                               trials = trials,
                               family = family,
