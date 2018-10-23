@@ -12,14 +12,11 @@
 #'     \emph{Product normal family} \tab \code{product_normal} \cr
 #'   }
 #'   
-#'   See the \link[=priors]{priors help page} for details on the families and
+#'   See the \link[=priors]{priors help page} for details on the families and 
 #'   how to specify the arguments for all of the functions in the table above.
-#'   To omit a prior on the regression coefficients ---i.e., to use a flat
-#'   (improper) uniform prior--- \code{prior} can be set to \code{NULL}. 
-#'   
-#'   For \code{stan_glm} only, \code{prior="flat"} can be used a shortcut for
-#'   setting a flat prior on \emph{all} parameters (i.e., it will
-#'   override the \code{prior_intercept} and \code{prior_aux} arguments).
+#'   To omit a prior ---i.e., to use a flat (improper) uniform prior---
+#'   \code{prior} can be set to \code{NULL}, although this is rarely a good
+#'   idea.
 #'   
 #'   \strong{Note:} Unless \code{QR=TRUE}, if \code{prior} is from the Student t
 #'   family or Laplace family, and if the \code{autoscale} argument to the 

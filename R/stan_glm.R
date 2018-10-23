@@ -235,12 +235,6 @@ stan_glm <-
     Y <- cbind(y1, y0 = weights - y1)
     weights <- double(0)
   }
-  
-  if (identical(prior, "flat")) {
-    prior <- NULL
-    prior_intercept <- NULL
-    prior_aux <- NULL
-  }
 
   stanfit <- stan_glm.fit(
     x = X,
