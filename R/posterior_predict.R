@@ -206,7 +206,7 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   } else if (!is_polr(object) && is.binomial(family(object, m = m)$family)) {
     ppargs$trials <- pp_binomial_trials(object, newdata, m = m)
   }
-  if (is(object, "car") && is.binomial(family(object)$family))
+  if (is_car(object) && is.binomial(family(object)$family))
     ppargs$trials <- object$trials
   ppfun <- pp_fun(object, m = m)
   ytilde <- do.call(ppfun, ppargs)
@@ -218,7 +218,7 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     ytilde <- matrix(levels(get_y(object))[ytilde], nrow(ytilde), ncol(ytilde))
 
   # fix me!
-  if (is(object, "car")) {
+  if (is_car(object)) {
     if (is.null(newdata)) colnames(ytilde) <- rownames(model.frame(object))
     else colnames(ytilde) <- rownames(newdata)
   }
@@ -440,7 +440,7 @@ pp_eta <- function(object, data, draws = NULL, m = NULL, stanmat = NULL) {
     eta <- t(eta)
   }
 
-  if (is(object, "car")) {
+  if (is_car(object)) {
     psi_indx <- grep("psi", colnames(stanmat))
     psi <- stanmat[, psi_indx, drop = FALSE]
     if (some_draws)
