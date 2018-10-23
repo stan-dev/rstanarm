@@ -134,6 +134,7 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   post_mat <- as.matrix(post)
   data_mat <- posterior_predict(post)
   constant <- apply(data_mat, 1, FUN = function(x) all(duplicated(x)[-1L]))
+
   if (any(constant))
     stop("'pp_validate' cannot proceed because some simulated outcomes are constant. ",
          "Try again with better priors on the parameters.")
