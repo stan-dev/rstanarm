@@ -26,7 +26,7 @@
 #' @method print stanreg
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
-#' @param details Logical, defaulting to \code{TRUE}. If \code{FALSE} a more
+#' @param detail Logical, defaulting to \code{TRUE}. If \code{FALSE} a more
 #'   minimal summary is printed consisting only of the parameter estimates.
 #' @param digits Number of digits to use for formatting numbers.
 #' @param ... Ignored.
@@ -67,8 +67,8 @@
 #' 
 #' @seealso \code{\link{summary.stanreg}}, \code{\link{stanreg-methods}}
 #' 
-print.stanreg <- function(x, digits = 1, details = TRUE, ...) {
-  if (details) {
+print.stanreg <- function(x, digits = 1, detail = TRUE, ...) {
+  if (detail) {
     cat(x$stan_function)
     cat("\n family:      ", family_plus_link(x))
     cat("\n formula:     ", formula_string(formula(x)))
@@ -158,7 +158,7 @@ print.stanreg <- function(x, digits = 1, details = TRUE, ...) {
     }
   }
   
-  if (details) {
+  if (detail) {
     cat("\n------\n")
     cat("* For help interpreting the printed output see ?print.stanreg\n")
     cat("* For info on the priors used see ?prior_summary.stanreg\n")
@@ -474,10 +474,10 @@ print.summary.stanreg <-
     
     if (has_ppd_diagnostic) {
       ppd_estimates <- xtemp[rownames(xtemp) %in% ppd_nms, , drop=FALSE]
-      xtemp <- xtemp[!rownames(xtemp) %in% ppd_nms, , drop=FALSE]
     } else {
       ppd_estimates <- NULL
     }
+    xtemp <- xtemp[!rownames(xtemp) %in% c(ppd_nms, "log-posterior"), , drop=FALSE]
     
     # print table of parameter stats
     .printfr(xtemp, digits)
@@ -487,7 +487,7 @@ print.summary.stanreg <-
       .printfr(ppd_estimates, digits)
       cat("\nThe mean_ppd is the sample average posterior predictive ", 
           "distribution of the outcome variable ", 
-          "(for details see '?summary.stanreg').\n",
+          "(for details see help('summary.stanreg').\n",
           sep = '')
     }
     
