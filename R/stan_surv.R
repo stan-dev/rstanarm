@@ -492,6 +492,8 @@ stan_surv <- function(formula,
     qrcens       = if (!has_quadrature) 0L else qrcens,
     qicens       = if (!has_quadrature) 0L else qicens,
     qdelay       = if (!has_quadrature) 0L else qdelay,
+    Nlcens       = if (!has_quadrature) 0L else nlcens, 
+    Nicens       = if (!has_quadrature) 0L else nicens,
 
     x_cpts       = if (!has_quadrature) matrix(0,0,K)     else x_cpts,
     s_cpts       = if (!has_quadrature) matrix(0,0,S)     else s_cpts,

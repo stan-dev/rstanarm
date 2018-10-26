@@ -408,7 +408,9 @@ data {
   int<lower=0> nicens;     // num. rows w/ interval censoring
   int<lower=0> ndelay;     // num. rows w/ delayed entry
   int<lower=0> qnodes;     // num. nodes for GK quadrature
-  int<lower=0> Nevent;     // num. rows w/ an event, used only in model w/ quadrature
+  int<lower=0> Nevent;     // num. rows w/ an event;      used only w/ quadrature
+  int<lower=0> Nlcens;     // num. rows w/ left cens;     used only w/ quadrature
+  int<lower=0> Nicens;     // num. rows w/ interval cens; used only w/ quadrature
   int<lower=0> qevent;     // num. quadrature points for rows w/ an event
   int<lower=0> qlcens;     // num. quadrature points for rows w/ left censoring
   int<lower=0> qrcens;     // num. quadrature points for rows w/ right censoring
@@ -599,7 +601,8 @@ transformed parameters {
       beta_tde[beg] = z_beta_tde[beg];  // define first spline coef
       if (end > beg) {                  // define subsequent spline coefs
         for (j in (beg+1):end) {
-          beta_tde[j] = beta_tde[j-1] + z_beta_tde[j] * smooth_sd[smooth_map[j]];
+          real tmp = beta_tde[j-1];
+          beta_tde[j] = tmp + z_beta_tde[j] * smooth_sd[smooth_map[j]];
         }
       }
     }
@@ -639,11 +642,11 @@ model {
 
       // add intercept
       if (has_intercept == 1) {
-        if (nevent > 0) eta_event = eta_event + gamma[1];
-        if (nlcens > 0) eta_lcens = eta_lcens + gamma[1];
-        if (nrcens > 0) eta_rcens = eta_rcens + gamma[1];
-        if (nicens > 0) eta_icens = eta_icens + gamma[1];
-        if (ndelay > 0) eta_delay = eta_delay + gamma[1];
+        if (nevent > 0) eta_event += gamma[1];
+        if (nlcens > 0) eta_lcens += gamma[1];
+        if (nrcens > 0) eta_rcens += gamma[1];
+        if (nicens > 0) eta_icens += gamma[1];
+        if (ndelay > 0) eta_delay += gamma[1];
       }
 
       // evaluate log hazard and log survival
@@ -711,12 +714,12 @@ model {
 
       // add on time-varying part to linear predictor
       if (S > 0) {
-        eta = eta + s_cpts * beta_tde;
+        eta += s_cpts * beta_tde;
       }
 
       // add on intercept to linear predictor
       if (has_intercept == 1) {
-        eta = eta + gamma[1];
+        eta += gamma[1];
       }
 
       // evaluate log hazard
@@ -753,10 +756,12 @@ model {
       // increment target with log-lik contributions for event submodel
       if (Nevent > 0) target +=  lhaz_epts_event;
       if (qevent > 0) target +=  quadrature_log_surv(qwts_event, lhaz_qpts_event);
-      if (qlcens > 0) target +=  quadrature_log_cdf (qwts_lcens, lhaz_qpts_lcens, qnodes);
+      if (qlcens > 0) target +=  quadrature_log_cdf (qwts_lcens, lhaz_qpts_lcens,
+                                                     qnodes, Nlcens);
       if (qrcens > 0) target +=  quadrature_log_surv(qwts_rcens, lhaz_qpts_rcens);
       if (qicens > 0) target +=  quadrature_log_cdf2(qwts_icenl, lhaz_qpts_icenl,
-                                                     qwts_icenu, lhaz_qpts_icenu, qnodes);
+                                                     qwts_icenu, lhaz_qpts_icenu,
+                                                     qnodes, Nicens);
       if (qdelay > 0) target += -quadrature_log_surv(qwts_delay, lhaz_qpts_delay);
 
     }

@@ -71,6 +71,7 @@
   * @param qwts Vector, the quadrature weights
   * @param log_hazard Vector, log hazard at the quadrature points
   * @param qnodes Integer, the number of quadrature points for each individual
+  * @param N Integer, the number of individuals (ie. rows(log_hazard) / qnodes)
   * @return A vector
   */
   real quadrature_log_surv(vector qwts, vector log_hazard) {
@@ -79,9 +80,8 @@
     return res;
   }
 
-  vector quadrature_log_cdf(vector qwts, vector log_hazard, int qnodes) {
+  vector quadrature_log_cdf(vector qwts, vector log_hazard, int qnodes, int N) {
     int M = rows(log_hazard);
-    int N = M / qnodes; // num of individuals
     vector[M] hazard = exp(log_hazard);
     matrix[N,qnodes] qwts_mat = to_matrix(qwts,   N, qnodes);
     matrix[N,qnodes] haz_mat  = to_matrix(hazard, N, qnodes);
@@ -93,9 +93,8 @@
 
   vector quadrature_log_cdf2(vector qwts_lower, vector log_hazard_lower,
                              vector qwts_upper, vector log_hazard_upper,
-                             int qnodes) {
+                             int qnodes, int N) {
     int M = rows(log_hazard_lower);
-    int N = M / qnodes; // num of individuals
     vector[M] hazard_lower = exp(log_hazard_lower);
     vector[M] hazard_upper = exp(log_hazard_upper);
     matrix[N,qnodes] qwts_lower_mat = to_matrix(qwts_lower,   N, qnodes);
