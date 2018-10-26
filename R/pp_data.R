@@ -32,6 +32,9 @@ pp_data <-
       if (!is.null(offset)) out$offset <- offset
       return(out)
     }
+    if (is.stansurv(object)) {
+      return(.pp_data_surv(object, newdata = newdata, ...))
+    }
     .pp_data(object, newdata = newdata, offset = offset, ...)
   }
 
@@ -235,6 +238,94 @@ pp_data <-
     group$Z@x <- 0
   return(nlist(x = nlf$X, offset = offset, Z = group$Z,
                Z_names = make_b_nms(group), arg1, arg2))
+}
+
+
+#------------------  for models fit using stan_surv  -----------------------
+
+.pp_data_surv <- function(object, 
+                          newdata = NULL,
+                          times   = NULL,
+                          at_quadpoints = FALSE,
+                          ...) {
+
+  formula <- object$formula
+  basehaz <- object$basehaz
+  
+  if (is.null(newdata))
+    newdata <- get_model_data(object)
+  
+  # flags
+  has_tde        <- object$has_tde
+  has_quadrature <- object$has_quadrature
+  
+  # define dimensions and times for quadrature
+  if (has_quadrature && at_quadpoints) {
+    
+    if (is.null(times))
+      stop("Bug found: 'times' must be specified.")
+    
+    # error check time variables
+    if (length(times) == nrow(newdata))
+      stop("Bug found: length of 'times' should equal number rows in the data.")
+
+    # number of nodes
+    qnodes <- object$qnodes
+    
+    # standardised weights and nodes for quadrature
+    qq <- get_quadpoints(nodes = qnodes)
+    qp <- qq$points
+    qw <- qq$weights
+    
+    # quadrature points & weights, evaluated for each row of data
+    pts <- uapply(qp, unstandardise_qpts, 0, times)
+    wts <- uapply(qw, unstandardise_qwts, 0, times)
+    
+    # id vector for quadrature points
+    ids <- factor(rep(1:length(times), times = qnodes))
+    
+  } else { # predictions don't require quadrature
+    
+    pts    <- times
+    wts    <- rep(NA, length(times))
+    ids    <- factor(1:length(times))
+    qnodes <- NULL
+    
+  }
+
+  # model frame for predictor matrices
+  mf <- make_model_frame(formula = formula$tf_form, 
+                         data    = newdata, 
+                         check_constant = FALSE)$mf
+
+  # time-fixed predictor matrix
+  x <- make_x(formula        = object$formula$tf_form, 
+              model_frame    = mf, 
+              xlevs          = object$xlevs, 
+              check_constant = FALSE)$x
+  if (has_quadrature && at_quadpoints) {
+    x <- rep_rows(x, times = qnodes)
+  }
+
+  # time-varying predictor matrix
+  if (has_tde) {
+    s <- make_s(formula = object$formula$td_form,
+                data    = newdata,
+                times   = pts, # prediction times or quadrature points
+                xlevs   = object$xlevs)
+  } else { # model does not have tde
+    s <- matrix(0, length(pts), 0)
+  }
+  
+  # return object
+  return(nlist(pts,
+               wts,
+               ids,
+               x,
+               s,
+               has_quadrature,
+               at_quadpoints,
+               qnodes))
 }
 
 
