@@ -201,6 +201,8 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
 
   validate_stansurv_object(x)
 
+  limits <- match.arg(limits)
+  
   if (plotfun %in% c("basehaz", "tde")) {
 
     stanpars <- extract_pars(x)
