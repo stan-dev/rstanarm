@@ -82,7 +82,12 @@ print.stanreg <- function(x, digits = 1, ...) {
     cat("\n formula:        ", formula_string(formula(x)))
     cat("\n observations:   ", x$nobs) 
     cat("\n events:         ", x$nevents, percent_string(x$nevents, x$nobs))
-    cat("\n censored:       ", x$ncensor, percent_string(x$ncensor, x$nobs))
+    if (x$nlcens > 0) 
+      cat("\n left censored:  ", x$nlcens, percent_string(x$nlcens, x$nobs))
+    if (x$nrcens > 0) 
+      cat("\n right censored: ", x$nrcens, percent_string(x$nrcens, x$nobs))
+    if (x$nicens > 0) 
+      cat("\n interval cens.: ", x$nicens, percent_string(x$nicens, x$nobs))
     cat("\n delayed entry:  ", yes_no_string(x$ndelayed))
   } else {
     cat("\n family:      ", family_plus_link(x))
@@ -445,7 +450,9 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
     npreds        = if (is_glm) length(coef(object)) else NULL,
     ngrps         = if (mer)  ngrps(object)   else NULL,
     nevents       = if (surv) object$nevents  else NULL,
-    ncensor       = if (surv) object$ncensor  else NULL,
+    nlcens        = if (surv) object$nlcens   else NULL,
+    nrcens        = if (surv) object$nrcens   else NULL,
+    nicens        = if (surv) object$nicens   else NULL,
     ndelayed      = if (surv) object$ndelayed else NULL,
     print.digits  = digits,
     priors        = object$prior.info,
@@ -473,7 +480,12 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
       cat("\n sample:         ", atts$posterior_sample_size, "(posterior sample size)")
     cat("\n observations:   ", atts$nobs)
     cat("\n events:         ", atts$nevents, percent_string(atts$nevents, atts$nobs))
-    cat("\n censored:       ", atts$ncensor, percent_string(atts$ncensor, atts$nobs))
+    if (atts$nlcens > 0)
+      cat("\n left censored:  ", atts$nlcens, percent_string(atts$nlcens, atts$nobs))
+    if (atts$nrcens > 0)
+      cat("\n right censored: ", atts$nrcens, percent_string(atts$nrcens, atts$nobs))
+    if (atts$nicens > 0)
+      cat("\n interval cens.: ", atts$nicens, percent_string(atts$nicens, atts$nobs))
     cat("\n delayed entry:  ", yes_no_string(atts$ndelayed))
   } else { # anything except survival models
     cat("\n function:    ", atts$stan_function)
