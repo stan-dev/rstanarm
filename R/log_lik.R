@@ -760,9 +760,9 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
   }
   
   # Log baseline hazard at etimes (if not NULL) and qtimes
-  log_basehaz <- evaluate_log_basehaz(times = times, 
-                                      basehaz = basehaz, 
-                                      coefs = pars$bhcoef)
+  log_basehaz <- evaluate_log_basehaz2(times = times, 
+                                       basehaz = basehaz, 
+                                       coefs = pars$bhcoef)
   
   # Log hazard at etimes (if not NULL) and qtimes
   log_haz <- log_basehaz + e_eta  
@@ -812,7 +812,7 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
 # @param basehaz A list with info about the baseline hazard.
 # @param coefs A vector or matrix of parameter estimates (MCMC draws).
 # @return A vector or matrix, depending on the input type of coefs.
-evaluate_log_basehaz <- function(times, basehaz, coefs) {
+evaluate_log_basehaz2 <- function(times, basehaz, coefs) {
   type <- basehaz$type_name
   if (type == "weibull") { 
     X  <- log(times) # log times
@@ -869,3 +869,151 @@ evaluate_log_survival.matrix <- function(log_haz, qnodes, qwts) {
   # return: -cum_haz == log survival probability
   -cum_haz
 } 
+
+#-------------
+
+# Evaluate the log baseline hazard at the specified times given the 
+# vector or matrix of MCMC draws for the baseline hazard parameters
+#
+# @param times A vector of times.
+# @param basehaz A list with info about the baseline hazard.
+# @param aux,intercept A vector or matrix of parameter estimates (MCMC draws).
+# @param x Predictor matrix.
+# @param s Predictor matrix for time-dependent effects.
+# @return A vector or matrix, depending on the input type of aux.
+evaluate_log_basehaz <- function(times, basehaz, aux, intercept = NULL) {
+  switch(get_basehaz_name(basehaz),
+         "exp"       = log_basehaz_exponential(times, log_scale = intercept),
+         "weibull"   = log_basehaz_weibull (times, shape = aux, log_scale = intercept),
+         "gompertz"  = log_basehaz_gompertz(times, scale = aux, log_shape = intercept),
+         "ms"        = log_basehaz_ms(times, coefs = aux, basis = basehaz$basis),
+         "bs"        = log_basehaz_bs(times, coefs = aux, basis = basehaz$basis),
+         "piecewise" = log_basehaz_pw(times, coefs = aux, knots = basehaz$knots),
+         stop2("Bug found: unknown type of baseline hazard."))
+}
+
+log_basehaz_exponential <- function(x, log_scale) {
+  linear_predictor(log_scale, rep(1, length(x)))
+}
+log_basehaz_weibull  <- function(x, shape, log_scale) {
+  as.vector(log_scale + log(shape)) + linear_predictor(shape - 1, log(x))
+}
+log_basehaz_gompertz <- function(x, scale, log_shape) {
+  as.vector(log_shape) + linear_predictor(scale, x)
+}
+log_basehaz_ms <- function(x, coefs, basis) {
+  log(linear_predictor(coefs, basis_matrix(x, basis = basis)))
+}
+log_basehaz_bs <- function(x, coefs, basis) {
+  linear_predictor(coefs, basis_matrix(x, basis = basis))
+}
+log_basehaz_pw <- function(x, coefs, knots) {
+  linear_predictor(coefs, dummy_matrix(x, knots = knots))
+}
+
+evaluate_log_haz <- function(times, basehaz, betas, betas_tde, aux, 
+                             intercept = NULL, x, s = NULL) {
+  eta <- linear_predictor(betas, x)
+  if ((!is.null(s)) && ncol(s))
+    eta <- eta + linear_predictor(betas_tde, s)
+  args <- nlist(times, basehaz, aux, intercept)
+  do.call(evaluate_log_basehaz, args) + eta
+}
+
+evaluate_basehaz <- function(times, basehaz, aux, intercept = NULL) {
+  exp(evaluate_log_basehaz(times = times, basehaz = basehaz, 
+                           aux = aux, intercept = intercept))
+}
+
+#-------------
+
+# Evaluate the log baseline survival at the specified times given the 
+# vector or matrix of MCMC draws for the baseline hazard parameters
+#
+# @param times A vector of times.
+# @param basehaz A list with info about the baseline hazard.
+# @param aux,intercept A vector or matrix of parameter estimates (MCMC draws).
+# @return A vector or matrix, depending on the input type of aux.
+evaluate_log_basesurv <- function(times, basehaz, aux, intercept = NULL) {
+  switch(get_basehaz_name(basehaz),
+         "exp"       = log_basesurv_exponential(times, log_scale = intercept),
+         "weibull"   = log_basesurv_weibull (times, shape = aux, log_scale = intercept),
+         "gompertz"  = log_basesurv_gompertz(times, scale = aux, log_shape = intercept),
+         "ms"        = log_basesurv_ms(times, coefs = aux, basis = basehaz$basis),
+         stop2("Bug found: unknown type of baseline hazard."))
+}
+
+log_basesurv_exponential <- function(x, log_scale) {
+  -linear_predictor(exp(log_scale), x)
+}
+log_basesurv_weibull  <- function(x, shape, log_scale) {
+  -exp(as.vector(log_scale) + linear_predictor(shape, log(x)))
+}
+log_basesurv_gompertz <- function(x, scale, log_shape) {
+  -(as.vector(log_shape / scale)) * (exp(linear_predictor(scale, x)) - 1)
+}
+log_basesurv_ms <- function(x, coefs, basis) {
+  -linear_predictor(coefs, basis_matrix(x, basis = basis, integrate = TRUE))
+}
+
+evaluate_log_surv <- function(times, basehaz, betas, aux, intercept = NULL, x, ...) {
+  eta  <- linear_predictor(betas, x)
+  args <- nlist(times, basehaz, aux,  intercept)
+  do.call(evaluate_log_basesurv, args) * exp(eta)
+}
+
+#---------------
+
+quadrature_sum <- function(x, qnodes, qwts) { 
+  UseMethod("quadrature_sum") 
+}
+
+quadrature_sum.default <- function(x, qnodes, qwts) {
+  weighted_x <- qwts * x                                 # apply quadrature weights
+  splitted_x <- split_vector(x, n_segments = qnodes)     # split at each quad node
+  Reduce('+', splitted_x)                                # sum over the quad nodes
+}
+
+quadrature_sum.matrix <- function(x, qnodes, qwts) {
+  weighted_x <- sweep_multiply(x, qwts, margin = 2L)     # apply quadrature weights
+  splitted_x <- array2list(weighted_x, nsplits = qnodes) # split at each quad node
+  Reduce('+', splitted_x)                                # sum over the quad nodes     
+}
+
+# Split a vector or matrix into a specified number of segments and return
+# each segment as an element of a list. The matrix method allows splitting
+# across the column (bycol = TRUE) or row margin (bycol = FALSE).
+#
+# @param x A vector or matrix.
+# @param n_segments Integer specifying the number of segments.
+# @param bycol Logical, should a matrix be split along the column or row margin?
+# @return A list with n_segments elements.
+split2 <- function(x, n_segments = 1, ...) { 
+  UseMethod("split2") 
+}
+
+split2.vector <- function(x, n_segments = 1, ...) {
+  len <- length(x)
+  segment_length <- len %/% n_segments 
+  if (!len == (segment_length * n_segments))
+    stop("Dividing x by n_segments does not result in an integer.")
+  split(x, rep(1:n_segments, each = segment_length))
+}
+
+split2.matrix <- function(x, n_segments = 1, bycol = TRUE) {
+  len <- if (bycol) ncol(x) else nrow(x)
+  segment_length <- len %/% n_segments 
+  if (!len == (segment_length * n_segments))
+    stop("Dividing x by n_segments does not result in an integer.")
+  lapply(1:nsplits, function(k) {
+    if (bycol) x[, (k-1) * len_k + 1:segment_length, drop = FALSE] else
+      x[(k-1) * len_k + 1:len_k, , drop = FALSE]})
+}
+
+# Split a vector or matrix into a specified number of segments
+# (see rstanarm:::split2) and then reduce it using 'FUN'
+split_and_reduce <- function(x, n_segments = 1, bycol = TRUE, FUN = '+') {
+  splitted_x <- split2(x, n_segments = n_segments, bycol = bycol)
+  Reduce(FUN, splitted_x)
+}
+
