@@ -833,6 +833,8 @@ hash_y <- function(x, ...) {
 is_discrete <- function(object) {
   if (inherits(object, "polr"))
     return(TRUE)
+  if (inherits(object, "stansurv"))
+    return(FALSE)
   if (inherits(object, "stanmvreg")) {
     fams <- fetch(family(object), "family")
     res <- sapply(fams, function(x)
