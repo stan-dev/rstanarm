@@ -266,7 +266,7 @@ pp_data <-
       stop("Bug found: 'times' must be specified.")
     
     # error check time variables
-    if (length(times) == nrow(newdata))
+    if (!length(times) == nrow(newdata))
       stop("Bug found: length of 'times' should equal number rows in the data.")
 
     # number of nodes
@@ -282,15 +282,14 @@ pp_data <-
     wts <- uapply(qw, unstandardise_qwts, 0, times)
     
     # id vector for quadrature points
-    ids <- factor(rep(1:length(times), times = qnodes))
+    ids <- rep(seq_along(times), times = qnodes)
     
   } else { # predictions don't require quadrature
     
     pts    <- times
     wts    <- rep(NA, length(times))
-    ids    <- factor(1:length(times))
-    qnodes <- NULL
-    
+    ids    <- seq_along(times)
+
   }
 
   # model frame for predictor matrices
@@ -325,7 +324,7 @@ pp_data <-
                s,
                has_quadrature,
                at_quadpoints,
-               qnodes))
+               qnodes = object$qnodes))
 }
 
 
@@ -472,12 +471,22 @@ pp_data <-
 # need to be recalculated at quadrature points etc, for example
 # in posterior_survfit.
 #
-# @param object A stanmvreg object.
+# @param object A stansurv, stanmvreg or stanjm object.
 # @param m Integer specifying which submodel to get the
-#   prediction data frame for.
+#   prediction data frame for (for stanmvreg or stanjm objects).
 # @return A data frame or list of data frames with all the
 #   (unevaluated) variables required for predictions.
-get_model_data <- function(object, m = NULL) {
+get_model_data <- function(object, ...) UseMethod("get_model_data")
+
+get_model_data.stansurv <- function(object, ...) {
+  validate_stansurv_object(object)
+  terms <- terms(object)
+  row_nms <- row.names(model.frame(object))
+  get_all_vars(terms, object$data)[row_nms, , drop = FALSE]
+}
+
+get_model_data.stanmvreg <- function(object, m = NULL, ...) {
+  
   validate_stanmvreg_object(object)
   M <- get_M(object)
   terms <- terms(object, fixed.only = FALSE)
