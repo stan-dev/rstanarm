@@ -207,7 +207,7 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
     has_intercept <- check_for_intercept(x$basehaz)
 
     t_min <- min(x$entrytime)
-    t_max <- max(x$exittime)
+    t_max <- max(x$eventtime)
     times <- seq(t_min, t_max, by = (t_max - t_min) / 200)
 
     if (plotfun == "basehaz") {
