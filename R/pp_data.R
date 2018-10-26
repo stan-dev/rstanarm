@@ -35,7 +35,9 @@ pp_data <-
     .pp_data(object, newdata = newdata, offset = offset, ...)
   }
 
-# for models without lme4 structure
+	
+#-------------  for models without lme4 structure  -------------------------
+
 .pp_data <- function(object, newdata = NULL, offset = NULL, ...) {
   if (is(object, "gamm4")) {
     requireNamespace("mgcv", quietly = TRUE)
@@ -78,7 +80,8 @@ pp_data <-
 }
 
 
-# for models fit using stan_(g)lmer or stan_gamm4
+#---------  for models fit using stan_(g)lmer or stan_gamm4  -----------------
+
 .pp_data_mer <- function(object, newdata, re.form, m = NULL, ...) {
   if (is(object, "gamm4")) {
     requireNamespace("mgcv", quietly = TRUE)
@@ -100,44 +103,6 @@ pp_data <-
     if (!is.numeric(offset)) offset <- NULL
   }
   return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names))
-}
-
-# for models fit using stan_nlmer
-.pp_data_nlmer <- function(object, newdata, re.form, offset = NULL, m = NULL, ...) {
-  inputs <- parse_nlf_inputs(object$glmod$respMod)
-  if (is.null(newdata)) {
-    arg1 <- arg2 <- NULL
-  } else if (object$family$link == "inv_SSfol") {
-    arg1 <- newdata[[inputs[2]]]
-    arg2 <- newdata[[inputs[3]]]
-  } else {
-    arg1 <- newdata[[inputs[2]]]
-    arg2 <- NULL
-  }
-  f <- formula(object, m = m)
-  if (!is.null(re.form) && !is.na(re.form)) {
-    f <- as.character(f)
-    f[3] <- as.character(re.form)
-    f <- as.formula(f[-1])
-  }
-  if (is.null(newdata)) newdata <- model.frame(object)
-  else {
-    yname <- names(model.frame(object))[1]
-    newdata[[yname]] <- 0
-  }
-  mc <- match.call(expand.dots = FALSE)
-  mc$re.form <- mc$offset <- mc$object <- mc$newdata <- NULL
-  mc$data <- newdata
-  mc$formula <- f
-  mc$start <- fixef(object)
-  nlf <- nlformula(mc)
-  offset <- .pp_data_offset(object, newdata, offset)
-
-  group <- with(nlf$reTrms, pad_reTrms(Ztlist, cnms, flist))
-  if (!is.null(re.form) && !is(re.form, "formula") && is.na(re.form)) 
-    group$Z@x <- 0
-  return(nlist(x = nlf$X, offset = offset, Z = group$Z,
-               Z_names = make_b_nms(group), arg1, arg2))
 }
 
 # the functions below are heavily based on a combination of 
@@ -233,7 +198,47 @@ pp_data <-
 }
 
 
-#----------------------- pp_data for joint models --------------------------
+#-------------  for models fit using stan_nlmer  -----------------------------
+
+.pp_data_nlmer <- function(object, newdata, re.form, offset = NULL, m = NULL, ...) {
+  inputs <- parse_nlf_inputs(object$glmod$respMod)
+  if (is.null(newdata)) {
+    arg1 <- arg2 <- NULL
+  } else if (object$family$link == "inv_SSfol") {
+    arg1 <- newdata[[inputs[2]]]
+    arg2 <- newdata[[inputs[3]]]
+  } else {
+    arg1 <- newdata[[inputs[2]]]
+    arg2 <- NULL
+  }
+  f <- formula(object, m = m)
+  if (!is.null(re.form) && !is.na(re.form)) {
+    f <- as.character(f)
+    f[3] <- as.character(re.form)
+    f <- as.formula(f[-1])
+  }
+  if (is.null(newdata)) newdata <- model.frame(object)
+  else {
+    yname <- names(model.frame(object))[1]
+    newdata[[yname]] <- 0
+  }
+  mc <- match.call(expand.dots = FALSE)
+  mc$re.form <- mc$offset <- mc$object <- mc$newdata <- NULL
+  mc$data <- newdata
+  mc$formula <- f
+  mc$start <- fixef(object)
+  nlf <- nlformula(mc)
+  offset <- .pp_data_offset(object, newdata, offset)
+
+  group <- with(nlf$reTrms, pad_reTrms(Ztlist, cnms, flist))
+  if (!is.null(re.form) && !is(re.form, "formula") && is.na(re.form)) 
+    group$Z@x <- 0
+  return(nlist(x = nlf$X, offset = offset, Z = group$Z,
+               Z_names = make_b_nms(group), arg1, arg2))
+}
+
+
+#--------------------  for models fit using stan_jm  -----------------------
 
 # Return the design matrices required for evaluating the linear predictor or
 # log-likelihood in post-estimation functions for a \code{stan_jm} model
