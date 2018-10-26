@@ -215,7 +215,7 @@ loo.stanreg <-
         ))
     } else if (is_clogit(x)) {
       ll <- log_lik.stanreg(x)
-      cons <- apply(ll,MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
+      cons <- apply(ll, MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
       if (any(cons)) {
         message(
           "The following strata were dropped from the ",
@@ -224,6 +224,16 @@ loo.stanreg <-
         )
         ll <- ll[,!cons, drop = FALSE]
       }
+      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      loo_x <-
+        suppressWarnings(loo.matrix(
+          ll,
+          r_eff = r_eff,
+          cores = cores,
+          save_psis = save_psis
+        ))
+    } else if (is.stansurv(x) && x$has_quadrature) {
+      ll <- log_lik.stanreg(x)
       r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
       loo_x <-
         suppressWarnings(loo.matrix(
