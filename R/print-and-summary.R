@@ -382,7 +382,8 @@ print.stanmvreg <- function(x, digits = 3, ...) {
 #' @importMethodsFrom rstan summary
 summary.stanreg <- function(object, pars = NULL, regex_pars = NULL, 
                             probs = NULL, ..., digits = 1) {
-  mer <- is.mer(object)
+  surv <- is.surv(object)
+  mer  <- is.mer(object)
   pars <- collect_pars(object, pars, regex_pars)
   
   if (!used.optimizing(object)) {
@@ -428,21 +429,27 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
     out <- object$stan_summary[mark, , drop=FALSE]
   }
   
+  is_glm <- 
+    isTRUE(object$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm"))
+  
   structure(
     out,
-    call = object$call,
-    algorithm = object$algorithm,
+    call          = object$call,
+    algorithm     = object$algorithm,
     stan_function = object$stan_function,
-    family = family_plus_link(object),
-    formula = formula(object),
+    family        = family_plus_link(object),
+    formula       = formula(object),
+    basehaz       = if (surv) basehaz_string(get_basehaz(object)) else NULL,
     posterior_sample_size = posterior_sample_size(object),
-    nobs = nobs(object),
-    npreds = if (isTRUE(object$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm")))
-      length(coef(object)) else NULL,
-    ngrps = if (mer) ngrps(object) else NULL,
-    print.digits = digits,
-    priors = object$prior.info,
-    class = "summary.stanreg"
+    nobs          = nobs(object),
+    npreds        = if (is_glm) length(coef(object)) else NULL,
+    ngrps         = if (mer)  ngrps(object)   else NULL,
+    nevents       = if (surv) object$nevents  else NULL,
+    ncensor       = if (surv) object$ncensor  else NULL,
+    ndelayed      = if (surv) object$ndelayed else NULL,
+    print.digits  = digits,
+    priors        = object$prior.info,
+    class         = "summary.stanreg"
   )
 }
 
@@ -455,20 +462,35 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
                                   ...) {
   atts <- attributes(x)
   cat("\nModel Info:\n")
-  cat("\n function:    ", atts$stan_function)
-  cat("\n family:      ", atts$family)
-  cat("\n formula:     ", formula_string(atts$formula))
-  cat("\n algorithm:   ", atts$algorithm)
-  cat("\n priors:      ", "see help('prior_summary')")
-  if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
-    cat("\n sample:      ", atts$posterior_sample_size, "(posterior sample size)")
-  cat("\n observations:", atts$nobs)
-  if (!is.null(atts$npreds))
-    cat("\n predictors:  ", atts$npreds)
-  if (!is.null(atts$ngrps))
-    cat("\n groups:      ", paste0(names(atts$ngrps), " (", 
-                                   unname(atts$ngrps), ")", 
-                                   collapse = ", "))
+  
+  if (is.surv(atts)) { # survival models
+    cat("\n function:       ", atts$stan_function)
+    cat("\n baseline hazard:", atts$basehaz)
+    cat("\n formula:        ", formula_string(atts$formula))
+    cat("\n algorithm:      ", atts$algorithm)
+    cat("\n priors:         ", "see help('prior_summary')")
+    if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
+      cat("\n sample:         ", atts$posterior_sample_size, "(posterior sample size)")
+    cat("\n observations:   ", atts$nobs)
+    cat("\n events:         ", atts$nevents, percent_string(atts$nevents, atts$nobs))
+    cat("\n censored:       ", atts$ncensor, percent_string(atts$ncensor, atts$nobs))
+    cat("\n delayed entry:  ", yes_no_string(atts$ndelayed))
+  } else { # anything except survival models
+    cat("\n function:    ", atts$stan_function)
+    cat("\n family:      ", atts$family)
+    cat("\n formula:     ", formula_string(atts$formula))
+    cat("\n algorithm:   ", atts$algorithm)
+    cat("\n priors:      ", "see help('prior_summary')")
+    if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
+      cat("\n sample:      ", atts$posterior_sample_size, "(posterior sample size)")
+    cat("\n observations:", atts$nobs)
+    if (!is.null(atts$npreds))
+      cat("\n predictors:  ", atts$npreds)
+    if (!is.null(atts$ngrps))
+      cat("\n groups:      ", paste0(names(atts$ngrps), " (", 
+                                     unname(atts$ngrps), ")", 
+                                     collapse = ", "))
+  }
   
   cat("\n\nEstimates:\n")
   sel <- which(colnames(x) %in% c("mcse", "n_eff", "Rhat"))
@@ -702,6 +724,9 @@ allow_special_parnames <- function(object, pars) {
 # @param x stanreg object
 # @param ... Optionally include m to specify which submodel for stanmvreg models
 family_plus_link <- function(x, ...) {
+  if (is.stansurv(x)) {
+    return(NULL)
+  }
   fam <- family(x, ...)
   if (is.character(fam)) {
     stopifnot(identical(fam, x$method))
@@ -730,7 +755,7 @@ formula_string <- function(formula, break_and_indent = TRUE) {
 # get name of aux parameter based on family
 .aux_name <- function(object) {
   aux <- character()
-  if (!is_polr(object)) {
+  if (!is_polr(object) && !is.stansurv(object)) {
     aux <- .rename_aux(family(object))
     if (is.na(aux)) {
       aux <- character()
@@ -738,7 +763,6 @@ formula_string <- function(formula, break_and_indent = TRUE) {
   }
   return(aux)
 }
-
 
 # print anova table for stan_aov models
 # @param x stanreg object created by stan_aov()
@@ -763,6 +787,29 @@ print_anova_table <- function(x, digits, ...) {
   .printfr(anova_table, digits, ...)
 }
 
+# @param basehaz A list with info about the baseline hazard
+basehaz_string <- function(basehaz, break_and_indent = TRUE) {
+  nm <- get_basehaz_name(basehaz)
+  switch(nm,
+         exp      = "exponential",
+         weibull  = "weibull",
+         gompertz = "gompertz",
+         ms       = "M-splines on hazard scale",
+         bs       = "B-splines on log hazard scale",
+         piecewise= "piecewise constant on log hazard scale",
+         NULL)
+}
+
+# @param x A logical (or a scalar to be evaluated as a logical).
+yes_no_string <- function(x) {
+  if (x) "yes" else "no"
+}
+
+# @param numer,denom The numerator and denominator with which to evaluate a %.
+percent_string <- function(numer, denom) {
+  val <- round(100 * numer / denom, 1)
+  paste0("(", val, "%)")
+}
 
 # equivalent to isFALSE(object$compute_mean_PPD)
 no_mean_PPD <- function(object) {
