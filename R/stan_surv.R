@@ -29,7 +29,8 @@
 #'
 #' @export
 #' @importFrom splines bs
-#' 
+#' @import splines2
+#'  
 #' @template args-prior_intercept
 #' @template args-priors
 #' @template args-prior_PD

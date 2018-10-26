@@ -43,6 +43,8 @@ Imports:
     rstan (>= 2.18.1),
     rstantools (>= 1.4.0),
     shinystan (>= 2.3.0),
+    splines,
+    splines2 (>= 0.2.7),
     stats,
     survival (>= 2.40.1),
     utils
