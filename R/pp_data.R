@@ -233,39 +233,6 @@ pp_data <-
 }
 
 
-
-# handle offsets ----------------------------------------------------------
-null_or_zero <- function(x) {
-  isTRUE(is.null(x) || all(x == 0))
-}
-
-.pp_data_offset <- function(object, newdata = NULL, offset = NULL) {
-  if (is.null(newdata)) {
-    # get offset from model object (should be null if no offset)
-    if (is.null(offset)) 
-      offset <- object$offset %ORifNULL% model.offset(model.frame(object))
-  } else {
-    if (!is.null(offset))
-      stopifnot(length(offset) == nrow(newdata))
-    else {
-      # if newdata specified but not offset then confirm that model wasn't fit
-      # with an offset (warning, not error)
-      if (!is.null(object$call$offset) || 
-          !null_or_zero(object$offset) || 
-          !null_or_zero(model.offset(model.frame(object)))) {
-        warning(
-          "'offset' argument is NULL but it looks like you estimated ", 
-          "the model using an offset term.", 
-          call. = FALSE
-        )
-      }
-      offset <- rep(0, nrow(newdata))
-    }
-  }
-  return(offset)
-}
-
-
 #----------------------- pp_data for joint models --------------------------
 
 # Return the design matrices required for evaluating the linear predictor or
@@ -461,4 +428,37 @@ get_model_data <- function(object, m = NULL) {
   
   mfs <- list_nms(mfs, M, stub = get_stub(object))
   if (is.null(m)) mfs else mfs[[m]]
+}
+
+
+#-----------------------  handle offsets  ----------------------------------
+
+null_or_zero <- function(x) {
+  isTRUE(is.null(x) || all(x == 0))
+}
+
+.pp_data_offset <- function(object, newdata = NULL, offset = NULL) {
+  if (is.null(newdata)) {
+    # get offset from model object (should be null if no offset)
+    if (is.null(offset)) 
+      offset <- object$offset %ORifNULL% model.offset(model.frame(object))
+  } else {
+    if (!is.null(offset))
+      stopifnot(length(offset) == nrow(newdata))
+    else {
+      # if newdata specified but not offset then confirm that model wasn't fit
+      # with an offset (warning, not error)
+      if (!is.null(object$call$offset) || 
+          !null_or_zero(object$offset) || 
+          !null_or_zero(model.offset(model.frame(object)))) {
+        warning(
+          "'offset' argument is NULL but it looks like you estimated ", 
+          "the model using an offset term.", 
+          call. = FALSE
+        )
+      }
+      offset <- rep(0, nrow(newdata))
+    }
+  }
+  return(offset)
 }
