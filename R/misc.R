@@ -912,16 +912,18 @@ sweep_multiply <- function(x, y, margin = 2L) {
 # @param x An unstandardised quadrature node
 # @param a The lower limit(s) of the integral, possibly a vector
 # @param b The upper limit(s) of the integral, possibly a vector
-unstandardise_qpts <- function(x, a, b) {
+unstandardise_qpts <- function(x, a, b, na.ok = TRUE) {
   if (!identical(length(x), 1L) || !is.numeric(x))
-    stop("'x' should be a single numeric value.", call. = FALSE)
-  if (!all(is.numeric(a), is.numeric(b)))
-    stop("'a' and 'b' should be numeric.", call. = FALSE)
+    stop2("'x' should be a single numeric value.")
   if (!length(a) %in% c(1L, length(b)))
-    stop("'a' and 'b' should be vectors of length 1, or, be the same length.", call. = FALSE)
-  if (any((b - a) < 0))
-    stop("The upper limits for the integral ('b' values) should be greater than ",
-         "the corresponding lower limits for the integral ('a' values).", call. = FALSE)
+    stop2("'a' and 'b' should be vectors of length 1, or, be the same length.")
+  if (!na.ok) {
+    if (!all(is.numeric(a), is.numeric(b)))
+      stop2("'a' and 'b' should be numeric.")
+    if (any((b - a) < 0))
+      stop2("The upper limits for the integral ('b' values) should be greater than ",
+           "the corresponding lower limits for the integral ('a' values).")
+  }
   ((b - a) / 2) * x + ((b + a) / 2)
 }
 
@@ -931,16 +933,18 @@ unstandardise_qpts <- function(x, a, b) {
 # @param x An unstandardised quadrature weight
 # @param a The lower limit(s) of the integral, possibly a vector
 # @param b The upper limit(s) of the integral, possibly a vector
-unstandardise_qwts <- function(x, a, b) {
+unstandardise_qwts <- function(x, a, b, na.ok = TRUE) {
   if (!identical(length(x), 1L) || !is.numeric(x))
-    stop("'x' should be a single numeric value.", call. = FALSE)
-  if (!all(is.numeric(a), is.numeric(b)))
-    stop("'a' and 'b' should be numeric.", call. = FALSE)
+    stop2("'x' should be a single numeric value.")
   if (!length(a) %in% c(1L, length(b)))
-    stop("'a' and 'b' should be vectors of length 1, or, be the same length.", call. = FALSE)
-  if (any((b - a) < 0))
-    stop("The upper limits for the integral ('b' values) should be greater than ",
-         "the corresponding lower limits for the integral ('a' values).", call. = FALSE)
+    stop2("'a' and 'b' should be vectors of length 1, or, be the same length.")
+  if (!na.ok) {
+    if (!all(is.numeric(a), is.numeric(b)))
+      stop2("'a' and 'b' should be numeric.")
+    if (any((b - a) < 0))
+      stop2("The upper limits for the integral ('b' values) should be greater than ",
+            "the corresponding lower limits for the integral ('a' values).")
+  }
   ((b - a) / 2) * x
 }
 
