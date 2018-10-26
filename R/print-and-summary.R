@@ -76,12 +76,20 @@
 #' 
 print.stanreg <- function(x, digits = 1, ...) {
   cat(x$stan_function)
-  cat("\n family:      ", family_plus_link(x))
-  cat("\n formula:     ", formula_string(formula(x)))
-  cat("\n observations:", nobs(x))
-  if (isTRUE(x$stan_function %in% 
-             c("stan_glm", "stan_glm.nb", "stan_lm", "stan_aov"))) {
-    cat("\n predictors:  ", length(coef(x)))
+  surv <- is.surv(x)
+  if (surv) {
+    cat("\n baseline hazard:", basehaz_string(x$basehaz)) 
+    cat("\n formula:        ", formula_string(formula(x)))
+    cat("\n observations:   ", x$nobs) 
+    cat("\n events:         ", x$nevents, percent_string(x$nevents, x$nobs))
+    cat("\n censored:       ", x$ncensor, percent_string(x$ncensor, x$nobs))
+    cat("\n delayed entry:  ", yes_no_string(x$ndelayed))
+  } else {
+    cat("\n family:      ", family_plus_link(x))
+    cat("\n formula:     ", formula_string(formula(x)))
+    cat("\n observations:", nobs(x))
+    if (isTRUE(x$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm", "stan_aov")))
+      cat("\n predictors:  ", length(coef(x)))
   }
   
   cat("\n------\n")
@@ -124,6 +132,15 @@ print.stanreg <- function(x, digits = 1, ...) {
     if (mer) {
       estimates <- estimates[!grepl("^Sigma\\[", rownames(estimates)),, drop=FALSE]
     }
+    if (surv) {
+      nms_int  <- get_int_name_basehaz(get_basehaz(x))
+      nms_aux  <- get_aux_name_basehaz(get_basehaz(x))
+      nms_beta <- setdiff(rownames(estimates), c(nms_int, nms_aux))
+      estimates <- cbind(estimates, 
+                         "exp(Median)" = c(rep(NA, length(nms_int)),
+                                           exp(estimates[nms_beta, "Median"]), 
+                                           rep(NA, length(nms_aux))))
+    }
     .printfr(estimates, digits, ...)
     
     if (length(aux_nms)) {
@@ -148,7 +165,7 @@ print.stanreg <- function(x, digits = 1, ...) {
     if (is(x, "aov")) {
       print_anova_table(x, digits, ...)
     }
-    if (!no_mean_PPD(x) && !is_clogit(x)) {
+    if (!no_mean_PPD(x) && !is_clogit(x) && !is.stansurv(x)) {
       ppd_mat <- mat[, ppd_nms, drop = FALSE]
       ppd_estimates <- .median_and_madsd(ppd_mat)
       
