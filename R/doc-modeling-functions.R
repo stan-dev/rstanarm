@@ -1,7 +1,7 @@
 #' Modeling functions available in \pkg{rstanarm}
-#' 
+#'
 #' @name available-models
-#' 
+#'
 #' @section Modeling functions:
 #' The model estimating functions are described in greater detail in their
 #' individual help pages and vignettes. Here we provide a very brief
@@ -33,9 +33,16 @@
 #'   appropriate estimates of uncertainty for models that consist of a mix of
 #'   common and group-specific parameters.
 #'  }
+#'  \item{\code{\link{stan_mvmer}}}{
+#'    A multivariate form of \code{\link{stan_glmer}}, whereby the user can
+#'    specify one or more submodels each consisting of a GLM with group-specific
+#'    terms. If more than one submodel is specified (i.e. there is more than one
+#'    outcome variable) then a dependence is induced by assuming that the
+#'    group-specific terms for each grouping factor are correlated across submodels.
+#'  }
 #'  \item{\code{\link{stan_nlmer}}}{
-#'   Similar to \code{\link[lme4]{nlmer}} in the \pkg{lme4} package for 
-#'   nonlinear "mixed-effects" models, but the group-specific coefficients 
+#'   Similar to \code{\link[lme4]{nlmer}} in the \pkg{lme4} package for
+#'   nonlinear "mixed-effects" models, but the group-specific coefficients
 #'   have flexible priors on their unknown covariance matrices.
 #'  }
 #'  \item{\code{\link{stan_gamm4}}}{
@@ -68,22 +75,24 @@
 #'    to \code{\link[survival]{clogit}} that allow \code{stan_clogit} to accept
 #'    group-specific terms as in \code{\link{stan_glmer}}.
 #'  }
-#'  \item{\code{\link{stan_mvmer}}}{
-#'    A multivariate form of \code{\link{stan_glmer}}, whereby the user can
-#'    specify one or more submodels each consisting of a GLM with group-specific 
-#'    terms. If more than one submodel is specified (i.e. there is more than one
-#'    outcome variable) then a dependence is induced by assuming that the
-#'    group-specific terms for each grouping factor are correlated across submodels. 
+#'  \item{\code{\link{stan_surv}}}{
+#'    Fits models to survival (i.e. time-to-event) data on the hazard scale.
+#'    The user can choose between a variety of standard parametric distributions
+#'    for the baseline hazard, or a flexible parametric model (using either
+#'    M-splines for modelling the baseline hazard, or B-splines for modelling
+#'    the log baseline hazard). Covariate effects can be accommodated under
+#'    proportional hazards or non-proportional hazards (i.e. time-dependent
+#'    effects).
 #'  }
 #'  \item{\code{\link{stan_jm}}}{
-#'    Estimates shared parameter joint models for longitudinal and time-to-event 
-#'    (i.e. survival) data. The joint model can be univariate (i.e. one longitudinal 
-#'    outcome) or multivariate (i.e. more than one longitudinal outcome). A variety 
-#'    of parameterisations are available for linking the longitudinal and event 
-#'    processes (i.e. a variety of association structures).      
+#'    Estimates shared parameter joint models for longitudinal and survival (i.e.
+#'    time-to-event) data. The joint model can be univariate (i.e. one longitudinal
+#'    outcome) or multivariate (i.e. more than one longitudinal outcome). A variety
+#'    of parameterisations are available for linking the longitudinal and event
+#'    processes (i.e. a variety of association structures).
 #'  }
 #' }
-#' 
+#'
 #' @seealso \url{http://mc-stan.org/rstanarm/}
-#' 
+#'
 NULL
