@@ -271,7 +271,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
         trials <- 1
         if (is.factor(y))
           y <- fac2bin(y)
-        if (!is(object, "car"))
+        if (!is_car(object))
           stopifnot(all(y %in% c(0, 1)))
         else
           trials <- object$trials
@@ -359,7 +359,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     data <- cbind(data, as.matrix(z)[1:NROW(x),, drop = FALSE])
     draws$beta <- cbind(draws$beta, b)
   }
-  if (is(object, "car")) {
+  if (is_car(object)) {
     psi_indx <- grep("^psi\\[[[:digit:]]+\\]", colnames(stanmat))
     psi <- stanmat[, psi_indx, drop = FALSE]
     data$psi <- t(psi)

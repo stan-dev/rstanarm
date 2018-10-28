@@ -31,7 +31,7 @@ stanreg <- function(object) {
   nobs <- NROW(y)
   ynames <- if (is.matrix(y)) rownames(y) else names(y)
   
-  # is_car <- object$stan_function %in% c("stan_besag", "stan_bym", "stan_bym2")
+  is_car <- object$stan_function %in% c("stan_besag", "stan_bym", "stan_bym2")
   is_betareg <- is.beta(family$family)
   if (is_betareg) { 
     family_phi <- object$family_phi  # pull out phi family/link
@@ -92,7 +92,7 @@ stanreg <- function(object) {
   
   # linear predictor, fitted values
   eta <- linear_predictor(coefs, x, object$offset)
-  if (is_car(object)) {
+  if (is_car) {
     psi_indx <- grep("psi", colnames(as.matrix(object$stanfit)))
     psi <- as.matrix(object$stanfit)[,psi_indx]
     psi <- unname(colMeans(psi))
@@ -156,7 +156,7 @@ stanreg <- function(object) {
     out$eta_z <- eta_z
     out$phi <- phi
   }
-  if (is_car(object)) {
+  if (is_car) {
     out$psi <- psi
     out$trials <- object$trials
   }

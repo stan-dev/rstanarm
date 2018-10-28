@@ -151,7 +151,7 @@ stan_besag <- function(formula,
                stan_function = stan_function)
  
   if (family$family == "binomial") {
-    fit$family <- binomial(link = "logit")
+    # fit$family <- binomial(link = "logit")
     fit$trials <- trials
   }
   out <- stanreg(fit)

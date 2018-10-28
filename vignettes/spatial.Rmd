@@ -41,9 +41,10 @@ The linear predictor takes the following form,
 $$
 \boldsymbol{\eta} = \alpha + \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\psi}
 $$
-where $\alpha$ is the intercept, $\mathbf{X}$ is an $N$-by-$K$ matrix of predictors, $\boldsymbol{\beta}$ is a $K$-dimensional vector of regression coefficients, and $\boldsymbol{\psi}$ is a $N$-dimensional vector representing the spatial effect (and $N$ denotes the number of spatial units). The construction of $\boldsymbol{\psi}$ depends on the model, which is discussed in the relevant sections below.
+where $\alpha$ is the intercept, $\mathbf{X}$ is an $N$-by-$K$ matrix of predictors ($N$ being the number of observations and $K$ being the number of predictors), $\boldsymbol{\beta}$ is a $K$-dimensional vector of regression coefficients, and $\boldsymbol{\psi}$ is a $N$-dimensional vector representing the spatial effect. The construction of $\boldsymbol{\psi}$ depends on the model, which is discussed in the relevant sections below.
 
-Depending on the choice of likelihood there may or may not be an additional auxiliary parameter $\gamma$ in the model (e.g. in a Gaussian likelihood this would be the variation of the data). Thus, for some probability density/mass function $f$ we can state the general form of the likelihood as,
+Depending on the choice of likelihood there may or may not be an additional auxiliary parameter $\gamma$ in the model (e.g. in a Gaussian likelihood this would be the variation of the data). With all these components, for some probability density/mass function $f$, we can state the general form of the likelihood as,
+
 $$
 \mathcal{L}(\alpha, \boldsymbol{\beta}, \gamma | \mathbf{y}) = \prod_{i=1}^N f(y_i | \alpha, \boldsymbol{\beta}, \gamma )
 $$
@@ -51,10 +52,12 @@ $$
 ## GMRF Hierarchical Component
 
 CAR models require that you define the spatial component as a Gaussian Markov Random Field (GMRF). The random vector $\boldsymbol{\phi}$ is a GMRF with respect to the graph $\mathcal{G} = (\mathcal{V} = \{1,\ldots,n\},\mathcal{E})$ with mean vector $\boldsymbol{\mu}$ and precision matrix $\mathbf{W}$ if its probability density function takes the precision form of the multivariate normal distribution,
+
 $$
 f(\boldsymbol{\phi} | \boldsymbol{\mu}) = (2\pi)^{-n/2} |\mathbf{W}|^{1/2}
 \exp\bigg( -\frac{1}{2}(\boldsymbol{\phi-\mu})^{\top}\mathbf{W}(\boldsymbol{\phi-\mu}) \bigg)
 $$
+
 and $W_{i,j} \neq 0$ when $\{i,j\}\in\mathcal{E}$ for all $i \neq j$. Here, $\mathcal{V}$ refers to the verticies on the graph (i.e. the spatial units) and $\mathcal{E}$ refers to the edges on the graph (i.e. the spatial units that are neighbors). In other words, $\mathbf{W}$ is an $N$-by-$N$ matrix  (with zeros on the diagonal) which describes spatial adjacency. 
 
 Unfortunately there is no guarantee that $\mathbf{W}$ is positive definite so $\mathbf{Q} = \mbox{diag}(\mathbf{W1}) - W$ (which is guaranteed to be positive semi-definite) is used as the precision matrix.
@@ -62,6 +65,7 @@ Unfortunately there is no guarantee that $\mathbf{W}$ is positive definite so $\
 ## Besag (ICAR) Spatial Prior
 
 The `stan_besag` modeling function fits the data to an ICAR model. This means that the spatial effect enters the linear predictor as
+
 $$
 \begin{align}
 \boldsymbol{\psi} = \boldsymbol{\phi} \\
@@ -74,7 +78,8 @@ where $\tau$ is a scalar that controls the overall spatial variation and has an 
 
 ## BYM
 
-The ICAR model is limited in that it only accounts for spatial variation among the spatial units. Thus, the random variation is picked up by the spatial variation which results in misleading parameter estimates and invalid inferences. The `stan_bym` model explains spatial variation as the sum of a structured (spatial) component $\boldsymbol{\phi}$ and an unstructured (random) component $\boldsymbol{\theta}$. Therefore, the spatial effect takes the following form,
+The ICAR model is limited in that it only accounts for spatial variation among the spatial units. Thus, the random variation is picked up by the spatial variation which may result in misleading parameter estimates and invalid inferences. The `stan_bym` model explains spatial variation as the sum of a structured (spatial) component $\boldsymbol{\phi}$ and an unstructured (random) component $\boldsymbol{\theta}$. Therefore, the spatial effect takes the following form,
+
 $$
 \begin{align}
 \boldsymbol{\psi} &= \rho\boldsymbol{\phi} + \tau\boldsymbol{\theta} \\
@@ -83,11 +88,13 @@ f(\boldsymbol{\phi} | \boldsymbol{\mu}) &= (2\pi)^{-n/2} |\mathbf{Q}|^{1/2}
 f(\theta_i) &= (2\pi)^{-1/2}\exp{\bigg( -\frac{\theta_i^2}{2} \bigg)}
 \end{align}
 $$
+
 Note that the unstructured effect $\boldsymbol{\theta}$ is distributed standard normal.
 
 ## BYM2 (Variant of the BYM Spatial Prior)
 
 The `stan_bym2` modeling function fits the data to a variant of the BYM model where the spatial effect enters as a convolution of the structured (spatial) effect and the unstructured (random) effect,
+
 $$
 \begin{align}
 \boldsymbol{\psi} &= \tau(\boldsymbol{\theta}\sqrt{1-\rho} + \boldsymbol{\phi}\sqrt{\rho}) \\
@@ -97,9 +104,9 @@ f(\theta_i) &= (2\pi)^{-1/2}\exp{\bigg( -\frac{\theta_i^2}{2} \bigg)}
 \end{align}
 $$
 
-As in the BYM model $\boldsymbol{\theta}$ is distributed standard normal. However, the parameter $\rho$ is on the unit interval and is interpreted as the proportion of spatial variation that is contributed to overall variation, and $\tau$ explains the overall (convolved) variation.
+As in the BYM model $\boldsymbol{\theta}$ is distributed standard normal. However, now the parameter $\rho$ is on the unit interval and is interpreted as the proportion of spatial variation that is contributed to overall variation, and $\tau$ explains the overall (convolved) variation.
 
-Priors on $\rho$ should be chosen wisely as $\rho=0$ reduces to a model that not account for spatial variation and $\rho=1$ reduces to the ICAR model, which does not account for random variation among the spatial units. 
+Priors on $\rho$ should be chosen carefully as $\rho=0$ reduces to a model that not account for spatial variation and $\rho=1$ reduces to the ICAR model, which does not account for random variation among the spatial units. 
 
 ## Posterior
 
@@ -193,11 +200,19 @@ spplot(grid_sim, "y_pred", at = var_range_y_pred, main = expression(y[pred]),
 ```
 
 Alternatively we can look at the conventional one-dimensional posterior predictive check with the `pp_check` function.
+
 ```{r ppcheck-1d, fig.align='center', fig.height=8}
 pp_check(fit_besag)
 ```
 
-In order to compare the predictive performance between the models we need to use the [loo](http://mc-stan.org/loo) package. Currently, however, this is not supported for CAR spatial models.
+In order to compare the predictive performance between the models we need to use the [loo](http://mc-stan.org/loo) package. Looking at the results below we can confirm that the correct model outperforms the incorrect model in terms of predictive accuracy.
+
+```{r loo}
+library(loo)
+loo_correct <- loo(fit_besag)
+loo_incorrect <- loo(fit_besag_bad)
+compare(loo_correct, loo_incorrect)
+```
 
 ## Smoothing the Spatial Random Walk
 
@@ -205,7 +220,8 @@ In some cases modeling the GMRF spatial component with the precision matrix $\ma
 
 ```{r smoothing, results="hide"}
 fit_besag_smooth <- stan_besag(y ~ 1 + x + z, data = spatial_data, W, order = 2,
-                               prior_intercept = normal(0,1), prior = normal(0,1), prior_rho = normal(0,1),
+                               prior_intercept = normal(0,1), prior = normal(0,1),
+                               prior_rho = normal(0,1),
                                family = binomial(link="logit"), trials = spatial_data$trials,
                                chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
 ```
