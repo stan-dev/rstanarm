@@ -254,6 +254,8 @@ stan_surv <- function(formula,
   
   if (missing(basehaz_ops)) 
     basehaz_ops <- NULL
+  if (missing(data) || !inherits(data, "data.frame"))
+    stop("'data' must be a data frame.")
   
   dots      <- list(...)
   algorithm <- match.arg(algorithm)
