@@ -30,8 +30,7 @@ This vignette explains how to account for spatial variation with conditional aut
 ```
 
 Steps 3 and 4 are covered in more depth by the vignette entitled ["How to Use
-the __rstanarm__ Package"](rstanarm.html). This vignette focuses on Step 1 when
-the likelihood is the product of beta distributions.
+the __rstanarm__ Package"](rstanarm.html).
 
 ## Likelihood
 

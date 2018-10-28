@@ -11,8 +11,8 @@ data {
   int<lower=0> N;                 // number of regions
   int<lower=0> K;                 // number of predictors (inc intercept)
   matrix[N,K] X;                  // model matrix
-  int<lower=1,upper=8> family;    // 1 gaussian, 2 poisson, 3 neg_binomial, 4 binomial, 5 gamma
-  int link;
+  int<lower=1,upper=7> family;    // 1 gaussian; 2 gamma; 5 binomial; 6 poisson; 7 neg_binomial_2
+  int<lower=1,upper=5> link;
   int<lower=0,upper=1> is_continuous;
   int<lower=0,upper=1> has_aux;
   int<lower=1,upper=3> model_type;       // Besag = 1; BYM = 2; BYM2 = 3
@@ -161,20 +161,16 @@ model {
     eta = X * beta + psi;
   // likelihoods
   if (family == 1) {
-    eta = linkinv_gauss(eta, link);
-    target+= normal_lpdf(y_real | eta, aux);
+    target+= normal_lpdf(y_real | linkinv_gauss(eta, link), aux);
   }
   else if (family == 6) {
-    eta = linkinv_count(eta, link);
-    target+= poisson_lpmf(y_int | eta);
+    target+= poisson_lpmf(y_int | linkinv_count(eta, link));
   }
   else if (family == 7) {
-    eta = linkinv_count(eta, link);
-    target += neg_binomial_2_lpmf(y_int | eta, aux);
+    target += neg_binomial_2_lpmf(y_int | linkinv_count(eta, link), aux);
   }
   else if (family == 5) {
-    eta = linkinv_binom(eta, link);
-    target+= binomial_lpmf(y_int | trials, eta);
+    target+= binomial_lpmf(y_int | trials, linkinv_binom(eta, link));
   }
   else if (family == 2) {
     target += GammaReg(y_real, eta, aux, link, sum_log_y);
@@ -276,9 +272,7 @@ generated quantities {
   real mean_PPD = 0;
   real alpha[has_intercept];
   {
-    vector[N] lp_tf;
-    vector[N] eta;
-    eta = X * beta + psi;
+    vector[N] eta = X * beta + psi;
     if (has_intercept == 1) {
       alpha[1] = gamma[1] - dot_product(beta, xbar);
       if ((family == 5 && link == 4)) { // binomial
@@ -319,7 +313,7 @@ generated quantities {
       }
     }
     else if (family == 5) {
-      lp_tf = linkinv_binom(eta, link);
+      vector[N] lp_tf = linkinv_binom(eta, link);
       for (n in 1:N) mean_PPD += binomial_rng(trials[n], lp_tf[n]);
     }
     else if (family == 2) {
@@ -327,5 +321,5 @@ generated quantities {
       for (n in 1:N) mean_PPD += gamma_rng(aux, aux / eta[n]);
     }
   }
-  mean_PPD = mean_PPD / N;
+  mean_PPD /= N;
 }
