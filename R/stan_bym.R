@@ -121,8 +121,6 @@ stan_bym <- function(formula,
                       adapt_delta = NULL,
                       QR = FALSE) {
   stan_function <- "stan_bym"
-  if (!requireNamespace("INLA", quietly = TRUE))
-    stop(paste("Please install the INLA package before using", stan_function))
   mc <- match.call(expand.dots = FALSE)
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
