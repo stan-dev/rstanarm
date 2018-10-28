@@ -11,8 +11,8 @@ data {
   int<lower=0> N;                 // number of regions
   int<lower=0> K;                 // number of predictors (inc intercept)
   matrix[N,K] X;                  // model matrix
-  int<lower=1,upper=8> family;    // 1 gaussian, 2 poisson, 3 neg_binomial, 4 binomial, 5 gamma
-  int link;
+  int<lower=1,upper=7> family;    // 1 gaussian; 2 gamma; 5 binomial; 6 poisson; 7 neg_binomial_2
+  int<lower=1,upper=5> link;
   int<lower=0,upper=1> is_continuous;
   int<lower=0,upper=1> has_aux;
   int<lower=1,upper=3> model_type;       // Besag = 1; BYM = 2; BYM2 = 3

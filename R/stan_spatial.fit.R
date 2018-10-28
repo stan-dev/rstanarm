@@ -38,7 +38,7 @@ stan_spatial.fit <- function(x, y, w,
                              QR = FALSE) {
 
   w[upper.tri(w)] <- 0
-  
+
   # convert W to a sparse matrix if not already sparse.
   if(!is(w, "sparseMatrix"))
     w <- Matrix(w, sparse = TRUE)
