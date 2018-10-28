@@ -81,11 +81,11 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
   }
  
   if (is.stansurv(object)) {
-    args <- ll_args.stansurv(object, newdata = newdata,
-                            reloo_or_kfold = reloo_or_kfold, ...)
+    args <- ll_args.stansurv(object, newdata = newdata, ...)
   } else {
     args <- ll_args.stanreg(object, newdata = newdata, offset = offset, 
-                            reloo_or_kfold = reloo_or_kfold, ...)
+                            reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
+                            ...)
   }
   
   fun <- ll_fun(object, m = m)
@@ -386,8 +386,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 }
 
 #--- ll_args for stansurv models
-ll_args.stansurv <- function(object, newdata = NULL, 
-                             reloo_or_kfold = FALSE, ...) {
+ll_args.stansurv <- function(object, newdata = NULL, ...) {
   
   validate_stansurv_object(object)
 
