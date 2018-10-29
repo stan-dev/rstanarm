@@ -332,7 +332,7 @@ posterior_survfit.stansurv <- function(object,
   
   # Obtain a vector of unique subject ids 
   if (is.null(newdata)) {
-    id_list <- seq(nrow(object$model_data))
+    id_list <- seq(nrow(get_model_data(object)))
   } else {
     id_list <- seq(nrow(newdata))
   }
