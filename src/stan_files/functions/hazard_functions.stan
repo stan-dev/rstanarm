@@ -98,7 +98,7 @@
     vector[M] hazard_lower = exp(log_hazard_lower);
     vector[M] hazard_upper = exp(log_hazard_upper);
     matrix[N,qnodes] qwts_lower_mat = to_matrix(qwts_lower,   N, qnodes);
-    matrix[N,qnodes] qwts_upper_mat = to_matrix(qwts_lower,   N, qnodes);
+    matrix[N,qnodes] qwts_upper_mat = to_matrix(qwts_upper,   N, qnodes);
     matrix[N,qnodes] haz_lower_mat  = to_matrix(hazard_lower, N, qnodes);
     matrix[N,qnodes] haz_upper_mat  = to_matrix(hazard_upper, N, qnodes);
     vector[N] chaz_lower = rows_dot_product(qwts_lower_mat, haz_lower_mat);
