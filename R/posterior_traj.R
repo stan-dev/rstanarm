@@ -375,8 +375,8 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
   if (interpolate || extrapolate) { # user specified interpolation or extrapolation
     if (return_matrix) 
       stop("'return_matrix' cannot be TRUE if 'interpolate' or 'extrapolate' is TRUE.")
-    ok_control_args <- c("ipoints", "epoints", "edist", "eprop")
-    control <- get_extrapolation_control(control, ok_control_args = ok_control_args)
+    ok_args <- c("ipoints", "epoints", "edist", "eprop")
+    control <- extrapolation_control(control, ok_args = ok_args)
     dist <- if (!is.null(control$eprop)) control$eprop * (last_time - 0) else control$edist
     iseq <- if (interpolate) get_time_seq(control$ipoints, 0, last_time) else NULL
     eseq <- if (extrapolate) get_time_seq(control$epoints, last_time, last_time + dist) else NULL
@@ -691,27 +691,27 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
 #
 # @param control A named list, being the user input to the control argument
 #   in the posterior_predict.stanmvreg or posterior_survfit.stanjm call
-# @param ok_control_args A character vector of allowed control arguments
+# @param ok_args A character vector of allowed control arguments
 # @return A named list
-get_extrapolation_control <- 
-  function(control = list(), ok_control_args = c("epoints", "edist", "eprop")) {
+extrapolation_control <- 
+  function(control = list(), ok_args = c("epoints", "edist", "eprop")) {
   defaults <- list(ipoints = 15, epoints = 15, edist = NULL, eprop = 0.2, last_time = NULL)
   if (!is.list(control)) {
     stop("'control' should be a named list.")
   } else if (!length(control)) {
-    control <- defaults[ok_control_args] 
+    control <- defaults[ok_args] 
   } else {  # user specified control list
     nms <- names(control)
     if (!length(nms))
       stop("'control' should be a named list.")
-    if (any(!nms %in% ok_control_args))
+    if (any(!nms %in% ok_args))
       stop(paste0("'control' list can only contain the following named arguments: ",
-                  paste(ok_control_args, collapse = ", ")))
+                  paste(ok_args, collapse = ", ")))
     if (all(c("edist", "eprop") %in% nms))
       stop("'control' list cannot include both 'edist' and 'eprop'.")        
-    if (("ipoints" %in% ok_control_args) && is.null(control$ipoints)) 
+    if (("ipoints" %in% ok_args) && is.null(control$ipoints)) 
       control$ipoints <- defaults$ipoints   
-    if (("epoints" %in% ok_control_args) && is.null(control$epoints)) 
+    if (("epoints" %in% ok_args) && is.null(control$epoints)) 
       control$epoints <- defaults$epoints  
     if (is.null(control$edist) && is.null(control$eprop)) 
       control$eprop <- defaults$eprop
