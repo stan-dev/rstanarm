@@ -292,30 +292,44 @@ pp_data <-
 
   }
 
-  # model frame for predictor matrices
+  # time-fixed predictor matrix
   mf <- make_model_frame(formula = formula$tf_form, 
                          data    = newdata, 
-                         check_constant = FALSE)$mf
-
-  # time-fixed predictor matrix
-  x <- make_x(formula        = object$formula$tf_form, 
+                         check_constant = FALSE)$mf 
+  x <- make_x(formula        = formula$tf_form, 
               model_frame    = mf, 
               xlevs          = object$xlevs, 
               check_constant = FALSE)$x
   if (has_quadrature && at_quadpoints) {
     x <- rep_rows(x, times = qnodes)
   }
-
+  
   # time-varying predictor matrix
-  if (has_tde) {
+  if (has_tde) { # model has tde
+    if (at_quadpoints) {
+      # expand covariate data
+      newdata <- rep_rows(newdata, times = qnodes)
+    }
+    if (all(is.na(pts))) {
+      # temporary replacement to avoid error in creating spline basis
+      pts_tmp <- rep(0, length(pts))
+    } else {
+      # else use prediction times or quadrature points
+      pts_tmp <- pts
+    }
     s <- make_s(formula = object$formula$td_form,
                 data    = newdata,
-                times   = pts, # prediction times or quadrature points
+                times   = pts_tmp,
                 xlevs   = object$xlevs)
+    if (all(is.na(pts))) {
+      # if pts were all NA then replace the time-varying predictor
+      # matrix with all NA, but retain appropriate dimensions
+      s[] <- NaN
+    }
   } else { # model does not have tde
     s <- matrix(0, length(pts), 0)
   }
-  
+
   # return object
   return(nlist(pts,
                wts,
