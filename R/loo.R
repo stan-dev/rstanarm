@@ -328,6 +328,8 @@ waic.stanreg <- function(x, ...) {
     out <- waic.matrix(ll)
   } else if (is_clogit(x)) {
     out <- waic.matrix(log_lik(x))
+  } else if (is.stansurv(x) && x$has_quadrature) {
+    out <- waic.matrix(log_lik(x))
   } else {
     args <- ll_args(x)
     out <- waic.function(ll_fun(x), data = args$data, draws = args$draws)
