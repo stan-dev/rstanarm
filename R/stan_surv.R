@@ -432,6 +432,7 @@ stan_surv <- function(formula,
                     rep_rows(x_lcens, times = qnodes),
                     rep_rows(x_rcens, times = qnodes),
                     rep_rows(x_icens, times = qnodes),
+                    rep_rows(x_icens, times = qnodes),
                     rep_rows(x_delay, times = qnodes))
   }
   
