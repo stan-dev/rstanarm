@@ -207,13 +207,19 @@ test_that("basehaz argument works", {
   o<-SW(f3  <- update(f1, basehaz = "exp"))
   o<-SW(f4  <- update(f1, basehaz = "weibull"))
   o<-SW(f5  <- update(f1, basehaz = "gompertz"))
+  
+  o<-SW(f6  <- update(f1, formula. = Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f7  <- update(f2, formula. = Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f8  <- update(f3, formula. = Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f9  <- update(f4, formula. = Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f10 <- update(f5, formula. = Surv(futimeYears, death) ~ sex + tde(trt)))
 
   # new data for predictions
   nd1 <- pbcSurv[pbcSurv$id == 2,]
   nd2 <- pbcSurv[pbcSurv$id %in% c(1,2),]
 
   # test the models
-  for (j in c(1:5)) {
+  for (j in c(1:10)) {
 
     mod <- try(get(paste0("f", j)), silent = TRUE)
 
