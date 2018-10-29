@@ -88,7 +88,7 @@ ps_check <- function(object,
   if (!any(is.stansurv(object), is.stanjm(object)))
     stop("Object is not a 'stansurv' or 'stanjm' object.")
 
-  if (is.stansurv(object) && object$has_delayed)
+  if (is.stansurv(object) && object$ndelayed)
     stop("'ps_check' cannot currently be used on models with delayed entry.")
   
   limits <- match.arg(limits)
