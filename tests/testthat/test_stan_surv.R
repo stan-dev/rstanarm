@@ -194,7 +194,10 @@ test_that("basehaz argument works", {
 
 #--------  Check post-estimation functions work
 
-  # fit the models
+  pbcSurv$t0 <- 0
+  pbcSurv$t0[pbcSurv$futimeYears > 2] <- 1 # delayed entry
+
+  # different baseline hazards
   o<-SW(f1  <- stan_surv(Surv(futimeYears, death) ~ sex + trt,
                          data    = pbcSurv,
                          basehaz = "ms",
@@ -208,12 +211,21 @@ test_that("basehaz argument works", {
   o<-SW(f4  <- update(f1, basehaz = "weibull"))
   o<-SW(f5  <- update(f1, basehaz = "gompertz"))
   
-  o<-SW(f6  <- update(f1, formula. = Surv(futimeYears, death) ~ sex + tde(trt)))
-  o<-SW(f7  <- update(f2, formula. = Surv(futimeYears, death) ~ sex + tde(trt)))
-  o<-SW(f8  <- update(f3, formula. = Surv(futimeYears, death) ~ sex + tde(trt)))
-  o<-SW(f9  <- update(f4, formula. = Surv(futimeYears, death) ~ sex + tde(trt)))
-  o<-SW(f10 <- update(f5, formula. = Surv(futimeYears, death) ~ sex + tde(trt)))
-
+  # time-dependent effects
+  o<-SW(f6  <- update(f1, Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f7  <- update(f2, Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f8  <- update(f3, Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f9  <- update(f4, Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f10 <- update(f5, Surv(futimeYears, death) ~ sex + tde(trt)))
+  
+  # start-stop notation (incl. delayed entry)
+  o<-SW(f11 <- update(f1, Surv(t0, futimeYears, death) ~ sex + trt))
+  o<-SW(f12 <- update(f1, Surv(t0, futimeYears, death) ~ sex + tde(trt)))
+  
+  # interval censoring
+  o<-SW(f13 <- update(f1, Surv(l, u, type = "interval2") ~ grp,      data = mice))
+  o<-SW(f14 <- update(f1, Surv(l, u, type = "interval2") ~ tde(grp), data = mice))
+  
   # new data for predictions
   nd1 <- pbcSurv[pbcSurv$id == 2,]
   nd2 <- pbcSurv[pbcSurv$id %in% c(1,2),]
