@@ -64,6 +64,24 @@
 #' \item \code{mom_age} Mother's age
 #' }
 #' }
+#' \item{\code{mice}}{
+#' Lung tumor development in 144 RFM mice allocated to either a conventional
+#' environment or germ-free environment. Mice were sacrificed and examined 
+#' for presence of a lung tumor. The outcome variables in the dataset 
+#' (\code{l} and \code{u}) denote a left-censored or right-censored time 
+#' interval within which the development of the first lung tumor must have 
+#' occurred. 
+#' 
+#' Source: Hoel and Walburg (1972)
+#'
+#' 144 obs. of 3 variables
+#' \itemize{
+#' \item \code{l} Lower limit of the interval.
+#' \item \code{u} Upper limit of the interval.
+#' \item \code{grp} Experimental group (\code{ce} = conventional environment,
+#' \code{ge} = germ-free environment).
+#' }
+#' }
 #' \item{\code{mortality}}{
 #' Surgical mortality rates in 12 hospitals performing cardiac surgery
 #' in babies.
@@ -181,6 +199,9 @@
 #' @template reference-gelman-hill
 #' 
 #' @references
+#' Hoel, D. and Walburg, H. (1972) Statistical analysis of survival experiments. 
+#' \emph{The Annals of Statistics} \strong{18}:1259-1294.
+#' 
 #' Spiegelhalter, D., Thomas, A., Best, N., & Gilks, W. (1996) BUGS 0.5 
 #' Examples. MRC Biostatistics Unit, Institute of Public health, Cambridge, UK.
 #' 
