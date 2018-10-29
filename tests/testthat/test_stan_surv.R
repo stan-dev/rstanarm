@@ -19,6 +19,7 @@
 # tests can be run using devtools::test() or manually by loading testthat
 # package and then running the code below possibly with options(mc.cores = 4).
 
+#library(testthat)
 library(rstanarm)
 library(survival)
 library(rstpm2)
@@ -39,11 +40,10 @@ TOLSCALES <- list(
 source(test_path("helpers", "expect_matrix.R"))
 source(test_path("helpers", "expect_stanreg.R"))
 source(test_path("helpers", "expect_stanmvreg.R"))
-source(test_path("helpers", "expect_survfit.R"))
+source(test_path("helpers", "expect_survfit_surv.R"))
 source(test_path("helpers", "expect_ppd.R"))
 source(test_path("helpers", "expect_equivalent_loo.R"))
 source(test_path("helpers", "SW.R"))
-# SW <- function(expr) eval(expr)
 source(test_path("helpers", "get_tols_surv.R"))
 source(test_path("helpers", "recover_pars_surv.R"))
 
@@ -213,7 +213,7 @@ test_that("basehaz argument works", {
   nd2 <- pbcSurv[pbcSurv$id %in% c(1,2),]
 
   # test the models
-  for (j in c(1:30)) {
+  for (j in c(1:5)) {
 
     mod <- try(get(paste0("f", j)), silent = TRUE)
 

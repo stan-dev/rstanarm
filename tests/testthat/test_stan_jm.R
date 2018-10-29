@@ -41,7 +41,7 @@ TOLSCALES <- list(
 source(test_path("helpers", "expect_matrix.R"))
 source(test_path("helpers", "expect_stanreg.R"))
 source(test_path("helpers", "expect_stanmvreg.R"))
-source(test_path("helpers", "expect_survfit.R"))
+source(test_path("helpers", "expect_survfit_jm.R"))
 source(test_path("helpers", "expect_ppd.R"))
 source(test_path("helpers", "expect_equivalent_loo.R"))
 source(test_path("helpers", "SW.R"))
