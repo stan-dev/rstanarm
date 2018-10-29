@@ -39,19 +39,22 @@
 #' 
 #' @param formula A two-sided formula object describing the model. 
 #'   The left hand side of the formula should be a \code{Surv()} 
-#'   object. See \code{\link[survival]{Surv}}. If you wish to include
-#'   time-dependent effect (i.e. time-dependent coefficients) in the model
-#'   then the covariate(s) that you wish to estimate a time-dependent for 
-#'   should be specified as \code{tde(varname)}  where \code{varname} is the 
-#'   name of the covariate. See the \strong{Details} section for more 
-#'   information on how the time-dependent effects are formulated, as well
-#'   as the \strong{Examples} section.
+#'   object. Left censored, right censored, and interval censored data 
+#'   are allowed, as well as delayed entry (i.e. left truncation). See 
+#'   \code{\link[survival]{Surv}} for how to specify these outcome types. 
+#'   If you wish to include time-dependent effects (i.e. time-dependent 
+#'   coefficients, also known as non-proportional hazards) in the model
+#'   then any covariate(s) that you wish to estimate a time-dependent 
+#'   coefficient for should be specified as \code{tde(varname)}  where 
+#'   \code{varname} is the name of the covariate. See the \strong{Details} 
+#'   section for more information on how the time-dependent effects are 
+#'   formulated, as well as the \strong{Examples} section.
 #' @param data A data frame containing the variables specified in 
 #'   \code{formula}.
 #' @param basehaz A character string indicating which baseline hazard to use
 #'   for the event submodel. Current options are: 
 #'   \itemize{
-#'     \item \code{"ms"}: a flexible parametric model using M-splines to 
+#'     \item \code{"ms"}: a flexible parametric model using cubic M-splines to 
 #'     model the baseline hazard. The default locations for the internal knots, 
 #'     as well as the basis terms for the splines, are calculated with respect
 #'     to time. If the model does \emph{not} include any time-dependendent 
@@ -60,35 +63,36 @@
 #'     On the other hand, if the model does include time-dependent effects then
 #'     quadrature is used to evaluate the cumulative hazard at each MCMC
 #'     iteration and, therefore, estimation of the model will be slower.
-#'     \item \code{"bs"}: a flexible parametric model using B-splines to model
-#'     the \emph{log} baseline hazard. The default locations for the internal 
-#'     knots, as well as the basis terms for the splines, are calculated with 
-#'     respect to time. A closed form solution for the cumulative hazard 
-#'     is \strong{not} available (regardless of whether or not the model includes
-#'     time-dependent effects) and therefore quadrature is used to evaluate 
-#'     the cumulative hazard at each MCMC iteration. Therefore, if the model
+#'     \item \code{"bs"}: a flexible parametric model using cubic B-splines to 
+#'     model the \emph{log} baseline hazard. The default locations for the  
+#'     internal knots, as well as the basis terms for the splines, are calculated 
+#'     with respect to time. A closed form solution for the cumulative hazard 
+#'     is \strong{not} available regardless of whether or not the model includes
+#'     time-dependent effects; instead, quadrature is used to evaluate 
+#'     the cumulative hazard at each MCMC iteration. Therefore, if your model
 #'     does not include any time-dependent effects, then estimation using the 
-#'     \code{"ms"} baseline will be faster.
+#'     \code{"ms"} baseline hazard will be faster.
 #'     \item \code{"exp"}: an exponential distribution for the event times. 
 #'     (i.e. a constant baseline hazard)
 #'     \item \code{"weibull"}: a Weibull distribution for the event times.
 #'     \item \code{"gompertz"}: a Gompertz distribution for the event times.
 #'   }
-#'   Note that all spline-based models use splines of degree 3 (i.e. cubic
-#'   splines).
+#'   Note that all spline-based models use cubic splines. The number of degrees
+#'   of freedom and/or location of the knots can be changed
 #' @param basehaz_ops a named list specifying options related to the baseline
 #'   hazard. Currently this can include: \cr
 #'   \itemize{
 #'     \item \code{df}: a positive integer specifying the degrees of freedom 
-#'     for the M-splines / I-splines. The default is 6.
-#'     \item \code{knots}: An optional numeric vector specifying the internal 
-#'     knot locations for the splines if \code{basehaz = "ms"}. Knots cannot be
-#'     specified if \code{df} is specified. If not specified, then the 
-#'     default is to use \code{df - 4} knots, which are
+#'     for the M-splines or B-splines. The default is 5, corresponding to 
+#'     two boundary knots and two internal knots.
+#'     \item \code{knots}: An optional numeric vector specifying internal 
+#'     knot locations for the M-splines or B-splines. Note that \code{knots} 
+#'     cannot be specified if \code{df} is specified. If \code{knots} are not 
+#'     specified, then the default is to use \code{df - 3} knots which are
 #'     placed at equally spaced percentiles of the distribution of
 #'     uncensored event times.
-#'     \item \code{bknots}: an optional numeric vector specifying the boundary 
-#'     knot locations for the splines if \code{basehaz = "ms"}. 
+#'     \item \code{bknots}: an optional numeric vector specifying boundary 
+#'     knot locations for the M-splines or B-splines. 
 #'     If not specified, then the default is to place the boundary knots at the
 #'     minimum and maximum of the event times (including both censored and
 #'     uncensored events).
@@ -97,11 +101,17 @@
 #'   that is used to evaluate the cumulative hazard when \code{basehaz = "bs"}
 #'   or when time-dependent effects (i.e. non-proportional hazards) are 
 #'   specified. Options are 15 (the default), 11 or 7.
-#' @param prior_aux The prior distribution for the parameters related to the
-#'   baseline hazard. The relevant "auxiliary" parameters differ depending on  
+#' @param prior_aux The prior distribution for "auxiliary" parameters related to 
+#'   the baseline hazard. The relevant parameters differ depending 
 #'   on the type of baseline hazard specified in the \code{basehaz} 
 #'   argument. The following applies:
 #'   \itemize{
+#'     \item \code{basehaz = "ms"}: the auxiliary parameters are the coefficients
+#'     for the M-spline basis terms on the baseline hazard. These parameters
+#'     have a lower bound at zero.
+#'     \item \code{basehaz = "bs"}: the auxiliary parameters are the coefficients
+#'     for the B-spline basis terms on the log baseline hazard. These parameters
+#'     are unbounded.
 #'     \item \code{basehaz = "exp"}: there is \strong{no} auxiliary parameter, 
 #'     since the log scale parameter for the exponential distribution is 
 #'     incorporated as an intercept in the linear predictor.
@@ -113,12 +123,6 @@
 #'     scale parameter, while the log shape parameter for the Gompertz 
 #'     distribution is incorporated as an intercept in the linear predictor.
 #'     The auxiliary parameter has a lower bound at zero. 
-#'     \item \code{basehaz = "ms"}: the auxiliary parameters are the coefficients
-#'     for the M-spline basis terms on the baseline hazard. These parameters
-#'     have a lower bound at zero.
-#'     \item \code{basehaz = "bs"}: the auxiliary parameters are the coefficients
-#'     for the B-spline basis terms on the log baseline hazard. These parameters
-#'     are unbounded.
 #'   }
 #'   Currently, \code{prior_aux} can be a call to \code{normal}, \code{student_t} 
 #'   or \code{cauchy}. See \code{\link{priors}} for details on these functions. 
@@ -127,20 +131,22 @@
 #' @param prior_smooth This is only relevant when time-dependent effects are 
 #'   specified in the model (i.e. the \code{tde()} function is used in the 
 #'   model formula. When that is the case, \code{prior_smooth} determines the
-#'   prior distribution for the hyperparameter of the smoothing function
-#'   for the time-dependent coefficients (specifically the standard deviation 
-#'   of the cubic B-spline coefficients). Lower values for the hyperparameter
-#'   yield a less flexible smooth function. \code{prior_smooth} can be a call 
-#'   to \code{exponential} to 
+#'   prior distribution given to the hyperparameter (standard deviation) 
+#'   contained in a random-walk prior for the cubic B-spline coefficients used 
+#'   to model the time-dependent coefficient. Lower values for the hyperparameter
+#'   yield a less a flexible smooth function for the time-dependent coefficient. 
+#'   Specifically, \code{prior_smooth} can be a call to \code{exponential} to 
 #'   use an exponential distribution, or \code{normal}, \code{student_t} or 
 #'   \code{cauchy}, which results in a half-normal, half-t, or half-Cauchy 
 #'   prior. See \code{\link{priors}} for details on these functions. To omit a 
 #'   prior ---i.e., to use a flat (improper) uniform prior--- set 
 #'   \code{prior_smooth} to \code{NULL}. The number of hyperparameters depends
-#'   on the model specification but a scalar prior will be recylced as necessary
+#'   on the model specification (i.e. the number of time-dependent effects
+#'   specified in the model) but a scalar prior will be recylced as necessary
 #'   to the appropriate length.
 #'  
 #' @details
+#' \subsection{Time dependent effects (i.e. non-proportional hazards)}{
 #'   By default, any covariate effects specified in the \code{formula} are
 #'   included in the model under a proportional hazards assumption. To relax
 #'   this assumption, it is possible to estimate a time-dependent coefficient
@@ -148,24 +154,42 @@
 #'   by wrapping the covariate name in the \code{tde()} function (note that
 #'   this function is not an exported function, rather it is an internal function
 #'   that can only be evaluated within the formula of a \code{stan_surv} call).
+#'   
 #'   For example, if we wish to estimate a time-dependent effect for the 
 #'   covariate \code{sex} then we can specify \code{tde(sex)} in the 
 #'   \code{formula}, e.g. \code{Surv(time, status) ~ tde(sex) + age + trt}. 
 #'   The coefficient for \code{sex} will then be modelled 
 #'   using a flexible smooth function based on a cubic B-spline expansion of 
-#'   time. The flexibility of the smooth function can be controlled through 
-#'   the hyperparameters related the B-spline coefficients; see the 
-#'   \code{prior_smooth} argument. Also, by default the cubic B-spline basis is 
-#'   evaluated with 3 degrees of freedom (that is a cubic spline basis with  
-#'   boundary knots at the limits of the time range, but no internal knots). If  
-#'   you wish to increase the flexibility of the smooth function by using a 
+#'   time. 
+#'   
+#'   The flexibility of the smooth function can be controlled in two ways:
+#'   \itemize{
+#'   \item First, through control of the prior distribution for the cubic B-spline 
+#'   coefficients that are used to model the time-dependent coefficient.
+#'   Specifically, one can control the flexibility of the prior through 
+#'   the hyperparameter (standard deviation) of the random walk prior used
+#'   for the B-spline coefficients; see the \code{prior_smooth} argument. 
+#'   \item Second, one can increase or decrease the number of degrees of 
+#'   freedom used for the cubic B-spline function that is used to model the 
+#'   time-dependent coefficient. By default the cubic B-spline basis is 
+#'   evaluated using 3 degrees of freedom (that is a cubic spline basis with  
+#'   boundary knots at the limits of the time range, but no internal knots). 
+#'   If you wish to increase the flexibility of the smooth function by using a 
 #'   greater number of degrees of freedom, then you can specify this as part
-#'   of the \code{tde} function call. For example, to use cubic B-splines with 
-#'   7 degrees of freedom we could specify \code{tde(sex, df = 7)} in the
-#'   model formula. See the \strong{Examples} section below for more details.
+#'   of the \code{tde} function call in the model formula. For example, to 
+#'   use cubic B-splines with 7 degrees of freedom we could specify 
+#'   \code{tde(sex, df = 7)} in the model formula instead of just
+#'   \code{tde(sex)}. See the \strong{Examples} section below for more 
+#'   details.
+#'   }
+#'   In practice, the default \code{tde()} function should provide sufficient 
+#'   flexibility for model most time-dependent effects. However, it is worth
+#'   noting that the reliable estimation of a time-dependent effect usually 
+#'   requires a relatively large number of events in the data (e.g. >1000).
+#' }
 #'              
 #' @examples
-#' 
+#' \donttest{
 #' #---------- Proportional hazards
 #' 
 #' # Simulated data
@@ -183,38 +207,33 @@
 #' mod1b <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "bs")
 #' mod1c <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "exp")
 #' mod1d <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "weibull")
-#' #mod1e <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "gompertz")
-#' do.call(cbind, lapply(list(mod1a, mod1b, mod1c, mod1d), fixef))
-#' bayesplot::bayesplot_grid(plot(mod1a), plot(mod1b), 
-#'                           plot(mod1c), plot(mod1d), 
-#'                           ylim = c(0, 0.8))
+#' mod1e <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "gompertz")
+#' do.call(cbind, lapply(list(mod1a, mod1b, mod1c, mod1d, mod1e), fixef))
+#' bayesplot::bayesplot_grid(plot(mod1a), # compare baseline hazards 
+#'                           plot(mod1b), 
+#'                           plot(mod1c), 
+#'                           plot(mod1d), 
+#'                           plot(mod1e),
+#'                           ylim = c(0, 0.6))
 #' 
-#' # Breast cancer data
-#' library(flexsurv)
-#' dat2 <- flexsurv::bc
-#' fm2  <- Surv(rectime, censrec) ~ group
-#' mod2a <- stan_surv(fm2, dat2, chains = 1, iter = 1000)
-#' mod2z <- flexsurv::flexsurvspline(fm2, dat2, k = 3)
-#' print(mod2a, 4)
-#' mod2z
-#'                 
 #' # PBC data
-#' dat3 <- survival::pbc
-#' dat3$timeYears <- dat3$time / 365.25
-#' dat3$death     <- (dat3$status == 2)
-#' fm3 <- Surv(timeYears, death) ~ sex + trt
-#' mod3a <- stan_surv(fm3, dat3, chains = 1, iter = 1000)
-#' mod3z <- flexsurv::flexsurvspline(fm3, dat3, k = 3)
-#' print(mod3a, 4)
-#' mod3z
-#'
+#' mod2 <- stan_surv(Surv(futimeYears, death) ~ sex + trt, 
+#'                   data = pbcSurv, chains = 1, iter = 1000)
+#' print(mod2, 4)
+#' 
+#' #---------- Interval censored data
+#' 
+#' # Mice tumor data
+#' mod3 <- stan_surv(Surv(l, u, type = "interval2") ~ grp, 
+#'                   data = mice, chains = 1, iter = 1000)
+#' print(mod3, 4)
+#' 
 #' #---------- Non-proportional hazards
 #' 
 #' # Simulated data
 #' library(simsurv)
-#' library(rstpm2)
-#' covs <- data.frame(id  = 1:1000, 
-#'                    trt = stats::rbinom(1000, 1L, 0.5))
+#' covs <- data.frame(id  = 1:500, 
+#'                    trt = stats::rbinom(500, 1L, 0.5))
 #' dat4 <- simsurv(lambdas = 0.1, 
 #'                 gammas  = 1.5, 
 #'                 betas   = c(trt = -0.5),
@@ -222,15 +241,11 @@
 #'                 x       = covs, 
 #'                 maxt    = 5)
 #' dat4 <- merge(dat4, covs)
-#' fm4  <- Surv(eventtime, status) ~ tde(trt)
-#' mod4a <- stan_surv(Surv(eventtime, status) ~ tde(trt), 
-#'                    dat4, chains = 1, iter = 1000)
-#' mod4z <- rstpm2::stpm2(Surv(eventtime, status) ~ trt, 
-#'                        dat4, tvc = list(trt = 5))
-#' print(mod4a, 4)
-#' mod4z
-#' plot(mod4a, "tde")
-#' plot(mod4z, newdata = data.frame(trt = 0), type = "hr", var = "trt")
+#' mod4 <- stan_surv(Surv(eventtime, status) ~ tde(trt), 
+#'                   data = dat4, chains = 1, iter = 1000)
+#' print(mod4, 4)
+#' plot(mod4, "tde") # time-dependent hazard ratio
+#' }
 #' 
 stan_surv <- function(formula, 
                       data, 
