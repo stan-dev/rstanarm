@@ -156,9 +156,9 @@ functions {
   * @param global Real, the global parameter
   * @param mix Vector of shrinkage parameters
   * @param one_over_lambda Real
-  * @return nothing
+  * @return Nothing
   */
-  void beta_lp(vector z_beta, int prior_dist, vector prior_scale,
+  real beta_lp(vector z_beta, int prior_dist, vector prior_scale,
                vector prior_df, real global_prior_df, vector[] local,
                real[] global, vector[] mix, real[] one_over_lambda,
                real slab_df, real[] caux) {
@@ -196,6 +196,7 @@ functions {
       target += normal_lpdf(z_beta | 0, 1);
     }
     /* else prior_dist is 0 and nothing is added */
+    return target();
   }
 
   /**
@@ -206,14 +207,15 @@ functions {
   * @param mean Real, mean of prior distribution
   * @param scale Real, scale for the prior distribution
   * @param df Real, df for the prior distribution
-  * @return nothing
+  * @return Nothing
   */
-  void gamma_lp(real gamma, int dist, real mean, real scale, real df) {
+  real gamma_lp(real gamma, int dist, real mean, real scale, real df) {
     if (dist == 1)  // normal
       target += normal_lpdf(gamma | mean, scale);
     else if (dist == 2)  // student_t
       target += student_t_lpdf(gamma | df, mean, scale);
     /* else dist is 0 and nothing is added */
+    return target();
   }
 
   /**
@@ -223,9 +225,9 @@ functions {
   *   auxiliary parameter(s)
   * @param dist Integer specifying the type of prior distribution
   * @param df Real specifying the df for the prior distribution
-  * @return nothing
+  * @return Nothing
   */
-  void basehaz_lp(vector aux_unscaled, int dist, vector df) {
+  real basehaz_lp(vector aux_unscaled, int dist, vector df) {
     if (dist > 0) {
       if (dist == 1)
         target += normal_lpdf(aux_unscaled | 0, 1);
@@ -234,6 +236,7 @@ functions {
       else
         target += exponential_lpdf(aux_unscaled | 1);
     }
+    return target();
   }
 
   /**
@@ -245,9 +248,9 @@ functions {
   *   smoothing sds
   * @param df Vector of reals specifying the df for the prior distribution
   *   for the smoothing sds
-  * @return nothing
+  * @return Nothing
   */
-  void smooth_lp(vector z_beta_tde, vector smooth_sd_raw, int dist, vector df) {
+  real smooth_lp(vector z_beta_tde, vector smooth_sd_raw, int dist, vector df) {
     target += normal_lpdf(z_beta_tde | 0, 1);
     if (dist > 0) {
       real log_half = -0.693147180559945286;
@@ -258,6 +261,7 @@ functions {
       else if (dist == 3)
         target += exponential_lpdf(smooth_sd_raw | 1);
     }
+    return target();
   }
 
   /**
@@ -772,24 +776,27 @@ model {
 
   // log priors for coefficients
   if (K > 0) {
-    beta_lp(z_beta, prior_dist, prior_scale, prior_df, global_prior_df,
-            local, global, mix, ool, slab_df, caux);
+    real dummy = beta_lp(z_beta, prior_dist, prior_scale, prior_df,
+                         global_prior_df, local, global, mix, ool,
+                         slab_df, caux);
   }
 
   // log prior for intercept
   if (has_intercept == 1) {
-    gamma_lp(gamma[1], prior_dist_for_intercept, prior_mean_for_intercept,
-             prior_scale_for_intercept, prior_df_for_intercept);
+    real dummy = gamma_lp(gamma[1], prior_dist_for_intercept,
+                          prior_mean_for_intercept, prior_scale_for_intercept,
+                          prior_df_for_intercept);
   }
 
   // log priors for baseline hazard parameters
   if (nvars > 0) {
-    basehaz_lp(z_coefs, prior_dist_for_aux, prior_df_for_aux);
+    real dummy = basehaz_lp(z_coefs, prior_dist_for_aux, prior_df_for_aux);
   }
 
   // log priors for tde spline coefficients and their smoothing parameters
   if (S > 0) {
-    smooth_lp(z_beta_tde, smooth_sd_raw, prior_dist_for_smooth, prior_df_for_smooth);
+    real dummy = smooth_lp(z_beta_tde, smooth_sd_raw,
+                           prior_dist_for_smooth, prior_df_for_smooth);
   }
 
 }
