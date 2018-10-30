@@ -293,13 +293,9 @@ pp_data <-
   }
 
   # time-fixed predictor matrix
-  mf <- make_model_frame(formula = formula$tf_form, 
-                         data    = newdata, 
-                         check_constant = FALSE)$mf 
-  x <- make_x(formula        = formula$tf_form, 
-              model_frame    = mf, 
-              xlevs          = object$xlevs, 
-              check_constant = FALSE)$x
+  tf_form <- reformulate_rhs(rhs(formula$tf_form))
+  mf <- make_model_frame(tf_form, newdata, check_constant = FALSE)$mf 
+  x  <- make_x(tf_form, mf, xlevs= object$xlevs, check_constant = FALSE)$x
   if (has_quadrature && at_quadpoints) {
     x <- rep_rows(x, times = qnodes)
   }
