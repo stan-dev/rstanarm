@@ -50,6 +50,22 @@
 #' \item \code{K} Number of at-bats
 #' }
 #' }
+#' \item{\code{bcancer}}{
+#' The German Breast Cancer Study Group dataset, containing time to death or
+#' recurrence for 686 patients with primary node positive breast cancer 
+#' recruited between 1984-1989. 
+#' 
+#' Source: Royston and Parmar (2002)
+#' 
+#' 686 obs. of 4 variables
+#' \itemize{
+#' \item \code{recdays} Time to death or censoring (in days)
+#' \item \code{recyrs} Time to death or censoring (in years)
+#' \item \code{status} Event indicator (0 = right censored, 1 = event)
+#' \item \code{group} Prognostic group, based on a regression model developed
+#' by Sauerbrei and Royston (1999) (\code{Good}, \code{Medium}, \code{Poor})
+#' }
+#' }
 #' \item{\code{kidiq}}{
 #' Data from a survey of adult American women and their children 
 #' (a subsample from the National Longitudinal Survey of Youth).
@@ -200,9 +216,19 @@
 #' 
 #' @references
 #' Hoel, D. and Walburg, H. (1972) Statistical analysis of survival experiments. 
-#' \emph{The Annals of Statistics} \strong{18}:1259-1294.
+#' \emph{The Annals of Statistics} \strong{18}:1259--1294.
 #' 
-#' Spiegelhalter, D., Thomas, A., Best, N., & Gilks, W. (1996) BUGS 0.5 
+#' Royston, P. and Parmar, M. (2002) Flexible parametric proportional-hazards 
+#' and proportional-odds models for censored survival data, with application 
+#' to prognostic modelling and estimation of treatment effects. 
+#' \emph{Statistics in Medicine} \strong{21}(1):2175--2197.
+#' 
+#' Sauerbrei, W. and Royston, P. (1999) Building multivariable prognostic and 
+#' diagnostic models: transformation of the predictors using fractional 
+#' polynomials. \emph{Journal of the Royal Statistical Society, Series A}
+#' \strong{162}:71--94.
+#' 
+#' Spiegelhalter, D., Thomas, A., Best, N., and Gilks, W. (1996) BUGS 0.5 
 #' Examples. MRC Biostatistics Unit, Institute of Public health, Cambridge, UK.
 #' 
 #' Tarone, R. E. (1982) The use of historical control information in testing for
