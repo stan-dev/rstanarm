@@ -19,13 +19,14 @@
 #' Bayesian survival models via Stan
 #'
 #' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
-#' Bayesian inference for proportional or non-proportional hazards regression 
-#' models. The user can specify a variety of standard parametric distributions 
-#' for the baseline hazard, or a flexible parametric model (using either 
-#' M-splines for modelling the baseline hazard, or B-splines for modelling 
-#' the log baseline hazard). Covariate effects can be accommodated under
-#' proportional hazards or non-proportional hazards (i.e. time-dependent 
-#' effects).
+#' Bayesian inference for survival models (sometimes known as models for 
+#' time-to-event data). Currently, the command fits standard parametric 
+#' (exponential, Weibull and Gompertz) and flexible parametric (cubic 
+#' spline-based) survival models on the hazard scale, with covariates included 
+#' under assumptions of either proportional or non-proportional hazards. 
+#' Where relevant, non-proportional hazards are modelled using a flexible 
+#' cubic spline-based function for the time-dependent effect (i.e. the
+#' time-dependent hazard ratio).
 #'
 #' @export
 #' @importFrom splines bs
