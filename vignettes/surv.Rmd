@@ -1,0 +1,426 @@
+---
+title: "Estimating Survival (Time-to-Event) Models with rstanarm"
+author: "Sam Brilleman"
+date: "`r Sys.Date()`"
+output: 
+  html_vignette:
+    toc: true
+    number_sections: false
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
+---
+
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{stan_surv: Survival (Time-to-Event) Models}
+-->
+
+<style type="text/css">
+h1 { /* Header 1 */
+  font-size: 25px;
+}
+#TOC { /* Table of contents */
+  width: 90%;
+}
+</style>
+
+```{r, child="children/SETTINGS-knitr.txt"}
+```
+```{r, child="children/SETTINGS-gg.txt"}
+```
+```{r, child="children/SETTINGS-rstan.txt"}
+```
+```{r, child="children/SETTINGS-loo.txt"}
+```
+
+```{r setup_jm, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(fig.width=10, fig.height=4)
+library(rstanarm)
+```
+
+
+# Preamble
+
+This vignette provides an introduction to the `stan_surv` modelling function in the __rstanarm__ package. The `stan_surv` function allows the user to fit survival models (sometimes known as models for time-to-event data) under a Bayesian framework. 
+
+Currently, the command fits standard parametric (exponential, Weibull and Gompertz) and flexible parametric (cubic spline-based) survival models on the hazard scale, with covariates included under assumptions of either proportional or non-proportional hazards. Where relevant, non-proportional hazards are modelled using a flexible cubic spline-based function for the time-dependent effect (i.e. the time-dependent hazard ratio).
+
+
+# Introduction
+
+Survival (a.k.a. time-to-event) analysis is generally concerned with the time from some defined baseline (e.g. diagnosis of a disease) until an event of interest occurs (e.g. death or disease progression). In standard survival analysis, one event time is measured for each observational unit. In practice however, that event time may be unobserved due to left, right, or interval censoring, in which case the event time is only known to have occurred within the relevant censoring interval. A number of extensions to standard survival analysis have also been proposed, for example, multiple (recurrent) events, competing events, clustered survival data, cure models, and more.
+
+In general, there are two common approaches to modelling time-to-event data. The first is to model the time-to-event outcome directly (e.g. the class of models known as accelerated failure time models). The second is to model the *rate* of the event (e.g. the class of models known as proportional and non-proportional hazards regression models). Currently, the `stan_surv` modelling function focusses on the latter.
+
+The intention is for the `stan_surv` modelling function in the **rstanarm** package to provide functionality for fitting a wide range of Bayesian survival models. The current implementation allows for a hazard-scale regression model with
+
+- a standard parametric or flexible parametric baseline hazard 
+- covariates included under proportional or non-proportional hazards
+- time-varying covariates
+- left, right or interval censoring
+- delayed entry (i.e. left truncation)
+
+Future plans include extensions to allow for
+
+- group-specific parameters (i.e. random/frailty effects)
+- shared frailty models
+- accelerated failure time (AFT) specification
+
+
+# Technical details
+
+## Data and notation
+
+We assume that a true event time for individual $i$ ($i = 1,...,N$) exists, denoted $T_i^*$, but that in practice may or may not observed due to left, right, or interval censoring. Therefore, in practice we observe outcome data $\mathcal{D}_i = \{T_i, T_i^U, T_i^E, d_i\}$ for individual $i$ where
+
+- $T_i$: the observed event or censoring time
+- $T_i^U$: the observed upper limit for interval censored individuals
+- $T_i^E$: the observed entry time (i.e. the time at which an individual became at risk for the event)
+
+and $d_i \in \{0,1,2,3\}$ denotes an event indicator taking value
+
+- 0 if individual $i$ was right censored (i.e. $T_i^* > T_i$) 
+- 1 if individual $i$ was uncensored (i.e. $T_i^* = T_i$)
+- 2 if individual $i$ was left censored (i.e. $T_i^* < T_i$)
+- 3 if individual $i$ was interval censored (i.e. $T_i < T_i^* < T_i^U$)
+
+## The hazard rate, cumulative hazard, and survival probability
+
+The hazard of the event at time $t$ is the instantaneous rate of occurrence for the event at time $t$. Mathematically, it is defined as
+\
+\begin{equation}
+\begin{split}
+h_i(t) = \lim_{\Delta t \to 0} 
+  \frac{P(t \leq T_i^* < t + \Delta t | T_i^* > t)}{\Delta t}
+\end{split}
+\end{equation}
+\
+where $\Delta t$ is the width of some small time interval. The numerator in is the conditional probability of the individual experiencing the event during the time interval $[t, t + \Delta t)$, given that they were still at risk of the event at time $t$. The denominator in the equation converts the conditional probability to a rate per unit of time. As $\Delta t$ approaches the limit, the width of the interval approaches zero and the instantaneous event rate is obtained.
+
+The cumulative hazard is defined as
+\
+\begin{equation}
+\begin{split}
+H_i(t) = \int_{s=0}^t h_i(s) ds
+\end{split}
+\end{equation}
+
+The survival probability is defined as
+\
+\begin{equation}
+\begin{split}
+S_i(t) = \exp \left[ -H_i(t) \right] = \exp \left[ -\int_{s=0}^t h_i(s) ds \right]
+\end{split}
+\end{equation}
+
+## Model formulation
+
+We model the hazard of the event for individual $i$ using the following regression model 
+\
+\begin{equation}
+\begin{split}
+h_i(t) = h_0(t) \exp \left[ \eta_i(t) \right]
+\end{split}
+\end{equation}
+\
+where $h_0(t)$ is the baseline hazard (i.e. the hazard for an individual with all covariates set equal to zero) at time $t$, and $\eta_i(t)$ denotes the (possibly time-dependent) linear predictor evaluated for individual $i$ at time $t$. 
+
+We further define the baseline hazard and linear predictor in the next sections.
+
+### Baseline hazard
+
+The `stan_surv` modelling function, via its `basehaz` argument, allows the baseline hazard $h_0(t)$ to be specified using any of the following parametric formulations.
+
+- **Exponential distribution**: for scale parameter $\lambda > 0$ we have
+
+\begin{equation}
+h_0(t) = \lambda
+\end{equation}
+
+- **Weibull distribution**: for scale parameter $\lambda > 0$ and shape parameter $\gamma > 0$ we have
+
+\begin{equation}
+h_0(t) = \gamma t^{\gamma-1} \lambda
+\end{equation}
+
+- **Gompertz distribution**: for shape parameter $\lambda > 0$ and scale parameter $\gamma > 0$ we have
+
+\begin{equation}
+h_0(t) = \exp(\gamma t) \lambda
+\end{equation}
+
+- **M-splines**, the default: letting $M(t; \boldsymbol{\gamma}, \boldsymbol{k_0})$ denote a cubic M-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma} > 0$ we have
+
+\begin{equation}
+h_0(t) = M(t; \boldsymbol{\gamma}, \boldsymbol{k_0})
+\end{equation}
+
+- **B-splines** (for the *log* baseline hazard): letting $B(t; \boldsymbol{\gamma}, \boldsymbol{k_0})$ denote a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma}$ we have 
+
+\begin{equation}
+\log h_0(t) = B(t; \boldsymbol{\gamma}, \boldsymbol{k_0})
+\end{equation}
+
+Note that for the exponential, Weibull, and Gompertz baseline hazards, $\log \lambda$ is absorbed as an intercept term in the linear predictor $\eta_i(t)$. It is therefore shown as such in the output for `stan_surv`.
+
+### Linear predictor
+
+The effects of covariates are introduced through the linear predictor under proportional or non-proportional hazards assumptions. That is, we define our linear predictor as
+\
+\begin{equation}
+\begin{split}
+\eta_i(t) = \boldsymbol{X_i^T(t)} \boldsymbol{\beta(t)}
+\end{split}
+\end{equation}
+\
+where $\boldsymbol{X_i^T(t)}$ is a vector of covariates (possibly time-varying) for individual $i$, and $\boldsymbol{\beta(t)} = \{ \beta_p(t); p = 1,...,P \}$ is a vector of parameters with each element defined as
+\
+\begin{align}
+\beta_p(t) = 
+  \begin{cases}
+    \theta_{p,0}
+    & \text{for proportional hazards} \\
+    \theta_{p,0} + B(t; \boldsymbol{\theta_p}, \boldsymbol{k_p})
+    & \text{for non-proportional hazards}
+  \end{cases}
+\end{align}
+\
+such that $\theta_{p,0}$ is a time-fixed hazard ratio, and $B(t; \boldsymbol{\theta_p}, \boldsymbol{k_p})$ is a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_p}$ and parameter vector $\boldsymbol{\theta_p}$. Where relevant, the cubic B-spline function is used to model the time-dependent hazard ratio as a smooth function of time. 
+
+In the `stan_surv` modelling function the user specifies that they wish to estimate a time-dependent hazard ratio for a covariate by wrapping the covariate name in the `tde()` function in the model formula; see the examples in the latter part of this vignette.
+
+## Likelihood
+
+Allowing for the three forms of censoring, and potential delayed entry (i.e. left truncation), the likelihood takes the form
+\
+\begin{align}
+\begin{split}
+p(\mathcal{D}_i | \boldsymbol{\gamma}, \boldsymbol{\beta}) =
+  &        {\left[ h_i(T_i)              \right]}^{I(d_i=1)} \\
+  & \times {\left[ S_i(T_i)              \right]}^{I(d_i \in \{0,1\})} \\
+  & \times {\left[ 1 - S_i(T_i)          \right]}^{I(d_i=2)} \\
+  & \times {\left[ S_i(T_i) - S_i(T_i^U) \right]}^{I(d_i=3)} \\
+  & \times {\left[ S_i(T_i^E)            \right]}^{-1}
+\end{split}
+\end{align}
+
+## Priors
+
+The prior distribution for the baseline hazard parameters (i.e. $\gamma$ for Weibull or Gompertz baseline hazards, or $\boldsymbol{\gamma}$ for the M-spline or B-spline baseline hazards) is specified via the `prior_aux` argument to `stan_surv`. Choices of prior distribution include half-normal, half-t or half-Cauchy for the Weibull, Gompertz and M-spline baseline hazards, or normal, t, or Cauchy for the B-splines log baseline hazard. These choices are described in greater detail in the `stan_surv` help file.
+
+For the exponential, Weibull, or Gompertz baseline hazards the prior distribution for the intercept parameter in the linear predictor, that is $\log \lambda$, is specified via the `prior_intercept` argument to `stan_surv`. Choices include the normal, t, or Cauchy distributions.
+
+The choice of prior distribution for the time-fixed hazard ratios $\theta_{p,0}$ ($p = 1,...,P$) is specified via the `prior` argument to `stan_surv`. This can any of the standard prior distributions allowed for regression coefficients in the **rstanarm** package; see the priors [vignette](priors.html) and the `stan_surv` help file for details. 
+
+The B-spline coefficients related to each time-dependent effect, that is $\boldsymbol{\theta_p}$, are given a random walk prior of the form $\theta_{p,1} \sim N(0,1)$ and $\theta_{p,m} \sim N(\theta_{p,m-1},\tau_p)$ for $m = 2,...,M$, where $M$ is the total number of cubic B-spline basis terms. The prior distribution for the hyperparameter $\tau_p$ is specified via the `prior_smooth` argument to `stan_surv`. Lower values of $\tau_p$ lead to a less flexible (i.e. smoother) function. Choices of prior distribution for the hyperparameter $\tau_p$ include an exponential, half-normal, half-t, or half-Cauchy distribution, and these are detailed in the `stan_surv` help file.
+
+
+# Usage examples
+
+## Example: a flexible parametric proportional hazards model
+
+We will use the German Breast Cancer Study Group dataset (see `?rstanarm-datasets` for details and references). In brief, the data consist of
+$N = 686$ patients with primary node positive breast cancer recruited between 1984-1989. The primary response is time to recurrence or death. Median follow-up time was 1084 days. Overall, there were 299 (44%) events and the remaining 387 (56%) individuals were right censored. We concern our analysis here with a 3-category baseline covariate for cancer prognosis (good/medium/poor).
+
+First, let us load the data and fit the proportional hazards model
+
+```{r, warning = FALSE, message = FALSE, results='hide'}
+library(rstanarm)
+fm <- Surv(recyrs, status) ~ group
+mod1 <- stan_surv(fm, data = bcancer, seed = 123321)
+```
+
+The model here is estimated using the default cubic M-splines (with 5 degrees of freedom) for modelling the baseline hazard. Since there are no time-dependent effects in the model (i.e. we did not wrap any covariates in the `tde()` function) there is a closed form expression for the cumulative hazard and survival function and so the model is relatively fast to fit. Specifically, the model takes ~3.5 sec for each MCMC chain based on the default 2000 (1000 warm up, 1000 sampling) MCMC iterations. 
+
+We can easily obtain the estimated hazard ratios for the 3-catgeory group covariate using the generic `print` method for `stansurv` objects, as follows
+
+```{r}
+print(mod1, digits = 3)
+```
+
+We see from this output we see that individuals in the groups with `Poor` or `Medium` prognosis have much higher rates of death relative to the group with `Good` prognosis (as we might expect!). The hazard of death in the `Poor` prognosis group is approximately 4.6-fold higher than the hazard of death in the `Good` prognosis group. Similarly, the hazard of death in the `Medium` prognosis group is approximately 2.1-fold higher than the hazard of death in the `Good` prognosis group.
+
+It may also be of interest to compare the different types of the baseline hazard we could potentially use. Here, we will fit a series of models, each with a different baseline hazard specification and then plot those baseline hazards with 95% posterior uncertainty limits
+
+```{r, warning = FALSE, message = FALSE, results='hide'}
+mod1_exp      <- stan_surv(fm, data = bcancer, basehaz = "exp")
+mod1_weibull  <- stan_surv(fm, data = bcancer, basehaz = "weibull")
+mod1_gompertz <- stan_surv(fm, data = bcancer, basehaz = "gompertz")
+mod1_bspline  <- stan_surv(fm, data = bcancer, basehaz = "bs")
+mod1_mspline1 <- stan_surv(fm, data = bcancer, basehaz = "ms")
+mod1_mspline2 <- stan_surv(fm, data = bcancer, basehaz = "ms", 
+                           basehaz_ops = list(df = 10))
+```
+
+```{r, echo=FALSE, fig.height=5}
+library(ggplot2)
+
+p_exp <- 
+  plot(mod1_exp, plotfun = "basehaz") + 
+  ggplot2::coord_cartesian(ylim = c(0,0.4)) + 
+  ggplot2::labs(title = "Exponential") +
+  ggplot2::theme(plot.title = element_text(hjust = 0.5))
+
+p_weibull <- 
+  plot(mod1_weibull, plotfun = "basehaz") + 
+  ggplot2::coord_cartesian(ylim = c(0,0.4)) + 
+  ggplot2::labs(title = "Weibull") +
+  ggplot2::theme(plot.title = element_text(hjust = 0.5))
+
+p_gompertz <- 
+  plot(mod1_gompertz, plotfun = "basehaz") + 
+  ggplot2::coord_cartesian(ylim = c(0,0.4)) + 
+  ggplot2::labs(title = "Gompertz") +
+  ggplot2::theme(plot.title = element_text(hjust = 0.5))
+
+p_bspline <- 
+  plot(mod1_bspline, plotfun = "basehaz") + 
+  ggplot2::coord_cartesian(ylim = c(0,0.4)) + 
+  ggplot2::labs(title = "B-splines with df = 5") +
+  ggplot2::theme(plot.title = element_text(hjust = 0.5))
+
+p_mspline1 <- 
+  plot(mod1_mspline1, plotfun = "basehaz") + 
+  ggplot2::coord_cartesian(ylim = c(0,0.4)) + 
+  ggplot2::labs(title = "M-splines with df = 5") +
+  ggplot2::theme(plot.title = element_text(hjust = 0.5))
+
+p_mspline2 <- 
+  plot(mod1_mspline2, plotfun = "basehaz") + 
+  ggplot2::coord_cartesian(ylim = c(0,0.4)) + 
+  ggplot2::labs(title = "M-splines with df = 10") +
+  ggplot2::theme(plot.title = element_text(hjust = 0.5))
+
+bayesplot::bayesplot_grid(p_exp,
+                          p_weibull,
+                          p_gompertz,
+                          p_bspline,
+                          p_mspline1,
+                          p_mspline2,
+                          grid_args = list(ncol = 3))
+```
+
+We can also compare the fit of these models using the `loo` method for `stansurv` objects
+
+```{r, message=FALSE}
+compare_models(loo(mod1_exp),
+               loo(mod1_weibull),
+               loo(mod1_gompertz),
+               loo(mod1_bspline),
+               loo(mod1_mspline1),
+               loo(mod1_mspline2))
+```
+
+where we see that models with a flexible parametric (spline-based) baseline hazard fit the data best followed by the standard parametric (Weibull, Gompertz, exponential) models. Specifically, B-splines used to approximate the log baseline hazard appear to perform best, followed by the M-spline model with a greater number of degrees of freedom for the M-splines leading to a marginally better fit. However, overall, the differences in `elpd` or `looic` between models are small relative to their standard errors.
+
+After fitting the survival model, we often want to estimate the predicted survival function for individual's with different covariate patterns. Here, let us estimate the predicted survival function between 0 and 5 years for an individual in each of the prognostic groups. To do this, we can use the `posterior_survfit` method for `stansurv` objects, and it's associated `plot` method. First let us construct the prediction (covariate) data
+
+```{r preddata}
+nd <- data.frame(group = c("Good", "Medium", "Poor"))
+head(nd)
+```
+
+and then we will generate the posterior predictions 
+
+```{r predresults}
+ps <- posterior_survfit(mod1, newdata = nd, times = 0, extrapolate = TRUE,
+                        control = list(edist = 5))
+head(ps)
+```
+
+Here we note that the `id` variable in the data frame of posterior predictions identifies which row of `newdata` the predictions correspond to. For demonstration purposes we have also shown a couple of other arguments in the `posterior_survfit` call, namely
+
+- the `times = 0` argument says that we want to predict at time = 0 (i.e. baseline) for each individual in the `newdata` (this is the default anyway)
+- the `extrapolate = TRUE` argument says that we want to extrapolate forward from time 0 (this is also the default)
+- the `control = list(edist = 5)` identifies the control of the extrapolation; this is saying extrapolate the survival function forward from time 0 for a distance of 5 time units (the default would have been to extrapolate as far as the largest event or censoring time in the estimation dataset, which is 7.28 years in the `brcancer` data).
+
+Let us now plot the survival predictions. We will relabel the `id` variable with meaningful labels identifying the covariate profile of each new individual in our prediction data
+
+```{r predplot}
+panel_labels <- c('1' = "Good", '2' = "Medium", '3' = "Poor")
+plot(ps) + 
+  ggplot2::facet_wrap(~ id, labeller = ggplot2::labeller(id = panel_labels))
+```
+
+We can see from the plot that predicted survival is worst for patients with a `Poor` diagnosis, and best for patients with a `Good` diagnosis, as we would expect based on our previous model estimates.
+
+Alternatively, if we wanted to obtain and plot the predicted *hazard* function for each individual in our new data (instead of their *survival* function), then we just need to specify `type = "haz"` in our `posterior_survfit` call (the default is `type = "surv"`), as follows
+
+```{r predhaz}
+ph <- posterior_survfit(mod1, newdata = nd, type = "haz")
+plot(ph) + 
+  ggplot2::facet_wrap(~ id, labeller = ggplot2::labeller(id = panel_labels))
+```
+
+We can quite clearly see in the plot the assumption of proportional hazards. We can also see that the hazard is highest in the `Poor` prognosis group (i.e. worst survival) and the hazard is lowest in the `Good` prognosis group (i.e. best survival). This corresponds to what we saw in the plot of the survival functions previously.
+
+## Example: a model with non-proportional hazards
+
+To demonstrate the implementation of time-dependent effects in `stan_surv` we will use a simulated dataset, generated using the **simsurv** package (Brilleman, 2018).
+
+We will simulate a dataset with $N = 200$ individuals with event times generated under the following Weibull hazard function
+\
+\begin{align}
+h_i(t) = \gamma t^{\gamma-1} \lambda exp( \beta(t) x_i )
+\end{align}
+\
+with scale parameter $\lambda = 0.1$, shape parameter $\gamma = 1.5$, binary baseline covariate $X_i \sim \text{Bern}(0.5)$, and time-dependent hazard ratio $\beta(t) = -0.5 + 0.2 t$. We will enforce administrative censoring at 5 years if an individual's simulated event time is >5 years.
+
+```{r simsurv-simdata}
+# load package
+library(simsurv)
+
+# set seed for reproducibility
+set.seed(999111)
+
+# simulate covariate data
+covs <- data.frame(id  = 1:100, 
+                   trt = rbinom(100, 1L, 0.5))
+
+# simulate event times
+dat  <- simsurv(lambdas = 0.1, 
+                gammas  = 1.5, 
+                betas   = c(trt = -0.5),
+                tde     = c(trt = 0.2),
+                x       = covs, 
+                maxt    = 5)
+
+# merge covariate data and event times
+dat  <- merge(dat, covs)
+
+# examine first few rows of data
+head(dat)
+```
+
+Now that we have our simulated dataset, let us fit a model with time-dependent hazard ratio for `trt`
+
+```{r, warning = FALSE, message = FALSE, results='hide'}
+# define formula
+fm <- Surv(eventtime, status) ~ tde(trt)
+
+# fit Stan model with time-dependent hazard ratio
+mod2 <- stan_surv(formula = fm, data = dat, seed = 5544, iter = 500)
+```
+
+By default the cubic B-spline basis used for modelling the time-dependent hazard ratio is evaluated with 3 degrees of freedom (i.e. two boundary knots placed at the limits of the range of event times, but no internal knots). For a more or less flexible spline function we can specify the `df` arugment to `tde()` function. For example, we could specify the model formula as
+
+```{r, warning = FALSE, message = FALSE, results='hide', eval=FALSE}
+fm <- Surv(eventtime, status) ~ tde(trt, df = 5)
+```
+
+so that we use 5 degrees of freedom for modelling the time-dependent effect (i.e. two boundary knots placed at the limits of the range of event times, as well as two internal knots placed - by default - at the 33.3rd and 66.6th percentiles of the distribution of uncensored event times).
+
+Let us now plot the estimated time-dependent hazard ratio from the fitted model. We can do this using the generic `plot` method for `stansurv` objects, for which we can specify the `plotfun = "tde"` argument. (Note that in this case, there is only one covariate in the model with a time-dependent effect, but if there were others, we could specify which covariate(s) we want to plot the time-dependent effect for by specifying the `pars` argument to the `plot` call).
+
+```{r, fig.height=5}
+plot(mod2, plotfun = "tde")
+```
+
+From the plot, we can see how the hazard ratio (i.e. the effect of treatment on the hazard of the event) changes as a function of time. The treatment appears to be protective during the first few years following baseline (i.e. HR < 1), and then the treatment appears to become harmful after about 4 years post-baseline (of course, this is the model we simulated under!). 
+
+The plot shows a large amount of uncertainty around the estimated time-dependent hazard ratio. This is to be expected, since we only simulated a dataset of 200 individuals of which only around 70% experienced the event before being censored at 5 years. So, there is little data (i.e. few events) with which to reliably estimate the time-dependent hazard ratio. We can also see this reflected in the differences between our data generating model and the estimates from our fitted model. In our data generating model, the time-dependent hazard ratio equals 1 (i.e. the log hazard ratio equals 0) at 2.5 years, but in our fitted model the median estimate for our time-dependent hazard ratio equals 1 at around ~4 years. This is a reflection of the large amount of sampling error, due to our simulated dataset being so small.
+
+
+# References
+
+Brilleman, S. (2018) *simsurv: Simulate Survival Data.* R package version 0.2.2. \url{https://CRAN.R-project.org/package=simsurv}
