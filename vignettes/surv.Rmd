@@ -36,6 +36,7 @@ h1 { /* Header 1 */
 ```{r setup_jm, include=FALSE, message=FALSE}
 knitr::opts_chunk$set(fig.width=10, fig.height=4)
 library(rstanarm)
+set.seed(989898)
 ```
 
 
@@ -210,7 +211,7 @@ The prior distribution for the baseline hazard parameters (i.e. $\gamma$ for Wei
 
 For the exponential, Weibull, or Gompertz baseline hazards the prior distribution for the intercept parameter in the linear predictor, that is $\log \lambda$, is specified via the `prior_intercept` argument to `stan_surv`. Choices include the normal, t, or Cauchy distributions.
 
-The choice of prior distribution for the time-fixed hazard ratios $\theta_{p,0}$ ($p = 1,...,P$) is specified via the `prior` argument to `stan_surv`. This can any of the standard prior distributions allowed for regression coefficients in the **rstanarm** package; see the priors [vignette](priors.html) and the `stan_surv` help file for details. 
+The choice of prior distribution for the time-fixed hazard ratios $\theta_{p,0}$ ($p = 1,...,P$) is specified via the `prior` argument to `stan_surv`. This can any of the standard prior distributions allowed for regression coefficients in the **rstanarm** package; see the [priors vignette](priors.html) and the `stan_surv` help file for details. 
 
 The B-spline coefficients related to each time-dependent effect, that is $\boldsymbol{\theta_p}$, are given a random walk prior of the form $\theta_{p,1} \sim N(0,1)$ and $\theta_{p,m} \sim N(\theta_{p,m-1},\tau_p)$ for $m = 2,...,M$, where $M$ is the total number of cubic B-spline basis terms. The prior distribution for the hyperparameter $\tau_p$ is specified via the `prior_smooth` argument to `stan_surv`. Lower values of $\tau_p$ lead to a less flexible (i.e. smoother) function. Choices of prior distribution for the hyperparameter $\tau_p$ include an exponential, half-normal, half-t, or half-Cauchy distribution, and these are detailed in the `stan_surv` help file.
 
@@ -225,7 +226,6 @@ $N = 686$ patients with primary node positive breast cancer recruited between 19
 First, let us load the data and fit the proportional hazards model
 
 ```{r, warning = FALSE, message = FALSE, results='hide'}
-library(rstanarm)
 fm <- Surv(recyrs, status) ~ group
 mod1 <- stan_surv(fm, data = bcancer, seed = 123321)
 ```
@@ -240,7 +240,7 @@ print(mod1, digits = 3)
 
 We see from this output we see that individuals in the groups with `Poor` or `Medium` prognosis have much higher rates of death relative to the group with `Good` prognosis (as we might expect!). The hazard of death in the `Poor` prognosis group is approximately 4.6-fold higher than the hazard of death in the `Good` prognosis group. Similarly, the hazard of death in the `Medium` prognosis group is approximately 2.1-fold higher than the hazard of death in the `Good` prognosis group.
 
-It may also be of interest to compare the different types of the baseline hazard we could potentially use. Here, we will fit a series of models, each with a different baseline hazard specification and then plot those baseline hazards with 95% posterior uncertainty limits
+It may also be of interest to compare the different types of the baseline hazard we could potentially use. Here, we will fit a series of models, each with a different baseline hazard specification 
 
 ```{r, warning = FALSE, message = FALSE, results='hide'}
 mod1_exp      <- stan_surv(fm, data = bcancer, basehaz = "exp")
@@ -252,44 +252,24 @@ mod1_mspline2 <- stan_surv(fm, data = bcancer, basehaz = "ms",
                            basehaz_ops = list(df = 10))
 ```
 
-```{r, echo=FALSE, fig.height=5}
+and then plot the baseline hazards with 95% posterior uncertainty limits using the generic `plot` method for `stansurv` objects (note that the default `plot` for `stansurv` objects is the estimated baseline hazard). We will write a little helper function to adjust the y-axis limits, add a title, and centre the title, on each plot, as follows
+
+```{r, fig.height=5}
 library(ggplot2)
 
-p_exp <- 
-  plot(mod1_exp, plotfun = "basehaz") + 
-  ggplot2::coord_cartesian(ylim = c(0,0.4)) + 
-  ggplot2::labs(title = "Exponential") +
-  ggplot2::theme(plot.title = element_text(hjust = 0.5))
+plotfun <- function(model, title) {
+  plot(model, plotfun = "basehaz") +              # plot baseline hazard
+    coord_cartesian(ylim = c(0,0.4)) +            # adjust y-axis limits
+    labs(title = title) +                         # add plot title
+    theme(plot.title = element_text(hjust = 0.5)) # centre plot title
+}
 
-p_weibull <- 
-  plot(mod1_weibull, plotfun = "basehaz") + 
-  ggplot2::coord_cartesian(ylim = c(0,0.4)) + 
-  ggplot2::labs(title = "Weibull") +
-  ggplot2::theme(plot.title = element_text(hjust = 0.5))
-
-p_gompertz <- 
-  plot(mod1_gompertz, plotfun = "basehaz") + 
-  ggplot2::coord_cartesian(ylim = c(0,0.4)) + 
-  ggplot2::labs(title = "Gompertz") +
-  ggplot2::theme(plot.title = element_text(hjust = 0.5))
-
-p_bspline <- 
-  plot(mod1_bspline, plotfun = "basehaz") + 
-  ggplot2::coord_cartesian(ylim = c(0,0.4)) + 
-  ggplot2::labs(title = "B-splines with df = 5") +
-  ggplot2::theme(plot.title = element_text(hjust = 0.5))
-
-p_mspline1 <- 
-  plot(mod1_mspline1, plotfun = "basehaz") + 
-  ggplot2::coord_cartesian(ylim = c(0,0.4)) + 
-  ggplot2::labs(title = "M-splines with df = 5") +
-  ggplot2::theme(plot.title = element_text(hjust = 0.5))
-
-p_mspline2 <- 
-  plot(mod1_mspline2, plotfun = "basehaz") + 
-  ggplot2::coord_cartesian(ylim = c(0,0.4)) + 
-  ggplot2::labs(title = "M-splines with df = 10") +
-  ggplot2::theme(plot.title = element_text(hjust = 0.5))
+p_exp      <- plotfun(mod1_exp,      title = "Exponential")
+p_weibull  <- plotfun(mod1_weibull,  title = "Weibull")
+p_gompertz <- plotfun(mod1_gompertz, title = "Gompertz")
+p_bspline  <- plotfun(mod1_bspline,  title = "B-splines with df = 5")
+p_mspline1 <- plotfun(mod1_mspline1, title = "M-splines with df = 5")
+p_mspline2 <- plotfun(mod1_mspline2, title = "M-splines with df = 10")
 
 bayesplot::bayesplot_grid(p_exp,
                           p_weibull,
@@ -395,10 +375,7 @@ head(dat)
 Now that we have our simulated dataset, let us fit a model with time-dependent hazard ratio for `trt`
 
 ```{r, warning = FALSE, message = FALSE, results='hide'}
-# define formula
 fm <- Surv(eventtime, status) ~ tde(trt)
-
-# fit Stan model with time-dependent hazard ratio
 mod2 <- stan_surv(formula = fm, data = dat, seed = 5544, iter = 500)
 ```
 
@@ -418,7 +395,7 @@ plot(mod2, plotfun = "tde")
 
 From the plot, we can see how the hazard ratio (i.e. the effect of treatment on the hazard of the event) changes as a function of time. The treatment appears to be protective during the first few years following baseline (i.e. HR < 1), and then the treatment appears to become harmful after about 4 years post-baseline (of course, this is the model we simulated under!). 
 
-The plot shows a large amount of uncertainty around the estimated time-dependent hazard ratio. This is to be expected, since we only simulated a dataset of 200 individuals of which only around 70% experienced the event before being censored at 5 years. So, there is little data (i.e. few events) with which to reliably estimate the time-dependent hazard ratio. We can also see this reflected in the differences between our data generating model and the estimates from our fitted model. In our data generating model, the time-dependent hazard ratio equals 1 (i.e. the log hazard ratio equals 0) at 2.5 years, but in our fitted model the median estimate for our time-dependent hazard ratio equals 1 at around ~4 years. This is a reflection of the large amount of sampling error, due to our simulated dataset being so small.
+The plot shows a large amount of uncertainty around the estimated time-dependent hazard ratio. This is to be expected, since we only simulated a dataset of 100 individuals of which only around 70% experienced the event before being censored at 5 years. So, there is very little data (i.e. very few events) with which to reliably estimate the time-dependent hazard ratio. We can also see this reflected in the differences between our data generating model and the estimates from our fitted model. In our data generating model, the time-dependent hazard ratio equals 1 (i.e. the log hazard ratio equals 0) at 2.5 years, but in our fitted model the median estimate for our time-dependent hazard ratio equals 1 at around ~4 years. This is a reflection of the large amount of sampling error, due to our simulated dataset being so small.
 
 
 # References
