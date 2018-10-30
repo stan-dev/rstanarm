@@ -1162,7 +1162,7 @@ log_basesurv_weibull  <- function(x, shape, log_scale) {
   -exp(as.vector(log_scale) + linear_predictor(shape, log(x)))
 }
 log_basesurv_gompertz <- function(x, scale, log_shape) {
-  -(as.vector(log_shape / scale)) * (exp(linear_predictor(scale, x)) - 1)
+  -(as.vector(exp(log_shape) / scale)) * (exp(linear_predictor(scale, x)) - 1)
 }
 log_basesurv_ms <- function(x, coefs, basis) {
   -linear_predictor(coefs, basis_matrix(x, basis = basis, integrate = TRUE))
