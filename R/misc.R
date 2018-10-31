@@ -364,8 +364,9 @@ validate_glm_formula <- function(f) {
 # @return If no constant variables are found mf is returned, otherwise an error
 #   is thrown.
 check_constant_vars <- function(mf) {
-  # don't check if columns are constant for binomial
-  mf1 <- if (NCOL(mf[, 1]) == 2) mf[, -1, drop=FALSE] else mf
+  # don't check if columns are constant for binomial or Surv object
+  mf1 <- if (NCOL(mf[, 1]) == 2 || survival::is.Surv(mf[, 1])) 
+    mf[, -1, drop=FALSE] else mf
   
   lu1 <- function(x) !all(x == 1) && length(unique(x)) == 1
   nocheck <- c("(weights)", "(offset)", "(Intercept)")
