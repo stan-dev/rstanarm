@@ -1133,12 +1133,15 @@ plot.survfit.stanjm <- function(x,
   x$time <- x[[time_var]]
   
   geom_defaults <- list(color = "black")
-  geom_mapp     <- list(mapping = aes_string(x = "time", y = "median"))
+  geom_mapp     <- list(mapping = aes_string(x = "time",
+                                             y = "median"))
   geom_args     <- do.call("set_geom_args", 
                            c(defaults = list(geom_defaults), list(...)))  
   
   lim_defaults  <- list(alpha = 0.3)
-  lim_mapp      <- list(mapping = aes_string(ymin = "ci_lb", ymax = "ci_ub"))
+  lim_mapp      <- list(mapping = aes_string(x = "time", 
+                                             ymin = "ci_lb", 
+                                             ymax = "ci_ub"))
   lim_args      <- do.call("set_geom_args", 
                            c(defaults = list(lim_defaults), ci_geom_args))
   
@@ -1164,7 +1167,7 @@ plot.survfit.stanjm <- function(x,
   
   graph_labels <- labs(x = xlab, y = ylab)
   
-  gg        <- graph + graph_facet + graph_limits + graph_labels
+  gg        <- graph_base + graph_facet + graph_limits + graph_labels
   class_gg  <- class(gg)
   class(gg) <- c("plot.survfit.stanjm", class_gg)
   gg
