@@ -262,8 +262,8 @@ test_that("prior arguments work", {
   o<-SW(f12 <- update(f1, Surv(t0, futimeYears, death) ~ sex + tde(trt)))
   
   # interval censoring
-  o<-SW(f13 <- update(f1, Surv(l, u, type = "interval2") ~ grp,      data = mice))
-  #o<-SW(f14 <- update(f1, Surv(l, u, type = "interval2") ~ tde(grp), data = mice))
+  o<-SW(f13 <- update(f1, Surv(t0, futimeYears, type = "interval2") ~ sex + trt))
+  #o<-SW(f14 <- update(f1, Surv(t0, futimeYears, type = "interval2") ~ sex + tde(trt)))
   
   # new data for predictions
   nd1 <- pbcSurv[pbcSurv$id == 2,]
