@@ -231,103 +231,103 @@ test_that("prior arguments work", {
   compare_surv(data = dat, basehaz = "gompertz")
 
 
-#----  Compare parameter estimates: stan_surv vs icenReg (interval censored)
-  
-  #---- simulated interval censored weibull data
-  
-  library(icenReg); set.seed(321)
-  
-  # simulate interval censored data
-  sim_data <- simIC_weib(n     = 5000, 
-                         b1    = 0.3, 
-                         b2    = -0.3, 
-                         model = 'ph', 
-                         shape = 2, 
-                         scale = 2, 
-                         inspections   = 6, 
-                         inspectLength = 1)
-  
-  # lower limit = 0 is actually left censoring (stan_surv doesn't accept 0's)
-  sim_data$l[sim_data$l == 0] <- -Inf 
-  
-  # fit stan model to interval censored data
-  fm <- Surv(l, u, type = 'interval2') ~ x1 + x2
-  ic_stan  <- stan_surv(fm, 
-                        data    = sim_data, 
-                        basehaz = "weibull",
-                        iter    = ITER,
-                        refresh = REFRESH,
-                        chains  = CHAINS,
-                        seed    = SEED)
-  
-  # compare stan estimates to known values from data generating model
-  truepars <- c('x1' = 0.3, 'x2' = -0.3, 'weibull-shape' = 2)
-  stanpars <- fixef(ic_stan)
-  expect_equal(stanpars[['x1']], 
-               truepars[['x1']], 
-               tol  = 0.01, 
-               info = "compare estimates (x1) with icenReg")
-  expect_equal(stanpars[['x2']], 
-               truepars[['x2']], 
-               tol  = 0.01, 
-               info = "compare estimates (x2) with icenReg")
-  expect_equal(stanpars[['weibull-shape']], 
-               truepars[['weibull-shape']], 
-               tol  = 0.1, 
-               info = "compare estimates (weibull-shape) with icenReg")  
-
-  # fit model using icenReg package & compare log_lik with stan model
-  ic_icen  <- ic_par(fm, data = sim_data)
-  ll_icen  <- ic_icen$llk
-  ll_stan  <- mean(rowSums(log_lik(ic_stan)))
-  expect_equal(ll_icen, 
-               ll_stan, 
-               tol = 5, 
-               info = "compare log lik with icenReg")
-
-    
-#----  Compare parameter estimates: stan_surv vs phreg (tvc & delayed entry)
-  
-  #---- mortality data: contains a time-varying covariate
-  
-  library(eha); library(dplyr); set.seed(987)
-  
-  # add a time-fixed covariate to the mortality data
-  data(mort); mort <- mort %>% group_by(id) %>% mutate(sesfixed = ses[[1]])
-  
-  # fit models using the time-fixed covariate & compare HR estimates
-  fm <- Surv(enter, exit, event) ~ sesfixed
-  f_weib <- phreg(fm, data = mort)
-  f_stan <- stan_surv(fm, 
-                      data    = mort, 
-                      basehaz = "weibull",
-                      iter    = ITER,
-                      refresh = REFRESH,
-                      chains  = CHAINS,
-                      seed    = SEED)
-  expect_equal(coef(f_weib)['sesfixedupper'],
-               coef(f_stan)['sesfixedupper'],
-               tol = 0.01)
-  
-  # fit models using the time-varying covariate & compare HR estimates
-  fm <- Surv(enter, exit, event) ~ ses
-  v_weib <- phreg(fm, data = mort)
-  v_stan <- stan_surv(fm, 
-                      data    = mort, 
-                      basehaz = "weibull",
-                      iter    = ITER,
-                      refresh = REFRESH,
-                      chains  = CHAINS,
-                      seed    = SEED)
-  expect_equal(coef(v_weib)['sesupper'],
-               coef(v_stan)['sesupper'],
-               tol = 0.01)
-  
-  # stupidity check; to make sure the hazard ratios actually differed 
-  # between the models with the time-fixed and time-varying covariate
-  expect_error(expect_equal(coef(f_weib)['sesfixedupper'][[1]],
-                            coef(v_weib)['sesupper'][[1]],
-                            tol = 0.1), "not equal") 
+# #----  Compare parameter estimates: stan_surv vs icenReg (interval censored)
+#   
+#   #---- simulated interval censored weibull data
+#   
+#   library(icenReg); set.seed(321)
+#   
+#   # simulate interval censored data
+#   sim_data <- simIC_weib(n     = 5000, 
+#                          b1    = 0.3, 
+#                          b2    = -0.3, 
+#                          model = 'ph', 
+#                          shape = 2, 
+#                          scale = 2, 
+#                          inspections   = 6, 
+#                          inspectLength = 1)
+#   
+#   # lower limit = 0 is actually left censoring (stan_surv doesn't accept 0's)
+#   sim_data$l[sim_data$l == 0] <- -Inf 
+#   
+#   # fit stan model to interval censored data
+#   fm <- Surv(l, u, type = 'interval2') ~ x1 + x2
+#   ic_stan  <- stan_surv(fm, 
+#                         data    = sim_data, 
+#                         basehaz = "weibull",
+#                         iter    = ITER,
+#                         refresh = REFRESH,
+#                         chains  = CHAINS,
+#                         seed    = SEED)
+#   
+#   # compare stan estimates to known values from data generating model
+#   truepars <- c('x1' = 0.3, 'x2' = -0.3, 'weibull-shape' = 2)
+#   stanpars <- fixef(ic_stan)
+#   expect_equal(stanpars[['x1']], 
+#                truepars[['x1']], 
+#                tol  = 0.01, 
+#                info = "compare estimates (x1) with icenReg")
+#   expect_equal(stanpars[['x2']], 
+#                truepars[['x2']], 
+#                tol  = 0.01, 
+#                info = "compare estimates (x2) with icenReg")
+#   expect_equal(stanpars[['weibull-shape']], 
+#                truepars[['weibull-shape']], 
+#                tol  = 0.1, 
+#                info = "compare estimates (weibull-shape) with icenReg")  
+# 
+#   # fit model using icenReg package & compare log_lik with stan model
+#   ic_icen  <- ic_par(fm, data = sim_data)
+#   ll_icen  <- ic_icen$llk
+#   ll_stan  <- mean(rowSums(log_lik(ic_stan)))
+#   expect_equal(ll_icen, 
+#                ll_stan, 
+#                tol = 5, 
+#                info = "compare log lik with icenReg")
+# 
+#     
+# #----  Compare parameter estimates: stan_surv vs phreg (tvc & delayed entry)
+#   
+#   #---- mortality data: contains a time-varying covariate
+#   
+#   library(eha); library(dplyr); set.seed(987)
+#   
+#   # add a time-fixed covariate to the mortality data
+#   data(mort); mort <- mort %>% group_by(id) %>% mutate(sesfixed = ses[[1]])
+#   
+#   # fit models using the time-fixed covariate & compare HR estimates
+#   fm <- Surv(enter, exit, event) ~ sesfixed
+#   f_weib <- phreg(fm, data = mort)
+#   f_stan <- stan_surv(fm, 
+#                       data    = mort, 
+#                       basehaz = "weibull",
+#                       iter    = ITER,
+#                       refresh = REFRESH,
+#                       chains  = CHAINS,
+#                       seed    = SEED)
+#   expect_equal(coef(f_weib)['sesfixedupper'],
+#                coef(f_stan)['sesfixedupper'],
+#                tol = 0.01)
+#   
+#   # fit models using the time-varying covariate & compare HR estimates
+#   fm <- Surv(enter, exit, event) ~ ses
+#   v_weib <- phreg(fm, data = mort)
+#   v_stan <- stan_surv(fm, 
+#                       data    = mort, 
+#                       basehaz = "weibull",
+#                       iter    = ITER,
+#                       refresh = REFRESH,
+#                       chains  = CHAINS,
+#                       seed    = SEED)
+#   expect_equal(coef(v_weib)['sesupper'],
+#                coef(v_stan)['sesupper'],
+#                tol = 0.01)
+#   
+#   # stupidity check; to make sure the hazard ratios actually differed 
+#   # between the models with the time-fixed and time-varying covariate
+#   expect_error(expect_equal(coef(f_weib)['sesfixedupper'][[1]],
+#                             coef(v_weib)['sesupper'][[1]],
+#                             tol = 0.1), "not equal") 
   
     
 #--------  Check post-estimation functions work
