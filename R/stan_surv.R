@@ -297,6 +297,13 @@ stan_surv <- function(formula,
   t_end <- make_t(mf, type = "end") # exit  time
   t_upp <- make_t(mf, type = "upp") # upper time for interval censoring
   
+  # ensure no event or censoring times are zero (leads to degenerate
+  # estimate for log hazard for most baseline hazards, due to log(0))
+  check1 <- any(t_end <= 0, na.rm = TRUE)
+  check2 <- any(t_upp <= 0, na.rm = TRUE)
+  if (check1 || check2)
+    stop2("All event and censoring times must be greater than 0.")
+
   # event indicator for each row of data
   status <- make_d(mf)
   

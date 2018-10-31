@@ -245,6 +245,7 @@ test_that("prior arguments work", {
                          scale = 2, 
                          inspections   = 6, 
                          inspectLength = 1)
+  sim_data$l[sim_data$l == 0] <- -Inf # left limit = 0 is actually left censoring
   fm <- Surv(l, u, type = 'interval2') ~ x1 + x2
   ic_icen  <- ic_par(fm, data = sim_data)
   ic_stan  <- stan_surv(fm, data = sim_data, basehaz = "weibull")
