@@ -54,7 +54,6 @@ Suggests:
     digest,
     gridExtra,
     HSAUR3,
-    icenReg (> 2.0.8),
     knitr (>= 1.15.1),
     MASS,
     mgcv (>= 1.8-13),
