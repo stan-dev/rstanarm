@@ -396,6 +396,8 @@ stan_surv <- function(formula,
     len_cpts <- 0L
     idx_cpts <- matrix(0,7,2)
     
+    if (!qnodes == 15) # warn user if qnodes is not equal to the default
+      warning2("There is no quadrature required so 'qnodes' is being ignored.")
   }
 
   #----- basis terms for baseline hazard
@@ -471,7 +473,6 @@ stan_surv <- function(formula,
     nvars, 
     has_intercept, 
     has_quadrature,
-    qnodes,
     smooth_map,
     smooth_idx,
     cpts,
@@ -505,6 +506,8 @@ stan_surv <- function(formula,
     ibasis_icenl = if (has_quadrature) matrix(0,0,nvars) else ibasis_icenl,
     ibasis_icenu = if (has_quadrature) matrix(0,0,nvars) else ibasis_icenu,
     ibasis_delay = if (has_quadrature) matrix(0,0,nvars) else ibasis_delay,
+    
+    qnodes       = if (!has_quadrature) 0L else qnodes,
     
     Nevent       = if (!has_quadrature) 0L else nevent,
     qevent       = if (!has_quadrature) 0L else qevent,
@@ -796,6 +799,13 @@ handle_basehaz_surv <- function(basehaz,
                "be used to evaluate default knot locations for splines.")
       tt <- times
     }
+    
+    if (!is.null(knots)) {
+      if (any(knots < min_t))
+        stop2("'knots' cannot be placed before the earliest entry time.")
+      if (any(knots > max_t))
+        stop2("'knots' cannot be placed beyond the latest event time.")
+    } 
         
     bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
@@ -823,7 +833,14 @@ handle_basehaz_surv <- function(basehaz,
                "be used to evaluate default knot locations for splines.")
       tt <- times
     }    
-        
+    
+    if (!is.null(knots)) {
+      if (any(knots < min_t))
+        stop2("'knots' cannot be placed before the earliest entry time.")
+      if (any(knots > max_t))
+        stop2("'knots' cannot be placed beyond the latest event time.")
+    }
+    
     bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- get_basis(tt, iknots = iknots, bknots = bknots, type = "ms")      
@@ -848,7 +865,14 @@ handle_basehaz_surv <- function(basehaz,
                "be used to evaluate default knot locations for piecewise basehaz.")
       tt <- times
     }    
-        
+    
+    if (!is.null(knots)) {
+      if (any(knots < min_t))
+        stop2("'knots' cannot be placed before the earliest entry time.")
+      if (any(knots > max_t))
+        stop2("'knots' cannot be placed beyond the latest event time.")
+    }
+    
     bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- NULL               # spline basis
