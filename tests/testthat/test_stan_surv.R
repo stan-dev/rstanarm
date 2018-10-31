@@ -231,6 +231,45 @@ test_that("prior arguments work", {
   compare_surv(data = dat, basehaz = "gompertz")
 
 
+#----  Compare parameter estimates: stan_surv vs icenReg
+  
+  #---- interval censored weibull data
+  
+  library(icenReg)
+  set.seed(321)
+  sim_data <- simIC_weib(n     = 5000, 
+                         b1    = 0.3, 
+                         b2    = -0.3, 
+                         model = 'ph', 
+                         shape = 2, 
+                         scale = 2, 
+                         inspections   = 6, 
+                         inspectLength = 1)
+  fm <- Surv(l, u, type = 'interval2') ~ x1 + x2
+  ic_icen  <- ic_par(fm, data = sim_data)
+  ic_stan  <- stan_surv(fm, data = sim_data, basehaz = "weibull")
+  truepars <- c('x1' = 0.3, 'x2' = -0.3, 'weibull-shape' = 2)
+  stanpars <- fixef(ic_stan)
+  ll_icen  <- ic_icen$llk
+  ll_stan  <- mean(rowSums(log_lik(ic_stan)))
+  expect_equal(stanpars[['x1']], 
+               truepars[['x1']], 
+               tol  = 0.01, 
+               info = "compare estimates (x1) with icenReg")
+  expect_equal(stanpars[['x2']], 
+               truepars[['x2']], 
+               tol  = 0.01, 
+               info = "compare estimates (x2) with icenReg")
+  expect_equal(stanpars[['weibull-shape']], 
+               truepars[['weibull-shape']], 
+               tol  = 0.1, 
+               info = "compare estimates (weibull-shape) with icenReg")  
+  expect_equal(ll_icen, 
+               ll_stan, 
+               tol = 5, 
+               info = "compare log lik with icenReg")
+  
+  
 #--------  Check post-estimation functions work
 
   pbcSurv$t0 <- 0
