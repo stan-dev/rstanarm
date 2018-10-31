@@ -169,8 +169,8 @@ test_that("prior arguments work", {
     stan1 <- stan_surv(formula = fm,
                        data    = data,
                        basehaz = basehaz,
-                       iter    = 1000,
-                       refresh = 0L,
+                       iter    = ITER,
+                       refresh = REFRESH,
                        chains  = CHAINS,
                        seed    = SEED, ...)
     tols <- get_tols(surv1, tolscales = TOLSCALES)
@@ -231,12 +231,13 @@ test_that("prior arguments work", {
   compare_surv(data = dat, basehaz = "gompertz")
 
 
-#----  Compare parameter estimates: stan_surv vs icenReg
+#----  Compare parameter estimates: stan_surv vs icenReg (interval censored)
   
-  #---- interval censored weibull data
+  #---- simulated interval censored weibull data
   
-  library(icenReg)
-  set.seed(321)
+  library(icenReg); set.seed(321)
+  
+  # simulate interval censored data
   sim_data <- simIC_weib(n     = 5000, 
                          b1    = 0.3, 
                          b2    = -0.3, 
@@ -245,14 +246,23 @@ test_that("prior arguments work", {
                          scale = 2, 
                          inspections   = 6, 
                          inspectLength = 1)
-  sim_data$l[sim_data$l == 0] <- -Inf # left limit = 0 is actually left censoring
+  
+  # lower limit = 0 is actually left censoring (stan_surv doesn't accept 0's)
+  sim_data$l[sim_data$l == 0] <- -Inf 
+  
+  # fit stan model to interval censored data
   fm <- Surv(l, u, type = 'interval2') ~ x1 + x2
-  ic_icen  <- ic_par(fm, data = sim_data)
-  ic_stan  <- stan_surv(fm, data = sim_data, basehaz = "weibull")
+  ic_stan  <- stan_surv(fm, 
+                        data    = sim_data, 
+                        basehaz = "weibull",
+                        iter    = ITER,
+                        refresh = REFRESH,
+                        chains  = CHAINS,
+                        seed    = SEED)
+  
+  # compare stan estimates to known values from data generating model
   truepars <- c('x1' = 0.3, 'x2' = -0.3, 'weibull-shape' = 2)
   stanpars <- fixef(ic_stan)
-  ll_icen  <- ic_icen$llk
-  ll_stan  <- mean(rowSums(log_lik(ic_stan)))
   expect_equal(stanpars[['x1']], 
                truepars[['x1']], 
                tol  = 0.01, 
@@ -265,26 +275,77 @@ test_that("prior arguments work", {
                truepars[['weibull-shape']], 
                tol  = 0.1, 
                info = "compare estimates (weibull-shape) with icenReg")  
+
+  # fit model using icenReg package & compare log_lik with stan model
+  ic_icen  <- ic_par(fm, data = sim_data)
+  ll_icen  <- ic_icen$llk
+  ll_stan  <- mean(rowSums(log_lik(ic_stan)))
   expect_equal(ll_icen, 
                ll_stan, 
                tol = 5, 
                info = "compare log lik with icenReg")
+
+    
+#----  Compare parameter estimates: stan_surv vs phreg (tvc & delayed entry)
   
+  #---- mortality data: contains a time-varying covariate
   
+  library(eha); library(dplyr); set.seed(987)
+  
+  # add a time-fixed covariate to the mortality data
+  data(mort); mort <- mort %>% group_by(id) %>% mutate(sesfixed = ses[[1]])
+  
+  # fit models using the time-fixed covariate & compare HR estimates
+  fm <- Surv(enter, exit, event) ~ sesfixed
+  f_weib <- phreg(fm, data = mort)
+  f_stan <- stan_surv(fm, 
+                      data    = mort, 
+                      basehaz = "weibull",
+                      iter    = ITER,
+                      refresh = REFRESH,
+                      chains  = CHAINS,
+                      seed    = SEED)
+  expect_equal(coef(f_weib)['sesfixedupper'],
+               coef(f_stan)['sesfixedupper'],
+               tol = 0.01)
+  
+  # fit models using the time-varying covariate & compare HR estimates
+  fm <- Surv(enter, exit, event) ~ ses
+  v_weib <- phreg(fm, data = mort)
+  v_stan <- stan_surv(fm, 
+                      data    = mort, 
+                      basehaz = "weibull",
+                      iter    = ITER,
+                      refresh = REFRESH,
+                      chains  = CHAINS,
+                      seed    = SEED)
+  expect_equal(coef(v_weib)['sesupper'],
+               coef(v_stan)['sesupper'],
+               tol = 0.01)
+  
+  # stupidity check; to make sure the hazard ratios actually differed 
+  # between the models with the time-fixed and time-varying covariate
+  expect_error(expect_equal(coef(f_weib)['sesfixedupper'][[1]],
+                            coef(v_weib)['sesupper'][[1]],
+                            tol = 0.1), "not equal") 
+  
+    
 #--------  Check post-estimation functions work
 
   pbcSurv$t0 <- 0
   pbcSurv$t0[pbcSurv$futimeYears > 2] <- 1 # delayed entry
 
+  pbcSurv$t1 <- pbcSurv$futimeYears - 1 # lower limit for interval censoring
+  pbcSurv$t1[pbcSurv$t1 <= 0] <- -Inf   # left censoring
+  
   # different baseline hazards
   o<-SW(f1  <- stan_surv(Surv(futimeYears, death) ~ sex + trt,
                          data    = pbcSurv,
                          basehaz = "ms",
                          chains  = 1,
-                         cores   = 1,
                          iter    = 40,
-                         refresh = 0,
-                         seed    = 12345))
+                         refresh = REFRESH,
+                         seed    = SEED))
   o<-SW(f2  <- update(f1, basehaz = "bs"))
   o<-SW(f3  <- update(f1, basehaz = "exp"))
   o<-SW(f4  <- update(f1, basehaz = "weibull"))
@@ -301,16 +362,16 @@ test_that("prior arguments work", {
   o<-SW(f11 <- update(f1, Surv(t0, futimeYears, death) ~ sex + trt))
   o<-SW(f12 <- update(f1, Surv(t0, futimeYears, death) ~ sex + tde(trt)))
   
-  # interval censoring
-  o<-SW(f13 <- update(f1, Surv(t0, futimeYears, type = "interval2") ~ sex + trt))
-  #o<-SW(f14 <- update(f1, Surv(t0, futimeYears, type = "interval2") ~ sex + tde(trt)))
+  # left and interval censoring
+  o<-SW(f13 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + trt))
+  o<-SW(f14 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + tde(trt)))
   
   # new data for predictions
   nd1 <- pbcSurv[pbcSurv$id == 2,]
   nd2 <- pbcSurv[pbcSurv$id %in% c(1,2),]
 
   # test the models
-  for (j in c(1:13)) {
+  for (j in c(1:14)) {
 
     mod <- try(get(paste0("f", j)), silent = TRUE)
 
