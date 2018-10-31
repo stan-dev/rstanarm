@@ -316,8 +316,8 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
     ndE <- dats[["Event"]]
   }
   if (!is.null(ids)) { # user specified a subset of ids
-    ndL <- subset_ids(object, ndL, ids)
-    ndE <- subset_ids(object, ndE, ids)
+    ndL <- subset_ids(ndL, ids, id_var)
+    ndE <- subset_ids(ndE, ids, id_var)
   }  
   id_list <- factor(unique(ndL[[m]][[id_var]])) # order of ids from data, not ids arg
   

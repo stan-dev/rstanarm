@@ -378,8 +378,8 @@ pp_data <-
   
   # possibly subset
   if (!is.null(ids)) {
-    ndL <- subset_ids(object, ndL, ids)
-    ndE <- subset_ids(object, ndE, ids)
+    ndL <- subset_ids(ndL, ids, id_var)
+    ndE <- subset_ids(ndE, ids, id_var)
   }
   id_list <- unique(ndE[[id_var]]) # unique subject id list
   

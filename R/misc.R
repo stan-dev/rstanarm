@@ -1353,19 +1353,23 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
 
 # Return data frames only including the specified subset of individuals
 #
-# @param object A stanmvreg object
 # @param data A data frame, or a list of data frames
 # @param ids A vector of ids indicating which individuals to keep
+# @param id_var Character string, the name of the ID variable
 # @return A data frame, or a list of data frames, depending on the input
-subset_ids <- function(object, data, ids) {
+subset_ids <- function(data, ids, id_var) {
+  
   if (is.null(data))
     return(NULL)
-  validate_stanmvreg_object(object)
-  id_var <- object$id_var
+  
   is_list <- is(data, "list")
-  if (!is_list) data <- list(data)
-  is_df <- sapply(data, is.data.frame)
-  if (!all(is_df)) stop("'data' should be a data frame, or list of data frames.")
+  if (!is_list) 
+    data <- list(data) # convert to list
+  
+  is_df <- sapply(data, inherits, "data.frame")
+  if (!all(is_df)) 
+    stop("'data' should be a data frame, or list of data frames.")
+  
   data <- lapply(data, function(x) {
     if (!id_var %in% colnames(x)) STOP_no_var(id_var)
     sel <- which(!ids %in% x[[id_var]])
@@ -1374,6 +1378,7 @@ subset_ids <- function(object, data, ids) {
            paste(ids[[sel]], collapse = ", "))
     x[x[[id_var]] %in% ids, , drop = FALSE]
   })
+  
   if (is_list) return(data) else return(data[[1]])
 }
 
