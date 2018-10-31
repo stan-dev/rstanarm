@@ -535,8 +535,8 @@ posterior_survfit.stanjm <- function(object,
     ndE <- newdatas[["Event"]]   
   }
   if (!is.null(ids)) { # user specified a subset of ids
-    ndL <- subset_ids(object, ndL, ids)
-    ndE <- subset_ids(object, ndE, ids)
+    ndL <- subset_ids(ndL, ids, id_var)
+    ndE <- subset_ids(ndE, ids, id_var)
   }  
   id_list <- factor(unique(ndE[[id_var]])) # order of ids from data, not ids arg
 
@@ -1102,29 +1102,30 @@ print.survfit.stanjm <- function(x, digits = 4, ...) {
 #'   plot(ps2)   
 #' }
 #'    
-plot.survfit.stanjm <- function(x, ids = NULL, 
+plot.survfit.stanjm <- function(x, 
+                                ids    = NULL, 
                                 limits = c("ci", "none"),  
-                                xlab = NULL, ylab = NULL, facet_scales = "free", 
+                                xlab   = NULL, 
+                                ylab   = NULL, 
+                                facet_scales = "free", 
                                 ci_geom_args = NULL, ...) {
   
-  limits <- match.arg(limits)
-  ci <- (limits == "ci")
+  limits <- match.arg (limits)
+  ci     <- as.logical(limits == "ci")
+  
+  type        <- attr(x, "type")
   standardise <- attr(x, "standardise")
-  id_var <- attr(x, "id_var")
-  time_var <- attr(x, "time_var")
+  id_var      <- attr(x, "id_var")
+  time_var    <- attr(x, "time_var")
+  
   if (is.null(xlab)) xlab <- paste0("Time (", time_var, ")")
-  if (is.null(ylab)) ylab <- "Event free probability"
+  if (is.null(ylab)) ylab <- get_survpred_name(type)
+  
   if (!is.null(ids)) {
     if (standardise) 
       stop("'ids' argument cannot be specified when plotting standardised ",
            "survival probabilities.")
-    if (!id_var %in% colnames(x))
-      stop("Bug found: could not find 'id_var' column in the data frame.")
-    ids_missing <- which(!ids %in% x[[id_var]])
-    if (length(ids_missing))
-      stop("The following 'ids' are not present in the survfit.stanjm object: ",
-           paste(ids[[ids_missing]], collapse = ", "), call. = FALSE)
-    x <- x[(x[[id_var]] %in% ids), , drop = FALSE]
+    x <- subset_ids(x, ids, id_var)
   } else {
     ids <- if (!standardise) attr(x, "ids") else NULL
   }
@@ -1132,39 +1133,41 @@ plot.survfit.stanjm <- function(x, ids = NULL,
   x$time <- x[[time_var]]
   
   geom_defaults <- list(color = "black")
-  geom_args <- set_geom_args(geom_defaults, ...)  
+  geom_mapp     <- list(mapping = aes_string(x = "time", y = "median"))
+  geom_args     <- do.call("set_geom_args", 
+                           c(defaults = list(geom_defaults), list(...)))  
   
-  lim_defaults <- list(alpha = 0.3)
-  lim_args <- do.call("set_geom_args", c(defaults = list(lim_defaults), ci_geom_args))
+  lim_defaults  <- list(alpha = 0.3)
+  lim_mapp      <- list(mapping = aes_string(ymin = "ci_lb", ymax = "ci_ub"))
+  lim_args      <- do.call("set_geom_args", 
+                           c(defaults = list(lim_defaults), ci_geom_args))
   
-  if ((!standardise) && (length(ids) > 60L)) {
+  if ((!standardise) && (length(ids) > 60L))
     stop("Too many individuals to plot for. Perhaps consider limiting ",
          "the number of individuals by specifying the 'ids' argument.")
-  } else if ((!standardise) && (length(ids) > 1L)) {
-    graph <- ggplot(x, aes_string(x = "time", y = "median")) +
-      theme_bw() +
-      do.call("geom_line", geom_args) +
-      coord_cartesian(ylim = c(0, 1)) +      
-      facet_wrap(~ id, scales = facet_scales)
-    if (ci) {
-      lim_mapp <- list(mapping = aes_string(ymin = "ci_lb", ymax = "ci_ub"))
-      graph_limits <- do.call("geom_ribbon", c(lim_mapp, lim_args))
-    } else graph_limits <- NULL
-  } else {
-    graph <- ggplot(x, aes_string(x = "time", y = "median")) + 
-      theme_bw() +
-      do.call("geom_line", geom_args) + 
-      coord_cartesian(ylim = c(0, 1))
-    if (ci) {
-      lim_mapp <- list(mapping = aes_string(ymin = "ci_lb", ymax = "ci_ub"))
-      graph_limits <- do.call("geom_ribbon", c(lim_mapp, lim_args))
-    } else graph_limits <- NULL
-  }    
   
-  ret <- graph + graph_limits + labs(x = xlab, y = ylab) 
-  class_ret <- class(ret)
-  class(ret) <- c("plot.survfit.stanjm", class_ret)
-  ret
+  graph_base <-
+    ggplot(x) + 
+    theme_bw() + 
+    coord_cartesian(ylim = get_survpred_ylim(type)) +
+    do.call("geom_line", c(geom_mapp, geom_args))
+  
+  graph_facet <- 
+    if ((!standardise) && (length(ids) > 1L)) {
+      facet_wrap(~ id, scales = facet_scales)
+    } else NULL
+  
+  graph_limits <- 
+    if (ci) {
+      do.call("geom_ribbon", c(lim_mapp, lim_args)) 
+    } else NULL  
+  
+  graph_labels <- labs(x = xlab, y = ylab)
+  
+  gg        <- graph + graph_facet + graph_limits + graph_labels
+  class_gg  <- class(gg)
+  class(gg) <- c("plot.survfit.stanjm", class_gg)
+  gg
 }
 
 
