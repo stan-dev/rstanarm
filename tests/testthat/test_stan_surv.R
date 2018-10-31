@@ -19,10 +19,9 @@
 # tests can be run using devtools::test() or manually by loading testthat
 # package and then running the code below possibly with options(mc.cores = 4).
 
-#library(testthat)
+library(testthat)
 library(rstanarm)
 library(survival)
-library(rstpm2)
 library(simsurv)
 ITER    <- 1000
 CHAINS  <- 1
@@ -50,15 +49,16 @@ source(test_path("helpers", "recover_pars_surv.R"))
 eo <- function(...) { expect_output (...) }
 ee <- function(...) { expect_error  (...) }
 ew <- function(...) { expect_warning(...) }
+es <- function(...) { expect_stanreg(...) }
 up <- function(...) { update(...) }
 
 #-----------------------------  Models -----------------------------------
 
 #--- Time fixed covariates, time fixed coefficients
 
-cov1 <- data.frame(id = 1:1000,
-                   x1 = stats::rbinom(1000, 1, 0.5),
-                   x2 = stats::rnorm (1000, -1, 0.5))
+cov1 <- data.frame(id = 1:50,
+                   x1 = stats::rbinom(50, 1, 0.5),
+                   x2 = stats::rnorm (50, -1, 0.5))
 dat1 <- simsurv(lambdas = 0.1,
                 gammas  = 1.5,
                 betas   = c(x1 = -0.5, x2 = -0.3),
@@ -66,73 +66,97 @@ dat1 <- simsurv(lambdas = 0.1,
                 maxt    = 5)
 dat1 <- merge(dat1, cov1)
 fm1  <- Surv(eventtime, status) ~ x1 + x2
-mod1a <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "ms")
-mod1b <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "bs")
-mod1c <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "exp")
-mod1d <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "weibull")
-mod1e <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "gompertz")
+o<-SW(testmod <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 50, basehaz = "ms"))
+
+# mod1a <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "ms")
+# mod1b <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "bs")
+# mod1c <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "exp")
+# mod1d <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "weibull")
+# mod1e <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "gompertz")
 
 
 #--------------------------  Arguments -----------------------------------
 
-testmod <- mod1a
-
 test_that("prior_PD argument works", {
-  eo(update(testmod, prior_PD = TRUE))
+  es(up(testmod, prior_PD = TRUE))
 })
 
 test_that("adapt_delta argument works", {
-  eo(up(testmod, adapt_delta = NULL))
-  eo(up(testmod, adapt_delta = 0.8))
-  eo(up(testmod, control = list(adapt_delta = NULL)))
-  eo(up(testmod, control = list(adapt_delta = 0.8)))
+  es(up(testmod, adapt_delta = NULL))
+  es(up(testmod, adapt_delta = 0.8))
+  es(up(testmod, control = list(adapt_delta = NULL)))
+  es(up(testmod, control = list(adapt_delta = 0.8)))
 })
 
 test_that("init argument works", {
-  eo(up(testmod, init = "prefit"))
-  eo(up(testmod, init = "0"))
-  eo(up(testmod, init = 0))
-  eo(up(testmod, init = "random"))
+  es(up(testmod, init = "prefit"))
+  es(up(testmod, init = "0"))
+  es(up(testmod, init = 0))
+  es(up(testmod, init = "random"))
 })
 
 test_that("qnodes argument works", {
-  eo(up(testmod, qnodes = 7))
-  eo(up(testmod, qnodes = 11))
-  eo(up(testmod, qnodes = 15))
-  ee(up(testmod, qnodes = 1),       "must be either 7, 11 or 15")
-  ee(up(testmod, qnodes = c(1,2)),  "numeric vector of length 1")
-  ee(up(testmod, qnodes = "wrong"), "numeric vector of length 1")
+  es(up(testmod, qnodes = 7,  basehaz = "bs"))
+  es(up(testmod, qnodes = 11, basehaz = "bs"))
+  es(up(testmod, qnodes = 15, basehaz = "bs"))
+  
+  ew(up(testmod, qnodes = 1),       "is being ignored")
+  ew(up(testmod, qnodes = c(1,2)),  "is being ignored")
+  ew(up(testmod, qnodes = "wrong"), "is being ignored")
+  
+  ee(up(testmod, qnodes = 1,       basehaz = "bs"), "7, 11 or 15")
+  ee(up(testmod, qnodes = c(1,2),  basehaz = "bs"), "numeric vector of length 1")
+  ee(up(testmod, qnodes = "wrong", basehaz = "bs"), "numeric vector of length 1")
 })
 
 test_that("basehaz argument works", {
 
-  eo(up(testmod, basehaz = "exp"))
-  eo(up(testmod, basehaz = "weibull"))
-  eo(up(testmod, basehaz = "gompertz"))
-  eo(up(testmod, basehaz = "ms"))
-  eo(up(testmod, basehaz = "bs"))
-  eo(up(testmod, basehaz = "piecewise"))
+  es(up(testmod, basehaz = "exp"))
+  es(up(testmod, basehaz = "weibull"))
+  es(up(testmod, basehaz = "gompertz"))
+  es(up(testmod, basehaz = "ms"))
+  es(up(testmod, basehaz = "bs"))
 
   dfl <- list(df = 5)
   knl <- list(knots = c(1,3,5))
-  eo(up(testmod, basehaz = "ms",        basehaz_ops = dfl))
-  eo(up(testmod, basehaz = "ms",        basehaz_ops = knl))
-  eo(up(testmod, basehaz = "bs",        basehaz_ops = dfl))
-  eo(up(testmod, basehaz = "bs",        basehaz_ops = knl))
-  eo(up(testmod, basehaz = "piecewise", basehaz_ops = dfl))
-  eo(up(testmod, basehaz = "piecewise", basehaz_ops = knl))
+  es(up(testmod, basehaz = "ms", basehaz_ops = dfl))
+  es(up(testmod, basehaz = "ms", basehaz_ops = knl))
+  es(up(testmod, basehaz = "bs", basehaz_ops = dfl))
+  es(up(testmod, basehaz = "bs", basehaz_ops = knl))
 
-  eo(ew(up(testmod, basehaz = "exp",     basehaz_ops = dfl), "'df' will be ignored"))
-  eo(ew(up(testmod, basehaz = "exp",     basehaz_ops = knl), "'knots' will be ignored"))
-  eo(ew(up(testmod, basehaz = "weibull", basehaz_ops = dfl), "'df' will be ignored"))
-  eo(ew(up(testmod, basehaz = "weibull", basehaz_ops = knl), "'knots' will be ignored"))
-  eo(ew(up(testmod, basehaz = "gompertz",basehaz_ops = dfl), "'df' will be ignored"))
-  eo(ew(up(testmod, basehaz = "gompertz",basehaz_ops = knl), "'knots' will be ignored"))
+  ee(up(testmod, basehaz_ops = list(junk = 3)), "can only include")
 
-  ee(up(testmod, basehaz_ops = list(df = 1)), "must be at least 3")
-  ee(up(testmod, basehaz_ops = list(knots = -1)), "'knots' must be non-negative")
-  ee(up(testmod, basehaz_ops = list(knots = c(1,2,50))), "cannot be greater than the largest event time")
+  ee(up(testmod, basehaz_ops = list(df = 1)),            "cannot be negative")
+  ee(up(testmod, basehaz_ops = list(knots = -1)),        "earliest entry time")
+  ee(up(testmod, basehaz_ops = list(knots = c(1,2,50))), "latest event time")
 
+})
+
+test_that("prior arguments work", {
+  es(up(testmod, prior = normal()))
+  es(up(testmod, prior = student_t()))
+  es(up(testmod, prior = cauchy()))
+  es(up(testmod, prior = hs()))
+  es(up(testmod, prior = hs_plus()))
+  es(up(testmod, prior = lasso()))
+  es(up(testmod, prior = laplace()))
+ 
+  es(up(testmod, prior_intercept = normal()))
+  es(up(testmod, prior_intercept = student_t()))
+  es(up(testmod, prior_intercept = cauchy()))
+  
+  es(up(testmod, prior_aux = normal()))
+  es(up(testmod, prior_aux = student_t()))
+  es(up(testmod, prior_aux = cauchy()))
+  
+  es(up(testmod, prior_smooth = exponential()))
+  es(up(testmod, prior_smooth = normal()))
+  es(up(testmod, prior_smooth = student_t()))
+  es(up(testmod, prior_smooth = cauchy()))
+  
+  ee(up(testmod, prior_intercept = lasso()), "prior distribution")
+  ee(up(testmod, prior_aux       = lasso()), "prior distribution")
+  ee(up(testmod, prior_smooth    = lasso()), "prior distribution")
 })
 
 
@@ -158,7 +182,22 @@ test_that("basehaz argument works", {
                    tol = tols$fixef[[i]],
                    info = basehaz)
   }
-
+  
+  #---- weibull data
+  
+  set.seed(543634)
+  covs <- data.frame(id = 1:300,
+                     X1 = rbinom(300, 1, 0.3),
+                     X2 = rnorm (300, 2, 2.0))
+  dat <- simsurv(dist    = "weibull",
+                 lambdas = 0.1,
+                 gammas  = 1,
+                 betas   = c(X1 = 0.3, X2 = -0.5),
+                 x       = covs)
+  dat <- merge(dat, covs)
+  
+  compare_surv(data = dat, basehaz = "exp")
+  
   #---- weibull data
 
   set.seed(543634)
@@ -174,7 +213,8 @@ test_that("basehaz argument works", {
 
   compare_surv(data = dat, basehaz = "weibull")
   compare_surv(data = dat, basehaz = "ms")
-
+  compare_surv(data = dat, basehaz = "bs")
+  
   #---- gompertz data
 
   set.seed(45357)
@@ -189,7 +229,6 @@ test_that("basehaz argument works", {
   dat <- merge(dat, covs)
 
   compare_surv(data = dat, basehaz = "gompertz")
-  compare_surv(data = dat, basehaz = "ms")
 
 
 #--------  Check post-estimation functions work
@@ -224,14 +263,14 @@ test_that("basehaz argument works", {
   
   # interval censoring
   o<-SW(f13 <- update(f1, Surv(l, u, type = "interval2") ~ grp,      data = mice))
-  o<-SW(f14 <- update(f1, Surv(l, u, type = "interval2") ~ tde(grp), data = mice))
+  #o<-SW(f14 <- update(f1, Surv(l, u, type = "interval2") ~ tde(grp), data = mice))
   
   # new data for predictions
   nd1 <- pbcSurv[pbcSurv$id == 2,]
   nd2 <- pbcSurv[pbcSurv$id %in% c(1,2),]
 
   # test the models
-  for (j in c(1:10)) {
+  for (j in c(1:13)) {
 
     mod <- try(get(paste0("f", j)), silent = TRUE)
 
@@ -262,10 +301,11 @@ test_that("basehaz argument works", {
         expect_equivalent_loo(mod)
       })
 
-      test_that("posterior_survfit works with estimation data", {
-        SW(ps <- posterior_survfit(mod))
-        expect_survfit(ps)
-      })
+      if (mod$ndelayed == 0) # only test if no delayed entry
+        test_that("posterior_survfit works with estimation data", {
+          SW(ps <- posterior_survfit(mod))
+          expect_survfit(ps)
+        })
 
       test_that("posterior_survfit works with new data (one individual)", {
         SW(ps <- posterior_survfit(mod, newdata = nd1))
