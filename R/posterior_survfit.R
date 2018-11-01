@@ -31,6 +31,20 @@
 #' @templateVar stanregArg object
 #' @template args-stansurv-stanjm-object
 #' 
+#' @param newdata Optionally, a data frame in which to look for variables with
+#'   which to predict. If omitted, the model matrix is used. If \code{newdata}
+#'   is provided and any variables were transformed (e.g. rescaled) in the data
+#'   used to fit the model, then these variables must also be transformed in
+#'   \code{newdata}. This only applies if variables were transformed before
+#'   passing the data to one of the modeling functions and \emph{not} if
+#'   transformations were specified inside the model formula. Also, 
+#'   \code{newdata} can optionally include a variable with information 
+#'   about the last known survival time for the new individuals -- 
+#'   see the description for the \code{last_time} argument below
+#'   -- however also note that when generating the survival probabilities it 
+#'   is of course assumed that all individuals in \code{newdata} have not 
+#'   yet experienced the event (that is, any variable in \code{newdataEvent} 
+#'   that corresponds to the event indicator will be ignored).
 #' @param newdataLong,newdataEvent Optionally, a data frame (or in the case of 
 #'   \code{newdataLong} this can be a list of data frames) in which to look 
 #'   for variables with which to predict. If omitted, the model matrices are used. 
@@ -830,67 +844,6 @@ posterior_survfit.stanjm <- function(object,
   } else { 
     # evaluate survival; with quadrature
     lhaz  <- do.call(evaluate_log_haz, args)
-    lsurv <- -quadrature_sum(exp(lhaz), qnodes = data$qnodes, qwts = data$wts)
-  }
-  
-  switch(type,
-         loghaz    = lhaz,
-         logcumhaz = log(-lsurv),
-         logsurv   = lsurv,
-         logcdf    = log(1 - exp(lsurv)),
-         haz       = exp(lhaz),
-         surv      = exp(lsurv),
-         cumhaz    = -lsurv,
-         cdf       = 1 - exp(lsurv),
-         stop("Invalid input to the 'type' argument."))
-}
-
-.pp_predict_surv.stanjm <- function(object,
-                                    data, 
-                                    pars,
-                                    type = "surv") {
-  
-  # time-fixed part of linear predictor
-  eta <- linear_predictor(pars$e_beta, data$e_x) 
-  
-  # add on association structure
-  if (length(pars$a_beta)) {
-    
-    # temporary stop, until make_assoc_terms can handle it
-    sel_stop <- grep("^shared", rownames(object$assoc))
-    if (any(unlist(object$assoc[sel_stop,])))
-      stop2("not yet implemented for shared_* association structures.")
-    
-    # order b_pars from stanmat according to predictor matrices
-    pars$b <- lapply(1:get_M(object), function(m) {
-      b_m       <- pars$b[[m]]
-      Z_names_m <- data$assoc_parts[[m]][["mod_eta"]][["Z_names"]]
-      pp_b_ord(if (is.matrix(b_m)) b_m else t(b_m), Z_names_m)
-    })
-    
-    # evaluate the implicit covariates in the association structure
-    a_x <- make_assoc_terms(parts  = data$assoc_parts, 
-                            assoc  = object$assoc, 
-                            family = object$family, 
-                            beta   = pars$beta,
-                            b      = pars$b)
-    if (one_draw) {
-      eta <- eta + linear_predictor.default(pars$a_beta, a_x)
-    } else { for (k in 1:length(a_x))
-      eta <- eta + sweep(a_x[[k]], 1L, pars$a_beta[,k], `*`)
-    }
-    
-  }
-  
-  # add on baseline hazard
-  args <- nlist(basehaz   = get_basehaz(object), 
-                times     = data$pts,
-                aux       = pars$e_aux, 
-                intercept = pars$e_alpha)
-  lhaz  <- do.call(evaluate_log_basehaz, args) + eta    
-  
-  if (!type %in% c("loghaz", "haz")) { 
-    # evaluate survival; with quadrature
     lsurv <- -quadrature_sum(exp(lhaz), qnodes = data$qnodes, qwts = data$wts)
   }
   

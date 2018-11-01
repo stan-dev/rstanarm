@@ -32,7 +32,7 @@
 #' @importFrom splines bs
 #' @import splines2
 #'  
-#' @template args-prior_intercept
+#' @template args-dots
 #' @template args-priors
 #' @template args-prior_PD
 #' @template args-algorithm
@@ -731,7 +731,7 @@ stan_surv <- function(formula,
                qnodes           = if (has_quadrature) qnodes else NULL,
                algorithm,
                stan_function    = "stan_surv",
-               rstanarm_version = packageVersion("rstanarm"),
+               rstanarm_version = utils::packageVersion("rstanarm"),
                call             = match.call(expand.dots = TRUE))
   stansurv(fit)
 }
@@ -1067,7 +1067,8 @@ basis_matrix <- function(times, basis, integrate = FALSE) {
   out <- predict(basis, times)
   if (integrate) {
     stopifnot(inherits(basis, "mSpline"))
-    out <- splines2:::predict.iSpline(basis, times)
+    class(basis) <- c("matrix", "iSpline")
+    out <- predict(basis, times)
   }
   aa(out)
 }

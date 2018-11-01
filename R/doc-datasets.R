@@ -20,8 +20,7 @@
 #' Small datasets for use in \pkg{rstanarm} examples and vignettes.
 #'
 #' @name rstanarm-datasets
-#' @aliases bball1970 bball2006 bcancer kidiq mice mortality 
-#' @aliases pbcLong pbcSurv tumors radon roaches wells
+#' @aliases bball1970 bball2006 bcancer kidiq mice mortality pbcLong pbcSurv tumors radon roaches wells
 #' @format 
 #' \describe{
 #' \item{\code{bball1970}}{

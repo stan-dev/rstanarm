@@ -1257,6 +1257,20 @@ make_basehaz_X <- function(times, basehaz) {
   X
 }
 
+# Create a dummy indicator matrix for time intervals defined by 'knots'
+#
+# @param x A numeric vector with the original data.
+# @param knots The cutpoints defining the desired categories of 'x'.
+# @return A dummy matrix.
+dummy_matrix <- function(x, knots) {
+  n_intervals <- length(knots) - 1
+  interval <- cut(x, knots, include.lowest = TRUE, labels = FALSE)
+  out <- matrix(NA, length(interval), n_intervals)
+  for (i in 1:nvars) 
+    out[, i] <- ifelse(interval == i, 1, 0)
+  as.matrix(out)
+}
+
 # Function to return standardised GK quadrature points and weights
 #
 # @param nodes The required number of quadrature nodes

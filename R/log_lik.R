@@ -1217,9 +1217,9 @@ split2.matrix <- function(x, n_segments = 1, bycol = TRUE) {
   segment_length <- len %/% n_segments 
   if (!len == (segment_length * n_segments))
     stop("Dividing x by n_segments does not result in an integer.")
-  lapply(1:nsplits, function(k) {
-    if (bycol) x[, (k-1) * len_k + 1:segment_length, drop = FALSE] else
-      x[(k-1) * len_k + 1:len_k, , drop = FALSE]})
+  lapply(1:n_segments, function(k) {
+    if (bycol) x[, (k-1) * segment_length + 1:segment_length, drop = FALSE] else
+      x[(k-1) * segment_length + 1:segment_length, , drop = FALSE]})
 }
 
 # Split a vector or matrix into a specified number of segments
