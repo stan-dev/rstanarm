@@ -1266,7 +1266,7 @@ dummy_matrix <- function(x, knots) {
   n_intervals <- length(knots) - 1
   interval <- cut(x, knots, include.lowest = TRUE, labels = FALSE)
   out <- matrix(NA, length(interval), n_intervals)
-  for (i in 1:nvars) 
+  for (i in 1:n_intervals) 
     out[, i] <- ifelse(interval == i, 1, 0)
   as.matrix(out)
 }
