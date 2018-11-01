@@ -211,57 +211,51 @@
 #' 
 #' # Simulated data
 #' library(simsurv)
-#' covs <- data.frame(id  = 1:1000, 
-#'                    trt = stats::rbinom(1000, 1L, 0.5))
-#' dat1 <- simsurv(lambdas = 0.1, 
-#'                 gammas  = 1.5, 
-#'                 betas   = c(trt = -0.5),
-#'                 x       = covs, 
-#'                 maxt    = 5)
-#' dat1 <- merge(dat1, covs)
-#' fm1  <- Surv(eventtime, status) ~ trt
-#' mod1a <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "ms")
-#' mod1b <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "bs")
-#' mod1c <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "exp")
-#' mod1d <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "weibull")
-#' mod1e <- stan_surv(fm1, dat1, chains = 1, iter = 1000, basehaz = "gompertz")
-#' do.call(cbind, lapply(list(mod1a, mod1b, mod1c, mod1d, mod1e), fixef))
-#' bayesplot::bayesplot_grid(plot(mod1a), # compare baseline hazards 
-#'                           plot(mod1b), 
-#'                           plot(mod1c), 
-#'                           plot(mod1d), 
-#'                           plot(mod1e),
-#'                           ylim = c(0, 0.6))
+#' covs <- data.frame(id  = 1:200, 
+#'                    trt = stats::rbinom(200, 1L, 0.5))
+#' d1 <- simsurv(lambdas = 0.1, 
+#'               gammas  = 1.5, 
+#'               betas   = c(trt = -0.5),
+#'               x       = covs, 
+#'               maxt    = 5)
+#' d1 <- merge(d1, covs)
+#' f1 <- Surv(eventtime, status) ~ trt
+#' m1a <- stan_surv(f1, d1, basehaz = "ms",       chains=1,refresh=0,iter=600)
+#' m1b <- stan_surv(f1, d1, basehaz = "exp",      chains=1,refresh=0,iter=600)
+#' m1c <- stan_surv(f1, d1, basehaz = "weibull",  chains=1,refresh=0,iter=600)
+#' m1d <- stan_surv(f1, d1, basehaz = "gompertz", chains=1,refresh=0,iter=600)
+#' get_est <- function(x) { fixef(x)["trt"] }
+#' do.call(rbind, lapply(list(m1a, m1b, m1c, m1d), get_est))
+#' bayesplot::bayesplot_grid(plot(m1a), # compare baseline hazards 
+#'                           plot(m1b), 
+#'                           plot(m1c), 
+#'                           plot(m1d), 
+#'                           ylim = c(0, 0.8))
 #' 
-#' # PBC data
-#' mod2 <- stan_surv(Surv(futimeYears, death) ~ sex + trt, 
-#'                   data = pbcSurv, chains = 1, iter = 1000)
-#' print(mod2, 4)
-#' 
-#' #---------- Interval censored data
+#' #---------- Left and right censored data
 #' 
 #' # Mice tumor data
-#' mod3 <- stan_surv(Surv(l, u, type = "interval2") ~ grp, 
-#'                   data = mice, chains = 1, iter = 1000)
-#' print(mod3, 4)
+#' m2 <- stan_surv(Surv(l, u, type = "interval2") ~ grp, 
+#'                 data = mice, chains = 1, refresh = 0, iter = 600)
+#' print(m2, 4)
 #' 
 #' #---------- Non-proportional hazards
 #' 
 #' # Simulated data
 #' library(simsurv)
-#' covs <- data.frame(id  = 1:500, 
-#'                    trt = stats::rbinom(500, 1L, 0.5))
-#' dat4 <- simsurv(lambdas = 0.1, 
-#'                 gammas  = 1.5, 
-#'                 betas   = c(trt = -0.5),
-#'                 tde     = c(trt = 0.2),
-#'                 x       = covs, 
-#'                 maxt    = 5)
-#' dat4 <- merge(dat4, covs)
-#' mod4 <- stan_surv(Surv(eventtime, status) ~ tde(trt), 
-#'                   data = dat4, chains = 1, iter = 1000)
-#' print(mod4, 4)
-#' plot(mod4, "tde") # time-dependent hazard ratio
+#' covs <- data.frame(id  = 1:250, 
+#'                    trt = stats::rbinom(250, 1L, 0.5))
+#' d3 <- simsurv(lambdas = 0.1, 
+#'               gammas  = 1.5, 
+#'               betas   = c(trt = -0.5),
+#'               tde     = c(trt = 0.2),
+#'               x       = covs, 
+#'               maxt    = 5)
+#' d3 <- merge(d3, covs)
+#' m3 <- stan_surv(Surv(eventtime, status) ~ tde(trt), 
+#'                 data = d3, chains = 1, refresh = 0, iter = 600)
+#' print(m3, 4)
+#' plot(m3, "tde") # time-dependent hazard ratio
 #' }
 #' 
 stan_surv <- function(formula, 
