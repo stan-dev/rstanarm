@@ -82,14 +82,17 @@
 #'   hazard. Currently this can include: \cr
 #'   \itemize{
 #'     \item \code{df}: a positive integer specifying the degrees of freedom 
-#'     for the M-splines or B-splines. The default is 5, corresponding to two 
+#'     for the M-splines or B-splines. An intercept is included in the spline
+#'     basis and included in the count of the degrees of freedom, such that
+#'     two boundary knots and \code{df - 4} internal knots are used to generate 
+#'     the cubic spline basis. The default is \code{df = 6}; that is, two 
 #'     boundary knots and two internal knots.
 #'     \item \code{knots}: An optional numeric vector specifying internal 
 #'     knot locations for the M-splines or B-splines. Note that \code{knots} 
 #'     cannot be specified if \code{df} is specified. If \code{knots} are 
-#'     \strong{not} specified, then the default is to use \code{df - 3} knots 
-#'     which are placed at equally spaced percentiles of the distribution of
-#'     uncensored event times.
+#'     \strong{not} specified, then \code{df - 4} internal knots are placed 
+#'     at equally spaced percentiles of the distribution of uncensored event 
+#'     times.
 #'   }
 #'   Note that for the M-splines and B-splines - in addition to any internal
 #'   \code{knots} - a lower boundary knot is placed at the earliest entry time
@@ -805,7 +808,7 @@ handle_basehaz_surv <- function(basehaz,
       stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
     
     if (is.null(df))
-      df <- 5L # default df for B-splines, assuming no intercept
+      df <- 6L # default df for B-splines, assuming an intercept is included
     # NB this is ignored if the user specified knots
     
     tt <- times[status == 1] # uncensored event times
@@ -838,7 +841,7 @@ handle_basehaz_surv <- function(basehaz,
     
     tt <- times[status == 1] # uncensored event times
     if (is.null(df)) {
-      df <- 5L # default df for B-splines, assuming no intercept
+      df <- 6L # default df for M-splines, assuming an intercept is included
       # NB this is ignored if the user specified knots
     }
 
