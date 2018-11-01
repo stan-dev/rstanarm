@@ -78,30 +78,46 @@
 #'     \item \code{"weibull"}: a Weibull distribution for the event times.
 #'     \item \code{"gompertz"}: a Gompertz distribution for the event times.
 #'   }
-#'   Note that all spline-based models use cubic splines. The number of degrees
-#'   of freedom and/or location of the knots can be changed
-#' @param basehaz_ops a named list specifying options related to the baseline
+#' @param basehaz_ops A named list specifying options related to the baseline
 #'   hazard. Currently this can include: \cr
 #'   \itemize{
 #'     \item \code{df}: a positive integer specifying the degrees of freedom 
-#'     for the M-splines or B-splines. The default is 5, corresponding to 
-#'     two boundary knots and two internal knots.
+#'     for the M-splines or B-splines. The default is 5, corresponding to two 
+#'     boundary knots and two internal knots.
 #'     \item \code{knots}: An optional numeric vector specifying internal 
 #'     knot locations for the M-splines or B-splines. Note that \code{knots} 
-#'     cannot be specified if \code{df} is specified. If \code{knots} are not 
-#'     specified, then the default is to use \code{df - 3} knots which are
-#'     placed at equally spaced percentiles of the distribution of
+#'     cannot be specified if \code{df} is specified. If \code{knots} are 
+#'     \strong{not} specified, then the default is to use \code{df - 3} knots 
+#'     which are placed at equally spaced percentiles of the distribution of
 #'     uncensored event times.
-#'     \item \code{bknots}: an optional numeric vector specifying boundary 
-#'     knot locations for the M-splines or B-splines. 
-#'     If not specified, then the default is to place the boundary knots at the
-#'     minimum and maximum of the event times (including both censored and
-#'     uncensored events).
 #'   }
+#'   Note that for the M-splines and B-splines - in addition to any internal
+#'   \code{knots} - a lower boundary knot is placed at the earliest entry time
+#'   and an upper boundary knot is placed at the latest event or censoring time.
+#'   These boundary knot locations are the default and cannot be changed by the
+#'   user.
 #' @param qnodes The number of nodes to use for the Gauss-Kronrod quadrature
 #'   that is used to evaluate the cumulative hazard when \code{basehaz = "bs"}
 #'   or when time-dependent effects (i.e. non-proportional hazards) are 
 #'   specified. Options are 15 (the default), 11 or 7.
+#' @param prior_intercept The prior distribution for the intercept. Note 
+#'   that there will only be an intercept parameter when \code{basehaz} is set
+#'   equal to one of the standard parametric distributions, i.e. \code{"exp"}, 
+#'   \code{"weibull"} or \code{"gompertz"}, in which case the intercept 
+#'   corresponds to the parameter \emph{log(lambda)} as defined in the 
+#'   \emph{stan_surv: Survival (Time-to-Event) Models} vignette. For the cubic 
+#'   spline-based baseline hazards there is no intercept parameter since it is 
+#'   absorbed into the spline basis and, therefore, the prior for the intercept 
+#'   is effectively specified as part of \code{prior_aux}.  
+#'   
+#'   Where relevant, \code{prior_intercept} can be a call to \code{normal}, 
+#'   \code{student_t} or \code{cauchy}. See the \link[=priors]{priors help page} 
+#'   for details on these functions. Note however that default scale for 
+#'   \code{prior_intercept} is 20 for \code{stan_surv} models (rather than 10,
+#'   which is the default scale used for \code{prior_intercept} by most 
+#'   \pkg{rstanarm} modelling functions). To omit a prior on the intercept 
+#'   ---i.e., to use a flat (improper) uniform prior--- \code{prior_intercept} 
+#'   can be set to \code{NULL}.
 #' @param prior_aux The prior distribution for "auxiliary" parameters related to 
 #'   the baseline hazard. The relevant parameters differ depending 
 #'   on the type of baseline hazard specified in the \code{basehaz} 
@@ -555,7 +571,7 @@ stan_surv <- function(formula,
   user_prior_stuff <- prior_stuff <-
     handle_glm_prior(prior, 
                      nvars = K,
-                     default_scale = 2,
+                     default_scale = 2.5,
                      link = NULL,
                      ok_dists = ok_dists)
   
@@ -572,9 +588,7 @@ stan_surv <- function(formula,
                      default_scale = get_default_aux_scale(basehaz),
                      link = NULL,
                      ok_dists = ok_aux_dists)
-  if (prior_PD && is.null(prior_aux))
-    stop("'prior_aux' cannot be NULL if 'prior_PD' is TRUE")
-  
+
   user_prior_smooth_stuff <- prior_smooth_stuff <-
     handle_glm_prior(prior_smooth, 
                      nvars = if (S) max(smooth_map) else 0,
