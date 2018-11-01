@@ -522,9 +522,13 @@ summarize_jm_prior <-
 # @param basehaz A list with information about the baseline hazard
 .rename_e_aux <- function(basehaz) {
   nm <- basehaz$type_name
-  if (nm == "weibull") "weibull-shape" else
-    if (nm == "bs") "spline-coefficients" else
-      if (nm == "piecewise") "piecewise-coefficients" else NA
+  switch(nm,
+         weibull   = "weibull-shape",
+         gompertz  = "gompertz-scale",
+         bs        = "B-spline-coefficients",
+         ms        = "M-spline-coefficients",
+         piecewise = "piecewise-coefficients",
+         NA)
 }
 
 # Check if priors were autoscaled
