@@ -21,30 +21,32 @@
 
 library(rstanarm)
 library(lme4)
-ITER <- 1000
-CHAINS <- 1
-SEED <- 12345
+
+ITER    <- 1000
+CHAINS  <- 1
+SEED    <- 12345
 REFRESH <- 0L
+
 set.seed(SEED)
 if (interactive()) 
   options(mc.cores = parallel::detectCores())
 
 TOLSCALES <- list(
-  lmer_fixef = 0.25,  # how many SEs can stan_jm fixefs be from lmer fixefs
-  lmer_ranef = 0.05, # how many SDs can stan_jm ranefs be from lmer ranefs
-  glmer_fixef = 0.3, # how many SEs can stan_jm fixefs be from glmer fixefs
-  glmer_ranef = 0.1 # how many SDs can stan_jm ranefs be from glmer ranefs
+  lmer_fixef  = 0.25, # how many SEs can stan_jm fixefs be from lmer fixefs
+  lmer_ranef  = 0.05, # how many SDs can stan_jm ranefs be from lmer ranefs
+  glmer_fixef = 0.3,  # how many SEs can stan_jm fixefs be from glmer fixefs
+  glmer_ranef = 0.1   # how many SDs can stan_jm ranefs be from glmer ranefs
 )
 
 source(test_path("helpers", "expect_matrix.R"))
 source(test_path("helpers", "expect_stanreg.R"))
 source(test_path("helpers", "expect_stanmvreg.R"))
-source(test_path("helpers", "expect_survfit.R"))
+source(test_path("helpers", "expect_survfit_jm.R"))
 source(test_path("helpers", "expect_ppd.R"))
 source(test_path("helpers", "expect_identical_sorted_stanmats.R"))
 source(test_path("helpers", "SW.R"))
-source(test_path("helpers", "get_tols.R"))
-source(test_path("helpers", "recover_pars.R"))
+source(test_path("helpers", "get_tols_jm.R"))
+source(test_path("helpers", "recover_pars_jm.R"))
 
 context("stan_mvmer")
 
@@ -183,7 +185,7 @@ if (interactive()) {
     expect_equal(colMeans(log_lik(y1, newdata = nd)), 
                  colMeans(log_lik(y2, newdata = nd)), tol = 0.15)
   }
-  test_that("coefs same for stan_jm and stan_lmer/coxph", {
+  test_that("coefs same for stan_mvmer and stan_glmer", {
     compare_glmer(logBili ~ year + (1 | id), gaussian)})
   # fails in some cases
   # test_that("coefs same for stan_jm and stan_glmer, bernoulli", {
@@ -210,16 +212,15 @@ o<-SW(f3 <- update(m2, formula. = list(logBili ~ year + (year | id) + (1 | pract
 o<-SW(f4 <- update(f3, formula. = list(logBili ~ year + (year | id) + (1 | practice),
                                        albumin ~ year + (year | id) + (1 | practice))))
 o<-SW(f5 <- update(f3, formula. = list(logBili ~ year + (year | id) + (1 | practice),
-                                       ybern ~ year + (year | id) + (1 | practice)),
-                   family = list(gaussian, binomial)))
+                                       ybern   ~ year + (year | id) + (1 | practice)),
+                                       family = list(gaussian, binomial)))
 
 for (j in 1:5) {
   mod <- get(paste0("f", j))
   cat("Checking model:", paste0("f", j), "\n")
 
   expect_error(posterior_traj(mod), "stanjm")
-  expect_error(posterior_survfit(mod), "stanjm")
-     
+
   test_that("posterior_predict works with estimation data", {
     pp <- posterior_predict(mod, m = 1)
     expect_ppd(pp)

@@ -22,20 +22,22 @@
 library(rstanarm)
 library(lme4)
 library(survival)
-ITER <- 1000
-CHAINS <- 1
-SEED <- 12345
+
+ITER    <- 1000
+CHAINS  <- 1
+SEED    <- 12345
 REFRESH <- 0L
+
 set.seed(SEED)
 if (interactive()) 
   options(mc.cores = parallel::detectCores())
 
 TOLSCALES <- list(
-  lmer_fixef = 0.25, # how many SEs can stan_jm fixefs be from lmer fixefs
-  lmer_ranef = 0.05, # how many SDs can stan_jm ranefs be from lmer ranefs
-  glmer_fixef = 0.5, # how many SEs can stan_jm fixefs be from glmer fixefs
-  glmer_ranef = 0.1, # how many SDs can stan_jm ranefs be from glmer ranefs
-  event = 0.3        # how many SEs can stan_jm fixefs be from coxph fixefs
+  lmer_fixef  = 0.25, # how many SEs can stan_jm fixefs be from lmer fixefs
+  lmer_ranef  = 0.05, # how many SDs can stan_jm ranefs be from lmer ranefs
+  glmer_fixef = 0.5,  # how many SEs can stan_jm fixefs be from glmer fixefs
+  glmer_ranef = 0.1,  # how many SDs can stan_jm ranefs be from glmer ranefs
+  event       = 0.3   # how many SEs can stan_jm fixefs be from coxph fixefs
 )
 
 source(test_path("helpers", "expect_matrix.R"))
@@ -45,7 +47,6 @@ source(test_path("helpers", "expect_survfit_jm.R"))
 source(test_path("helpers", "expect_ppd.R"))
 source(test_path("helpers", "expect_equivalent_loo.R"))
 source(test_path("helpers", "SW.R"))
-# SW <- function(expr) eval(expr)
 source(test_path("helpers", "get_tols_jm.R"))
 source(test_path("helpers", "recover_pars_jm.R"))
 
