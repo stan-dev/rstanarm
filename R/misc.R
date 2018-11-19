@@ -1744,7 +1744,7 @@ qtile <- function(x, nq = 2) {
 
 # Return the desired spline basis for the given knot locations
 get_basis <- function(x, iknots, bknots = range(x), 
-                      degree = 3, intercept = TRUE, 
+                      degree = 3, intercept = FALSE, 
                       type = c("bs", "is", "ms")) {
   type <- match.arg(type)
   if (type == "bs") {
