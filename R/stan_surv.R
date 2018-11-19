@@ -103,15 +103,14 @@
 #'   that is used to evaluate the cumulative hazard when \code{basehaz = "bs"}
 #'   or when time-dependent effects (i.e. non-proportional hazards) are 
 #'   specified. Options are 15 (the default), 11 or 7.
-#' @param prior_intercept The prior distribution for the intercept. Note 
-#'   that there will only be an intercept parameter when \code{basehaz} is set
-#'   equal to one of the standard parametric distributions, i.e. \code{"exp"}, 
-#'   \code{"weibull"} or \code{"gompertz"}, in which case the intercept 
-#'   corresponds to the parameter \emph{log(lambda)} as defined in the 
-#'   \emph{stan_surv: Survival (Time-to-Event) Models} vignette. For the cubic 
-#'   spline-based baseline hazards there is no intercept parameter since it is 
-#'   absorbed into the spline basis and, therefore, the prior for the intercept 
-#'   is effectively specified as part of \code{prior_aux}.  
+#' @param prior_intercept The prior distribution for the intercept. 
+#'   All models include an intercept parameter.
+#'   If \code{basehaz} is set equal to one of the standard parametric 
+#'   distributions, i.e. \code{"exp"}, \code{"weibull"} or \code{"gompertz"}, 
+#'   then the intercept corresponds to the parameter \emph{log(lambda)} as 
+#'   defined in the \emph{stan_surv: Survival (Time-to-Event) Models} vignette. 
+#'   Also refer to the vignette for the definition of the intercept parameter
+#'   in the cubic spline-based baseline hazards.
 #'   
 #'   Where relevant, \code{prior_intercept} can be a call to \code{normal}, 
 #'   \code{student_t} or \code{cauchy}. See the \link[=priors]{priors help page} 
@@ -128,7 +127,12 @@
 #'   \itemize{
 #'     \item \code{basehaz = "ms"}: the auxiliary parameters are the coefficients
 #'     for the M-spline basis terms on the baseline hazard. These parameters
-#'     have a lower bound at zero.
+#'     have a lower bound at zero. The prior specified by the user is for the
+#'     coefficients as defined on the postive real line. However, to ensure
+#'     identifiability of the model, these are transformed to constrained 
+#'     parameters between 0 and 1 (forming a simplex) during the fitting of 
+#'     the model. Refer to the \emph{stan_surv: Survival (Time-to-Event) Models} 
+#'     vignette for further technical details.
 #'     \item \code{basehaz = "bs"}: the auxiliary parameters are the coefficients
 #'     for the B-spline basis terms on the log baseline hazard. These parameters
 #'     are unbounded.
@@ -334,6 +338,11 @@ stan_surv <- function(formula,
   t_icenu <- t_upp[status == 3] # upper limit of interval censoring time
   t_delay <- t_beg[delayed]     # delayed entry time
 
+  # calculate log crude event rate
+  t_tmp <- sum(rowMeans(cbind(t_end, t_upp), na.rm = TRUE) - t_beg)
+  d_tmp <- sum(!status == 0)
+  log_crude_event_rate = log(d_tmp / t_tmp)
+  
   # dimensions
   nevent <- sum(status == 1)
   nrcens <- sum(status == 0)
@@ -442,12 +451,15 @@ stan_surv <- function(formula,
   #----- predictor matrices
   
   # time-fixed predictor matrix
-  x <- make_x(formula$tf_form, mf)$x
-  x_event <- keep_rows(x, status == 1)
-  x_lcens <- keep_rows(x, status == 2)
-  x_rcens <- keep_rows(x, status == 0)
-  x_icens <- keep_rows(x, status == 3)
-  x_delay <- keep_rows(x, delayed)
+  x_stuff <- make_x(formula$tf_form, mf)
+  x          <- x_stuff$x
+  x_bar      <- x_stuff$x_bar
+  x_centered <- x_stuff$x_centered
+  x_event <- keep_rows(x_centered, status == 1)
+  x_lcens <- keep_rows(x_centered, status == 2)
+  x_rcens <- keep_rows(x_centered, status == 0)
+  x_icens <- keep_rows(x_centered, status == 3)
+  x_delay <- keep_rows(x_centered, delayed)
   K <- ncol(x)
   if (has_quadrature) {
     x_cpts <- rbind(x_event,
@@ -490,7 +502,8 @@ stan_surv <- function(formula,
   
   standata <- nlist(
     K, S, 
-    nvars, 
+    nvars,
+    x_bar,
     has_intercept, 
     has_quadrature,
     smooth_map,
@@ -499,6 +512,7 @@ stan_surv <- function(formula,
     len_cpts,
     idx_cpts,
     type = basehaz$type,
+    log_crude_event_rate,
     
     nevent       = if (has_quadrature) 0L else nevent,
     nlcens       = if (has_quadrature) 0L else nlcens,
@@ -661,11 +675,12 @@ stan_surv <- function(formula,
   stanfit  <- stanmodels$surv
   
   # specify parameters for stan to monitor
-  stanpars <- c(if (standata$has_intercept) "gamma",
+  basehaz_pars <- ifelse(basehaz$type_name == "ms", "coefs_constrained", "coefs")
+  stanpars <- c(if (standata$has_intercept) "alpha",
                 if (standata$K)             "beta",
                 if (standata$S)             "beta_tde",
                 if (standata$S)             "smooth_sd",
-                if (standata$nvars)         "coefs")
+                if (standata$nvars)         basehaz_pars)
   
   # fit model using stan
   if (algorithm == "sampling") { # mcmc
@@ -808,7 +823,7 @@ handle_basehaz_surv <- function(basehaz,
       stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
     
     if (is.null(df))
-      df <- 6L # default df for B-splines, assuming an intercept is included
+      df <- 5L # default df for B-splines, assuming no intercept 
     # NB this is ignored if the user specified knots
     
     tt <- times[status == 1] # uncensored event times
@@ -841,7 +856,7 @@ handle_basehaz_surv <- function(basehaz,
     
     tt <- times[status == 1] # uncensored event times
     if (is.null(df)) {
-      df <- 6L # default df for M-splines, assuming an intercept is included
+      df <- 5L # default df for M-splines, assuming no intercept 
       # NB this is ignored if the user specified knots
     }
 
@@ -979,7 +994,7 @@ get_iknots <- function(x, df = 6L, degree = 3L, iknots = NULL, intercept = TRUE)
 # @return A Logical.
 has_intercept <- function(basehaz) {
   nm <- get_basehaz_name(basehaz)
-  (nm %in% c("exp", "weibull", "gompertz"))
+  (nm %in% c("ms", "bs", "exp", "weibull", "gompertz"))
 }
 
 # Return the name of the tde spline coefs or smoothing parameters.
@@ -1394,8 +1409,9 @@ make_model_frame <- function(formula, data, check_constant = TRUE) {
 # @param formula The parsed model formula.
 # @param model_frame The model frame.
 # @return A named list with the following elements:
-#   x: the fe model matrix, not centred and without intercept.
-#   xbar: the column means of the model matrix.
+#   x: the fe model matrix, not centered and without intercept.
+#   x_bar: the column means of the model matrix.
+#   x_centered: the fe model matrix, centered.
 #   N,K: number of rows (observations) and columns (predictors) in the
 #     fixed effects model matrix
 make_x <- function(formula, model_frame, xlevs = NULL, check_constant = TRUE) {
@@ -1405,7 +1421,10 @@ make_x <- function(formula, model_frame, xlevs = NULL, check_constant = TRUE) {
   x <- drop_intercept(x)
   
   # column means of predictor matrix
-  xbar <- colMeans(x)
+  x_bar <- aa(colMeans(x))
+  
+  # centered predictor matrix
+  x_centered <- sweep(x, 2, x_bar, FUN = "-")
   
   # identify any column of x with < 2 unique values (empty interaction levels)
   sel <- (apply(x, 2L, n_distinct) < 2)
@@ -1414,7 +1433,7 @@ make_x <- function(formula, model_frame, xlevs = NULL, check_constant = TRUE) {
     stop2("Cannot deal with empty interaction levels found in columns: ", cols)
   }
   
-  nlist(x, xbar, N = NROW(x), K = NCOL(x))
+  nlist(x, x_centered, x_bar, N = NROW(x), K = NCOL(x))
 }
 
 # Return a predictor for the tde spline terms
