@@ -1098,8 +1098,8 @@ evaluate_log_basehaz <- function(times, basehaz, aux, intercept = NULL) {
          "exp"       = log_basehaz_exponential(times, log_scale = intercept),
          "weibull"   = log_basehaz_weibull (times, shape = aux, log_scale = intercept),
          "gompertz"  = log_basehaz_gompertz(times, scale = aux, log_shape = intercept),
-         "ms"        = log_basehaz_ms(times, coefs = aux, basis = basehaz$basis),
-         "bs"        = log_basehaz_bs(times, coefs = aux, basis = basehaz$basis),
+         "ms"        = log_basehaz_ms(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
+         "bs"        = log_basehaz_bs(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
          "piecewise" = log_basehaz_pw(times, coefs = aux, knots = basehaz$knots),
          stop2("Bug found: unknown type of baseline hazard."))
 }
@@ -1113,11 +1113,11 @@ log_basehaz_weibull  <- function(x, shape, log_scale) {
 log_basehaz_gompertz <- function(x, scale, log_shape) {
   as.vector(log_shape) + linear_predictor(scale, x)
 }
-log_basehaz_ms <- function(x, coefs, basis) {
-  log(linear_predictor(coefs, basis_matrix(x, basis = basis)))
+log_basehaz_ms <- function(x, coefs, basis, intercept) {
+  as.vector(intercept) + log(linear_predictor(coefs, basis_matrix(x, basis = basis)))
 }
-log_basehaz_bs <- function(x, coefs, basis) {
-  linear_predictor(coefs, basis_matrix(x, basis = basis))
+log_basehaz_bs <- function(x, coefs, basis, intercept) {
+  as.vector(intercept) + linear_predictor(coefs, basis_matrix(x, basis = basis))
 }
 log_basehaz_pw <- function(x, coefs, knots) {
   linear_predictor(coefs, dummy_matrix(x, knots = knots))
@@ -1151,7 +1151,7 @@ evaluate_log_basesurv <- function(times, basehaz, aux, intercept = NULL) {
          "exp"       = log_basesurv_exponential(times, log_scale = intercept),
          "weibull"   = log_basesurv_weibull (times, shape = aux, log_scale = intercept),
          "gompertz"  = log_basesurv_gompertz(times, scale = aux, log_shape = intercept),
-         "ms"        = log_basesurv_ms(times, coefs = aux, basis = basehaz$basis),
+         "ms"        = log_basesurv_ms(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
          stop2("Bug found: unknown type of baseline hazard."))
 }
 
@@ -1164,8 +1164,9 @@ log_basesurv_weibull  <- function(x, shape, log_scale) {
 log_basesurv_gompertz <- function(x, scale, log_shape) {
   -(as.vector(exp(log_shape) / scale)) * (exp(linear_predictor(scale, x)) - 1)
 }
-log_basesurv_ms <- function(x, coefs, basis) {
-  -linear_predictor(coefs, basis_matrix(x, basis = basis, integrate = TRUE))
+log_basesurv_ms <- function(x, coefs, basis, intercept) {
+  - exp(as.vector(intercept)) *
+      linear_predictor(coefs, basis_matrix(x, basis = basis, integrate = TRUE))
 }
 
 evaluate_log_surv <- function(times, basehaz, betas, aux, intercept = NULL, x, ...) {
