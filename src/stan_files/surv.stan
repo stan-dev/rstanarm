@@ -580,9 +580,11 @@ transformed parameters {
   // log hazard ratios
   vector[K] beta;
 
-  // basehaz parameters
+  // unconstrained basehaz parameters
   vector[nvars] coefs;
-  simplex[type == 4 ? nvars : 1] coefs_constrained; // for M-splines only
+
+  // constrained basehaz parameters; for M-splines, to ensure identifiability
+  simplex[nvars] coefs_constrained[type == 4];
 
   // tde spline coefficients and their hyperparameters
   vector[S] beta_tde;
@@ -601,8 +603,9 @@ transformed parameters {
     coefs = z_coefs .* prior_scale_for_aux;
   }
   if (type == 4) { // constrained coefs for M-splines (ensures identifiability)
-    coefs_constrained = softmax(coefs);
+    coefs_constrained[1] = softmax(coefs);
   }
+
 
   // define tde spline coefficients using random walk
   if (S > 0) {
@@ -696,12 +699,12 @@ model {
         if (ndelay > 0) target += -gompertz_log_surv(eta_delay, t_delay, scale);
       }
       else if (type == 4) { // M-splines, on haz scale
-        if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, coefs_constrained);
-        if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, coefs_constrained);
-        if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, coefs_constrained);
-        if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, coefs_constrained);
-        if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, coefs_constrained);
-        if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, coefs_constrained);
+        if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, coefs_constrained[1]);
+        if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, coefs_constrained[1]);
+        if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, coefs_constrained[1]);
+        if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, coefs_constrained[1]);
+        if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, coefs_constrained[1]);
+        if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, coefs_constrained[1]);
       }
       else {
         reject("Bug found: invalid baseline hazard (without quadrature).");
@@ -740,7 +743,7 @@ model {
       if (has_intercept == 1) {
         eta += gamma[1];
       }
-      
+
       // add on log crude event rate (helps to center intercept)
       eta += log_crude_event_rate;
 
@@ -757,7 +760,7 @@ model {
         lhaz = gompertz_log_haz(eta, cpts, scale);
       }
       else if (type == 4) { // M-splines, on haz scale
-        lhaz = mspline_log_haz(eta, basis_cpts, coefs_constrained);
+        lhaz = mspline_log_haz(eta, basis_cpts, coefs_constrained[1]);
       }
       else if (type == 2) { // B-splines, on log haz scale
         lhaz = bspline_log_haz(eta, basis_cpts, coefs);
@@ -820,8 +823,11 @@ model {
 }
 
 generated quantities {
-  real alpha; // transformed intercept
+  // baseline hazard parameters to return
+  vector[nvars] aux = (type == 4) ? coefs_constrained[1] : coefs;
 
+  // transformed intercept
+  real alpha;
   if (has_intercept == 1) {
     alpha = log_crude_event_rate - dot_product(x_bar, beta) + gamma[1];
   } else {

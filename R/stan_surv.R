@@ -675,12 +675,11 @@ stan_surv <- function(formula,
   stanfit  <- stanmodels$surv
   
   # specify parameters for stan to monitor
-  basehaz_pars <- ifelse(basehaz$type_name == "ms", "coefs_constrained", "coefs")
   stanpars <- c(if (standata$has_intercept) "alpha",
                 if (standata$K)             "beta",
                 if (standata$S)             "beta_tde",
                 if (standata$S)             "smooth_sd",
-                if (standata$nvars)         basehaz_pars)
+                if (standata$nvars)         "aux")
   
   # fit model using stan
   if (algorithm == "sampling") { # mcmc
@@ -1422,7 +1421,7 @@ make_x <- function(formula, model_frame, xlevs = NULL, check_constant = TRUE) {
   
   # column means of predictor matrix
   x_bar <- aa(colMeans(x))
-  
+
   # centered predictor matrix
   x_centered <- sweep(x, 2, x_bar, FUN = "-")
   
