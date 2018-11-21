@@ -224,7 +224,8 @@ functions {
   * @param aux_unscaled Vector (potentially of length 1) of unscaled
   *   auxiliary parameter(s)
   * @param dist Integer specifying the type of prior distribution
-  * @param df Real specifying the df for the prior distribution
+  * @param df Real specifying the df for the prior distribution, or in the case
+  *   of the dirichlet distribution it is the concentration parameter(s)
   * @return Nothing
   */
   real basehaz_lp(vector aux_unscaled, int dist, vector df) {
@@ -233,8 +234,10 @@ functions {
         target += normal_lpdf(aux_unscaled | 0, 1);
       else if (dist == 2)
         target += student_t_lpdf(aux_unscaled | df, 0, 1);
-      else
+      else if (dist == 3)
         target += exponential_lpdf(aux_unscaled | 1);
+      else
+        target += dirichlet_lpdf(aux_unscaled | df); // df is concentration here
     }
     return target();
   }
@@ -505,7 +508,8 @@ data {
   //   1 = normal
   //   2 = student_t
   //   3 = exponential
-  int<lower=0,upper=3> prior_dist_for_aux;
+  //   4 = dirichlet
+  int<lower=0,upper=4> prior_dist_for_aux;
 
   // prior family:
   //   0 = none
@@ -559,7 +563,8 @@ parameters {
   //   gompertz model: nvars = 1, ie. scale parameter
   //   M-spline model: nvars = number of basis terms, ie. spline coefs
   //   B-spline model: nvars = number of basis terms, ie. spline coefs
-  vector<lower=coefs_lb(type)>[nvars] z_coefs;
+  vector<lower=coefs_lb(type)>[type == 4 ? 0 : nvars] z_coefs;
+  simplex[nvars] ms_coefs[type == 4]; // constrained coefs for M-splines
 
   // unscaled tde spline coefficients
   vector[S] z_beta_tde;
@@ -580,11 +585,8 @@ transformed parameters {
   // log hazard ratios
   vector[K] beta;
 
-  // unconstrained basehaz parameters
-  vector[nvars] coefs;
-
-  // constrained basehaz parameters; for M-splines, to ensure identifiability
-  simplex[nvars] coefs_constrained[type == 4];
+  // basehaz parameters
+  vector[type == 4 ? 0 : nvars] coefs;
 
   // tde spline coefficients and their hyperparameters
   vector[S] beta_tde;
@@ -599,13 +601,9 @@ transformed parameters {
   }
 
   // define basehaz parameters
-  if (nvars > 0) {
+  if (type != 4 && nvars > 0) {
     coefs = z_coefs .* prior_scale_for_aux;
   }
-  if (type == 4) { // constrained coefs for M-splines (ensures identifiability)
-    coefs_constrained[1] = softmax(coefs);
-  }
-
 
   // define tde spline coefficients using random walk
   if (S > 0) {
@@ -699,12 +697,12 @@ model {
         if (ndelay > 0) target += -gompertz_log_surv(eta_delay, t_delay, scale);
       }
       else if (type == 4) { // M-splines, on haz scale
-        if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, coefs_constrained[1]);
-        if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, coefs_constrained[1]);
-        if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, coefs_constrained[1]);
-        if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, coefs_constrained[1]);
-        if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, coefs_constrained[1]);
-        if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, coefs_constrained[1]);
+        if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, ms_coefs[1]);
+        if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, ms_coefs[1]);
+        if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, ms_coefs[1]);
+        if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, ms_coefs[1]);
+        if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, ms_coefs[1]);
+        if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, ms_coefs[1]);
       }
       else {
         reject("Bug found: invalid baseline hazard (without quadrature).");
@@ -760,7 +758,7 @@ model {
         lhaz = gompertz_log_haz(eta, cpts, scale);
       }
       else if (type == 4) { // M-splines, on haz scale
-        lhaz = mspline_log_haz(eta, basis_cpts, coefs_constrained[1]);
+        lhaz = mspline_log_haz(eta, basis_cpts, ms_coefs[1]);
       }
       else if (type == 2) { // B-splines, on log haz scale
         lhaz = bspline_log_haz(eta, basis_cpts, coefs);
@@ -810,7 +808,10 @@ model {
   }
 
   // log priors for baseline hazard parameters
-  if (nvars > 0) {
+  if (type == 4) {
+    real dummy = basehaz_lp(ms_coefs[1], prior_dist_for_aux, prior_df_for_aux);
+  } 
+  else if (nvars > 0) {
     real dummy = basehaz_lp(z_coefs, prior_dist_for_aux, prior_df_for_aux);
   }
 
@@ -824,7 +825,7 @@ model {
 
 generated quantities {
   // baseline hazard parameters to return
-  vector[nvars] aux = (type == 4) ? coefs_constrained[1] : coefs;
+  vector[nvars] aux = (type == 4) ? ms_coefs[1] : coefs;
 
   // transformed intercept
   real alpha;
