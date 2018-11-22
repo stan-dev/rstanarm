@@ -466,7 +466,10 @@ summarize_jm_prior <-
             adjusted_priorEvent_aux_scale else NULL,
           df = if (!is.na(prior_dist_name) && 
                    prior_dist_name %in% "student_t")
-            prior_df else NULL, 
+            prior_df else NULL,
+          concentration = if (!is.na(prior_dist_name) && 
+                              prior_dist_name %in% "dirichlet")
+            prior_concentration else NULL,
           aux_name = e_aux_name
         ))      
     }
