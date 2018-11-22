@@ -288,9 +288,9 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
     if (!is.null(x[["priorEvent_aux"]])) {
       aux_name <- x[["priorEvent_aux"]][["aux_name"]]
       aux_dist <- x[["priorEvent_aux"]][["dist"]]
-      if ((aux_name %in% c("weibull-shape", "gompertz-scale")) &&
-          (aux_dist %in% c("normal", "student_t", "cauchy"))) { # weibull, gompertz
-        x[["priorEvent_aux"]][["dist"]] <- paste0("half-", aux_dist)
+      if (aux_name %in% c("weibull-shape", "gompertz-scale")) {
+        if (aux_dist %in% c("normal", "student_t", "cauchy"))
+          x[["priorEvent_aux"]][["dist"]] <- paste0("half-", aux_dist)
         .print_scalar_prior(
           x[["priorEvent_aux"]], 
           txt = paste0("\nAuxiliary (", aux_name, ")"), 
@@ -410,8 +410,11 @@ used.sparse <- function(x) {
       p$df2 <- .format_pars(p$scale, .f1)
     } else if (p$dist %in% c("hs")) {
       p$df <- .format_pars(p$df, .f1)
-    } else if (p$dist %in% c("product_normal"))
+    } else if (p$dist %in% c("product_normal")) {
       p$df <- .format_pars(p$df, .f1)
+    } else if (p$dist %in% c("dirichlet")) {
+      p$concentration <- .format_pars(p$concentration, .f1) 
+    }
   }
   cat(paste0("\n", txt, "\n ~"),
       if (is.na(p$dist)) {
@@ -432,6 +435,8 @@ used.sparse <- function(x) {
         paste0("hs(df = ", .f1(p$df), ")")
       } else if (p$dist %in% c("R2")) {
         paste0("R2(location = ", .f1(p$location), ", what = '", p$what, "')")
+      } else if (p$dist %in% c("dirichlet")) {
+        paste0("dirichlet(concentration = ", .f1(p$concentration), ")")
       })
   
   if (!is.null(p$adjusted_scale))
