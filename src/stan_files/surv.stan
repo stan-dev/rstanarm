@@ -535,6 +535,7 @@ data {
   // hyperparameters (basehaz pars), set to 0 if there is no prior
   vector<lower=0>[nvars] prior_scale_for_aux;
   vector<lower=0>[nvars] prior_df_for_aux;
+  vector<lower=0>[nvars] prior_conc_for_aux; // dirichlet concentration pars
 
   // hyperparameters (tde smooths), set to 0 if there is no prior
   vector         [S > 0 ? max(smooth_map) : 0] prior_mean_for_smooth;
@@ -809,8 +810,8 @@ model {
 
   // log priors for baseline hazard parameters
   if (type == 4) {
-    real dummy = basehaz_lp(ms_coefs[1], prior_dist_for_aux, prior_df_for_aux);
-  } 
+    real dummy = basehaz_lp(ms_coefs[1], prior_dist_for_aux, prior_conc_for_aux);
+  }
   else if (nvars > 0) {
     real dummy = basehaz_lp(z_coefs, prior_dist_for_aux, prior_df_for_aux);
   }

@@ -575,8 +575,11 @@ stan_surv <- function(formula,
                     "laplace", 
                     "lasso") # disallow product normal
   ok_intercept_dists <- ok_dists[1:3]
-  ok_aux_dists       <- ok_dists[1:3]
+  ok_aux_dists       <- get_ok_priors_for_aux(basehaz)
   ok_smooth_dists    <- c(ok_dists[1:3], "exponential")
+  
+  if (missing(prior_aux))
+    prior_aux <- get_default_prior_for_aux(basehaz)
   
   # priors
   user_prior_stuff <- prior_stuff <-
@@ -640,6 +643,7 @@ stan_surv <- function(formula,
   standata$prior_df_for_intercept   <- c(prior_intercept_stuff$prior_df)
   standata$prior_scale_for_aux      <- prior_aux_stuff$prior_scale
   standata$prior_df_for_aux         <- prior_aux_stuff$prior_df
+  standata$prior_conc_for_aux       <- prior_aux_stuff$prior_concentration
   standata$prior_mean_for_smooth    <- prior_smooth_stuff$prior_mean
   standata$prior_scale_for_smooth   <- prior_smooth_stuff$prior_scale
   standata$prior_df_for_smooth      <- prior_smooth_stuff$prior_df
@@ -961,7 +965,7 @@ basehaz_for_stan <- function(basehaz_name) {
 #   specified then 'df' is ignored.
 # @return A numeric vector of internal knot locations, or NULL if there are
 #   no internal knots.
-get_iknots <- function(x, df = 6L, degree = 3L, iknots = NULL, intercept = TRUE) {
+get_iknots <- function(x, df = 5L, degree = 3L, iknots = NULL, intercept = FALSE) {
   
   # obtain number of internal knots
   if (is.null(iknots)) {
@@ -1019,6 +1023,38 @@ get_smooth_name <- function(x, type = "smooth_coefs") {
          stop2("Bug found: invalid input to 'type' argument."))
 }
 
+# Return the valid prior distributions for 'prior_aux'.
+#
+# @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
+# @return A named list.
+get_ok_priors_for_aux <- function(basehaz) {
+  nm <- get_basehaz_name(basehaz)
+  switch(nm,
+         exp       = nlist(),
+         weibull   = nlist("normal", student_t = "t", "cauchy", "exponential"),
+         gompertz  = nlist("normal", student_t = "t", "cauchy", "exponential"),
+         ms        = nlist("dirichlet"),
+         bs        = nlist("normal", student_t = "t", "cauchy"),
+         piecewise = nlist("normal", student_t = "t", "cauchy"),
+         stop2("Bug found: unknown type of baseline hazard."))
+}
+
+# Return the default prior distribution for 'prior_aux'.
+#
+# @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
+# @return A list corresponding to the default prior.
+get_default_prior_for_aux <- function(basehaz) {
+  nm <- get_basehaz_name(basehaz)
+  switch(nm,
+         exp       = NULL,
+         weibull   = normal(),
+         gompertz  = normal(),
+         ms        = dirichlet(),
+         bs        = normal(),
+         piecewise = normal(),
+         stop2("Bug found: unknown type of baseline hazard."))
+}
+
 # Return the default scale parameter for 'prior_aux'.
 #
 # @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
@@ -1071,7 +1107,7 @@ make_basis <- function(times, basehaz, integrate = FALSE) {
          "ms"        = basis_matrix(times, basis = basehaz$basis, integrate = integrate),
          "bs"        = basis_matrix(times, basis = basehaz$basis),
          "piecewise" = dummy_matrix(times, knots = basehaz$knots),
-         stop2("Bug found: type of baseline hazard unknown."))
+         stop2("Bug found: unknown type of baseline hazard."))
 }
 
 # Evaluate a spline basis matrix at the specified times
