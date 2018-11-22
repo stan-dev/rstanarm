@@ -470,6 +470,9 @@ summarize_jm_prior <-
           concentration = if (!is.na(prior_dist_name) && 
                               prior_dist_name %in% "dirichlet")
             prior_concentration else NULL,
+          rate = if (!is.na(prior_dist_name) && 
+                     prior_dist_name %in% "exponential")
+            1 / prior_scale else NULL,
           aux_name = e_aux_name
         ))      
     }
