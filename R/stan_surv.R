@@ -82,15 +82,13 @@
 #'   hazard. Currently this can include: \cr
 #'   \itemize{
 #'     \item \code{df}: a positive integer specifying the degrees of freedom 
-#'     for the M-splines or B-splines. An intercept is included in the spline
-#'     basis and included in the count of the degrees of freedom, such that
-#'     two boundary knots and \code{df - 4} internal knots are used to generate 
-#'     the cubic spline basis. The default is \code{df = 6}; that is, two 
-#'     boundary knots and two internal knots.
+#'     for the M-splines or B-splines. Two boundary knots and \code{df - 3} 
+#'     internal knots are used to generate the cubic spline basis. The default 
+#'     is \code{df = 5}; that is, two boundary knots and two internal knots.
 #'     \item \code{knots}: An optional numeric vector specifying internal 
 #'     knot locations for the M-splines or B-splines. Note that \code{knots} 
 #'     cannot be specified if \code{df} is specified. If \code{knots} are 
-#'     \strong{not} specified, then \code{df - 4} internal knots are placed 
+#'     \strong{not} specified, then \code{df - 3} internal knots are placed 
 #'     at equally spaced percentiles of the distribution of uncensored event 
 #'     times.
 #'   }
@@ -103,53 +101,66 @@
 #'   that is used to evaluate the cumulative hazard when \code{basehaz = "bs"}
 #'   or when time-dependent effects (i.e. non-proportional hazards) are 
 #'   specified. Options are 15 (the default), 11 or 7.
-#' @param prior_intercept The prior distribution for the intercept. 
-#'   All models include an intercept parameter.
-#'   If \code{basehaz} is set equal to one of the standard parametric 
-#'   distributions, i.e. \code{"exp"}, \code{"weibull"} or \code{"gompertz"}, 
-#'   then the intercept corresponds to the parameter \emph{log(lambda)} as 
-#'   defined in the \emph{stan_surv: Survival (Time-to-Event) Models} vignette. 
-#'   Also refer to the vignette for the definition of the intercept parameter
-#'   in the cubic spline-based baseline hazards.
-#'   
-#'   Where relevant, \code{prior_intercept} can be a call to \code{normal}, 
+#' @param prior_intercept The prior distribution for the intercept in the 
+#'   linear predictor. All models include an intercept parameter.
+#'   \code{prior_intercept} can be a call to \code{normal}, 
 #'   \code{student_t} or \code{cauchy}. See the \link[=priors]{priors help page} 
-#'   for details on these functions. Note however that default scale for 
+#'   for details on these functions. However, note that default scale for 
 #'   \code{prior_intercept} is 20 for \code{stan_surv} models (rather than 10,
 #'   which is the default scale used for \code{prior_intercept} by most 
 #'   \pkg{rstanarm} modelling functions). To omit a prior on the intercept 
 #'   ---i.e., to use a flat (improper) uniform prior--- \code{prior_intercept} 
 #'   can be set to \code{NULL}.
+#'   
+#'   \strong{Note:} The prior distribution for the intercept is set so it
+#'   applies to the value \emph{when all predictors are centered} and with an  
+#'   adjustment (i.e. "constant shift") equal to the \emph{log crude event rate}.
+#'   However, the reported \emph{estimates} for the intercept always correspond 
+#'   to a parameterization without centered predictors and without the 
+#'   "constant shift". That is, these adjustments are made internally to help
+#'   with numerical stability and sampling, but the necessary 
+#'   back-transformations are made so that they are not relevant for the 
+#'   estimates returned to the user.
 #' @param prior_aux The prior distribution for "auxiliary" parameters related to 
 #'   the baseline hazard. The relevant parameters differ depending 
 #'   on the type of baseline hazard specified in the \code{basehaz} 
-#'   argument. The following applies:
+#'   argument. The following applies (however, for further technical details, 
+#'   refer to the \emph{stan_surv: Survival (Time-to-Event) Models vignette)}:
 #'   \itemize{
-#'     \item \code{basehaz = "ms"}: the auxiliary parameters are the coefficients
-#'     for the M-spline basis terms on the baseline hazard. These parameters
-#'     have a lower bound at zero. The prior specified by the user is for the
-#'     coefficients as defined on the postive real line. However, to ensure
-#'     identifiability of the model, these are transformed to constrained 
-#'     parameters between 0 and 1 (forming a simplex) during the fitting of 
-#'     the model. Refer to the \emph{stan_surv: Survival (Time-to-Event) Models} 
-#'     vignette for further technical details.
-#'     \item \code{basehaz = "bs"}: the auxiliary parameters are the coefficients
-#'     for the B-spline basis terms on the log baseline hazard. These parameters
-#'     are unbounded.
+#'     \item \code{basehaz = "ms"}: the auxiliary parameters are the 
+#'     coefficients for the M-spline basis terms on the baseline hazard. 
+#'     These coefficients are defined using a simplex; that is, they are 
+#'     all between 0 and 1, and constrained to sum to 1. This constraint 
+#'     is necessary for identifiability of the intercept in the linear 
+#'     predictor. The default prior is a Dirichlet distribution with all 
+#'     concentration parameters set equal to 1. That is, a uniform 
+#'     prior over all points defined within the support of the simplex. 
+#'     Specifying all concentration parameters equal and > 1 supports a more 
+#'     even distribution (i.e. a smoother spline function), while specifying a 
+#'     all concentration parameters equal and < 1 supports a more sparse 
+#'     distribution (i.e. a less smooth spline function).
+#'     \item \code{basehaz = "bs"}: the auxiliary parameters are the 
+#'     coefficients for the B-spline basis terms on the log baseline hazard. 
+#'     These parameters are unbounded. The default prior is a normal 
+#'     distribution with mean 0 and scale 20.
 #'     \item \code{basehaz = "exp"}: there is \strong{no} auxiliary parameter, 
 #'     since the log scale parameter for the exponential distribution is 
 #'     incorporated as an intercept in the linear predictor.
 #'     \item \code{basehaz = "weibull"}: the auxiliary parameter is the Weibull 
 #'     shape parameter, while the log scale parameter for the Weibull 
 #'     distribution is incorporated as an intercept in the linear predictor.
-#'     The auxiliary parameter has a lower bound at zero. 
+#'     The auxiliary parameter has a lower bound at zero. The default prior is  
+#'     a half-normal distribution with mean 0 and scale 2.
 #'     \item \code{basehaz = "gompertz"}: the auxiliary parameter is the Gompertz 
 #'     scale parameter, while the log shape parameter for the Gompertz 
 #'     distribution is incorporated as an intercept in the linear predictor.
-#'     The auxiliary parameter has a lower bound at zero. 
+#'     The auxiliary parameter has a lower bound at zero. The default prior is  
+#'     a half-normal distribution with mean 0 and scale 2.
 #'   }
-#'   Currently, \code{prior_aux} can be a call to \code{normal}, \code{student_t} 
-#'   or \code{cauchy}. See \code{\link{priors}} for details on these functions. 
+#'   Currently, \code{prior_aux} can be a call to \code{dirichlet}, 
+#'   \code{normal}, \code{student_t}, \code{cauchy} or \code{exponential}. 
+#'   See \code{\link{priors}} for details on these functions. Note that not 
+#'   all prior distributions are allowed with all types of baseline hazard. 
 #'   To omit a prior ---i.e., to use a flat (improper) uniform prior--- set 
 #'   \code{prior_aux} to \code{NULL}. 
 #' @param prior_smooth This is only relevant when time-dependent effects are 
