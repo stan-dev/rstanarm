@@ -309,6 +309,35 @@ functions {
   }
 
   /**
+  * Log survival and log CDF for exponential distribution; AFT parameterisation
+  *
+  * @param eta Vector, linear predictor
+  * @param t Vector, event or censoring times
+  * @return A vector
+  */
+  vector exponentialAFT_log_surv(vector eta, vector t) {
+    vector[rows(eta)] res;
+    res = - t .* exp(-eta);
+    return res;
+  }
+
+  vector exponentialAFT_log_cdf(vector eta, vector t) {
+    vector[rows(eta)] res;
+    res = log(1 - exp(-t .* exp(-eta)));
+    return res;
+  }
+
+  vector exponentialAFT_log_cdf2(vector eta, vector t_lower, vector t_upper) {
+    int N = rows(eta);
+    vector[N] exp_eta = exp(-eta);
+    vector[N] surv_lower = exp(-t_lower .* exp_eta);
+    vector[N] surv_upper = exp(-t_upper .* exp_eta);
+    vector[N] res;
+    res = log(surv_lower - surv_upper);
+    return res;
+  }
+
+  /**
   * Log survival and log CDF for Weibull distribution
   *
   * @param eta Vector, linear predictor
@@ -331,6 +360,36 @@ functions {
   vector weibull_log_cdf2(vector eta, vector t_lower, vector t_upper, real shape) {
     int N = rows(eta);
     vector[N] exp_eta = exp(eta);
+    vector[N] surv_lower = exp(- pow_vec(t_lower, shape) .* exp_eta);
+    vector[N] surv_upper = exp(- pow_vec(t_upper, shape) .* exp_eta);
+    vector[N] res;
+    res = log(surv_lower - surv_upper);
+    return res;
+  }
+
+  /**
+  * Log survival and log CDF for Weibull distribution; AFT parameterisation
+  *
+  * @param eta Vector, linear predictor
+  * @param t Vector, event or censoring times
+  * @param shape Real, Weibull shape
+  * @return A vector
+  */
+  vector weibullAFT_log_surv(vector eta, vector t, real shape) {
+    vector[rows(eta)] res;
+    res = - pow_vec(t, shape) .* exp(-shape * eta);
+    return res;
+  }
+
+  vector weibullAFT_log_cdf(vector eta, vector t, real shape) {
+    vector[rows(eta)] res;
+    res = log(1 - exp(- pow_vec(t, shape) .* exp(-shape * eta)));
+    return res;
+  }
+
+  vector weibullAFT_log_cdf2(vector eta, vector t_lower, vector t_upper, real shape) {
+    int N = rows(eta);
+    vector[N] exp_eta = exp(-shape * eta);
     vector[N] surv_lower = exp(- pow_vec(t_lower, shape) .* exp_eta);
     vector[N] surv_upper = exp(- pow_vec(t_upper, shape) .* exp_eta);
     vector[N] res;
@@ -465,7 +524,9 @@ data {
   //   4 = M-splines
   //   5 = exponential
   //   6 = gompertz
-  int<lower=1,upper=7> type;
+  //   7 = exponential AFT
+  //   8 = weibull AFT
+  int<lower=1,upper=8> type;
 
   // GK quadrature weights, with (b-a)/2 scaling already incorporated
   vector[qevent] qwts_event;
@@ -662,6 +723,14 @@ model {
         if (nicens > 0) target +=  exponential_log_cdf2(eta_icens, t_icenl, t_icenu);
         if (ndelay > 0) target += -exponential_log_surv(eta_delay, t_delay);
       }
+      else if (type == 7) { // exponential AFT model
+        if (nevent > 0) target +=  exponentialAFT_log_haz (eta_event);
+        if (nevent > 0) target +=  exponentialAFT_log_surv(eta_event, t_event);
+        if (nlcens > 0) target +=  exponentialAFT_log_cdf (eta_lcens, t_lcens);
+        if (nrcens > 0) target +=  exponentialAFT_log_surv(eta_rcens, t_rcens);
+        if (nicens > 0) target +=  exponentialAFT_log_cdf2(eta_icens, t_icenl, t_icenu);
+        if (ndelay > 0) target += -exponentialAFT_log_surv(eta_delay, t_delay);
+      }
       else if (type == 1) { // weibull model
         real shape = coefs[1];
         if (nevent > 0) target +=  weibull_log_haz (eta_event, t_event, shape);
@@ -670,6 +739,15 @@ model {
         if (nrcens > 0) target +=  weibull_log_surv(eta_rcens, t_rcens, shape);
         if (nicens > 0) target +=  weibull_log_cdf2(eta_icens, t_icenl, t_icenu, shape);
         if (ndelay > 0) target += -weibull_log_surv(eta_delay, t_delay, shape);
+      }
+      else if (type == 8) { // weibull AFT model
+        real shape = coefs[1];
+        if (nevent > 0) target +=  weibullAFT_log_haz (eta_event, t_event, shape);
+        if (nevent > 0) target +=  weibullAFT_log_surv(eta_event, t_event, shape);
+        if (nlcens > 0) target +=  weibullAFT_log_cdf (eta_lcens, t_lcens, shape);
+        if (nrcens > 0) target +=  weibullAFT_log_surv(eta_rcens, t_rcens, shape);
+        if (nicens > 0) target +=  weibullAFT_log_cdf2(eta_icens, t_icenl, t_icenu, shape);
+        if (ndelay > 0) target += -weibullAFT_log_surv(eta_delay, t_delay, shape);
       }
       else if (type == 6) { // gompertz model
         real scale = coefs[1];
@@ -730,9 +808,16 @@ model {
       if (type == 5) { // exponential model
         lhaz = exponential_log_haz(eta);
       }
+      else if (type == 7) { // exponential AFT model
+        lhaz = exponentialAFT_log_haz(eta);
+      }
       else if (type == 1) { // weibull model
         real shape = coefs[1];
         lhaz = weibull_log_haz(eta, cpts, shape);
+      }
+      else if (type == 8) { // weibull AFT model
+        real shape = coefs[1];
+        lhaz = weibullAFT_log_haz(eta, cpts, shape);
       }
       else if (type == 6) { // gompertz model
         real scale = coefs[1];

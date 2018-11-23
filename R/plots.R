@@ -260,7 +260,9 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       plotdat <- median_and_bounds(exp(log_hr), prob, na.rm = TRUE)
       plotdat <- data.frame(times, plotdat)
 
-      ylab <- "Hazard ratio"
+      is_aft  <- get_basehaz_name(x$basehaz) %in% c("exp-aft", "weibull-aft")
+      
+      ylab <- ifelse(is_aft, "Acceleration factor", "Hazard ratio")
       xlab <- "Time"
 
     }

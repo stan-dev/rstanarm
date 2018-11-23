@@ -9,6 +9,16 @@
   }
 
   /**
+  * Log hazard for exponential distribution; AFT parameterisation
+  *
+  * @param eta Vector, linear predictor
+  * @return A vector
+  */
+  vector exponentialAFT_log_haz(vector eta) {
+    return -eta;
+  }
+
+  /**
   * Log hazard for Weibull distribution
   *
   * @param eta Vector, linear predictor
@@ -19,6 +29,20 @@
   vector weibull_log_haz(vector eta, vector t, real shape) {
     vector[rows(eta)] res;
     res = log(shape) + (shape - 1) * log(t) + eta;
+    return res;
+  }
+
+  /**
+  * Log hazard for Weibull distribution; AFT parameterisation
+  *
+  * @param eta Vector, linear predictor
+  * @param t Vector, event or censoring times
+  * @param shape Real, Weibull shape
+  * @return A vector
+  */
+  vector weibullAFT_log_haz(vector eta, vector t, real shape) {
+    vector[rows(eta)] res;
+    res = log(shape) + (shape - 1) * log(t) - (shape * eta);
     return res;
   }
 

@@ -44,16 +44,18 @@
 #'   are allowed, as well as delayed entry (i.e. left truncation). See 
 #'   \code{\link[survival]{Surv}} for how to specify these outcome types. 
 #'   If you wish to include time-dependent effects (i.e. time-dependent 
-#'   coefficients, also known as non-proportional hazards) in the model
+#'   coefficients, e.g. non-proportional hazards) in the model
 #'   then any covariate(s) that you wish to estimate a time-dependent 
-#'   coefficient for should be specified as \code{tde(varname)}  where 
+#'   coefficient for should be specified as \code{tde(varname)} where 
 #'   \code{varname} is the name of the covariate. See the \strong{Details} 
 #'   section for more information on how the time-dependent effects are 
 #'   formulated, as well as the \strong{Examples} section.
 #' @param data A data frame containing the variables specified in 
 #'   \code{formula}.
-#' @param basehaz A character string indicating which baseline hazard to use
-#'   for the event submodel. Current options are: 
+#' @param basehaz A character string indicating which baseline hazard or
+#'   baseline survival distribution to use for the event submodel. 
+#'   
+#'   The following are available under a proportional hazards formulation: 
 #'   \itemize{
 #'     \item \code{"ms"}: a flexible parametric model using cubic M-splines to 
 #'     model the baseline hazard. The default locations for the internal knots, 
@@ -73,10 +75,16 @@
 #'     the cumulative hazard at each MCMC iteration. Therefore, if your model
 #'     does not include any time-dependent effects, then estimation using the 
 #'     \code{"ms"} baseline hazard will be faster.
-#'     \item \code{"exp"}: an exponential distribution for the event times. 
-#'     (i.e. a constant baseline hazard)
+#'     \item \code{"exp"}: an exponential distribution for the event times
+#'     (i.e. a constant baseline hazard).
 #'     \item \code{"weibull"}: a Weibull distribution for the event times.
 #'     \item \code{"gompertz"}: a Gompertz distribution for the event times.
+#'    }
+#'   and the following are available under an accelerated failure time (AFT)
+#'   formulation: 
+#'   \itemize{
+#'     \item \code{"exp-aft"}: an exponential distribution for the event times.
+#'     \item \code{"weibull-aft"}: a Weibull distribution for the event times.
 #'   }
 #' @param basehaz_ops A named list specifying options related to the baseline
 #'   hazard. Currently this can include: \cr
@@ -106,12 +114,13 @@
 #' @param prior_intercept The prior distribution for the intercept. Note 
 #'   that there will only be an intercept parameter when \code{basehaz} is set
 #'   equal to one of the standard parametric distributions, i.e. \code{"exp"}, 
-#'   \code{"weibull"} or \code{"gompertz"}, in which case the intercept 
-#'   corresponds to the parameter \emph{log(lambda)} as defined in the 
-#'   \emph{stan_surv: Survival (Time-to-Event) Models} vignette. For the cubic 
-#'   spline-based baseline hazards there is no intercept parameter since it is 
-#'   absorbed into the spline basis and, therefore, the prior for the intercept 
-#'   is effectively specified as part of \code{prior_aux}.  
+#'   \code{"weibull"}, \code{"gompertz"}, \code{"exp-aft"}, or 
+#'   \code{"weibull-aft"}. See the \emph{stan_surv: Survival (Time-to-Event) 
+#'   Models} vignette for technical details on the model formulation. 
+#'   
+#'   For the spline-based baseline hazards there is no intercept parameter since 
+#'   it is absorbed into the spline basis and, therefore, the prior for the 
+#'   intercept is effectively specified as part of \code{prior_aux}.  
 #'   
 #'   Where relevant, \code{prior_intercept} can be a call to \code{normal}, 
 #'   \code{student_t} or \code{cauchy}. See the \link[=priors]{priors help page} 
@@ -132,10 +141,12 @@
 #'     \item \code{basehaz = "bs"}: the auxiliary parameters are the coefficients
 #'     for the B-spline basis terms on the log baseline hazard. These parameters
 #'     are unbounded.
-#'     \item \code{basehaz = "exp"}: there is \strong{no} auxiliary parameter, 
+#'     \item \code{basehaz = "exp"} or \code{basehaz = "exp-aft"}: 
+#'     there is \strong{no} auxiliary parameter, 
 #'     since the log scale parameter for the exponential distribution is 
 #'     incorporated as an intercept in the linear predictor.
-#'     \item \code{basehaz = "weibull"}: the auxiliary parameter is the Weibull 
+#'     \item \code{basehaz = "weibull"} or \code{basehaz = "weibull-aft"}: 
+#'     the auxiliary parameter is the Weibull 
 #'     shape parameter, while the log scale parameter for the Weibull 
 #'     distribution is incorporated as an intercept in the linear predictor.
 #'     The auxiliary parameter has a lower bound at zero. 
@@ -168,9 +179,22 @@
 #' @details
 #' \subsection{Time dependent effects (i.e. non-proportional hazards)}{
 #'   By default, any covariate effects specified in the \code{formula} are
-#'   included in the model under a proportional hazards assumption. To relax
-#'   this assumption, it is possible to estimate a time-dependent coefficient
-#'   for a given covariate. This can be specified in the model \code{formula}
+#'   included in the model under a proportional hazards assumption (or for the 
+#'   exponential and Weibull AFT models, under the assumption of time-fixed
+#'   acceleration factors). To relax this assumption, it is possible to 
+#'   estimate a time-dependent coefficient for a given covariate. 
+#'   
+#'   Estimating a time-dependent coefficient under a hazards model 
+#'   formulation (i.e. when \code{basehaz} is set equal to \code{"ms"}, 
+#'   \code{"bs"}, \code{"exp"}, \code{"weibull"} or \code{"gompertz"}) leads
+#'   to the estimation of a time-dependent hazard ratio for the relevant 
+#'   covariate (i.e. non-proportional hazards). Conversely, estimating a 
+#'   time-dependent coefficient under an accelerated failure time model 
+#'   formulation (i.e. when \code{basehaz} is set equal to \code{"exp-aft"}, 
+#'   or \code{"weibull-aft"}) leads to the estimation of a time-dependent 
+#'   acceleration factor for the relevant covariate.
+#'   
+#'   A time-dependent effect can be specified in the model \code{formula}
 #'   by wrapping the covariate name in the \code{tde()} function (note that
 #'   this function is not an exported function, rather it is an internal function
 #'   that can only be evaluated within the formula of a \code{stan_surv} call).
@@ -234,7 +258,7 @@
 #'                           plot(m1c), 
 #'                           plot(m1d), 
 #'                           ylim = c(0, 0.8))
-#' 
+#'     
 #' #---------- Left and right censored data
 #' 
 #' # Mice tumor data
@@ -259,12 +283,36 @@
 #'                 data = d3, chains = 1, refresh = 0, iter = 600)
 #' print(m3, 4)
 #' plot(m3, "tde") # time-dependent hazard ratio
+#' 
+#' #---------- Compare PH and AFT parameterisations
+#' 
+#' m_ph  <- stan_surv(Surv(recyrs, status) ~ group, 
+#'                    data    = bcancer[1:100,], 
+#'                    basehaz = "weibull", 
+#'                    chains  = 1,
+#'                    refresh = 0,
+#'                    iter    = 600,
+#'                    seed    = 123)
+#' m_aft <- stan_surv(Surv(recyrs, status) ~ group, 
+#'                    data    = bcancer[1:100,], 
+#'                    basehaz = "weibull-aft", 
+#'                    chains  = 1,
+#'                    refresh = 0,
+#'                    iter    = 600,
+#'                    seed    = 123)
+#'
+#' fixef(m_ph) [c('groupMedium', 'groupPoor')] # hazard ratios
+#' fixef(m_aft)[c('groupMedium', 'groupPoor')] # acceleration factors
+#' 
+#' # same model (...slight differences due to sampling)
+#' summary(m_ph,  par = "log-posterior")[, 'mean'] 
+#' summary(m_aft, par = "log-posterior")[, 'mean'] 
 #' }
 #' 
 stan_surv <- function(formula, 
                       data, 
-                      basehaz         = "ms", 
-                      basehaz_ops, 
+                      basehaz         = "ms",
+                      basehaz_ops,
                       qnodes          = 15, 
                       prior           = normal(), 
                       prior_intercept = normal(),
@@ -343,12 +391,16 @@ stan_surv <- function(formula,
   
   #----- baseline hazard
 
-  ok_basehaz <- c("exp", "weibull", "gompertz", "ms", "bs")
-  ok_basehaz_ops <- get_ok_basehaz_ops(basehaz)
+  ok_basehaz <- c("exp",
+                  "exp-aft",
+                  "weibull",
+                  "weibull-aft",
+                  "gompertz", 
+                  "ms", 
+                  "bs")
   basehaz <- handle_basehaz_surv(basehaz        = basehaz, 
-                                 basehaz_ops    = basehaz_ops, 
+                                 basehaz_ops    = basehaz_ops,
                                  ok_basehaz     = ok_basehaz,
-                                 ok_basehaz_ops = ok_basehaz_ops,
                                  times          = t_end, 
                                  status         = status,
                                  min_t          = min(t_beg),
@@ -499,7 +551,7 @@ stan_surv <- function(formula,
     len_cpts,
     idx_cpts,
     type = basehaz$type,
-    
+
     nevent       = if (has_quadrature) 0L else nevent,
     nlcens       = if (has_quadrature) 0L else nlcens,
     nrcens       = if (has_quadrature) 0L else nrcens,
@@ -765,9 +817,8 @@ stan_surv <- function(formula,
 #     predictions since it contains information about the knot locations
 #     for the baseline hazard (this is implemented via splines::predict.bs). 
 handle_basehaz_surv <- function(basehaz, 
-                                basehaz_ops, 
-                                ok_basehaz     = c("weibull", "bs", "piecewise"),
-                                ok_basehaz_ops = c("df", "knots"),
+                                basehaz_ops,
+                                ok_basehaz,
                                 times, 
                                 status,
                                 min_t, max_t) {
@@ -775,31 +826,11 @@ handle_basehaz_surv <- function(basehaz,
   if (!basehaz %in% ok_basehaz)
     stop2("'basehaz' should be one of: ", comma(ok_basehaz))
   
+  ok_basehaz_ops <- get_ok_basehaz_ops(basehaz)
   if (!all(names(basehaz_ops) %in% ok_basehaz_ops))
     stop2("'basehaz_ops' can only include: ", comma(ok_basehaz_ops))
-  
-  if (basehaz == "exp") {
-    
-    bknots <- NULL # boundary knot locations
-    iknots <- NULL # internal knot locations
-    basis  <- NULL # spline basis
-    nvars  <- 0L   # number of aux parameters, none
-    
-  } else if (basehaz == "gompertz") {
-    
-    bknots <- NULL # boundary knot locations
-    iknots <- NULL # internal knot locations
-    basis  <- NULL # spline basis
-    nvars  <- 1L   # number of aux parameters, Gompertz scale
-    
-  } else if (basehaz == "weibull") {
-    
-    bknots <- NULL # boundary knot locations
-    iknots <- NULL # internal knot locations
-    basis  <- NULL # spline basis
-    nvars  <- 1L   # number of aux parameters, Weibull shape
-    
-  } else if (basehaz == "bs") {
+
+  if (basehaz %in% c("ms", "bs", "piecewise")) {
     
     df    <- basehaz_ops$df
     knots <- basehaz_ops$knots
@@ -808,8 +839,7 @@ handle_basehaz_surv <- function(basehaz,
       stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
     
     if (is.null(df))
-      df <- 6L # default df for B-splines, assuming an intercept is included
-    # NB this is ignored if the user specified knots
+      df <- 6L # NB this is ignored if the user specified knots
     
     tt <- times[status == 1] # uncensored event times
     if (is.null(knots) && !length(tt)) {
@@ -823,41 +853,38 @@ handle_basehaz_surv <- function(basehaz,
         stop2("'knots' cannot be placed before the earliest entry time.")
       if (any(knots > max_t))
         stop2("'knots' cannot be placed beyond the latest event time.")
-    } 
-        
+    }
+  }
+  
+  if (basehaz %in% c("exp", "exp-aft")) {
+    
+    bknots <- NULL # boundary knot locations
+    iknots <- NULL # internal knot locations
+    basis  <- NULL # spline basis
+    nvars  <- 0L   # number of aux parameters, none
+    
+  } else if (basehaz %in% c("weibull", "weibull-aft")) {
+    
+    bknots <- NULL # boundary knot locations
+    iknots <- NULL # internal knot locations
+    basis  <- NULL # spline basis
+    nvars  <- 1L   # number of aux parameters, Weibull shape
+    
+  } else if (basehaz == "gompertz") {
+    
+    bknots <- NULL # boundary knot locations
+    iknots <- NULL # internal knot locations
+    basis  <- NULL # spline basis
+    nvars  <- 1L   # number of aux parameters, Gompertz scale
+    
+  } else if (basehaz == "bs") {
+ 
     bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- get_basis(tt, iknots = iknots, bknots = bknots, type = "bs")      
     nvars  <- ncol(basis)  # number of aux parameters, basis terms
     
   } else if (basehaz == "ms") {
-    
-    df    <- basehaz_ops$df
-    knots <- basehaz_ops$knots
-    
-    if (!is.null(df) && !is.null(knots)) {
-      stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
-    }
-    
-    tt <- times[status == 1] # uncensored event times
-    if (is.null(df)) {
-      df <- 6L # default df for M-splines, assuming an intercept is included
-      # NB this is ignored if the user specified knots
-    }
-
-    tt <- times[status == 1] # uncensored event times
-    if (is.null(knots) && !length(tt)) {
-      warning2("No observed events found in the data. Censoring times will ",
-               "be used to evaluate default knot locations for splines.")
-      tt <- times
-    }    
-    
-    if (!is.null(knots)) {
-      if (any(knots < min_t))
-        stop2("'knots' cannot be placed before the earliest entry time.")
-      if (any(knots > max_t))
-        stop2("'knots' cannot be placed beyond the latest event time.")
-    }
     
     bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
@@ -866,40 +893,15 @@ handle_basehaz_surv <- function(basehaz,
     
   } else if (basehaz == "piecewise") {
     
-    df    <- basehaz_ops$df
-    knots <- basehaz_ops$knots
-    
-    if (!is.null(df) && !is.null(knots)) {
-      stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
-    }
-    
-    if (is.null(df)) {
-      df <- 6L # default number of segments for piecewise constant
-      # NB this is ignored if the user specified knots
-    }
-
-    if (is.null(knots) && !length(tt)) {
-      warning2("No observed events found in the data. Censoring times will ",
-               "be used to evaluate default knot locations for piecewise basehaz.")
-      tt <- times
-    }    
-    
-    if (!is.null(knots)) {
-      if (any(knots < min_t))
-        stop2("'knots' cannot be placed before the earliest entry time.")
-      if (any(knots > max_t))
-        stop2("'knots' cannot be placed beyond the latest event time.")
-    }
-    
     bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- NULL               # spline basis
     nvars  <- length(iknots) + 1 # number of aux parameters, dummy indicators
     
-  }  
+  }
   
   nlist(type_name = basehaz, 
-        type = basehaz_for_stan(basehaz), 
+        type = basehaz_for_stan(basehaz),
         nvars, 
         iknots, 
         bknots, 
@@ -917,25 +919,26 @@ handle_basehaz_surv <- function(basehaz,
 # @return A character vector, or NA if unmatched.
 get_ok_basehaz_ops <- function(basehaz_name) {
   switch(basehaz_name,
-         weibull   = c(),
-         bs        = c("df", "knots"),
-         piecewise = c("df", "knots"),
-         ms        = c("df", "knots"),
+         "bs"        = c("df", "knots"),
+         "piecewise" = c("df", "knots"),
+         "ms"        = c("df", "knots"),
          NA)
 }
 
-# Return the integer respresentation for the baseline hazard, used by Stan
+# Return the integer representation for the baseline hazard, used by Stan
 #
 # @param basehaz_name A character string, the type of baseline hazard.
 # @return An integer, or NA if unmatched.
 basehaz_for_stan <- function(basehaz_name) {
   switch(basehaz_name, 
-         weibull   = 1L, 
-         bs        = 2L,
-         piecewise = 3L,
-         ms        = 4L,
-         exp       = 5L,
-         gompertz  = 6L,
+         "weibull"     = 1L,
+         "bs"          = 2L,
+         "piecewise"   = 3L,
+         "ms"          = 4L,
+         "exp"         = 5L,
+         "gompertz"    = 6L,
+         "exp-aft"     = 7L,
+         "weibull-aft" = 8L,
          NA)
 }
 
@@ -979,7 +982,7 @@ get_iknots <- function(x, df = 6L, degree = 3L, iknots = NULL, intercept = TRUE)
 # @return A Logical.
 has_intercept <- function(basehaz) {
   nm <- get_basehaz_name(basehaz)
-  (nm %in% c("exp", "weibull", "gompertz"))
+  (nm %in% c("exp", "exp-aft", "weibull", "weibull-aft", "gompertz"))
 }
 
 # Return the name of the tde spline coefs or smoothing parameters.
@@ -998,10 +1001,10 @@ get_smooth_name <- function(x, type = "smooth_coefs") {
   suffix  <- paste0(":tde-spline-coef", indices)
   
   switch(type,
-         smooth_coefs = paste0(nms, suffix),
-         smooth_sd    = paste0("smooth_sd[", unique(nms), "]"),
-         smooth_map   = rep(seq_along(tally), tally),
-         smooth_vars  = unique(nms),
+         "smooth_coefs" = paste0(nms, suffix),
+         "smooth_sd"    = paste0("smooth_sd[", unique(nms), "]"),
+         "smooth_map"   = rep(seq_along(tally), tally),
+         "smooth_vars"  = unique(nms),
          stop2("Bug found: invalid input to 'type' argument."))
 }
 
@@ -1011,7 +1014,7 @@ get_smooth_name <- function(x, type = "smooth_coefs") {
 # @return A scalar.
 get_default_aux_scale <- function(basehaz) {
   nm <- get_basehaz_name(basehaz)
-  if (nm %in% c("weibull", "gompertz")) 2 else 20
+  if (nm %in% c("weibull", "weibull-aft", "gompertz")) 2 else 20
 }
 
 # Check if the type of baseline hazard has a closed form
@@ -1021,7 +1024,9 @@ get_default_aux_scale <- function(basehaz) {
 check_for_closed_form <- function(basehaz) {
   nm <- get_basehaz_name(basehaz)
   nm %in% c("exp",
+            "exp-aft",
             "weibull",
+            "weibull-aft",
             "gompertz",
             "ms")
 }
@@ -1051,12 +1056,14 @@ make_basis <- function(times, basehaz, integrate = FALSE) {
     return(matrix(0, 0, K))
   } 
   switch(basehaz$type_name,
-         "exp"       = matrix(0, N, K), # dud matrix for Stan
-         "weibull"   = matrix(0, N, K), # dud matrix for Stan
-         "gompertz"  = matrix(0, N, K), # dud matrix for Stan
-         "ms"        = basis_matrix(times, basis = basehaz$basis, integrate = integrate),
-         "bs"        = basis_matrix(times, basis = basehaz$basis),
-         "piecewise" = dummy_matrix(times, knots = basehaz$knots),
+         "exp"         = matrix(0, N, K), # dud matrix for Stan
+         "exp-aft"     = matrix(0, N, K), # dud matrix for Stan
+         "weibull"     = matrix(0, N, K), # dud matrix for Stan
+         "weibull-aft" = matrix(0, N, K), # dud matrix for Stan
+         "gompertz"    = matrix(0, N, K), # dud matrix for Stan
+         "ms"          = basis_matrix(times, basis = basehaz$basis, integrate = integrate),
+         "bs"          = basis_matrix(times, basis = basehaz$basis),
+         "piecewise"   = dummy_matrix(times, knots = basehaz$knots),
          stop2("Bug found: type of baseline hazard unknown."))
 }
 
