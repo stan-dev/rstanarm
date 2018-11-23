@@ -124,9 +124,9 @@ h_i(t) = h_0(t) \exp \left[ \eta_i(t) \right]
 \end{split}
 \end{equation}
 \
-where $h_0(t)$ is the baseline hazard (i.e. the hazard for an individual with all covariates set equal to zero) at time $t$, and $\eta_i(t)$ denotes the (possibly time-dependent) linear predictor evaluated for individual $i$ at time $t$. All models defined below include an intercept parameter in the linear predictor 
+where $h_0(t)$ is the baseline hazard (i.e. the hazard for an individual with all covariates set equal to zero) at time $t$, and $\eta_i(t)$ denotes the (possibly time-dependent) linear predictor evaluated for individual $i$ at time $t$.
 
-We further define the baseline hazard and linear predictor in the next sections.
+We further define the baseline hazard and linear predictor in the following sections.
 
 ### Linear predictor
 
@@ -158,6 +158,18 @@ In the `stan_surv` modelling function the user specifies that they wish to estim
 
 The `stan_surv` modelling function, via its `basehaz` argument, allows the baseline hazard $h_0(t)$ to be specified using any of the following parametric formulations. Since the intercept parameter from the linear predictor (i.e. $\beta_0$) effectively forms part of the baseline hazard, we include it in the definitions of the baseline hazards below.
 
+- **M-splines**, the default: letting $M(t; \boldsymbol{\gamma}, \boldsymbol{k_0})$ denote a cubic M-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma} > 0$, and parameter $\lambda > 0$ denote a constant, we have
+
+\begin{equation}
+h_0(t) = M(t; \boldsymbol{\gamma}, \boldsymbol{k_0})
+\end{equation}
+
+\begin{equation}
+\beta_0 = \log \lambda
+\end{equation}
+
+    For identifiability of the intercept $\beta_0$ in the linear predictor $\eta_i$ we constrain the M-spline coefficients to a simplex, that is, $\sum_{j=1}^J{\gamma_j} = 1$.
+
 - **Exponential distribution**: for scale parameter $\lambda > 0$ we have
 
 \begin{equation}
@@ -188,18 +200,14 @@ h_0(t) = \exp(\gamma t)
 \beta_0 = \log \lambda
 \end{equation}
 
-- **M-splines**, the default: letting $M(t; \boldsymbol{\gamma}, \boldsymbol{k_0})$ denote a cubic M-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma} > 0$ we have
-
-\begin{equation}
-h_0(t) = M(t; \boldsymbol{\gamma}, \boldsymbol{k_0})
-\end{equation}
-
-For identifiability of the intercept $\beta_0$ in the linear predictor $\eta_i$ we constrain the M-spline coefficients to a simplex, that is, $\sum_{j=1}^J{\gamma_j} = 1$.
-
-- **B-splines** (for the *log* baseline hazard): letting $B(t; \boldsymbol{\gamma}, \boldsymbol{k_0})$ denote a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma}$ we have 
+- **B-splines** (for the *log* baseline hazard): letting $B(t; \boldsymbol{\gamma}, \boldsymbol{k_0})$ denote a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma}$, and parameter $\lambda > 0$ denote a constant, we have 
 
 \begin{equation}
 \log h_0(t) = B(t; \boldsymbol{\gamma}, \boldsymbol{k_0})
+\end{equation}
+
+\begin{equation}
+\beta_0 = \log \lambda
 \end{equation}
 
 ## Likelihood
@@ -228,7 +236,7 @@ The prior distribution for the baseline hazard parameters (i.e. $\gamma$ for Wei
 
 These choices are described in greater detail in the `stan_surv` or `priors` help file.
 
-The prior distribution for the intercept parameter in the linear predictor, i.e. $\beta_0$, is specified via the `prior_intercept` argument to `stan_surv`. Choices include the normal, t, or Cauchy distributions. The default is a normal distribution with mean zero and scale 20. Note that -- internally (but not in the reported parameter estimates) -- the prior is placed on the intercept *after* centering the predictors at their sample means and *after* applying a constant shift of $\log \left( \frac{E}{T} \right)$ where $E$ is the total number of events and $T$ is the total follow up time. For example, a prior specified by the user as `prior_intercept = normal(0,20)` is in fact not centered on an intercept of zero when all predictors are at their sample means, but rather, it is centered on the log crude event rate when all predictors are at their means. This helps with numerical stability and sampling, but does not impact on the reported estimates (i.e. the intercept is back-transformed before being returned to the user).
+The prior distribution for the intercept parameter in the linear predictor, i.e. $\beta_0 = \log \lambda$, is specified via the `prior_intercept` argument to `stan_surv`. Choices include the normal, t, or Cauchy distributions. The default is a normal distribution with mean zero and scale 20. Note that -- internally (but not in the reported parameter estimates) -- the prior is placed on the intercept *after* centering the predictors at their sample means and *after* applying a constant shift of $\log \left( \frac{E}{T} \right)$ where $E$ is the total number of events and $T$ is the total follow up time. For example, a prior specified by the user as `prior_intercept = normal(0,20)` is in fact not centered on an intercept of zero when all predictors are at their sample means, but rather, it is centered on the log crude event rate when all predictors are at their means. This is intended to help with numerical stability and sampling, but does not impact on the reported estimates (i.e. the intercept is back-transformed before being returned to the user).
 
 The choice of prior distribution for the time-fixed hazard ratios $\theta_{p,0}$ ($p = 1,...,P$) is specified via the `prior` argument to `stan_surv`. This can any of the standard prior distributions allowed for regression coefficients in the **rstanarm** package; see the [priors vignette](priors.html) and the `stan_surv` help file for details. 
 
@@ -257,7 +265,7 @@ We can easily obtain the estimated hazard ratios for the 3-catgeory group covari
 print(mod1, digits = 3)
 ```
 
-We see from this output we see that individuals in the groups with `Poor` or `Medium` prognosis have much higher rates of death relative to the group with `Good` prognosis (as we might expect!). The hazard of death in the `Poor` prognosis group is approximately 4.6-fold higher than the hazard of death in the `Good` prognosis group. Similarly, the hazard of death in the `Medium` prognosis group is approximately 2.1-fold higher than the hazard of death in the `Good` prognosis group.
+We see from this output we see that individuals in the groups with `Poor` or `Medium` prognosis have much higher rates of death relative to the group with `Good` prognosis (as we might expect!). The hazard of death in the `Poor` prognosis group is approximately 5.0-fold higher than the hazard of death in the `Good` prognosis group. Similarly, the hazard of death in the `Medium` prognosis group is approximately 2.3-fold higher than the hazard of death in the `Good` prognosis group.
 
 It may also be of interest to compare the different types of the baseline hazard we could potentially use. Here, we will fit a series of models, each with a different baseline hazard specification 
 
@@ -310,7 +318,7 @@ compare_models(loo(mod1_exp),
                loo(mod1_mspline2))
 ```
 
-where we see that models with a flexible parametric (spline-based) baseline hazard fit the data best followed by the standard parametric (Weibull, Gompertz, exponential) models. Specifically, B-splines used to approximate the log baseline hazard appear to perform best, followed by the M-spline model with a greater number of degrees of freedom for the M-splines leading to a marginally better fit. However, overall, the differences in `elpd` or `looic` between models are small relative to their standard errors.
+where we see that models with a flexible parametric (spline-based) baseline hazard fit the data best followed by the standard parametric (Weibull, Gompertz, exponential) models. Roughly speaking, the B-spline and M-spline models seem to fit the data equally well since the differences in `elpd` or `looic` between the models are very small relative to their standard errors. Moreover, increasing the degrees of freedom for the M-splines from 5 to 10 doesn't seem to improve the fit (that is, the default degrees of freedom `df = 5` seems to provide sufficient flexibility to model the baseline hazard). used to approximate the log baseline hazard appear to perform best, followed by the M-spline model with a greater number of degrees of freedom for the M-splines leading to a marginally better fit. However, overall, 
 
 After fitting the survival model, we often want to estimate the predicted survival function for individual's with different covariate patterns. Here, let us estimate the predicted survival function between 0 and 5 years for an individual in each of the prognostic groups. To do this, we can use the `posterior_survfit` method for `stansurv` objects, and it's associated `plot` method. First let us construct the prediction (covariate) data
 
@@ -414,7 +422,7 @@ plot(mod2, plotfun = "tde")
 
 From the plot, we can see how the hazard ratio (i.e. the effect of treatment on the hazard of the event) changes as a function of time. The treatment appears to be protective during the first few years following baseline (i.e. HR < 1), and then the treatment appears to become harmful after about 4 years post-baseline (of course, this is the model we simulated under!). 
 
-The plot shows a large amount of uncertainty around the estimated time-dependent hazard ratio. This is to be expected, since we only simulated a dataset of 100 individuals of which only around 70% experienced the event before being censored at 5 years. So, there is very little data (i.e. very few events) with which to reliably estimate the time-dependent hazard ratio. We can also see this reflected in the differences between our data generating model and the estimates from our fitted model. In our data generating model, the time-dependent hazard ratio equals 1 (i.e. the log hazard ratio equals 0) at 2.5 years, but in our fitted model the median estimate for our time-dependent hazard ratio equals 1 at around ~4 years. This is a reflection of the large amount of sampling error, due to our simulated dataset being so small.
+The plot shows a large amount of uncertainty around the estimated time-dependent hazard ratio. This is to be expected, since we only simulated a dataset of 100 individuals of which only around 70% experienced the event before being censored at 5 years. So, there is very little data (i.e. very few events) with which to reliably estimate the time-dependent hazard ratio. We can also see this reflected in the differences between our data generating model and the estimates from our fitted model. In our data generating model, the time-dependent hazard ratio equals 1 (i.e. the log hazard ratio equals 0) at 2.5 years, but in our fitted model the median estimate for our time-dependent hazard ratio equals 1 at around ~3 years. This is a reflection of the large amount of sampling error, due to our simulated dataset being so small.
 
 
 # References
