@@ -20,13 +20,19 @@
 #'
 #' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Bayesian inference for survival models (sometimes known as models for 
-#' time-to-event data). Currently, the command fits standard parametric 
-#' (exponential, Weibull and Gompertz) and flexible parametric (cubic 
-#' spline-based) survival models on the hazard scale, with covariates included 
-#' under assumptions of either proportional or non-proportional hazards. 
-#' Where relevant, non-proportional hazards are modelled using a flexible 
-#' cubic spline-based function for the time-dependent effect (i.e. the
-#' time-dependent hazard ratio).
+#' time-to-event data). Currently, the command fits:
+#' (i) flexible parametric (cubic spline-based) survival 
+#' models on the hazard scale, with covariates included under assumptions of 
+#' either proportional or non-proportional hazards;
+#' (ii) standard parametric (exponential, Weibull and Gompertz) survival 
+#' models on the hazard scale, with covariates included under assumptions of 
+#' either proportional or non-proportional hazards; and
+#' (iii) standard parametric (exponential, Weibull) accelerated failure time
+#' models, with covariates included under assumptions of either time-fixed or 
+#' time-dependent acceleration factors.
+#' Where relevant, time-dependent effects (i.e. time-dependent hazard ratios
+#' or time-dependent acceleration factors) are modelled using a flexible 
+#' cubic spline-based function for the time-dependent coefficient.
 #'
 #' @export
 #' @importFrom splines bs
@@ -55,7 +61,7 @@
 #' @param basehaz A character string indicating which baseline hazard or
 #'   baseline survival distribution to use for the event submodel. 
 #'   
-#'   The following are available under a proportional hazards formulation: 
+#'   The following are available under a hazard scale formulation: 
 #'   \itemize{
 #'     \item \code{"ms"}: a flexible parametric model using cubic M-splines to 
 #'     model the baseline hazard. The default locations for the internal knots, 
@@ -80,7 +86,8 @@
 #'     \item \code{"weibull"}: a Weibull distribution for the event times.
 #'     \item \code{"gompertz"}: a Gompertz distribution for the event times.
 #'    }
-#'   and the following are available under an accelerated failure time (AFT)
+#'   
+#'   The following are available under an accelerated failure time (AFT)
 #'   formulation: 
 #'   \itemize{
 #'     \item \code{"exp-aft"}: an exponential distribution for the event times.
@@ -177,22 +184,26 @@
 #'   to the appropriate length.
 #'  
 #' @details
-#' \subsection{Time dependent effects (i.e. non-proportional hazards)}{
+#' \subsection{Time dependent effects}{
 #'   By default, any covariate effects specified in the \code{formula} are
-#'   included in the model under a proportional hazards assumption (or for the 
-#'   exponential and Weibull AFT models, under the assumption of time-fixed
-#'   acceleration factors). To relax this assumption, it is possible to 
-#'   estimate a time-dependent coefficient for a given covariate. 
+#'   included in the model under a proportional hazards assumption (for models
+#'   estimated using a hazard scale formulation) or under the assumption of
+#'   time-fixed acceleration factors (for models estimated using an accelerated
+#'   failure time formulation). To relax this assumption, it is possible to 
+#'   estimate a time-dependent coefficient for a given covariate. Note the 
+#'   following:
 #'   
-#'   Estimating a time-dependent coefficient under a hazards model 
+#'   \itemize{
+#'   \item Estimating a time-dependent coefficient under a hazard scale model 
 #'   formulation (i.e. when \code{basehaz} is set equal to \code{"ms"}, 
 #'   \code{"bs"}, \code{"exp"}, \code{"weibull"} or \code{"gompertz"}) leads
 #'   to the estimation of a time-dependent hazard ratio for the relevant 
-#'   covariate (i.e. non-proportional hazards). Conversely, estimating a 
-#'   time-dependent coefficient under an accelerated failure time model 
-#'   formulation (i.e. when \code{basehaz} is set equal to \code{"exp-aft"}, 
-#'   or \code{"weibull-aft"}) leads to the estimation of a time-dependent 
-#'   acceleration factor for the relevant covariate.
+#'   covariate (i.e. non-proportional hazards). 
+#'   \item Estimating a time-dependent coefficient under an accelerated failure 
+#'   time model formulation (i.e. when \code{basehaz} is set equal to 
+#'   \code{"exp-aft"}, or \code{"weibull-aft"}) leads to the estimation of a 
+#'   time-dependent acceleration factor for the relevant covariate.
+#'   }
 #'   
 #'   A time-dependent effect can be specified in the model \code{formula}
 #'   by wrapping the covariate name in the \code{tde()} function (note that
