@@ -9,6 +9,7 @@ Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "au
              person(given = "Jacqueline Buros", family = "Novik", 
                     role = "ctb", comment = "R/stan_jm.R"),
              person("AstraZeneca", role = "ctb", comment = "R/stan_jm.R"),
+             person("Eren", "Elci", role = "ctb", comment = "R/stan_surv.R"),
              person("Trustees of", "Columbia University", role = "cph"),
              person("Simon", "Wood", role = "cph", comment = "R/stan_gamm4.R"),
              person("R Core", "Deveopment Team", role = "cph", 
