@@ -32,7 +32,8 @@
 #' time-dependent acceleration factors.
 #' Where relevant, time-dependent effects (i.e. time-dependent hazard ratios
 #' or time-dependent acceleration factors) are modelled using a flexible 
-#' cubic spline-based function for the time-dependent coefficient.
+#' cubic spline-based function for the time-dependent coefficient in the
+#' linear predictor.
 #'
 #' @export
 #' @importFrom splines bs
