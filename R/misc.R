@@ -1899,12 +1899,14 @@ get_int_name_emod <- function(x, is_jm = FALSE, ...) {
 # Return the names for the auxiliary parameters
 get_aux_name_basehaz <- function(x, ...) {
   switch(get_basehaz_name(x),
-         exp       = NULL,
-         weibull   = "weibull-shape",
-         gompertz  = "gompertz-scale",
-         ms        = paste0("m-splines-coef", seq(x$nvars)),
-         bs        = paste0("b-splines-coef", seq(x$nvars)),
-         piecewise = paste0("piecewise-coef", seq(x$nvars)),
+         "exp"         = NULL,
+         "exp-aft"     = NULL,
+         "weibull"     = "weibull-shape",
+         "weibull-aft" = "weibull-shape",
+         "gompertz"    = "gompertz-scale",
+         "ms"          = paste0("m-splines-coef", seq(x$nvars)),
+         "bs"          = paste0("b-splines-coef", seq(x$nvars)),
+         "piecewise"   = paste0("piecewise-coef", seq(x$nvars)),
          NA)
 }
 get_aux_name_ymod <- function(x, ...) {

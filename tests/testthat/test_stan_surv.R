@@ -115,7 +115,9 @@ test_that("basehaz argument works", {
   es(up(testmod, basehaz = "gompertz"))
   es(up(testmod, basehaz = "ms"))
   es(up(testmod, basehaz = "bs"))
-
+  es(up(testmod, basehaz = "exp-aft"))
+  es(up(testmod, basehaz = "weibull-aft"))
+  
   dfl <- list(df = 5)
   knl <- list(knots = c(1,3,5))
   es(up(testmod, basehaz = "ms", basehaz_ops = dfl))
@@ -182,7 +184,7 @@ test_that("prior arguments work", {
                    info = basehaz)
   }
   
-  #---- weibull data
+  #---- exponential data
   
   set.seed(543634)
   covs <- data.frame(id = 1:300,
@@ -230,6 +232,63 @@ test_that("prior arguments work", {
   compare_surv(data = dat, basehaz = "gompertz")
 
 
+#----  Compare parameter estimates: stan_surv vs survreg
+  
+  compare_surv <- function(data, basehaz = "weibull-aft", ...) {
+    require(survival)
+    fm    <- Surv(eventtime, status) ~ X1 + X2
+    dist  <- ifelse(basehaz == "weibull-aft", "weibull", "exponential")
+    surv1 <- survreg(fm, data, dist = dist)
+    stan1 <- stan_surv(formula = fm,
+                       data    = data,
+                       basehaz = basehaz,
+                       iter    = ITER,
+                       refresh = REFRESH,
+                       chains  = CHAINS,
+                       seed    = SEED, ...)
+    tols <- get_tols(surv1, tolscales = TOLSCALES)
+    pars_surv <- recover_pars(surv1)
+    pars_stan <- recover_pars(stan1)
+    for (i in names(tols$fixef))
+      expect_equal(pars_surv$fixef[[i]],
+                   pars_stan$fixef[[i]],
+                   tol = tols$fixef[[i]],
+                   info = basehaz)
+  }
+  
+  #---- exponential data
+  
+  set.seed(543634)
+  covs <- data.frame(id = 1:300,
+                     X1 = rbinom(300, 1, 0.3),
+                     X2 = rnorm (300, 2, 2.0))
+  dat <- simsurv(dist    = "weibull",
+                 lambdas = 0.1,
+                 gammas  = 1,
+                 betas   = c(X1 = 0.3, X2 = -0.5),
+                 x       = covs)
+  dat <- merge(dat, covs)
+  
+  compare_surv(data = dat, basehaz = "exp-aft")
+  
+  #---- weibull data
+  
+  set.seed(543634)
+  covs <- data.frame(id = 1:300,
+                     X1 = rbinom(300, 1, 0.3),
+                     X2 = rnorm (300, 2, 2.0))
+  dat <- simsurv(dist    = "weibull",
+                 lambdas = 0.1,
+                 gammas  = 1.3,
+                 betas   = c(X1 = 0.3, X2 = -0.5),
+                 x       = covs)
+  dat <- merge(dat, covs)
+  
+  compare_surv(data = dat, basehaz = "weibull-aft")
+
+  
+# COMMENTED OUT TO AVOID ADDING PACKAGES TO SUGGESTS
+#  
 # #----  Compare parameter estimates: stan_surv vs icenReg (interval censored)
 #   
 #   #---- simulated interval censored weibull data
@@ -349,28 +408,36 @@ test_that("prior arguments work", {
   o<-SW(f3  <- update(f1, basehaz = "exp"))
   o<-SW(f4  <- update(f1, basehaz = "weibull"))
   o<-SW(f5  <- update(f1, basehaz = "gompertz"))
+  o<-SW(f6  <- update(f1, basehaz = "exp-aft"))
+  o<-SW(f7  <- update(f1, basehaz = "weibull-aft"))
   
   # time-dependent effects
-  o<-SW(f6  <- update(f1, Surv(futimeYears, death) ~ sex + tde(trt)))
-  o<-SW(f7  <- update(f2, Surv(futimeYears, death) ~ sex + tde(trt)))
-  o<-SW(f8  <- update(f3, Surv(futimeYears, death) ~ sex + tde(trt)))
-  o<-SW(f9  <- update(f4, Surv(futimeYears, death) ~ sex + tde(trt)))
-  o<-SW(f10 <- update(f5, Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f8  <- update(f1, Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f9  <- update(f2, Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f10 <- update(f3, Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f11 <- update(f4, Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f12 <- update(f5, Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f13 <- update(f6, Surv(futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f14 <- update(f7, Surv(futimeYears, death) ~ sex + tde(trt)))
   
   # start-stop notation (incl. delayed entry)
-  o<-SW(f11 <- update(f1, Surv(t0, futimeYears, death) ~ sex + trt))
-  o<-SW(f12 <- update(f1, Surv(t0, futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f15 <- update(f1, Surv(t0, futimeYears, death) ~ sex + trt))
+  o<-SW(f16 <- update(f1, Surv(t0, futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f17 <- update(f6, Surv(t0, futimeYears, death) ~ sex + tde(trt)))
+  o<-SW(f18 <- update(f6, Surv(t0, futimeYears, death) ~ sex + tde(trt)))
   
   # left and interval censoring
-  o<-SW(f13 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + trt))
-  o<-SW(f14 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + tde(trt)))
+  o<-SW(f19 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + trt))
+  o<-SW(f20 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + tde(trt)))
+  o<-SW(f21 <- update(f6, Surv(t1, futimeYears, type = "interval2") ~ sex + tde(trt)))
+  o<-SW(f22 <- update(f6, Surv(t1, futimeYears, type = "interval2") ~ sex + tde(trt)))
   
   # new data for predictions
   nd1 <- pbcSurv[pbcSurv$id == 2,]
   nd2 <- pbcSurv[pbcSurv$id %in% c(1,2),]
 
   # test the models
-  for (j in c(1:14)) {
+  for (j in c(1:22)) {
 
     mod <- try(get(paste0("f", j)), silent = TRUE)
 

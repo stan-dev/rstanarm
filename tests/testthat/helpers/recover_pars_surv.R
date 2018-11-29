@@ -10,6 +10,7 @@ recover_pars <- function(mod) {
   
   fixef_pars <- switch(cl,
                        coxph    = mod$coefficients,
+                       survreg  = mod$coefficients,
                        stansurv = fixef(mod),
                        NULL)
   

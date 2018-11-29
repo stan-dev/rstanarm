@@ -309,6 +309,33 @@ functions {
   }
 
   /**
+  * Log survival and log CDF for exponential distribution; AFT parameterisation
+  *
+  * @param caf Vector, cumulative acceleration factor
+  * @return A vector
+  */
+  vector exponentialAFT_log_surv(vector caf) {
+    vector[rows(caf)] res;
+    res = - caf;
+    return res;
+  }
+
+  vector exponentialAFT_log_cdf(vector caf) {
+    vector[rows(caf)] res;
+    res = log(1 - exp(-caf));
+    return res;
+  }
+
+  vector exponentialAFT_log_cdf2(vector caf_lower, vector caf_upper) {
+    int N = rows(caf_lower);
+    vector[N] surv_lower = exp(-caf_lower);
+    vector[N] surv_upper = exp(-caf_upper);
+    vector[N] res;
+    res = log(surv_lower - surv_upper);
+    return res;
+  }
+
+  /**
   * Log survival and log CDF for Weibull distribution
   *
   * @param eta Vector, linear predictor
@@ -333,6 +360,34 @@ functions {
     vector[N] exp_eta = exp(eta);
     vector[N] surv_lower = exp(- pow_vec(t_lower, shape) .* exp_eta);
     vector[N] surv_upper = exp(- pow_vec(t_upper, shape) .* exp_eta);
+    vector[N] res;
+    res = log(surv_lower - surv_upper);
+    return res;
+  }
+
+  /**
+  * Log survival and log CDF for Weibull distribution; AFT parameterisation
+  *
+  * @param caf Vector, cumulative acceleration factor
+  * @param shape Real, Weibull shape
+  * @return A vector
+  */
+  vector weibullAFT_log_surv(vector caf, real shape) {
+    vector[rows(caf)] res;
+    res = - pow_vec(caf, shape);
+    return res;
+  }
+
+  vector weibullAFT_log_cdf(vector caf, real shape) {
+    vector[rows(caf)] res;
+    res = log(1 - exp(- pow_vec(caf, shape)));
+    return res;
+  }
+
+  vector weibullAFT_log_cdf2(vector caf_lower, vector caf_upper, real shape) {
+    int N = rows(caf_lower);
+    vector[N] surv_lower = exp(- pow_vec(caf_lower, shape));
+    vector[N] surv_upper = exp(- pow_vec(caf_upper, shape));
     vector[N] res;
     res = log(surv_lower - surv_upper);
     return res;
@@ -411,10 +466,12 @@ data {
   int<lower=0> nrcens;     // num. rows w/ right censoring
   int<lower=0> nicens;     // num. rows w/ interval censoring
   int<lower=0> ndelay;     // num. rows w/ delayed entry
-  int<lower=0> qnodes;     // num. nodes for GK quadrature
   int<lower=0> Nevent;     // num. rows w/ an event;      used only w/ quadrature
   int<lower=0> Nlcens;     // num. rows w/ left cens;     used only w/ quadrature
+  int<lower=0> Nrcens;     // num. rows w/ right cens;    used only w/ quadrature
   int<lower=0> Nicens;     // num. rows w/ interval cens; used only w/ quadrature
+  int<lower=0> Ndelay;     // num. rows w/ delayed entry; used only w/ quadrature
+  int<lower=0> qnodes;     // num. nodes for GK quadrature
   int<lower=0> qevent;     // num. quadrature points for rows w/ an event
   int<lower=0> qlcens;     // num. quadrature points for rows w/ left censoring
   int<lower=0> qrcens;     // num. quadrature points for rows w/ right censoring
@@ -465,7 +522,9 @@ data {
   //   4 = M-splines
   //   5 = exponential
   //   6 = gompertz
-  int<lower=1,upper=7> type;
+  //   7 = exponential AFT
+  //   8 = weibull AFT
+  int<lower=1,upper=8> type;
 
   // GK quadrature weights, with (b-a)/2 scaling already incorporated
   vector[qevent] qwts_event;
@@ -653,43 +712,82 @@ model {
         if (ndelay > 0) eta_delay += gamma[1];
       }
 
-      // evaluate log hazard and log survival
-      if (type == 5) { // exponential model
-        if (nevent > 0) target +=  exponential_log_haz (eta_event);
-        if (nevent > 0) target +=  exponential_log_surv(eta_event, t_event);
-        if (nlcens > 0) target +=  exponential_log_cdf (eta_lcens, t_lcens);
-        if (nrcens > 0) target +=  exponential_log_surv(eta_rcens, t_rcens);
-        if (nicens > 0) target +=  exponential_log_cdf2(eta_icens, t_icenl, t_icenu);
-        if (ndelay > 0) target += -exponential_log_surv(eta_delay, t_delay);
+      // aft models
+      if (type == 7 || type == 8) {
+
+        // acceleration factor at event times
+        vector[nevent] af_event = exp(-eta_event);
+
+        // cumulative acceleration factors
+        vector[nevent] caf_event = t_event .* exp(-eta_event);
+        vector[nlcens] caf_lcens = t_lcens .* exp(-eta_lcens);
+        vector[nrcens] caf_rcens = t_rcens .* exp(-eta_rcens);
+        vector[nicens] caf_icenl = t_icenl .* exp(-eta_icens);
+        vector[nicens] caf_icenu = t_icenu .* exp(-eta_icens);
+        vector[ndelay] caf_delay = t_delay .* exp(-eta_delay);
+
+        // increment target with log-lik contributions
+        if (type == 7) { // exponential AFT model
+          if (nevent > 0) target +=  exponentialAFT_log_haz (af_event);
+          if (nevent > 0) target +=  exponentialAFT_log_surv(caf_event);
+          if (nlcens > 0) target +=  exponentialAFT_log_cdf (caf_lcens);
+          if (nrcens > 0) target +=  exponentialAFT_log_surv(caf_rcens);
+          if (nicens > 0) target +=  exponentialAFT_log_cdf2(caf_icenl, caf_icenu);
+          if (ndelay > 0) target += -exponentialAFT_log_surv(caf_delay);
+        } else if (type == 8) { // weibull AFT model
+          real shape = coefs[1];
+          if (nevent > 0) target +=  weibullAFT_log_haz (af_event, caf_event, shape);
+          if (nevent > 0) target +=  weibullAFT_log_surv(caf_event, shape);
+          if (nlcens > 0) target +=  weibullAFT_log_cdf (caf_lcens, shape);
+          if (nrcens > 0) target +=  weibullAFT_log_surv(caf_rcens, shape);
+          if (nicens > 0) target +=  weibullAFT_log_cdf2(caf_icenl, caf_icenu, shape);
+          if (ndelay > 0) target += -weibullAFT_log_surv(caf_delay, shape);
+        }
+
       }
-      else if (type == 1) { // weibull model
-        real shape = coefs[1];
-        if (nevent > 0) target +=  weibull_log_haz (eta_event, t_event, shape);
-        if (nevent > 0) target +=  weibull_log_surv(eta_event, t_event, shape);
-        if (nlcens > 0) target +=  weibull_log_cdf (eta_lcens, t_lcens, shape);
-        if (nrcens > 0) target +=  weibull_log_surv(eta_rcens, t_rcens, shape);
-        if (nicens > 0) target +=  weibull_log_cdf2(eta_icens, t_icenl, t_icenu, shape);
-        if (ndelay > 0) target += -weibull_log_surv(eta_delay, t_delay, shape);
-      }
-      else if (type == 6) { // gompertz model
-        real scale = coefs[1];
-        if (nevent > 0) target +=  gompertz_log_haz (eta_event, t_event, scale);
-        if (nevent > 0) target +=  gompertz_log_surv(eta_event, t_event, scale);
-        if (nlcens > 0) target +=  gompertz_log_cdf (eta_lcens, t_lcens, scale);
-        if (nrcens > 0) target +=  gompertz_log_surv(eta_rcens, t_rcens, scale);
-        if (nicens > 0) target +=  gompertz_log_cdf2(eta_icens, t_icenl, t_icenu, scale);
-        if (ndelay > 0) target += -gompertz_log_surv(eta_delay, t_delay, scale);
-      }
-      else if (type == 4) { // M-splines, on haz scale
-        if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, coefs);
-        if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, coefs);
-        if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, coefs);
-        if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, coefs);
-        if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, coefs);
-        if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, coefs);
-      }
+
+      // hazard models
       else {
-        reject("Bug found: invalid baseline hazard (without quadrature).");
+
+        // evaluate log hazard and log survival
+        if (type == 5) { // exponential model
+          if (nevent > 0) target +=  exponential_log_haz (eta_event);
+          if (nevent > 0) target +=  exponential_log_surv(eta_event, t_event);
+          if (nlcens > 0) target +=  exponential_log_cdf (eta_lcens, t_lcens);
+          if (nrcens > 0) target +=  exponential_log_surv(eta_rcens, t_rcens);
+          if (nicens > 0) target +=  exponential_log_cdf2(eta_icens, t_icenl, t_icenu);
+          if (ndelay > 0) target += -exponential_log_surv(eta_delay, t_delay);
+        }
+        else if (type == 1) { // weibull model
+          real shape = coefs[1];
+          if (nevent > 0) target +=  weibull_log_haz (eta_event, t_event, shape);
+          if (nevent > 0) target +=  weibull_log_surv(eta_event, t_event, shape);
+          if (nlcens > 0) target +=  weibull_log_cdf (eta_lcens, t_lcens, shape);
+          if (nrcens > 0) target +=  weibull_log_surv(eta_rcens, t_rcens, shape);
+          if (nicens > 0) target +=  weibull_log_cdf2(eta_icens, t_icenl, t_icenu, shape);
+          if (ndelay > 0) target += -weibull_log_surv(eta_delay, t_delay, shape);
+        }
+        else if (type == 6) { // gompertz model
+          real scale = coefs[1];
+          if (nevent > 0) target +=  gompertz_log_haz (eta_event, t_event, scale);
+          if (nevent > 0) target +=  gompertz_log_surv(eta_event, t_event, scale);
+          if (nlcens > 0) target +=  gompertz_log_cdf (eta_lcens, t_lcens, scale);
+          if (nrcens > 0) target +=  gompertz_log_surv(eta_rcens, t_rcens, scale);
+          if (nicens > 0) target +=  gompertz_log_cdf2(eta_icens, t_icenl, t_icenu, scale);
+          if (ndelay > 0) target += -gompertz_log_surv(eta_delay, t_delay, scale);
+        }
+        else if (type == 4) { // M-splines, on haz scale
+          if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, coefs);
+          if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, coefs);
+          if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, coefs);
+          if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, coefs);
+          if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, coefs);
+          if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, coefs);
+        }
+        else {
+          reject("Bug found: invalid baseline hazard (without quadrature).");
+        }
+
       }
     }
 
@@ -698,15 +796,6 @@ model {
     else {
 
       vector[len_cpts] eta;  // linear predictor at event and quadrature times
-      vector[len_cpts] lhaz; // log hazard       at event and quadrature times
-
-      vector[Nevent] lhaz_epts_event;
-      vector[qevent] lhaz_qpts_event;
-      vector[qlcens] lhaz_qpts_lcens;
-      vector[qrcens] lhaz_qpts_rcens;
-      vector[qicens] lhaz_qpts_icenl;
-      vector[qicens] lhaz_qpts_icenu;
-      vector[qdelay] lhaz_qpts_delay;
 
       // linear predictor (time-fixed part)
       if (K > 0) {
@@ -726,47 +815,129 @@ model {
         eta += gamma[1];
       }
 
-      // evaluate log hazard
-      if (type == 5) { // exponential model
-        lhaz = exponential_log_haz(eta);
+      // aft models
+      if (type == 7 || type == 8) {
+
+        vector[Nevent] eta_epts_event;
+        vector[qevent] eta_qpts_event;
+        vector[qlcens] eta_qpts_lcens;
+        vector[qrcens] eta_qpts_rcens;
+        vector[qicens] eta_qpts_icenl;
+        vector[qicens] eta_qpts_icenu;
+        vector[qdelay] eta_qpts_delay;
+
+        vector[Nevent] af_event;
+
+        vector[Nevent] caf_event;
+        vector[Nlcens] caf_lcens;
+        vector[Nrcens] caf_rcens;
+        vector[Nicens] caf_icenl;
+        vector[Nicens] caf_icenu;
+        vector[Ndelay] caf_delay;
+
+        // split linear predictor based on event types
+        if (Nevent > 0) eta_epts_event = eta[idx_cpts[1,1]:idx_cpts[1,2]];
+        if (qevent > 0) eta_qpts_event = eta[idx_cpts[2,1]:idx_cpts[2,2]];
+        if (qlcens > 0) eta_qpts_lcens = eta[idx_cpts[3,1]:idx_cpts[3,2]];
+        if (qrcens > 0) eta_qpts_rcens = eta[idx_cpts[4,1]:idx_cpts[4,2]];
+        if (qicens > 0) eta_qpts_icenl = eta[idx_cpts[5,1]:idx_cpts[5,2]];
+        if (qicens > 0) eta_qpts_icenu = eta[idx_cpts[6,1]:idx_cpts[6,2]];
+        if (qdelay > 0) eta_qpts_delay = eta[idx_cpts[7,1]:idx_cpts[7,2]];
+
+        // acceleration factor at event time
+        if (Nevent > 0) af_event = exp(-eta_epts_event);
+
+        // evaluate cumulative acceleration factors
+        if (qevent > 0) caf_event = quadrature_aft(qwts_event, eta_qpts_event, qnodes, Nevent);
+        if (qlcens > 0) caf_lcens = quadrature_aft(qwts_lcens, eta_qpts_lcens, qnodes, Nlcens);
+        if (qrcens > 0) caf_rcens = quadrature_aft(qwts_rcens, eta_qpts_rcens, qnodes, Nrcens);
+        if (qicens > 0) caf_icenl = quadrature_aft(qwts_icenl, eta_qpts_icenl, qnodes, Nicens);
+        if (qicens > 0) caf_icenu = quadrature_aft(qwts_icenu, eta_qpts_icenu, qnodes, Nicens);
+        if (qdelay > 0) caf_delay = quadrature_aft(qwts_delay, eta_qpts_delay, qnodes, Ndelay);
+
+        // increment target with log-lik contributions
+        if (type == 7) { // exponential AFT model
+          if (nevent > 0) target +=  exponentialAFT_log_haz (af_event);
+          if (nevent > 0) target +=  exponentialAFT_log_surv(caf_event);
+          if (nlcens > 0) target +=  exponentialAFT_log_cdf (caf_lcens);
+          if (nrcens > 0) target +=  exponentialAFT_log_surv(caf_rcens);
+          if (nicens > 0) target +=  exponentialAFT_log_cdf2(caf_icenl, caf_icenu);
+          if (ndelay > 0) target += -exponentialAFT_log_surv(caf_delay);
+        } else if (type == 8) { // weibull AFT model
+          real shape = coefs[1];
+          if (nevent > 0) target +=  weibullAFT_log_haz (af_event, caf_event, shape);
+          if (nevent > 0) target +=  weibullAFT_log_surv(caf_event, shape);
+          if (nlcens > 0) target +=  weibullAFT_log_cdf (caf_lcens, shape);
+          if (nrcens > 0) target +=  weibullAFT_log_surv(caf_rcens, shape);
+          if (nicens > 0) target +=  weibullAFT_log_cdf2(caf_icenl, caf_icenu, shape);
+          if (ndelay > 0) target += -weibullAFT_log_surv(caf_delay, shape);
+        }
+
       }
-      else if (type == 1) { // weibull model
-        real shape = coefs[1];
-        lhaz = weibull_log_haz(eta, cpts, shape);
-      }
-      else if (type == 6) { // gompertz model
-        real scale = coefs[1];
-        lhaz = gompertz_log_haz(eta, cpts, scale);
-      }
-      else if (type == 4) { // M-splines, on haz scale
-        lhaz = mspline_log_haz(eta, basis_cpts, coefs);
-      }
-      else if (type == 2) { // B-splines, on log haz scale
-        lhaz = bspline_log_haz(eta, basis_cpts, coefs);
-      }
+
+      // hazard models
       else {
-        reject("Bug found: invalid baseline hazard (with quadrature).");
+
+        vector[len_cpts] lhaz; // log hazard       at event and quadrature times
+
+        vector[Nevent] lhaz_epts_event;
+        vector[qevent] lhaz_qpts_event;
+        vector[qlcens] lhaz_qpts_lcens;
+        vector[qrcens] lhaz_qpts_rcens;
+        vector[qicens] lhaz_qpts_icenl;
+        vector[qicens] lhaz_qpts_icenu;
+        vector[qdelay] lhaz_qpts_delay;
+
+        // evaluate log hazard
+        if (type == 5) { // exponential model
+          lhaz = exponential_log_haz(eta);
+        }
+        else if (type == 7) { // exponential AFT model
+          lhaz = exponentialAFT_log_haz(eta);
+        }
+        else if (type == 1) { // weibull model
+          real shape = coefs[1];
+          lhaz = weibull_log_haz(eta, cpts, shape);
+        }
+        else if (type == 8) { // weibull AFT model
+          real shape = coefs[1];
+          lhaz = weibullAFT_log_haz(eta, cpts, shape);
+        }
+        else if (type == 6) { // gompertz model
+          real scale = coefs[1];
+          lhaz = gompertz_log_haz(eta, cpts, scale);
+        }
+        else if (type == 4) { // M-splines, on haz scale
+          lhaz = mspline_log_haz(eta, basis_cpts, coefs);
+        }
+        else if (type == 2) { // B-splines, on log haz scale
+          lhaz = bspline_log_haz(eta, basis_cpts, coefs);
+        }
+        else {
+          reject("Bug found: invalid baseline hazard (with quadrature).");
+        }
+
+        // split log hazard vector based on event types
+        if (Nevent > 0) lhaz_epts_event = lhaz[idx_cpts[1,1]:idx_cpts[1,2]];
+        if (qevent > 0) lhaz_qpts_event = lhaz[idx_cpts[2,1]:idx_cpts[2,2]];
+        if (qlcens > 0) lhaz_qpts_lcens = lhaz[idx_cpts[3,1]:idx_cpts[3,2]];
+        if (qrcens > 0) lhaz_qpts_rcens = lhaz[idx_cpts[4,1]:idx_cpts[4,2]];
+        if (qicens > 0) lhaz_qpts_icenl = lhaz[idx_cpts[5,1]:idx_cpts[5,2]];
+        if (qicens > 0) lhaz_qpts_icenu = lhaz[idx_cpts[6,1]:idx_cpts[6,2]];
+        if (qdelay > 0) lhaz_qpts_delay = lhaz[idx_cpts[7,1]:idx_cpts[7,2]];
+
+        // increment target with log-lik contributions for event submodel
+        if (Nevent > 0) target +=  lhaz_epts_event;
+        if (qevent > 0) target +=  quadrature_log_surv(qwts_event, lhaz_qpts_event);
+        if (qlcens > 0) target +=  quadrature_log_cdf (qwts_lcens, lhaz_qpts_lcens,
+                                                       qnodes, Nlcens);
+        if (qrcens > 0) target +=  quadrature_log_surv(qwts_rcens, lhaz_qpts_rcens);
+        if (qicens > 0) target +=  quadrature_log_cdf2(qwts_icenl, lhaz_qpts_icenl,
+                                                       qwts_icenu, lhaz_qpts_icenu,
+                                                       qnodes, Nicens);
+        if (qdelay > 0) target += -quadrature_log_surv(qwts_delay, lhaz_qpts_delay);
+
       }
-
-      // split log hazard vector based on event types
-      if (Nevent > 0) lhaz_epts_event = lhaz[idx_cpts[1,1]:idx_cpts[1,2]];
-      if (qevent > 0) lhaz_qpts_event = lhaz[idx_cpts[2,1]:idx_cpts[2,2]];
-      if (qlcens > 0) lhaz_qpts_lcens = lhaz[idx_cpts[3,1]:idx_cpts[3,2]];
-      if (qrcens > 0) lhaz_qpts_rcens = lhaz[idx_cpts[4,1]:idx_cpts[4,2]];
-      if (qicens > 0) lhaz_qpts_icenl = lhaz[idx_cpts[5,1]:idx_cpts[5,2]];
-      if (qicens > 0) lhaz_qpts_icenu = lhaz[idx_cpts[6,1]:idx_cpts[6,2]];
-      if (qdelay > 0) lhaz_qpts_delay = lhaz[idx_cpts[7,1]:idx_cpts[7,2]];
-
-      // increment target with log-lik contributions for event submodel
-      if (Nevent > 0) target +=  lhaz_epts_event;
-      if (qevent > 0) target +=  quadrature_log_surv(qwts_event, lhaz_qpts_event);
-      if (qlcens > 0) target +=  quadrature_log_cdf (qwts_lcens, lhaz_qpts_lcens,
-                                                     qnodes, Nlcens);
-      if (qrcens > 0) target +=  quadrature_log_surv(qwts_rcens, lhaz_qpts_rcens);
-      if (qicens > 0) target +=  quadrature_log_cdf2(qwts_icenl, lhaz_qpts_icenl,
-                                                     qwts_icenu, lhaz_qpts_icenu,
-                                                     qnodes, Nicens);
-      if (qdelay > 0) target += -quadrature_log_surv(qwts_delay, lhaz_qpts_delay);
 
     }
 

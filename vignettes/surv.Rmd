@@ -114,9 +114,12 @@ S_i(t) = \exp \left[ -H_i(t) \right] = \exp \left[ -\int_{s=0}^t h_i(s) ds \righ
 \end{split}
 \end{equation}
 
-## Model formulation
 
-We model the hazard of the event for individual $i$ using the following regression model 
+## Hazard scale formulations
+
+When `basehaz` is set equal to `"exp"`, `"weibull"`, `"gompertz"`, `"ms"` (the default), or `"bs"` then the model is defined on the hazard scale as described by the following parameterisations. 
+
+We model the hazard of the event for individual $i$ at time $t$ using the regression model:
 \
 \begin{equation}
 \begin{split}
@@ -124,57 +127,25 @@ h_i(t) = h_0(t) \exp \left[ \eta_i(t) \right]
 \end{split}
 \end{equation}
 \
-where $h_0(t)$ is the baseline hazard (i.e. the hazard for an individual with all covariates set equal to zero) at time $t$, and $\eta_i(t)$ denotes the (possibly time-dependent) linear predictor evaluated for individual $i$ at time $t$. 
-
-We further define the baseline hazard and linear predictor in the next sections.
-
-### Baseline hazard
-
-The `stan_surv` modelling function, via its `basehaz` argument, allows the baseline hazard $h_0(t)$ to be specified using any of the following parametric formulations.
-
-- **Exponential distribution**: for scale parameter $\lambda > 0$ we have
-
-\begin{equation}
-h_0(t) = \lambda
-\end{equation}
-
-- **Weibull distribution**: for scale parameter $\lambda > 0$ and shape parameter $\gamma > 0$ we have
-
-\begin{equation}
-h_0(t) = \gamma t^{\gamma-1} \lambda
-\end{equation}
-
-- **Gompertz distribution**: for shape parameter $\lambda > 0$ and scale parameter $\gamma > 0$ we have
-
-\begin{equation}
-h_0(t) = \exp(\gamma t) \lambda
-\end{equation}
-
-- **M-splines**, the default: letting $M(t; \boldsymbol{\gamma}, \boldsymbol{k_0})$ denote a cubic M-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma} > 0$ we have
-
-\begin{equation}
-h_0(t) = M(t; \boldsymbol{\gamma}, \boldsymbol{k_0})
-\end{equation}
-
-- **B-splines** (for the *log* baseline hazard): letting $B(t; \boldsymbol{\gamma}, \boldsymbol{k_0})$ denote a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma}$ we have 
-
-\begin{equation}
-\log h_0(t) = B(t; \boldsymbol{\gamma}, \boldsymbol{k_0})
-\end{equation}
-
-Note that for the exponential, Weibull, and Gompertz baseline hazards, $\log \lambda$ is absorbed as an intercept term in the linear predictor $\eta_i(t)$. It is therefore shown as such in the output for `stan_surv`.
-
-### Linear predictor
-
-The effects of covariates are introduced through the linear predictor under proportional or non-proportional hazards assumptions. That is, we define our linear predictor as
+where $h_0(t)$ is the baseline hazard (i.e. the hazard for an individual with all covariates set equal to zero) at time $t$, and $\eta_i(t)$ denotes the linear predictor evaluated for individual $i$ at time $t$. For full generality, we allow the linear predictor to be time-dependent; that is, it may be a function of time-varying covariates or time-varying coefficients (i.e. a time-varying hazard ratio). However, if there are no time-varying covariates or time-varying coefficients in the model, then the linear predictor reduces to a time-fixed quantity and the definition of the hazard function reduces to:
 \
 \begin{equation}
 \begin{split}
-\eta_i(t) = \boldsymbol{X_i^T(t)} \boldsymbol{\beta(t)}
+h_i(t) = h_0(t) \exp \left[ \eta_i \right]
+\end{split}
+\end{equation}
+
+### Linear predictor
+
+Our linear predictor is defined as:
+\
+\begin{equation}
+\begin{split}
+\eta_i(t) = \beta_0 + \sum_{p=1}^P \beta_p(t) x_{ip}(t)
 \end{split}
 \end{equation}
 \
-where $\boldsymbol{X_i^T(t)}$ is a vector of covariates (possibly time-varying) for individual $i$, and $\boldsymbol{\beta(t)} = \{ \beta_p(t); p = 1,...,P \}$ is a vector of parameters with each element defined as
+where $\beta_0$ denotes the intercept parameter, $x_{ip}(t)$ denotes the observed value of $p^{th}$ $(p=1,...,P)$ covariate for the $i^{th}$ $(i=1,...,N)$ individual at time $t$, and $\beta_p(t)$ denotes a coefficient defined as:
 \
 \begin{align}
 \beta_p(t) = 
@@ -186,9 +157,125 @@ where $\boldsymbol{X_i^T(t)}$ is a vector of covariates (possibly time-varying) 
   \end{cases}
 \end{align}
 \
-such that $\theta_{p,0}$ is a time-fixed hazard ratio, and $B(t; \boldsymbol{\theta_p}, \boldsymbol{k_p})$ is a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_p}$ and parameter vector $\boldsymbol{\theta_p}$. Where relevant, the cubic B-spline function is used to model the time-dependent hazard ratio as a smooth function of time. 
+such that $\theta_{p,0}$ is a time-fixed log hazard ratio, and $B(t; \boldsymbol{\theta_p}, \boldsymbol{k_p})$ is a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_p}$ and parameter vector $\boldsymbol{\theta_p}$. Where relevant, the cubic B-spline function is used to model the time-dependent hazard ratio as a smooth function of time.
 
-In the `stan_surv` modelling function the user specifies that they wish to estimate a time-dependent hazard ratio for a covariate by wrapping the covariate name in the `tde()` function in the model formula; see the examples in the latter part of this vignette.
+**Note:** in these expressions, the quantity $\exp \left( \beta_p(t) \right)$ is referred to as a "hazard ratio". The *hazard ratio (HR)* quantifies the relative increase in the hazard that is associated with a unit-increase in the relevant covariate, $x_{ip}$; e.g. a hazard ratio of 2 means that a unit-increase in the covariate leads to a doubling in the hazard (i.e. the instantaneous rate) of the event.
+
+**Note:** in the `stan_surv` modelling function the user specifies that they wish to estimate a time-dependent hazard ratio for a covariate by wrapping the covariate name in the `tde()` function in the model formula; see the examples in the latter part of this vignette.
+
+### Distributions
+
+- **Exponential model** (`basehaz = "exp"`): for scale parameter $\lambda_i(t) = \exp ( \eta_i(t) )$ we have
+\
+\begin{equation}
+h_i(t) = \lambda_i(t)
+\end{equation}
+
+- **Weibull model** (`basehaz = "weibull"`): for scale parameter $\lambda_i(t) = \exp ( \eta_i(t) )$ and shape parameter $\gamma > 0$ we have
+\
+\begin{equation}
+h_0(t) = \gamma t^{\gamma-1} \lambda_i(t)
+\end{equation}
+
+- **Gompertz model** (`basehaz = "gompertz"`): for shape parameter $\lambda = \exp ( \eta_i(t) )$ and scale parameter $\gamma > 0$ we have
+\
+\begin{equation}
+h_0(t) = \exp(\gamma t) \lambda_i(t)
+\end{equation}
+
+- **M-splines model** (`basehaz = "ms"`, the default): letting $M(t; \boldsymbol{\gamma}, \boldsymbol{k_0})$ denote a cubic M-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma} > 0$ we have
+\
+\begin{equation}
+h_0(t) = M(t; \boldsymbol{\gamma}, \boldsymbol{k_0}) \exp ( \eta_i(t) )
+\end{equation}
+
+- **B-splines model** (for the *log* baseline hazard): letting $B(t; \boldsymbol{\gamma}, \boldsymbol{k_0})$ denote a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma}$ we have 
+\
+\begin{equation}
+h_0(t) = \exp ( B(t; \boldsymbol{\gamma}, \boldsymbol{k_0}) + \eta_i(t) )
+\end{equation}
+
+**Note:** for the M-spline and B-spline models, the linear predictor does not include an intercept $\beta_0$; instead the intercept parameter is absorbed into the spline basis. 
+
+**Note:** when the linear predictor *is not* time-dependent (i.e. under proportional hazards), there is a closed form expression for the survival probability; details shown in the appendix. However, when the linear predictor *is* time-dependent (i.e. under non-proportional hazards) there is no closed form expression for the survival probability; instead, quadrature is used to evaluate the survival probability for inclusion in the likelihood. Extended details on the parameterisations are given in the appendix.
+
+
+## Accelerated failure time formulations
+
+When `basehaz` is set equal to `"exp-aft"`, or `"weibull-aft"` then the model is defined on the accelerated failure time scale as described by the following parameterisations. 
+
+Following Hougaard (1999), we model the survival probability for individual $i$ at time $t$ using the regression model:
+\
+\begin{equation}
+\begin{split}
+S_i(t) = S_0 \left( \int_0^t \exp \left[ - \eta_i(u) \right] du \right)
+\end{split}
+\end{equation}
+\
+where $S_0(t)$ is the baseline survival probability at time $t$, and $\eta_i(t)$ denotes the linear predictor evaluated for individual $i$ at time $t$. For full generality, we allow the linear predictor to be time-dependent; that is, it may be a function of time-varying covariates or time-varying coefficients (i.e. a time-varying acceleration factor). However, if there are no time-varying covariates or time-varying coefficients in the model, then the linear predictor reduces to a time-fixed quantity (i.e. $\eta_i(t) = \eta_i$) and the definition of the survival probability reduces to:
+\
+\begin{equation}
+\begin{split}
+S_i(t) = S_0 \left( t \exp \left[ - \eta_i \right] \right)
+\end{split}
+\end{equation}
+
+### Linear predictor
+
+Our linear predictor is defined as:
+\
+\begin{equation}
+\begin{split}
+\eta_i(t) = \beta_0^* + \sum_{p=1}^P \beta_p^*(t) x_{ip}(t)
+\end{split}
+\end{equation}
+\
+where $\beta_0^*$ denotes the intercept parameter, $x_{ip}(t)$ denotes the observed value of $p^{th}$ $(p=1,...,P)$ covariate for the $i^{th}$ $(i=1,...,N)$ individual at time $t$, and $\beta_p^*(t)$ denotes a coefficient defined as:
+\
+\begin{align}
+\beta_p^*(t) = 
+  \begin{cases}
+    \theta_{p,0}
+    & \text{for time-fixed acceleration} \\
+    \theta_{p,0} + B(t; \boldsymbol{\theta_p}, \boldsymbol{k_p})
+    & \text{for time-dependent acceleration}
+  \end{cases}
+\end{align}
+\
+such that $\theta_{p,0}$ is a time-fixed log survival time ratio, and $B(t; \boldsymbol{\theta_p}, \boldsymbol{k_p})$ is a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_p}$ and parameter vector $\boldsymbol{\theta_p}$. Where relevant, the cubic B-spline function is used to model the time-dependent acceleration factor as a smooth function of time.
+
+**Note:** in these expressions, the quantity $\exp \left( - \beta_p^*(t) \right)$ is referred to as an "acceleration factor" and the quantity $\exp \left( \beta_p^*(t) \right)$ is referred to as a "survival time ratio". The *acceleration factor (AF)* quantifies the acceleration (or deceleration) of the event process that is associated with a unit-increase in the relevant covariate, $x_{ip}$; e.g. an acceleration factor of 0.5 means that a unit-increase in the covariate leads to an individual approaching the event at half the speed. If you find that somewhat confusing, then it may be easier to think about the *survival time ratio (STR)* . The *survival time ratio* is the inverse of the acceleration factor (i.e. $STR = 1/AF$). The *survival time ratio* is interpreted as the increase (or decrease) in the expected survival time that is associated with a unit-increase in the relevant covariate, $x_{ip}$; e.g. a survival time ratio of 2 (which is equivalent to an acceleration factor of 0.5) means that a unit-increase in the covariate leads to an doubling in the expected survival time. 
+
+**Note:** in the `stan_surv` modelling function the user specifies that they wish to estimate a time-dependent acceleration factor for a covariate by wrapping the covariate name in the `tde()` function in the model formula; see the examples in the latter part of this vignette.
+
+### Distributions
+
+- **Exponential model** (`basehaz = "exp-aft"`): for scale parameter $\lambda_i(t) = \exp ( -\eta_i(t) )$ we have
+\
+\begin{equation}
+S_i(t) = \exp \left( - t \lambda_i \right)
+\end{equation}
+\
+or in the case with time-dependent effects
+\
+\begin{equation}
+S_i(t) = \exp \left( - \int_0^t \exp ( -\eta_i(u) ) du \right)
+\end{equation}
+
+- **Weibull model** (`basehaz = "weibull-aft"`): for scale parameter $\lambda_i(t) = \exp ( -\gamma \eta_i(t) )$ and shape parameter $\gamma > 0$ we have
+\
+\begin{equation}
+S_i(t) = \exp \left( - t^{\gamma} \lambda_i \right)
+\end{equation}
+\
+or in the case with time-dependent effects
+\
+\begin{equation}
+S_i(t) = \exp \left( - \left[ \int_0^t \exp ( -\eta_i(u) ) du \right]^{\gamma} \right)
+\end{equation}
+
+**Note:** when the linear predictor *is not* time-dependent (i.e. under time-fixed acceleration), there is a closed form expression for both the hazard function and survival function; details shown in the appendix. However, when the linear predictor *is* time-dependent (i.e. under time-dependent acceleration) there is no closed form expression for the hazard function or survival probability; instead, quadrature is used to evaluate the cumulative acceleration factor, which in turn is used to evaluate the hazard function and survival probability for inclusion in the likelihood. Extended details on the parameterisations are given in the appendix.
+
 
 ## Likelihood
 
@@ -207,11 +294,11 @@ p(\mathcal{D}_i | \boldsymbol{\gamma}, \boldsymbol{\beta}) =
 
 ## Priors
 
-The prior distribution for the baseline hazard parameters (i.e. $\gamma$ for Weibull or Gompertz baseline hazards, or $\boldsymbol{\gamma}$ for the M-spline or B-spline baseline hazards) is specified via the `prior_aux` argument to `stan_surv`. Choices of prior distribution include half-normal, half-t or half-Cauchy for the Weibull, Gompertz and M-spline baseline hazards, or normal, t, or Cauchy for the B-splines log baseline hazard. These choices are described in greater detail in the `stan_surv` help file.
+The prior distribution for the so-called "auxiliary" parameters (i.e. $\gamma$ for the Weibull and Gompertz models, or $\boldsymbol{\gamma}$ for the M-spline and B-spline models) is specified via the `prior_aux` argument to `stan_surv`. Choices of prior distribution for the auxiliary parameters include half-normal, half-t or half-Cauchy for the Weibull, Gompertz and M-spline models, or normal, t, or Cauchy for the B-splines model. These choices are described in greater detail in the `stan_surv` help file.
 
-For the exponential, Weibull, or Gompertz baseline hazards the prior distribution for the intercept parameter in the linear predictor, that is $\log \lambda$, is specified via the `prior_intercept` argument to `stan_surv`. Choices include the normal, t, or Cauchy distributions.
+For the exponential, Weibull, or Gompertz models the prior distribution for the intercept parameter in the linear predictor is specified via the `prior_intercept` argument to `stan_surv`. Choices include the normal, t, or Cauchy distributions.
 
-The choice of prior distribution for the time-fixed hazard ratios $\theta_{p,0}$ ($p = 1,...,P$) is specified via the `prior` argument to `stan_surv`. This can any of the standard prior distributions allowed for regression coefficients in the **rstanarm** package; see the [priors vignette](priors.html) and the `stan_surv` help file for details. 
+The choice of prior distribution for the time-fixed coefficients $\theta_{p,0}$ ($p = 1,...,P$) is specified via the `prior` argument to `stan_surv`. This can any of the standard prior distributions allowed for regression coefficients in the **rstanarm** package; see the [priors vignette](priors.html) and the `stan_surv` help file for details. 
 
 The B-spline coefficients related to each time-dependent effect, that is $\boldsymbol{\theta_p}$, are given a random walk prior of the form $\theta_{p,1} \sim N(0,1)$ and $\theta_{p,m} \sim N(\theta_{p,m-1},\tau_p)$ for $m = 2,...,M$, where $M$ is the total number of cubic B-spline basis terms. The prior distribution for the hyperparameter $\tau_p$ is specified via the `prior_smooth` argument to `stan_surv`. Lower values of $\tau_p$ lead to a less flexible (i.e. smoother) function. Choices of prior distribution for the hyperparameter $\tau_p$ include an exponential, half-normal, half-t, or half-Cauchy distribution, and these are detailed in the `stan_surv` help file.
 
@@ -401,3 +488,524 @@ The plot shows a large amount of uncertainty around the estimated time-dependent
 # References
 
 Brilleman, S. (2018) *simsurv: Simulate Survival Data.* R package version 0.2.2. \url{https://CRAN.R-project.org/package=simsurv}
+
+Hougaard P. Fundamentals of Survival Data. *Biometrics* 1999;55:13--22.
+
+
+# Appendix A: Parameterisations on the hazard scale
+
+When `basehaz` is set equal to `"exp"`, `"weibull"`, `"gompertz"`, `"ms"` (the default), or `"bs"` then the model is defined on the hazard scale using the following parameterisations.
+
+
+### Exponential model
+
+The exponential model is parameterised with scale parameter $\lambda_i = \exp(\eta_i)$ where $\eta_i = \beta_0 + \sum_{p=1}^P \beta_p x_{ip}$ denotes our linear predictor.
+
+For individual $i$ we have:
+
+\begin{align}
+\begin{split}
+  h_i(T_i) 
+    & = \lambda_i \\
+    & = \exp(\eta_i) \\
+  H_i(T_i) 
+    & = T_i \lambda_i \\
+    & = T_i \exp(\eta_i) \\
+  S_i(T_i) 
+    & = \exp \left( - T_i \lambda_i \right) \\
+    & = \exp \left( - T_i \exp(\eta_i) \right) \\
+  F_i(T_i) 
+    & = 1 - \exp \left( - T_i \lambda_i \right) \\
+    & = 1 - \exp \left( - T_i \exp(\eta_i) \right) \\
+  S_i(T_i) - S_i(T_i^U) 
+    & = \exp \left( - T_i \lambda_i \right) - \exp \left( - T_i^U \lambda_i \right) \\
+    & = \exp \left( - T_i \exp(\eta_i) \right) - \exp \left( - T_i^U \exp(\eta_i) \right)
+\end{split}
+\end{align}
+
+or on the log scale:
+
+\begin{align}
+\begin{split}
+  \log h_i(T_i) 
+    & = \log \lambda_i \\
+    & = \eta_i \\
+  \log H_i(T_i) 
+    & = \log(T_i) + \log \lambda_i \\
+    & = \log(T_i) + \eta_i \\
+  \log S_i(T_i) 
+    & = - T_i \lambda_i \\
+    & = - T_i \exp(\eta_i) \\
+  \log F_i(T_i) 
+    & = \log \left( 1 - \exp \left( - T_i \lambda_i \right) \right) \\
+    & = \log \left( 1 - \exp \left( - T_i \exp(\eta_i) \right) \right) \\
+  \log (S_i(T_i) - S_i(T_i^U)) 
+    & = \log \left[ \exp \left( - T_i \lambda_i \right) - \exp \left( - T_i^U \lambda_i \right) \right] \\
+    & = \log \left[ \exp \left( - T_i \exp(\eta_i) \right) - \exp \left( - T_i^U \exp(\eta_i) \right) \right]
+\end{split}
+\end{align}
+
+The definition of $\lambda$ for the baseline is:
+
+\begin{align}
+\begin{split}
+  \lambda_0 = \exp(\beta_0) \Longleftrightarrow \beta_0 = \log(\lambda_0)
+\end{split}
+\end{align}  
+  
+
+### Weibull model
+
+The Weibull model is parameterised with scale parameter $\lambda_i = \exp(\eta_i)$ and shape parameter $\gamma > 0$ where $\eta_i = \beta_0 + \sum_{p=1}^P \beta_p x_{ip}$ denotes our linear predictor. 
+
+For individual $i$ we have:
+
+\begin{align}
+\begin{split}
+  h_i(T_i) 
+    & = \gamma t^{\gamma-1} \lambda_i \\
+    & = \gamma t^{\gamma-1} \exp(\eta_i) \\
+  H_i(T_i) 
+    & = T_i^{\gamma} \lambda_i \\
+    & = T_i^{\gamma} \exp(\eta_i) \\
+  S_i(T_i) 
+    & = \exp \left( - T_i^{\gamma} \lambda_i \right) \\
+    & = \exp \left( - T_i^{\gamma} \exp(\eta_i) \right) \\
+  F_i(T_i) 
+    & = 1 - \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) \\
+    & = 1 - \exp \left( - {(T_i)}^{\gamma} \exp(\eta_i) \right) \\
+  S_i(T_i) - S_i(T_i^U) 
+    & = \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) - \exp \left( - {(T_i^U)}^{\gamma} \lambda_i \right) \\
+    & = \exp \left( - {(T_i)}^{\gamma} \exp(\eta_i) \right) - \exp \left( - {(T_i^U)}^{\gamma} \exp(\eta_i) \right)
+\end{split}
+\end{align}
+
+or on the log scale:
+
+\begin{align}
+\begin{split}
+  \log h_i(T_i) 
+    & = \log(\gamma) + (\gamma-1) \log(t) + \log \lambda_i \\
+    & = \log(\gamma) + (\gamma-1) \log(t) + \eta_i \\
+  \log H_i(T_i) 
+    & = \gamma \log(T_i) + \log \lambda_i \\
+    & = \gamma \log(T_i) + \eta_i \\
+  \log S_i(T_i) 
+    & = - T_i^{\gamma} \lambda_i \\
+    & = - T_i^{\gamma} \exp(\eta_i) \\
+  \log F_i(T_i) 
+    & = \log \left( 1 - \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) \right) \\
+    & = \log \left( 1 - \exp \left( - {(T_i)}^{\gamma} \exp(\eta_i) \right) \right) \\
+  \log (S_i(T_i) - S_i(T_i^U)) 
+    & = \log \left[ \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) - \exp \left( - {(T_i^U)}^{\gamma} \lambda_i \right) \right] \\
+    & = \log \left[ \exp \left( - {(T_i)}^{\gamma} \exp(\eta_i) \right) - \exp \left( - {(T_i^U)}^{\gamma} \exp(\eta_i) \right) \right]
+\end{split}
+\end{align}
+
+The definition of $\lambda$ for the baseline is:
+
+\begin{align}
+\begin{split}
+  \lambda_0 = \exp(\beta_0) \Longleftrightarrow \beta_0 = \log(\lambda_0)
+\end{split}
+\end{align}
+
+
+### Gompertz model
+
+The Gompertz model is parameterised with shape parameter $\lambda_i = \exp(\eta_i)$ and scale parameter $\gamma > 0$ where $\eta_i = \beta_0 + \sum_{p=1}^P \beta_p x_{ip}$ denotes our linear predictor. 
+
+For individual $i$ we have:
+
+\begin{align}
+\begin{split}
+  h_i(T_i) 
+    & = \exp(\gamma T_i) \lambda_i \\
+    & = \exp(\gamma T_i) \exp(\eta_i) \\
+  H_i(T_i) 
+    & = \frac{\exp(\gamma T_i) - 1}{\gamma} \lambda_i \\
+    & = \frac{\exp(\gamma T_i) - 1}{\gamma} \exp(\eta_i) \\
+  S_i(T_i) 
+    & = \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \lambda_i \right) \\
+    & = \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \exp(\eta_i) \right) \\
+  F_i(T_i) 
+    & = 1 - \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \lambda_i \right) \\
+    & = 1 - \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \exp(\eta_i) \right) \\
+  S_i(T_i) - S_i(T_i^U) 
+    & = \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \lambda_i \right) - \exp \left( \frac{-(\exp(\gamma T_i^U) - 1)}{\gamma} \lambda_i \right) \\
+    & = \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \exp(\eta_i) \right) - \exp \left( \frac{-(\exp(\gamma T_i^U) - 1)}{\gamma} \exp(\eta_i) \right)
+\end{split}
+\end{align}
+
+or on the log scale:
+
+\begin{align}
+\begin{split}
+  \log h_i(T_i) 
+    & = \gamma T_i + \log \lambda_i \\
+    & = \gamma T_i + \eta_i \\
+  \log H_i(T_i) 
+    & = \log(\exp(\gamma T_i) - 1) - \log(\gamma) + \log \lambda_i \\
+    & = \log(\exp(\gamma T_i) - 1) - \log(\gamma) + \eta_i \\
+  \log S_i(T_i) 
+    & = \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \lambda_i \\
+    & = \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \exp(\eta_i) \\
+  \log F_i(T_i) 
+    & = \log \left( 1 - \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \lambda_i \right) \right) \\
+    & = \log \left( 1 - \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \exp(\eta_i) \right) \right) \\
+  \log (S_i(T_i) - S_i(T_i^U)) 
+    & = \log \left[ \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \lambda_i \right) - \exp \left( \frac{-(\exp(\gamma T_i^U) - 1)}{\gamma} \lambda_i \right) \right] \\
+    & = \log \left[ \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \exp(\eta_i) \right) - \exp \left( \frac{-(\exp(\gamma T_i^U) - 1)}{\gamma} \exp(\eta_i) \right) \right]
+\end{split}
+\end{align}
+
+The definition of $\lambda$ for the baseline is:
+
+\begin{align}
+\begin{split}
+  \lambda_0 = \exp(\beta_0) \Longleftrightarrow \beta_0 = \log(\lambda_0)
+\end{split}
+\end{align}
+
+
+### M-spline model
+
+The M-spline model is parameterised with vector of regression coefficients $\boldsymbol{\theta} > 0$ for the baseline hazard and with covariate effects introduced through a linear predictor $\eta_i = \sum_{p=1}^P \beta_p x_{ip}$. Note that there is no intercept in the linear predictor since it is absorbed into the baseline hazard spline function.
+
+For individual $i$ we have:
+
+\begin{align}
+\begin{split}
+  h_i(T_i) 
+    & = M(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \\
+  H_i(T_i) 
+    & = I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \\
+  S_i(T_i) 
+    & = \exp \left( - I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right) \\
+  F_i(T_i) 
+    & = 1 - \exp \left( - I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right) \\
+  S_i(T_i) - S_i(T_i^U) 
+    & = \exp \left( - I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right) - \exp \left( - I(T_i^U; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right)
+\end{split}
+\end{align}
+
+or on the log scale:
+
+\begin{align}
+\begin{split}
+  \log h_i(T_i) 
+    & = \log(M(T_i; \boldsymbol{\theta}, \boldsymbol{k_0})) + \eta_i \\
+  \log H_i(T_i) 
+    & = \log(I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0})) + \eta_i \\
+  \log S_i(T_i) 
+    & = - I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \\
+  \log F_i(T_i) 
+    & = \log \left[ 1 - \exp \left( - I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right) \right] \\
+  \log (S_i(T_i) - S_i(T_i^U)) 
+    & = \log \left[ \exp \left( - I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right) - \exp \left( - I(T_i^U; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right) \right]
+\end{split}
+\end{align}
+
+where $M(t; \boldsymbol{\theta}, \boldsymbol{k_0})$ denotes a cubic M-spline function evaluated at time $t$ with regression coefficients $\boldsymbol{\theta}$ and basis evaluated using the vector of knot locations $\boldsymbol{k_0})$. Similarly, $I(t; \boldsymbol{\theta}, \boldsymbol{k_0})$ denotes a cubic I-spline function (i.e. integral of an M-spline) evaluated at time $t$ with regression coefficients $\boldsymbol{\theta}$ and basis evaluated using the vector of knot locations $\boldsymbol{k_0}$.
+
+
+### B-spline model
+
+The B-spline model is parameterised with vector of regression coefficients $\boldsymbol{\theta}$ and linear predictor where $\eta_i = \sum_{p=1}^P \beta_p x_{ip}$ denotes our linear predictor. Note that there is no intercept in the linear predictor since it is absorbed into the spline function.
+
+
+For individual $i$ we have:
+
+\begin{align}
+\begin{split}
+  h_i(T_i) 
+    & = \exp \left( B(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) + \eta_i \right)
+\end{split}
+\end{align}
+
+or on the log scale:
+
+\begin{align}
+\begin{split}
+  \log h_i(T_i) 
+    & = B(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) + \eta_i
+\end{split}
+\end{align}
+
+The cumulative hazard, survival function, and CDF for the B-spline model cannot be calculated analytically. Instead, the model is only defined analytically on the hazard scale and quadrature is used to evaluate the following:
+
+\begin{align}
+\begin{split}
+  H_i(T_i) 
+    & = \int_0^{T_i} h_i(u) du \\
+  S_i(T_i) 
+    & = \exp \left( - \int_0^{T_i} h_i(u) du \right) \\
+  F_i(T_i) 
+    & = 1 - \exp \left( - \int_0^{T_i} h_i(u) du \right) \\
+  S_i(T_i) - S_i(T_i^U) 
+    & = \exp \left( -\int_0^{T_i} h_i(u) du \right) - \exp \left( - \int_0^{T_i^U} h_i(u) du \right)
+\end{split}
+\end{align}
+
+
+### Extension to time-dependent coefficients (i.e. non-proportional hazards)
+
+We can extend the previous model formulations to allow for time-dependent coefficients (i.e. non-proportional hazards). The time-dependent linear predictor is introduced on the hazard scale. That is, $\eta_i$ in our previous model definitions is instead replaced by $\eta_i(t)$. This leads to an analytical form for the hazard and log hazard. However, in general, there is no longer a closed form expression for the cumulative hazard, survival function, or CDF. Therefore, when the linear predictor includes time-dependent coefficients, quadrature is used to evaluate the following:
+
+\begin{align}
+\begin{split}
+  H_i(T_i) 
+    & = \int_0^{T_i} h_i(u) du \\
+  S_i(T_i) 
+    & = \exp \left( - \int_0^{T_i} h_i(u) du \right) \\
+  F_i(T_i) 
+    & = 1 - \exp \left( - \int_0^{T_i} h_i(u) du \right) \\
+  S_i(T_i) - S_i(T_i^U) 
+    & = \exp \left( -\int_0^{T_i} h_i(u) du \right) - \exp \left( - \int_0^{T_i^U} h_i(u) du \right)
+\end{split}
+\end{align}
+
+
+# Appendix B: Parameterisations under accelerated failure times
+
+When `basehaz` is set equal to `"exp-aft"`, or `"weibull-aft"` then the model is defined on the accelerated failure time scale using the following parameterisations.
+
+
+### Exponential model
+
+The exponential model is parameterised with scale parameter $\lambda_i = \exp(-\eta_i)$ where $\eta_i = \beta_0^* + \sum_{p=1}^P \beta_p^* x_{ip}$ denotes our linear predictor.
+
+For individual $i$ we have:
+
+\begin{align}
+\begin{split}
+  h_i(T_i) 
+    & = \lambda_i \\
+    & = \exp(-\eta_i) \\
+  H_i(T_i) 
+    & = T_i \lambda_i \\ 
+    & = T_i \exp(-\eta_i) \\
+  S_i(T_i) 
+    & = \exp \left( - T_i \lambda_i \right) \\
+    & = \exp \left( - T_i \exp(-\eta_i) \right) \\
+  F_i(T_i) 
+    & = 1 - \exp \left( - T_i \lambda_i \right) \\
+    & = 1 - \exp \left( - T_i \exp(-\eta_i) \right) \\
+  S_i(T_i) - S_i(T_i^U) 
+    & = \exp \left( - T_i \lambda_i \right) - \exp \left( - T_i^U \lambda_i \right) \\
+    & = \exp \left( - T_i \exp(-\eta_i) \right) - \exp \left( - T_i^U \exp(-\eta_i) \right)
+\end{split}
+\end{align}
+
+or on the log scale:
+
+\begin{align}
+\begin{split}
+  \log h_i(T_i) 
+    & = \log \lambda_i \\
+    & = -\eta_i \\
+  \log H_i(T_i) 
+    & = \log(T_i) + \log \lambda_i \\
+    & = \log(T_i) - \eta_i \\
+  \log S_i(T_i) 
+    & = - T_i \lambda_i \\
+    & = - T_i \exp(-\eta_i) \\
+  \log F_i(T_i) 
+    & = \log \left( 1 - \exp \left( - T_i \lambda_i \right) \right) \\
+    & = \log \left( 1 - \exp \left( - T_i \exp(-\eta_i) \right) \right) \\
+  \log (S_i(T_i) - S_i(T_i^U)) 
+    & = \log \left[ \exp \left( - T_i \lambda_i) \right) - \exp \left( - T_i^U \lambda_i \right) \right] \\
+    & = \log \left[ \exp \left( - T_i \exp(-\eta_i) \right) - \exp \left( - T_i^U \exp(-\eta_i) \right) \right]
+\end{split}
+\end{align}
+
+The definition of $\lambda$ for the baseline is:
+
+\begin{align}
+\begin{split}
+  \lambda_0 = \exp(-\beta_0^*) \Longleftrightarrow \beta_0^* = -\log(\lambda_0)
+\end{split}
+\end{align}  
+  
+The relationship between coefficients under the PH (unstarred) and AFT (starred) parameterisations are as follows:
+
+\begin{align}
+\begin{split}
+  \beta_0 & = -\beta_0^* \\
+  \beta_p & = -\beta_p^*
+\end{split}
+\end{align}
+
+Lastly, the general form for the hazard function and survival function under an AFT model with acceleration factor $\exp(-\eta_i)$ can be used to derive the exponential AFT model defined here by setting $h_0(t) = 1$, $S_0(t) = \exp(-T_i)$, and $\lambda_i = \exp(-\eta_i)$:
+
+\begin{align}
+\begin{split}
+  h_i(T_i) 
+    & = \exp(-\eta_i) h_0(t \exp(-\eta_i)) \\
+    & = \exp(-\eta_i) \\
+    & = \lambda_i
+\end{split}
+\end{align}
+
+\begin{align}
+\begin{split}
+  S_i(T_i) 
+    & = S_0(t \exp(-\eta_i)) \\
+    & = \exp(-T_i \exp(-\eta_i)) \\
+    & = \exp(-T_i \lambda_i)
+\end{split}
+\end{align}
+
+
+### Weibull model
+
+The Weibull model is parameterised with scale parameter $\lambda_i = \exp(-\gamma \eta_i)$ and shape parameter $\gamma > 0$ where $\eta_i = \beta_0^* + \sum_{p=1}^P \beta_p^* x_{ip}$ denotes our linear predictor.
+
+For individual $i$ we have:
+
+\begin{align}
+\begin{split}
+  h_i(T_i) 
+    & = \gamma t^{\gamma-1} \lambda_i \\
+    & = \gamma t^{\gamma-1} \exp(-\gamma \eta_i) \\
+  H_i(T_i) 
+    & = T_i^{\gamma} \lambda_i \\
+    & = T_i^{\gamma} \exp(-\gamma \eta_i) \\
+  S_i(T_i) 
+    & = \exp \left( - T_i^{\gamma} \lambda_i \right) \\
+    & = \exp \left( - T_i^{\gamma} \exp(-\gamma \eta_i) \right) \\
+  F_i(T_i) 
+    & = 1 - \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) \\
+    & = 1 - \exp \left( - {(T_i)}^{\gamma} \exp(-\gamma \eta_i) \right) \\
+  S_i(T_i) - S_i(T_i^U) 
+    & = \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) - \exp \left( - {(T_i^U)}^{\gamma} \lambda_i \right) \\
+    & = \exp \left( - {(T_i)}^{\gamma} \exp(-\gamma \eta_i) \right) - \exp \left( - {(T_i^U)}^{\gamma} \exp(-\gamma \eta_i) \right)
+\end{split}
+\end{align}
+
+or on the log scale:
+
+\begin{align}
+\begin{split}
+  \log h_i(T_i) 
+    & = \log(\gamma) + (\gamma-1) \log(t) + \log \lambda_i \\
+    & = \log(\gamma) + (\gamma-1) \log(t) - \gamma \eta_i \\
+  \log H_i(T_i) 
+    & = \gamma \log(T_i) + \log \lambda_i \\
+    & = \gamma \log(T_i) - \gamma \eta_i \\
+  \log S_i(T_i) 
+    & = - T_i^{\gamma} \lambda_i \\
+    & = - T_i^{\gamma} \exp(-\gamma \eta_i) \\
+  \log F_i(T_i) 
+    & = \log \left( 1 - \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) \right) \\
+    & = \log \left( 1 - \exp \left( - {(T_i)}^{\gamma} \exp(-\gamma \eta_i) \right) \right) \\
+  \log (S_i(T_i) - S_i(T_i^U)) 
+    & = \log \left[ \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) - \exp \left( - {(T_i^U)}^{\gamma} \lambda_i \right) \right] \\
+    & = \log \left[ \exp \left( - {(T_i)}^{\gamma} \exp(-\gamma \eta_i) \right) - \exp \left( - {(T_i^U)}^{\gamma} \exp(-\gamma \eta_i) \right) \right]
+\end{split}
+\end{align}
+
+The definition of $\lambda$ for the baseline is:
+
+\begin{align}
+\begin{split}
+  \lambda_0 = \exp(-\gamma \beta_0^*) \Longleftrightarrow \beta_0^* = \frac{-\log(\lambda_0)}{\gamma}
+\end{split}
+\end{align}  
+  
+The relationship between coefficients under the PH (unstarred) and AFT (starred) parameterisations are as follows:
+
+\begin{align}
+\begin{split}
+  \beta_0 & = -\gamma \beta_0^* \\
+  \beta_p & = -\gamma \beta_p^*  
+\end{split}
+\end{align}
+
+Lastly, the general form for the hazard function and survival function under an AFT model with acceleration factor $\exp(-\eta_i)$ can be used to derive the Weibull AFT model defined here by setting $h_0(t) = \gamma t^{\gamma - 1}$, $S_0(t) = \exp(-T_i^{\gamma})$, and $\lambda_i = \exp(-\gamma \eta_i)$:
+
+\begin{align}
+\begin{split}
+  h_i(T_i) 
+    & = \exp(-\eta_i) h_0(t \exp(-\eta_i)) \\
+    & = \exp(-\eta_i) \gamma {(t \exp(-\eta_i))}^{\gamma - 1} \\
+    & = \exp(-\gamma \eta_i) \gamma t^{\gamma - 1} \\
+    & = \lambda_i \gamma t^{\gamma - 1}
+\end{split}
+\end{align}
+
+\begin{align}
+\begin{split}
+  S_i(T_i) 
+    & = S_0(t \exp(-\eta_i)) \\
+    & = \exp(-(T_i \exp(-\eta_i))^{\gamma}) \\
+    & = \exp(-T_i^{\gamma} [\exp(-\eta_i)]^{\gamma}) \\
+    & = \exp(-T_i^{\gamma} \exp(-\gamma \eta_i)) \\
+    & = \exp(-T_i \lambda_i)
+\end{split}
+\end{align}
+
+
+### Extension to time-dependent coefficients (i.e. time-dependent acceleration factors)
+
+We can extend the previous model formulations to allow for time-dependent coefficients (i.e. time-dependent acceleration factors). 
+
+The so-called "unmoderated" survival probability for an individual at time $t$ is defined as the baseline survival probability at time $t$, i.e. $S_i(t) = S_0(t)$. With a time-fixed acceleration factor, the survival probability for a so-called "moderated" individual is defined as the baseline survival probability but evaluated at "time $t$ multiplied by the acceleration factor $\exp(-\eta_i)$". That is, the survival probability for the moderated individual is $S_i(t) = S_0(t \exp(-\eta_i))$. 
+
+However, with time-dependent acceleration we cannot simply multiply time by a fixed (acceleration) constant. Instead, we must integrate the function for the time-dependent acceleration factor over the interval $0$ to $t$. In other words, we must evaluate:
+\
+\begin{align}
+\begin{split}
+  S_i(t) = S_0 \left( \int_0^t \exp(-\eta_i(u)) du \right)
+\end{split}
+\end{align}
+\
+as described by Hougaard (1999).
+
+Hougaard also gives a general expression for the hazard function under time-dependent acceleration, as follows:
+\
+\begin{align}
+\begin{split}
+  h_i(t) = \exp \left(-\eta_i(t) \right) h_0 \left( \int_0^t \exp(-\eta_i(u)) du \right)
+\end{split}
+\end{align}
+
+**Note:** It is interesting to note here that the *hazard* at time $t$ is in fact a function of the full history of covariates and parameters (i.e. the linear predictor) from time $0$ up until time $t$. This is different to the hazard scale formulation of time-dependent effects (i.e. non-proportional hazards). Under the hazard scale formulation with time-dependent effects, the *survival* probability is a function of the full history between times $0$ and $t$, but the *hazard* is **not**; instead, the hazard is only a function of covariates and parameters as defined at the current time. This is particularly important to consider when fitting accelerated failure time models with time-dependent effects in the presence of delayed entry (i.e. left truncation).
+
+For the exponential distribution, this leads to:
+
+\begin{align}
+\begin{split}
+  S_i(T_i) 
+    & = S_0 \left( \int_0^{T_i} \exp(-\eta_i(u)) du \right) \\
+    & = \exp \left(- \int_0^{T_i} \exp(-\eta_i(u)) du \right)
+\end{split}
+\end{align}
+
+\begin{align}
+\begin{split}
+  h_i(T_i) 
+    & = \exp \left(-\eta_i(T_i) \right) h_0 \left( \int_0^{T_i} \exp(-\eta_i(u)) du \right) \\
+    & = \exp \left(-\eta_i(T_i) \right) \exp \left(- \int_0^{T_i} \exp(-\eta_i(u)) du \right)
+\end{split}
+\end{align}
+
+and for the Weibull distribution, this leads to:
+
+\begin{align}
+\begin{split}
+  S_i(T_i) 
+    & = S_0 \left( \int_0^{T_i} \exp(-\eta_i(u)) du \right) \\
+    & = \exp \left(- \left[\int_0^{T_i} \exp (-\eta_i(u)) du \right]^{\gamma} \right)
+\end{split}
+\end{align}
+
+\begin{align}
+\begin{split}
+  h_i(T_i) 
+    & = \exp \left(-\eta_i(T_i) \right) h_0 \left( \int_0^{T_i} \exp(-\eta_i(u)) du \right) \\
+    & = \exp \left(-\eta_i(T_i) \right) \exp \left(- \left[\int_0^{T_i} \exp (-\eta_i(u)) du \right]^{\gamma} \right)
+\end{split}
+\end{align}
+
+The general expressions for the hazard and survival function under an AFT model with a time-dependent linear predictor are used to evaluate the likelihood for the accelerated failure time model in `stan_surv` when time-dependent effects are specified in the model formula. Specifically, quadrature is used to evaluate the cumulative acceleration factor $\int_0^t \exp(-\eta_i(u)) du$ and this is then substituted into the relevant expressions for the hazard and survival.

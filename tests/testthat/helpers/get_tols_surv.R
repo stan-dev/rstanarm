@@ -14,12 +14,12 @@ get_tols <- function(mod, tolscales) {
   
   cl <- class(mod)[1L]
   
-  if (cl == "coxph") {
-    fixef_ses  <- sqrt(diag(mod$var))
+  if (cl %in% c("coxph", "survreg")) {
+    fixef_ses  <- sqrt(diag(mod$var))[1:length(mod$coefficients)]
     fixef_tols <- tolscales$hr_fixef * fixef_ses
     names(fixef_tols) <- names(mod$coefficients)
   }
-  
+   
   if ("(Intercept)" %in% names(fixef_tols))
     fixef_tols[["(Intercept)"]] <- 2 * fixef_tols[["(Intercept)"]]
   
