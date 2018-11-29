@@ -184,7 +184,63 @@
 #'   to the appropriate length.
 #'  
 #' @details
-#' \subsection{Time dependent effects}{
+#' \subsection{Model formulations}{
+#'   Let \eqn{h_i(t)} denote the hazard for individual \eqn{i} at time 
+#'   \eqn{t}, \eqn{h_0(t)} the baseline hazard at time \eqn{t}, \eqn{X_i} 
+#'   a vector of covariates for individual \eqn{i}, \eqn{\beta} a vector of 
+#'   coefficients, \eqn{S_i(t)} the survival probability for individual 
+#'   \eqn{i} at time \eqn{t}, and \eqn{S_0(t)} the baseline survival 
+#'   probability at time \eqn{t}. Without time-dependent effects in the 
+#'   model formula our linear predictor is \eqn{\eta_i = X_i \beta}, whereas
+#'   with time-dependent effects in the model formula our linear predictor
+#'   is \eqn{\eta_i(t) = X_i(t) \beta(t)}. Then the following definitions of 
+#'   the hazard function and survival function apply:
+#'   
+#'   \tabular{llll}{
+#'     \strong{Scale    }                                                \tab 
+#'     \strong{TDE      }                                                \tab
+#'     \strong{Hazard   }                                                \tab 
+#'     \strong{Survival }                                                \cr
+#'     \emph{Hazard}                                                     \tab 
+#'     \emph{No}                                                         \tab
+#'     \eqn{h_i(t) = h_0(t) \exp(\eta_i)}                                \tab
+#'     \eqn{S_i(t) = [S_0(t)]^{\exp(\eta_i)}}                            \cr 
+#'     \emph{Hazard}                                                     \tab 
+#'     \emph{Yes}                                                        \tab
+#'     \eqn{h_i(t) = h_0(t) \exp(\eta_i(t))}                             \tab
+#'     \eqn{S_i(t) = \exp(- \int_0^t h_i(u) du )}                        \cr
+#'     \emph{AFT}                                                        \tab 
+#'     \emph{No}                                                         \tab
+#'     \eqn{h_i(t) = \exp(-\eta_i) h_0 (t \exp(-\eta_i))}                \tab
+#'     \eqn{S_i(t) = S_0 ( t \exp(-\eta_i) )}                            \cr     
+#'     \emph{AFT}                                                        \tab 
+#'     \emph{Yes}                                                        \tab
+#'     \eqn{h_i(t) = \exp(-\eta_i(t)) h_0(\int_0^t \exp(-\eta_i(u)) du)} \tab
+#'     \eqn{S_i(t) = S_0 (\int_0^t \exp(-\eta_i(u)) du)}                 \cr
+#'   }
+#'   
+#'   where \emph{AFT} stands for an accelerated failure time formulation, 
+#'   and \emph{TDE} stands for time dependent effects in the model formula.
+#'   
+#'   For models without time-dependent effects, the value of \eqn{S_i(t)} can
+#'   be calculated analytically (with the one exception being when B-splines 
+#'   are used to model the log baseline hazard, i.e. \code{basehaz = "bs"}).
+#'   
+#'   For models with time-dependent effects \eqn{S_i(t)} cannot be calculated 
+#'   analytically and so Gauss-Kronrod quadrature is used to approximate the 
+#'   relevant integral. The number of nodes used in the quadrature can be 
+#'   controlled via the \code{nodes} argument.
+#'   
+#'   For models estimated on the hazard scale, a hazard ratio can be calculated 
+#'   as \eqn{\exp(\beta)}. For models estimated on the AFT scale, a survival 
+#'   time ratio can be calculated as \eqn{\exp(\beta)} and an acceleration 
+#'   factor can be calculated as \eqn{\exp(-\beta)}.
+#'   
+#'   Note that the \emph{stan_surv: Survival (Time-to-Event) Models} vignette 
+#'   provides more extensive details on the model formulations, including the
+#'   parameterisations for each of the parametric distributions.
+#' }
+#' \subsection{More details on time dependent effects}{
 #'   By default, any covariate effects specified in the \code{formula} are
 #'   included in the model under a proportional hazards assumption (for models
 #'   estimated using a hazard scale formulation) or under the assumption of
@@ -202,7 +258,8 @@
 #'   \item Estimating a time-dependent coefficient under an accelerated failure 
 #'   time model formulation (i.e. when \code{basehaz} is set equal to 
 #'   \code{"exp-aft"}, or \code{"weibull-aft"}) leads to the estimation of a 
-#'   time-dependent acceleration factor for the relevant covariate.
+#'   time-dependent acceleration factor -- or equivalently, a
+#'   time-dependent survival time ratio -- for the relevant covariate.
 #'   }
 #'   
 #'   A time-dependent effect can be specified in the model \code{formula}
@@ -297,23 +354,26 @@
 #' 
 #' #---------- Compare PH and AFT parameterisations
 #' 
+#' # Breast cancer data
+#' sel <- sample(1:nrow(bcancer), 100)
+#' 
 #' m_ph  <- stan_surv(Surv(recyrs, status) ~ group, 
-#'                    data    = bcancer[1:100,], 
+#'                    data    = bcancer[sel,], 
 #'                    basehaz = "weibull", 
 #'                    chains  = 1,
 #'                    refresh = 0,
 #'                    iter    = 600,
 #'                    seed    = 123)
 #' m_aft <- stan_surv(Surv(recyrs, status) ~ group, 
-#'                    data    = bcancer[1:100,], 
+#'                    data    = bcancer[sel,], 
 #'                    basehaz = "weibull-aft", 
 #'                    chains  = 1,
 #'                    refresh = 0,
 #'                    iter    = 600,
 #'                    seed    = 123)
 #'
-#' fixef(m_ph) [c('groupMedium', 'groupPoor')] # hazard ratios
-#' fixef(m_aft)[c('groupMedium', 'groupPoor')] # acceleration factors
+#' exp(fixef(m_ph)) [c('groupMedium', 'groupPoor')] # hazard ratios
+#' exp(fixef(m_aft))[c('groupMedium', 'groupPoor')] # survival time ratios
 #' 
 #' # same model (...slight differences due to sampling)
 #' summary(m_ph,  par = "log-posterior")[, 'mean'] 
@@ -593,13 +653,15 @@ stan_surv <- function(formula,
     qnodes       = if (!has_quadrature) 0L else qnodes,
     
     Nevent       = if (!has_quadrature) 0L else nevent,
+    Nlcens       = if (!has_quadrature) 0L else nlcens, 
+    Nrcens       = if (!has_quadrature) 0L else nrcens, 
+    Nicens       = if (!has_quadrature) 0L else nicens,
+    Ndelay       = if (!has_quadrature) 0L else ndelay, 
     qevent       = if (!has_quadrature) 0L else qevent,
     qlcens       = if (!has_quadrature) 0L else qlcens,
     qrcens       = if (!has_quadrature) 0L else qrcens,
     qicens       = if (!has_quadrature) 0L else qicens,
     qdelay       = if (!has_quadrature) 0L else qdelay,
-    Nlcens       = if (!has_quadrature) 0L else nlcens, 
-    Nicens       = if (!has_quadrature) 0L else nicens,
 
     x_cpts       = if (!has_quadrature) matrix(0,0,K)     else x_cpts,
     s_cpts       = if (!has_quadrature) matrix(0,0,S)     else s_cpts,
