@@ -11,11 +11,11 @@
   /**
   * Log hazard for exponential distribution; AFT parameterisation
   *
-  * @param eta Vector, linear predictor
+  * @param af Vector, acceleration factor at time t
   * @return A vector
   */
-  vector exponentialAFT_log_haz(vector eta) {
-    return -eta;
+  vector exponentialAFT_log_haz(vector af) {
+    return log(af);
   }
 
   /**
@@ -35,14 +35,14 @@
   /**
   * Log hazard for Weibull distribution; AFT parameterisation
   *
-  * @param eta Vector, linear predictor
-  * @param t Vector, event or censoring times
+  * @param af Vector, acceleration factor at time t
+  * @param caf Vector, cumulative acceleration factor at time t
   * @param shape Real, Weibull shape
   * @return A vector
   */
-  vector weibullAFT_log_haz(vector eta, vector t, real shape) {
-    vector[rows(eta)] res;
-    res = log(shape) + (shape - 1) * log(t) - (shape * eta);
+  vector weibullAFT_log_haz(vector af, vector caf, real shape) {
+    vector[rows(af)] res;
+    res = log(shape) + (shape - 1) * log(caf) + log(af);
     return res;
   }
 
@@ -132,4 +132,24 @@
     vector[N] res;
     res = log(surv_lower - surv_upper);
     return res;
+  }
+
+
+  /**
+  * Evaluate cumulative acceleration factor from the linear predictor evaluated
+  * at quadrature points and a corresponding vector of quadrature weights
+  *
+  * @param qwts Vector, the quadrature weights
+  * @param eta Vector, linear predictor at the quadrature points
+  * @param qnodes Integer, the number of quadrature points for each individual
+  * @param N Integer, the number of individuals (ie. rows(eta) / qnodes)
+  * @return A vector
+  */
+  vector quadrature_aft(vector qwts, vector eta, int qnodes, int N) {
+    int M = rows(eta);
+    vector[M] af = exp(-eta); // time-dependent acceleration factor
+    matrix[N,qnodes] qwts_mat = to_matrix(qwts, N, qnodes);
+    matrix[N,qnodes] af_mat   = to_matrix(af,   N, qnodes);
+    vector[N] caf = rows_dot_product(qwts_mat, af_mat);
+    return caf; // cumulative acceleration factor
   }
