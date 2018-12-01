@@ -1,3 +1,9 @@
+# rstanarm 2.18.2
+
+### Bug fixes
+
+* src/Makevars{.win} now uses a more robust way to find StanHeaders
+
 # rstanarm 2.18.1
 
 ### Bug fixes
