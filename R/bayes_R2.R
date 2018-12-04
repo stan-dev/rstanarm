@@ -55,7 +55,8 @@ bayes_R2.stanreg <-
       offset = offset
     )
     
-    if (is.binomial(family(object)$family)) {
+    fam <- family(object)$family
+    if (is.binomial(fam)) {
       if (is.factor(y)) {
         y <- fac2bin(y)
       } else if (NCOL(y) == 2) {
@@ -65,10 +66,23 @@ bayes_R2.stanreg <-
       }
     }
     
-    e <- -1 * sweep(yhat, 2, y)
+    sigma2 <- 
+      switch(fam, 
+        "gaussian" = drop(as.matrix(fit, pars = "sigma")^2),
+        "binomial" = rowMeans(yhat * (1 - yhat)),
+        "poisson" = rowMeans(yhat),
+        "neg_binomial_2"= {
+          phi <- drop(as.matrix(fit, pars = "reciprocal_dispersion"))
+          rowMeans(yhat + yhat^2 / phi)
+        },
+        "Gamma" = {
+          shape <- drop(as.matrix(fit, pars = "shape"))
+          rowMeans(yhat^2 / shape)
+        }
+      ) 
+    
     var_yhat <- apply(yhat, 1, var)
-    var_e <- apply(e, 1, var)
-    var_yhat / (var_yhat + var_e)
+    var_yhat / (var_yhat + sigma2)
   }
 
 
