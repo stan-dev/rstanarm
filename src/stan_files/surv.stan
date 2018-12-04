@@ -480,8 +480,6 @@ data {
   int<lower=0> nvars;      // num. aux parameters for baseline hazard
   int<lower=1> smooth_map[S]; // indexing of smooth sds for tde spline coefs
   int<lower=0> smooth_idx[S > 0 ? max(smooth_map) : 0, 2];
-  int<lower=0> idx_cpts[7,2]; // index for breaking cpts into epts,qpts_event,etc
-  int<lower=0> len_cpts;
 
   // response and time variables
   vector[nevent] t_event;  // time of events
@@ -490,30 +488,48 @@ data {
   vector[nicens] t_icenl;  // time of lower limit for interval censoring
   vector[nicens] t_icenu;  // time of upper limit for interval censoring
   vector[ndelay] t_delay;  // time of entry for delayed entry
-  vector[len_cpts] cpts;   // time at events and all quadrature points
 
-  // predictor matrices (time-fixed)
+  // predictor matrices (time-fixed), without quadrature
   matrix[nevent,K] x_event; // for rows with events
   matrix[nlcens,K] x_lcens; // for rows with left censoring
   matrix[nrcens,K] x_rcens; // for rows with right censoring
   matrix[nicens,K] x_icens; // for rows with interval censoring
   matrix[ndelay,K] x_delay; // for rows with delayed entry
-  matrix[len_cpts,K] x_cpts; // for rows at events and all quadrature points
+
+  // predictor matrices (time-fixed), with quadrature
+  matrix[Nevent,K] x_epts_event; // for rows with events
+  matrix[qevent,K] x_qpts_event; // for rows with events
+  matrix[qlcens,K] x_qpts_lcens; // for rows with left censoring
+  matrix[qrcens,K] x_qpts_rcens; // for rows with right censoring
+  matrix[qicens,K] x_qpts_icens; // for rows with interval censoring
+  matrix[qdelay,K] x_qpts_delay; // for rows with delayed entry
 
   // predictor matrices (time-varying)
-  matrix[len_cpts,S] s_cpts; // for rows at events and all quadrature points
+  matrix[Nevent,S] s_epts_event; // for rows with events
+  matrix[qevent,S] s_qpts_event; // for rows with events
+  matrix[qlcens,S] s_qpts_lcens; // for rows with left censoring
+  matrix[qrcens,S] s_qpts_rcens; // for rows with right censoring
+  matrix[qicens,S] s_qpts_icenl; // for rows with interval censoring
+  matrix[qicens,S] s_qpts_icenu; // for rows with interval censoring
+  matrix[qdelay,S] s_qpts_delay; // for rows with delayed entry
 
-  // basis matrices for M-splines
+  // basis matrices for M-splines / I-splines, without quadrature
   matrix[nevent,nvars] basis_event;  // at event time
-  matrix[len_cpts,nvars] basis_cpts; // at event times and all quadrature points
-
-  // basis matrices for I-splines
   matrix[nevent,nvars] ibasis_event; // at event time
   matrix[nlcens,nvars] ibasis_lcens; // at left  censoring time
   matrix[nrcens,nvars] ibasis_rcens; // at right censoring time
   matrix[nicens,nvars] ibasis_icenl; // at lower limit of interval censoring
   matrix[nicens,nvars] ibasis_icenu; // at upper limit of interval censoring
   matrix[ndelay,nvars] ibasis_delay; // at delayed entry time
+
+  // basis matrices for M-splines, with quadrature
+  matrix[Nevent,nvars] basis_epts_event; // at event time
+  matrix[qevent,nvars] basis_qpts_event; // at qpts for event time
+  matrix[qlcens,nvars] basis_qpts_lcens; // at qpts for left  censoring time
+  matrix[qrcens,nvars] basis_qpts_rcens; // at qpts for right censoring time
+  matrix[qicens,nvars] basis_qpts_icenl; // at qpts for lower limit of icens time
+  matrix[qicens,nvars] basis_qpts_icenu; // at qpts for upper limit of icens time
+  matrix[qdelay,nvars] basis_qpts_delay; // at qpts for delayed entry time
 
   // baseline hazard type:
   //   1 = weibull
@@ -644,10 +660,10 @@ transformed parameters {
 
   // define log hazard ratios
   if (K > 0) {
-    beta = make_beta(z_beta, prior_dist, prior_mean,
-                     prior_scale, prior_df, global_prior_scale,
-                     global, local, ool, mix, rep_array(1.0, 0), 0,
-                     slab_scale, caux);
+    beta = make_beta(z_beta,
+                     prior_dist, prior_mean, prior_scale, prior_df,
+                     global_prior_scale, global, local, ool, mix,
+                     rep_array(1.0, 0), 0, slab_scale, caux);
   }
 
   // define basehaz parameters
@@ -681,11 +697,11 @@ model {
 
     if (has_quadrature == 0) {
 
-      vector[nevent] eta_event; // linear predictor for events
-      vector[nlcens] eta_lcens; // linear predictor for left censored
-      vector[nrcens] eta_rcens; // linear predictor for right censored
-      vector[nicens] eta_icens; // linear predictor for interval censored
-      vector[ndelay] eta_delay; // linear predictor for delayed entry
+      vector[nevent] eta_event; // for events
+      vector[nlcens] eta_lcens; // for left censored
+      vector[nrcens] eta_rcens; // for right censored
+      vector[nicens] eta_icens; // for interval censored
+      vector[ndelay] eta_delay; // for delayed entry
 
       // linear predictor
       if (K > 0) {
@@ -795,36 +811,58 @@ model {
 
     else {
 
-      vector[len_cpts] eta;  // linear predictor at event and quadrature times
+      vector[Nevent] eta_epts_event; // for event times
+      vector[qlcens] eta_qpts_event; // for qpts for event time
+      vector[qlcens] eta_qpts_lcens; // for qpts for left  censoring time
+      vector[qrcens] eta_qpts_rcens; // for qpts for right censoring time
+      vector[qicens] eta_qpts_icenl; // for qpts for lower limit of icens time
+      vector[qicens] eta_qpts_icenu; // for qpts for upper limit of icens time
+      vector[qdelay] eta_qpts_delay; // for qpts for delayed entry time
 
       // linear predictor (time-fixed part)
       if (K > 0) {
-        eta = x_cpts * beta;
+        if (Nevent > 0) eta_epts_event = x_epts_event * beta;
+        if (qevent > 0) eta_qpts_event = x_qpts_event * beta;
+        if (qlcens > 0) eta_qpts_lcens = x_qpts_lcens * beta;
+        if (qrcens > 0) eta_qpts_rcens = x_qpts_rcens * beta;
+        if (qicens > 0) eta_qpts_icenl = x_qpts_icens * beta;
+        if (qicens > 0) eta_qpts_icenu = x_qpts_icens * beta;
+        if (qdelay > 0) eta_qpts_delay = x_qpts_delay * beta;
       }
       else {
-        eta = rep_vector(0.0, len_cpts);
+        if (Nevent > 0) eta_epts_event = rep_vector(0.0, Nevent);
+        if (qevent > 0) eta_qpts_event = rep_vector(0.0, qevent);
+        if (qlcens > 0) eta_qpts_lcens = rep_vector(0.0, qlcens);
+        if (qrcens > 0) eta_qpts_rcens = rep_vector(0.0, qrcens);
+        if (qicens > 0) eta_qpts_icenl = rep_vector(0.0, qicens);
+        if (qicens > 0) eta_qpts_icenu = rep_vector(0.0, qicens);
+        if (qdelay > 0) eta_qpts_delay = rep_vector(0.0, qdelay);
       }
 
       // add on time-varying part to linear predictor
       if (S > 0) {
-        eta += s_cpts * beta_tde;
+        if (Nevent > 0) eta_epts_event += s_epts_event * beta_tde;
+        if (qevent > 0) eta_qpts_event += s_qpts_event * beta_tde;
+        if (qlcens > 0) eta_qpts_lcens += s_qpts_lcens * beta_tde;
+        if (qrcens > 0) eta_qpts_rcens += s_qpts_rcens * beta_tde;
+        if (qicens > 0) eta_qpts_icenl += s_qpts_icenl * beta_tde;
+        if (qicens > 0) eta_qpts_icenu += s_qpts_icenu * beta_tde;
+        if (qdelay > 0) eta_qpts_delay += s_qpts_delay * beta_tde;
       }
 
       // add on intercept to linear predictor
       if (has_intercept == 1) {
-        eta += gamma[1];
+        if (Nevent > 0) eta_epts_event += gamma[1];
+        if (qevent > 0) eta_qpts_event += gamma[1];
+        if (qlcens > 0) eta_qpts_lcens += gamma[1];
+        if (qrcens > 0) eta_qpts_rcens += gamma[1];
+        if (qicens > 0) eta_qpts_icenl += gamma[1];
+        if (qicens > 0) eta_qpts_icenu += gamma[1];
+        if (qdelay > 0) eta_qpts_delay += gamma[1];
       }
 
       // aft models
       if (type == 7 || type == 8) {
-
-        vector[Nevent] eta_epts_event;
-        vector[qevent] eta_qpts_event;
-        vector[qlcens] eta_qpts_lcens;
-        vector[qrcens] eta_qpts_rcens;
-        vector[qicens] eta_qpts_icenl;
-        vector[qicens] eta_qpts_icenu;
-        vector[qdelay] eta_qpts_delay;
 
         vector[Nevent] af_event;
 
@@ -835,50 +873,39 @@ model {
         vector[Nicens] caf_icenu;
         vector[Ndelay] caf_delay;
 
-        // split linear predictor based on event types
-        if (Nevent > 0) eta_epts_event = eta[idx_cpts[1,1]:idx_cpts[1,2]];
-        if (qevent > 0) eta_qpts_event = eta[idx_cpts[2,1]:idx_cpts[2,2]];
-        if (qlcens > 0) eta_qpts_lcens = eta[idx_cpts[3,1]:idx_cpts[3,2]];
-        if (qrcens > 0) eta_qpts_rcens = eta[idx_cpts[4,1]:idx_cpts[4,2]];
-        if (qicens > 0) eta_qpts_icenl = eta[idx_cpts[5,1]:idx_cpts[5,2]];
-        if (qicens > 0) eta_qpts_icenu = eta[idx_cpts[6,1]:idx_cpts[6,2]];
-        if (qdelay > 0) eta_qpts_delay = eta[idx_cpts[7,1]:idx_cpts[7,2]];
-
         // acceleration factor at event time
         if (Nevent > 0) af_event = exp(-eta_epts_event);
 
         // evaluate cumulative acceleration factors
-        if (qevent > 0) caf_event = quadrature_aft(qwts_event, eta_qpts_event, qnodes, Nevent);
-        if (qlcens > 0) caf_lcens = quadrature_aft(qwts_lcens, eta_qpts_lcens, qnodes, Nlcens);
-        if (qrcens > 0) caf_rcens = quadrature_aft(qwts_rcens, eta_qpts_rcens, qnodes, Nrcens);
-        if (qicens > 0) caf_icenl = quadrature_aft(qwts_icenl, eta_qpts_icenl, qnodes, Nicens);
-        if (qicens > 0) caf_icenu = quadrature_aft(qwts_icenu, eta_qpts_icenu, qnodes, Nicens);
-        if (qdelay > 0) caf_delay = quadrature_aft(qwts_delay, eta_qpts_delay, qnodes, Ndelay);
+        if (Nevent > 0) caf_event = quadrature_aft(qwts_event, eta_qpts_event, qnodes, Nevent);
+        if (Nlcens > 0) caf_lcens = quadrature_aft(qwts_lcens, eta_qpts_lcens, qnodes, Nlcens);
+        if (Nrcens > 0) caf_rcens = quadrature_aft(qwts_rcens, eta_qpts_rcens, qnodes, Nrcens);
+        if (Nicens > 0) caf_icenl = quadrature_aft(qwts_icenl, eta_qpts_icenl, qnodes, Nicens);
+        if (Nicens > 0) caf_icenu = quadrature_aft(qwts_icenu, eta_qpts_icenu, qnodes, Nicens);
+        if (Ndelay > 0) caf_delay = quadrature_aft(qwts_delay, eta_qpts_delay, qnodes, Ndelay);
 
         // increment target with log-lik contributions
         if (type == 7) { // exponential AFT model
-          if (nevent > 0) target +=  exponentialAFT_log_haz (af_event);
-          if (nevent > 0) target +=  exponentialAFT_log_surv(caf_event);
-          if (nlcens > 0) target +=  exponentialAFT_log_cdf (caf_lcens);
-          if (nrcens > 0) target +=  exponentialAFT_log_surv(caf_rcens);
-          if (nicens > 0) target +=  exponentialAFT_log_cdf2(caf_icenl, caf_icenu);
-          if (ndelay > 0) target += -exponentialAFT_log_surv(caf_delay);
+          if (Nevent > 0) target +=  exponentialAFT_log_haz (af_event);
+          if (Nevent > 0) target +=  exponentialAFT_log_surv(caf_event);
+          if (Nlcens > 0) target +=  exponentialAFT_log_cdf (caf_lcens);
+          if (Nrcens > 0) target +=  exponentialAFT_log_surv(caf_rcens);
+          if (Nicens > 0) target +=  exponentialAFT_log_cdf2(caf_icenl, caf_icenu);
+          if (Ndelay > 0) target += -exponentialAFT_log_surv(caf_delay);
         } else if (type == 8) { // weibull AFT model
           real shape = coefs[1];
-          if (nevent > 0) target +=  weibullAFT_log_haz (af_event, caf_event, shape);
-          if (nevent > 0) target +=  weibullAFT_log_surv(caf_event, shape);
-          if (nlcens > 0) target +=  weibullAFT_log_cdf (caf_lcens, shape);
-          if (nrcens > 0) target +=  weibullAFT_log_surv(caf_rcens, shape);
-          if (nicens > 0) target +=  weibullAFT_log_cdf2(caf_icenl, caf_icenu, shape);
-          if (ndelay > 0) target += -weibullAFT_log_surv(caf_delay, shape);
+          if (Nevent > 0) target +=  weibullAFT_log_haz (af_event, caf_event, shape);
+          if (Nevent > 0) target +=  weibullAFT_log_surv(caf_event, shape);
+          if (Nlcens > 0) target +=  weibullAFT_log_cdf (caf_lcens, shape);
+          if (Nrcens > 0) target +=  weibullAFT_log_surv(caf_rcens, shape);
+          if (Nicens > 0) target +=  weibullAFT_log_cdf2(caf_icenl, caf_icenu, shape);
+          if (Ndelay > 0) target += -weibullAFT_log_surv(caf_delay, shape);
         }
 
       }
 
       // hazard models
       else {
-
-        vector[len_cpts] lhaz; // log hazard       at event and quadrature times
 
         vector[Nevent] lhaz_epts_event;
         vector[qevent] lhaz_qpts_event;
@@ -890,51 +917,63 @@ model {
 
         // evaluate log hazard
         if (type == 5) { // exponential model
-          lhaz = exponential_log_haz(eta);
-        }
-        else if (type == 7) { // exponential AFT model
-          lhaz = exponentialAFT_log_haz(eta);
+          if (Nevent > 0) lhaz_epts_event = exponential_log_haz(eta_epts_event);
+          if (qevent > 0) lhaz_qpts_event = exponential_log_haz(eta_qpts_event);
+          if (qlcens > 0) lhaz_qpts_lcens = exponential_log_haz(eta_qpts_lcens);
+          if (qrcens > 0) lhaz_qpts_rcens = exponential_log_haz(eta_qpts_rcens);
+          if (qicens > 0) lhaz_qpts_icenl = exponential_log_haz(eta_qpts_icenl);
+          if (qicens > 0) lhaz_qpts_icenu = exponential_log_haz(eta_qpts_icenu);
+          if (qdelay > 0) lhaz_qpts_delay = exponential_log_haz(eta_qpts_delay);
         }
         else if (type == 1) { // weibull model
           real shape = coefs[1];
-          lhaz = weibull_log_haz(eta, cpts, shape);
-        }
-        else if (type == 8) { // weibull AFT model
-          real shape = coefs[1];
-          lhaz = weibullAFT_log_haz(eta, cpts, shape);
+          if (Nevent > 0) lhaz_epts_event = weibull_log_haz(eta_epts_event, t_event,    shape);
+          if (qevent > 0) lhaz_qpts_event = weibull_log_haz(eta_qpts_event, qpts_event, shape);
+          if (qlcens > 0) lhaz_qpts_lcens = weibull_log_haz(eta_qpts_lcens, qpts_lcens, shape);
+          if (qrcens > 0) lhaz_qpts_rcens = weibull_log_haz(eta_qpts_rcens, qpts_rcens, shape);
+          if (qicens > 0) lhaz_qpts_icenl = weibull_log_haz(eta_qpts_icenl, qpts_icenl, shape);
+          if (qicens > 0) lhaz_qpts_icenu = weibull_log_haz(eta_qpts_icenu, qpts_icenu, shape);
+          if (qdelay > 0) lhaz_qpts_delay = weibull_log_haz(eta_qpts_delay, qpts_delay, shape);
         }
         else if (type == 6) { // gompertz model
           real scale = coefs[1];
-          lhaz = gompertz_log_haz(eta, cpts, scale);
+          if (Nevent > 0) lhaz_epts_event = gompertz_log_haz(eta_epts_event, t_event,    scale);
+          if (qevent > 0) lhaz_qpts_event = gompertz_log_haz(eta_qpts_event, qpts_event, scale);
+          if (qlcens > 0) lhaz_qpts_lcens = gompertz_log_haz(eta_qpts_lcens, qpts_lcens, scale);
+          if (qrcens > 0) lhaz_qpts_rcens = gompertz_log_haz(eta_qpts_rcens, qpts_rcens, scale);
+          if (qicens > 0) lhaz_qpts_icenl = gompertz_log_haz(eta_qpts_icenl, qpts_icenl, scale);
+          if (qicens > 0) lhaz_qpts_icenu = gompertz_log_haz(eta_qpts_icenu, qpts_icenu, scale);
+          if (qdelay > 0) lhaz_qpts_delay = gompertz_log_haz(eta_qpts_delay, qpts_delay, scale);
         }
         else if (type == 4) { // M-splines, on haz scale
-          lhaz = mspline_log_haz(eta, basis_cpts, coefs);
+          if (Nevent > 0) lhaz_epts_event = mspline_log_haz(eta_epts_event, basis_epts_event, coefs);
+          if (qevent > 0) lhaz_qpts_event = mspline_log_haz(eta_qpts_event, basis_qpts_event, coefs);
+          if (qlcens > 0) lhaz_qpts_lcens = mspline_log_haz(eta_qpts_lcens, basis_qpts_lcens, coefs);
+          if (qrcens > 0) lhaz_qpts_rcens = mspline_log_haz(eta_qpts_rcens, basis_qpts_rcens, coefs);
+          if (qicens > 0) lhaz_qpts_icenl = mspline_log_haz(eta_qpts_icenl, basis_qpts_icenl, coefs);
+          if (qicens > 0) lhaz_qpts_icenu = mspline_log_haz(eta_qpts_icenu, basis_qpts_icenu, coefs);
+          if (qdelay > 0) lhaz_qpts_delay = mspline_log_haz(eta_qpts_delay, basis_qpts_delay, coefs);
         }
         else if (type == 2) { // B-splines, on log haz scale
-          lhaz = bspline_log_haz(eta, basis_cpts, coefs);
+          if (Nevent > 0) lhaz_epts_event = bspline_log_haz(eta_epts_event, basis_epts_event, coefs);
+          if (qevent > 0) lhaz_qpts_event = bspline_log_haz(eta_qpts_event, basis_qpts_event, coefs);
+          if (qlcens > 0) lhaz_qpts_lcens = bspline_log_haz(eta_qpts_lcens, basis_qpts_lcens, coefs);
+          if (qrcens > 0) lhaz_qpts_rcens = bspline_log_haz(eta_qpts_rcens, basis_qpts_rcens, coefs);
+          if (qicens > 0) lhaz_qpts_icenl = bspline_log_haz(eta_qpts_icenl, basis_qpts_icenl, coefs);
+          if (qicens > 0) lhaz_qpts_icenu = bspline_log_haz(eta_qpts_icenu, basis_qpts_icenu, coefs);
+          if (qdelay > 0) lhaz_qpts_delay = bspline_log_haz(eta_qpts_delay, basis_qpts_delay, coefs);
         }
         else {
           reject("Bug found: invalid baseline hazard (with quadrature).");
         }
 
-        // split log hazard vector based on event types
-        if (Nevent > 0) lhaz_epts_event = lhaz[idx_cpts[1,1]:idx_cpts[1,2]];
-        if (qevent > 0) lhaz_qpts_event = lhaz[idx_cpts[2,1]:idx_cpts[2,2]];
-        if (qlcens > 0) lhaz_qpts_lcens = lhaz[idx_cpts[3,1]:idx_cpts[3,2]];
-        if (qrcens > 0) lhaz_qpts_rcens = lhaz[idx_cpts[4,1]:idx_cpts[4,2]];
-        if (qicens > 0) lhaz_qpts_icenl = lhaz[idx_cpts[5,1]:idx_cpts[5,2]];
-        if (qicens > 0) lhaz_qpts_icenu = lhaz[idx_cpts[6,1]:idx_cpts[6,2]];
-        if (qdelay > 0) lhaz_qpts_delay = lhaz[idx_cpts[7,1]:idx_cpts[7,2]];
-
         // increment target with log-lik contributions for event submodel
         if (Nevent > 0) target +=  lhaz_epts_event;
         if (qevent > 0) target +=  quadrature_log_surv(qwts_event, lhaz_qpts_event);
-        if (qlcens > 0) target +=  quadrature_log_cdf (qwts_lcens, lhaz_qpts_lcens,
-                                                       qnodes, Nlcens);
+        if (qlcens > 0) target +=  quadrature_log_cdf (qwts_lcens, lhaz_qpts_lcens, qnodes, Nlcens);
         if (qrcens > 0) target +=  quadrature_log_surv(qwts_rcens, lhaz_qpts_rcens);
         if (qicens > 0) target +=  quadrature_log_cdf2(qwts_icenl, lhaz_qpts_icenl,
-                                                       qwts_icenu, lhaz_qpts_icenu,
-                                                       qnodes, Nicens);
+                                                       qwts_icenu, lhaz_qpts_icenu, qnodes, Nicens);
         if (qdelay > 0) target += -quadrature_log_surv(qwts_delay, lhaz_qpts_delay);
 
       }
