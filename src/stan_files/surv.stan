@@ -489,6 +489,15 @@ data {
   vector[nicens] t_icenu;  // time of upper limit for interval censoring
   vector[ndelay] t_delay;  // time of entry for delayed entry
 
+  vector[Nevent] epts_event;  // time of events
+  vector[qevent] qpts_event;  // qpts for time of events
+  vector[qlcens] qpts_lcens;  // qpts for time of left censoring
+  vector[qrcens] qpts_rcens;  // qpts for time of right censoring
+  vector[qicens] qpts_icenl;  // qpts for time of lower limit for interval censoring
+  vector[qicens] qpts_icenu;  // qpts for time of upper limit for interval censoring
+  vector[qdelay] qpts_delay;  // qpts for time of entry for delayed entry
+
+
   // predictor matrices (time-fixed), without quadrature
   matrix[nevent,K] x_event; // for rows with events
   matrix[nlcens,K] x_lcens; // for rows with left censoring
@@ -927,7 +936,7 @@ model {
         }
         else if (type == 1) { // weibull model
           real shape = coefs[1];
-          if (Nevent > 0) lhaz_epts_event = weibull_log_haz(eta_epts_event, t_event,    shape);
+          if (Nevent > 0) lhaz_epts_event = weibull_log_haz(eta_epts_event, epts_event, shape);
           if (qevent > 0) lhaz_qpts_event = weibull_log_haz(eta_qpts_event, qpts_event, shape);
           if (qlcens > 0) lhaz_qpts_lcens = weibull_log_haz(eta_qpts_lcens, qpts_lcens, shape);
           if (qrcens > 0) lhaz_qpts_rcens = weibull_log_haz(eta_qpts_rcens, qpts_rcens, shape);
@@ -937,7 +946,7 @@ model {
         }
         else if (type == 6) { // gompertz model
           real scale = coefs[1];
-          if (Nevent > 0) lhaz_epts_event = gompertz_log_haz(eta_epts_event, t_event,    scale);
+          if (Nevent > 0) lhaz_epts_event = gompertz_log_haz(eta_epts_event, epts_event, scale);
           if (qevent > 0) lhaz_qpts_event = gompertz_log_haz(eta_qpts_event, qpts_event, scale);
           if (qlcens > 0) lhaz_qpts_lcens = gompertz_log_haz(eta_qpts_lcens, qpts_lcens, scale);
           if (qrcens > 0) lhaz_qpts_rcens = gompertz_log_haz(eta_qpts_rcens, qpts_rcens, scale);

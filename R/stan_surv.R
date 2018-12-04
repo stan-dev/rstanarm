@@ -410,7 +410,7 @@ stan_surv <- function(formula,
   algorithm <- match.arg(algorithm)
   
   formula   <- parse_formula(formula, data)
-  data      <- make_model_data(formula$tf_form, data) # row subsetting etc.
+  data      <- make_model_data(formula$allvars_form, data) # row subsetting etc.
   
   #----------------
   # Construct data
@@ -495,19 +495,20 @@ stan_surv <- function(formula,
   
   if (has_quadrature) { # model uses quadrature
     
-    # standardised weights and nodes for quadrature
+    # standardised nodes and weights for quadrature
     qq <- get_quadpoints(nodes = qnodes)
     qp <- qq$points
     qw <- qq$weights
     
-    # quadrature points & weights, evaluated for each row of data
+    # quadrature points, evaluated for each row of data
     qpts_event <- uapply(qp, unstandardise_qpts, 0, t_event)
     qpts_lcens <- uapply(qp, unstandardise_qpts, 0, t_lcens)
     qpts_rcens <- uapply(qp, unstandardise_qpts, 0, t_rcens)
     qpts_icenl <- uapply(qp, unstandardise_qpts, 0, t_icenl)
     qpts_icenu <- uapply(qp, unstandardise_qpts, 0, t_icenu)
     qpts_delay <- uapply(qp, unstandardise_qpts, 0, t_delay)
-    
+
+    # quadrature weights, evaluated for each row of data
     qwts_event <- uapply(qw, unstandardise_qwts, 0, t_event)
     qwts_lcens <- uapply(qw, unstandardise_qwts, 0, t_lcens)
     qwts_rcens <- uapply(qw, unstandardise_qwts, 0, t_rcens)
@@ -515,18 +516,6 @@ stan_surv <- function(formula,
     qwts_icenu <- uapply(qw, unstandardise_qwts, 0, t_icenu)
     qwts_delay <- uapply(qw, unstandardise_qwts, 0, t_delay)
     
-    # times at events and all quadrature points
-    cpts_list <- list(t_event,
-                      qpts_event,
-                      qpts_lcens,
-                      qpts_rcens,
-                      qpts_icenl,
-                      qpts_icenu,
-                      qpts_delay)
-    idx_cpts <- get_idx_array(sapply(cpts_list, length))
-    cpts     <- unlist(cpts_list) # as vector for stan
-    len_cpts <- length(cpts)
-
     # number of quadrature points
     qevent <- length(qwts_event)
     qlcens <- length(qwts_lcens)
@@ -536,78 +525,143 @@ stan_surv <- function(formula,
         
   } else {
     
-    cpts     <- rep(0,0)
-    len_cpts <- 0L
-    idx_cpts <- matrix(0,7,2)
-    
     if (!qnodes == 15) # warn user if qnodes is not equal to the default
       warning2("There is no quadrature required so 'qnodes' is being ignored.")
+    
   }
 
   #----- basis terms for baseline hazard
 
-  if (has_quadrature) {
-    
-    basis_cpts <- make_basis(cpts, basehaz)   
-    
-  } else {
+  if (!has_quadrature) {
     
     basis_event  <- make_basis(t_event, basehaz)
-    
     ibasis_event <- make_basis(t_event, basehaz, integrate = TRUE)
     ibasis_lcens <- make_basis(t_lcens, basehaz, integrate = TRUE)
     ibasis_rcens <- make_basis(t_rcens, basehaz, integrate = TRUE)
     ibasis_icenl <- make_basis(t_icenl, basehaz, integrate = TRUE)
     ibasis_icenu <- make_basis(t_icenu, basehaz, integrate = TRUE)
     ibasis_delay <- make_basis(t_delay, basehaz, integrate = TRUE)
- 
+    
+  } else {
+    
+    basis_epts_event <- make_basis(t_event,    basehaz)
+    basis_qpts_event <- make_basis(qpts_event, basehaz)
+    basis_qpts_lcens <- make_basis(qpts_lcens, basehaz)
+    basis_qpts_rcens <- make_basis(qpts_rcens, basehaz)
+    basis_qpts_icenl <- make_basis(qpts_icenl, basehaz)
+    basis_qpts_icenu <- make_basis(qpts_icenu, basehaz)
+    basis_qpts_delay <- make_basis(qpts_delay, basehaz)
+    
   }
     
-  #----- predictor matrices
-  
-  # time-fixed predictor matrix
-  x <- make_x(formula$tf_form, mf)$x
-  x_event <- keep_rows(x, status == 1)
-  x_lcens <- keep_rows(x, status == 2)
-  x_rcens <- keep_rows(x, status == 0)
-  x_icens <- keep_rows(x, status == 3)
-  x_delay <- keep_rows(x, delayed)
-  K <- ncol(x)
-  if (has_quadrature) {
-    x_cpts <- rbind(x_event,
-                    rep_rows(x_event, times = qnodes),
-                    rep_rows(x_lcens, times = qnodes),
-                    rep_rows(x_rcens, times = qnodes),
-                    rep_rows(x_icens, times = qnodes),
-                    rep_rows(x_icens, times = qnodes),
-                    rep_rows(x_delay, times = qnodes))
+  #----- model frames for generating predictor matrices
+ 
+  if (!has_quadrature) {
+    
+    # model frames without quadrature
+    mf_event <- keep_rows(mf, status == 1)
+    mf_lcens <- keep_rows(mf, status == 2)
+    mf_rcens <- keep_rows(mf, status == 0)
+    mf_icens <- keep_rows(mf, status == 3)
+    mf_delay <- keep_rows(mf, delayed)
+    
+  } else {
+    
+    # model frames with quadrature
+    mf_epts_event <- keep_rows(mf, status == 1)
+    mf_qpts_event <- rep_rows(keep_rows(mf, status == 1), times = qnodes)
+    mf_qpts_lcens <- rep_rows(keep_rows(mf, status == 2), times = qnodes)
+    mf_qpts_rcens <- rep_rows(keep_rows(mf, status == 0), times = qnodes)
+    mf_qpts_icenl <- rep_rows(keep_rows(mf, status == 3), times = qnodes)
+    mf_qpts_icenu <- rep_rows(keep_rows(mf, status == 3), times = qnodes)
+    mf_qpts_delay <- rep_rows(keep_rows(mf, delayed),     times = qnodes)
+
   }
   
-  # time-varying predictor matrix
-  if (has_tde) { 
-    tdfm  <- formula$td_form 
-    xlevs <- .getXlevels(mt, mf)
-    data_event <- keep_rows(data, status == 1)
-    data_lcens <- keep_rows(data, status == 2)
-    data_rcens <- keep_rows(data, status == 0)
-    data_icens <- keep_rows(data, status == 3)
-    data_delay <- keep_rows(data, delayed)
-    data_cpts  <- rbind(data_event,
-                        rep_rows(data_event, times = qnodes),
-                        rep_rows(data_lcens, times = qnodes),
-                        rep_rows(data_rcens, times = qnodes),
-                        rep_rows(data_icens, times = qnodes),
-                        rep_rows(data_icens, times = qnodes),
-                        rep_rows(data_delay, times = qnodes))
-    s_cpts <- make_s(tdfm, data_cpts, times = cpts, xlevs = xlevs)
-    smooth_map <- get_smooth_name(s_cpts, type = "smooth_map")
+  if (has_tde) {
+    
+    bsf <- formula$bs_form
+    
+    # generate a model frame with time transformations for tde effects
+    tms_epts_event <- model.frame(bsf, data.frame(times__ = t_event))
+    tms_qpts_event <- model.frame(bsf, data.frame(times__ = qpts_event))
+    tms_qpts_lcens <- model.frame(bsf, data.frame(times__ = qpts_lcens))
+    tms_qpts_rcens <- model.frame(bsf, data.frame(times__ = qpts_rcens))
+    tms_qpts_icenl <- model.frame(bsf, data.frame(times__ = qpts_icenl))
+    tms_qpts_icenu <- model.frame(bsf, data.frame(times__ = qpts_icenu))
+    tms_qpts_delay <- model.frame(bsf, data.frame(times__ = qpts_delay))
+    
+    # NB the method for adding columns here avoids dropping terms attribute
+    mf_epts_event[, colnames(tms_epts_event)] <- tms_epts_event
+    mf_qpts_event[, colnames(tms_qpts_event)] <- tms_qpts_event
+    mf_qpts_lcens[, colnames(tms_qpts_lcens)] <- tms_qpts_lcens
+    mf_qpts_rcens[, colnames(tms_qpts_rcens)] <- tms_qpts_rcens
+    mf_qpts_icenl[, colnames(tms_qpts_icenl)] <- tms_qpts_icenl
+    mf_qpts_icenu[, colnames(tms_qpts_icenu)] <- tms_qpts_icenu
+    mf_qpts_delay[, colnames(tms_qpts_delay)] <- tms_qpts_delay
+    
+  }  
+
+  #----- time-fixed predictor matrices
+  
+  tf <- formula$tf_form
+  
+  if (!has_quadrature) {
+
+    x_event <- make_x(tf, mf_event, xlevs = xlevs)$x
+    x_lcens <- make_x(tf, mf_lcens, xlevs = xlevs)$x
+    x_rcens <- make_x(tf, mf_rcens, xlevs = xlevs)$x
+    x_icens <- make_x(tf, mf_icens, xlevs = xlevs)$x
+    x_delay <- make_x(tf, mf_delay, xlevs = xlevs)$x
+    
+    K <- ncol(x_events)
+    
+  } else {
+    
+    x_epts_event <- make_x(tf, mf_epts_event, xlevs = xlevs)$x
+    x_qpts_event <- make_x(tf, mf_qpts_event, xlevs = xlevs)$x
+    x_qpts_lcens <- make_x(tf, mf_qpts_lcens, xlevs = xlevs)$x
+    x_qpts_rcens <- make_x(tf, mf_qpts_rcens, xlevs = xlevs)$x
+    x_qpts_icenl <- make_x(tf, mf_qpts_icenl, xlevs = xlevs)$x
+    x_qpts_icenu <- make_x(tf, mf_qpts_icenu, xlevs = xlevs)$x
+    x_qpts_delay <- make_x(tf, mf_qpts_delay, xlevs = xlevs)$x
+    
+    K <- ncol(x_epts_event)
+    
+  }
+  
+  #----- time-varying predictor matrices
+  
+  td <- formula$td_form
+
+  if (has_tde) {
+    
+    s_epts_event <- make_x(td, mf_epts_event, xlevs = xlevs)$x
+    s_qpts_event <- make_x(td, mf_qpts_event, xlevs = xlevs)$x
+    s_qpts_lcens <- make_x(td, mf_qpts_lcens, xlevs = xlevs)$x
+    s_qpts_rcens <- make_x(td, mf_qpts_rcens, xlevs = xlevs)$x
+    s_qpts_icenl <- make_x(td, mf_qpts_icenl, xlevs = xlevs)$x
+    s_qpts_icenu <- make_x(td, mf_qpts_icenu, xlevs = xlevs)$x
+    s_qpts_delay <- make_x(td, mf_qpts_delay, xlevs = xlevs)$x
+    
+    smooth_map <- get_smooth_name(s_epts_event, type = "smooth_map")
     smooth_idx <- get_idx_array(table(smooth_map))
-    S <- ncol(s_cpts) # num. of tde spline coefficients
-  } else { # model does not have tde
-    s_cpts     <- matrix(0,len_cpts,0)
+    S          <- ncol(s_epts_event) # number of tde spline coefficients
+    
+  } else {
+    
+    s_epts_event <- matrix(0,length(t_event),   0)
+    s_qpts_event <- matrix(0,length(qpts_event),0)
+    s_qpts_lcens <- matrix(0,length(qpts_lcens),0)
+    s_qpts_rcens <- matrix(0,length(qpts_rcens),0)
+    s_qpts_icenl <- matrix(0,length(qpts_icenl),0)
+    s_qpts_icenu <- matrix(0,length(qpts_icenu),0)
+    s_qpts_delay <- matrix(0,length(qpts_delay),0)
+
     smooth_idx <- matrix(0,0,2)
     smooth_map <- integer(0)
     S          <- 0L
+    
   }
 
   #----- stan data
@@ -619,9 +673,6 @@ stan_surv <- function(formula,
     has_quadrature,
     smooth_map,
     smooth_idx,
-    cpts,
-    len_cpts,
-    idx_cpts,
     type = basehaz$type,
 
     nevent       = if (has_quadrature) 0L else nevent,
@@ -650,24 +701,45 @@ stan_surv <- function(formula,
     ibasis_icenl = if (has_quadrature) matrix(0,0,nvars) else ibasis_icenl,
     ibasis_icenu = if (has_quadrature) matrix(0,0,nvars) else ibasis_icenu,
     ibasis_delay = if (has_quadrature) matrix(0,0,nvars) else ibasis_delay,
-    
+
     qnodes       = if (!has_quadrature) 0L else qnodes,
     
     Nevent       = if (!has_quadrature) 0L else nevent,
     Nlcens       = if (!has_quadrature) 0L else nlcens, 
     Nrcens       = if (!has_quadrature) 0L else nrcens, 
     Nicens       = if (!has_quadrature) 0L else nicens,
-    Ndelay       = if (!has_quadrature) 0L else ndelay, 
+    Ndelay       = if (!has_quadrature) 0L else ndelay,
+    
     qevent       = if (!has_quadrature) 0L else qevent,
     qlcens       = if (!has_quadrature) 0L else qlcens,
     qrcens       = if (!has_quadrature) 0L else qrcens,
     qicens       = if (!has_quadrature) 0L else qicens,
     qdelay       = if (!has_quadrature) 0L else qdelay,
 
-    x_cpts       = if (!has_quadrature) matrix(0,0,K)     else x_cpts,
-    s_cpts       = if (!has_quadrature) matrix(0,0,S)     else s_cpts,
-    basis_cpts   = if (!has_quadrature) matrix(0,0,nvars) else basis_cpts,
+    x_epts_event = if (!has_quadrature) matrix(0,0,K) else x_epts_event,
+    x_qpts_event = if (!has_quadrature) matrix(0,0,K) else x_qpts_event,
+    x_qpts_lcens = if (!has_quadrature) matrix(0,0,K) else x_qpts_lcens,
+    x_qpts_rcens = if (!has_quadrature) matrix(0,0,K) else x_qpts_rcens,
+    x_qpts_icenl = if (!has_quadrature) matrix(0,0,K) else x_qpts_icenl,
+    x_qpts_icenu = if (!has_quadrature) matrix(0,0,K) else x_qpts_icenu,
+    x_qpts_delay = if (!has_quadrature) matrix(0,0,K) else x_qpts_delay,
     
+    s_epts_event = if (!has_quadrature) matrix(0,0,S) else s_epts_event,
+    s_qpts_event = if (!has_quadrature) matrix(0,0,S) else s_qpts_event,
+    s_qpts_lcens = if (!has_quadrature) matrix(0,0,S) else s_qpts_lcens,
+    s_qpts_rcens = if (!has_quadrature) matrix(0,0,S) else s_qpts_rcens,
+    s_qpts_icenl = if (!has_quadrature) matrix(0,0,S) else s_qpts_icenl,
+    s_qpts_icenu = if (!has_quadrature) matrix(0,0,S) else s_qpts_icenu,
+    s_qpts_delay = if (!has_quadrature) matrix(0,0,S) else s_qpts_delay,
+    
+    basis_epts_event = if (!has_quadrature) matrix(0,0,nvars) else basis_epts_event,
+    basis_qpts_event = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_event,
+    basis_qpts_lcens = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_lcens,
+    basis_qpts_rcens = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_rcens,
+    basis_qpts_icenl = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_icenl,
+    basis_qpts_icenu = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_icenu,
+    basis_qpts_delay = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_delay,
+
     qwts_event   = if (!has_quadrature) rep(0,0) else qwts_event,
     qwts_lcens   = if (!has_quadrature) rep(0,0) else qwts_lcens,
     qwts_rcens   = if (!has_quadrature) rep(0,0) else qwts_rcens,
@@ -818,8 +890,8 @@ stan_surv <- function(formula,
   
   # define new parameter names
   nms_beta   <- colnames(x) # may be NULL
-  nms_tde    <- get_smooth_name(s_cpts, type = "smooth_coefs") # may be NULL
-  nms_smooth <- get_smooth_name(s_cpts, type = "smooth_sd")    # may be NULL
+  nms_tde    <- get_smooth_name(s_epts_event, type = "smooth_coefs") # may be NULL
+  nms_smooth <- get_smooth_name(s_epts_event, type = "smooth_sd")    # may be NULL
   nms_int    <- get_int_name_basehaz(basehaz)
   nms_aux    <- get_aux_name_basehaz(basehaz)
   nms_all    <- c(nms_int,
@@ -842,7 +914,7 @@ stan_surv <- function(formula,
                terms            = mt,
                xlevels          = .getXlevels(mt, mf),
                x,
-               s_cpts           = if (has_tde) s_cpts else NULL,
+               s_epts_event     = if (has_tde) s_epts_event else NULL,
                t_beg, 
                t_end,
                status,
@@ -1165,13 +1237,21 @@ parse_formula <- function(formula, data) {
   
   formula <- validate_formula(formula, needs_response = TRUE)
   
-  lhs      <- lhs(formula) # full LHS of formula
-  lhs_form <- reformulate_lhs(lhs)
+  lhs       <- lhs(formula)         # LHS as expression
+  lhs_form  <- reformulate_lhs(lhs) # LHS as formula
   
-  rhs        <- rhs(formula)         # RHS as expression
-  rhs_form   <- reformulate_rhs(rhs) # RHS as formula
-  rhs_terms  <- terms(rhs_form, specials = "tde")
-  rhs_vars   <- rownames(attr(rhs_terms, "factors"))
+  rhs       <- rhs(formula)         # RHS as expression
+  rhs_form  <- reformulate_rhs(rhs) # RHS as formula
+  
+  fe_form   <- lme4::nobars(rhs_form)              
+  fe_terms  <- terms(fe_form, specials = "tde")    
+  fe_vars   <- rownames(attr(fe_terms, "factors")) 
+   
+  bars      <- lme4::findbars(rhs_form)
+  re_parts  <- lapply(bars, split_at_bars)
+  re_forms  <- fetch(re_parts, "re_form")  
+  if (length(bars) > 2L)
+    stop2("A maximum of 2 grouping factors are allowed.")
   
   allvars <- all.vars(formula)
   allvars_form <- reformulate(allvars)
@@ -1206,34 +1286,36 @@ parse_formula <- function(formula, data) {
     max_t    <- max(surv[, c("time1", "time2")])
   }
 
-  sel <- attr(rhs_terms, "specials")$tde
-  
+  sel <- attr(fe_terms, "specials")$tde
+
   if (!is.null(sel)) { # model has tde
     
     # replace 'tde(x, ...)' in formula with 'x'
-    tde_oldvars <- rhs_vars
+    tde_oldvars <- fe_vars
     tde_newvars <- sapply(tde_oldvars, function(oldvar) {
-      if (oldvar %in% rhs_vars[sel]) {
+      if (oldvar %in% fe_vars[sel]) {
         tde <- function(newvar, ...) { # define tde function locally
           safe_deparse(substitute(newvar)) 
         }
         eval(parse(text = oldvar))
       } else oldvar
     }, USE.NAMES = FALSE)
-    term_labels <- attr(rhs_terms, "term.labels")
+    tf_term_labels <- attr(fe_terms, "term.labels")
+    td_term_labels <- c()
+    k <- 0 # initialise td_term_labels indexing (for creating a new formula)
     for (i in sel) {
-      sel_terms <- which(attr(rhs_terms, "factors")[i, ] > 0)
+      sel_terms <- which(attr(fe_terms, "factors")[i, ] > 0)
       for (j in sel_terms) {
-        term_labels[j] <- gsub(tde_oldvars[i], 
-                               tde_newvars[i], 
-                               term_labels[j], 
-                               fixed = TRUE)
+        k <- k + 1
+        tf_term_labels[j] <- td_term_labels[k] <- gsub(tde_oldvars[i], 
+                                                       tde_newvars[i], 
+                                                       tf_term_labels[j], 
+                                                       fixed = TRUE)
       }
     }
-    tf_form <- reformulate(term_labels, response = lhs)
     
     # extract 'tde(x, ...)' from formula and construct 'bs(times, ...)'
-    tde_terms <- lapply(rhs_vars[sel], function(x) {
+    tde_terms <- lapply(fe_vars[sel], function(x) {
       tde <- function(vn, ...) { # define tde function locally
         dots <- list(...)
         ok_args <- c("df")
@@ -1252,32 +1334,56 @@ parse_formula <- function(formula, data) {
         sub("^list\\(", "bs\\(times__, ", safe_deparse(dots))
       }
       tde_calls <- eval(parse(text = x))
-      sel_terms <- which(attr(rhs_terms, "factors")[x, ] > 0)
+      sel_terms <- which(attr(fe_terms, "factors")[x, ] > 0)
       new_calls <- sapply(seq_along(sel_terms), function(j) {
-        paste0(term_labels[sel_terms[j]], ":", tde_calls)
+        paste0(tf_term_labels[sel_terms[j]], ":", tde_calls)
       })
       nlist(tde_calls, new_calls)
     })
-    td_basis <- fetch(tde_terms, "tde_calls")
-    new_calls <- fetch_(tde_terms, "new_calls")
-    td_form <- reformulate(new_calls, response = NULL, intercept = FALSE)
+
+    # formula with all variables but no 'tde(x, ...)' wrappers
+    tf_form <- reformulate(tf_term_labels, response = lhs)
+
+    # formula with only tde variables but no 'tde(x, ...)' wrappers
+    td_form <- reformulate(td_term_labels, response = lhs)
+        
+    # formula with 'bs(times__, ...)' terms based on 'tde(x, ...)' calls
+    tt_basis <- fetch(tde_terms, "tde_calls")
+    bs_form  <- reformulate(unique(unlist(tt_basis)), 
+                            response  = NULL, 
+                            intercept = FALSE)
     
+    # formula with 'x:bs(times__, ...)' terms based on 'tde(x, ...)' calls
+    tt_calls <- fetch_(tde_terms, "new_calls")
+    tt_form  <- reformulate(tt_calls, 
+                            response  = NULL, 
+                            intercept = FALSE)
+
   } else { # model doesn't have tde
-    tf_form  <- formula
+    
+    tf_form  <- fe_form
     td_form  <- NULL
-    td_basis <- NULL
+    bs_form  <- NULL
+    tt_form  <- NULL
+    tt_basis <- NULL
+    tt_calls <- NULL
+    
   }
 
   nlist(formula,
         lhs,
-        rhs,
         lhs_form,
+        rhs,
         rhs_form,
         tf_form,
         td_form,
-        td_basis,
-        fe_form = rhs_form, # no re terms accommodated yet
-        re_form = NULL,     # no re terms accommodated yet
+        bs_form,
+        tt_form,
+        tt_basis,
+        tt_calls,
+        fe_form,
+        re_forms,
+        re_parts,
         allvars,
         allvars_form,
         tvar_beg,
@@ -1285,6 +1391,7 @@ parse_formula <- function(formula, data) {
         dvar,
         surv_type = attr(surv, "type"))
 }
+
 
 # Check formula object
 #
@@ -1453,7 +1560,7 @@ make_model_data <- function(formula, data) {
 make_model_frame <- function(formula, data, check_constant = TRUE) {
 
   # construct terms object from formula 
-  Terms <- terms(formula)
+  Terms <- terms(lme4::subbars(formula))
   
   # construct model frame
   mf <- model.frame(Terms, data)
