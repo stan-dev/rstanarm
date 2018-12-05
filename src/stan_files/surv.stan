@@ -821,7 +821,7 @@ model {
     else {
 
       vector[Nevent] eta_epts_event; // for event times
-      vector[qlcens] eta_qpts_event; // for qpts for event time
+      vector[qevent] eta_qpts_event; // for qpts for event time
       vector[qlcens] eta_qpts_lcens; // for qpts for left  censoring time
       vector[qrcens] eta_qpts_rcens; // for qpts for right censoring time
       vector[qicens] eta_qpts_icenl; // for qpts for lower limit of icens time
