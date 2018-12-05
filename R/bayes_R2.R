@@ -60,14 +60,7 @@ bayes_R2.stanreg <- function(object, ..., re.form = NULL) {
 
 
 #' @rdname bayes_R2.stanreg
-#' @export 
-loo_R2 <- function(object, ...) {
-  UseMethod("loo_R2")
-}
-
-#' @rdname bayes_R2.stanreg
 #' @export
-# #' @importFrom loo loo_R2
 loo_R2.stanreg <- function(object, ...) {
   if (!used.sampling(object))
     STOP_sampling_only("bayes_R2")
