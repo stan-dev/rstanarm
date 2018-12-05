@@ -44,9 +44,13 @@ bayes_R2.stanreg <-
     if (!used.sampling(object))
       STOP_sampling_only("bayes_R2")
     if (is_polr(object))
-      stop("Not available for stan_polr models.")
+      stop("bayes_R2 is not available for stan_polr models.")
     
-    y <- get_y_new(object, newdata = newdata)
+    fam <- family(object)$family
+    if (!fam %in% c("gaussian", "binomial")) {
+      stop("bayes_R2 is only available for Gaussian and binomial models.")
+    }
+    
     yhat <- posterior_linpred(
       object,
       transform = TRUE,
@@ -55,42 +59,28 @@ bayes_R2.stanreg <-
       offset = offset
     )
     
-    fam <- family(object)$family
     if (is.binomial(fam)) {
-      if (is.factor(y)) {
-        y <- fac2bin(y)
-      } else if (NCOL(y) == 2) {
+      y <- get_y_new(object, newdata = newdata)
+      if (NCOL(y) == 2) {
         trials <- rowSums(y)
-        y <- y[, 1]
         yhat <- yhat %*% diag(trials)
       }
+      sigma2 <- rowMeans(yhat * (1 - yhat))
+    } else {
+      sigma2 <- drop(as.matrix(fit, pars = "sigma"))^2
     }
     
-    sigma2 <- 
-      switch(fam, 
-        "gaussian" = drop(as.matrix(fit, pars = "sigma")^2),
-        "binomial" = rowMeans(yhat * (1 - yhat)),
-        "poisson" = rowMeans(yhat),
-        "neg_binomial_2"= {
-          phi <- drop(as.matrix(fit, pars = "reciprocal_dispersion"))
-          rowMeans(yhat + yhat^2 / phi)
-        },
-        "Gamma" = {
-          shape <- drop(as.matrix(fit, pars = "shape"))
-          rowMeans(yhat^2 / shape)
-        }
-      ) 
-    
     var_yhat <- apply(yhat, 1, var)
-    var_yhat / (var_yhat + sigma2)
+    r_squared <- var_yhat / (var_yhat + sigma2)
+    return(r_squared)
   }
 
 
 # internal ----------------------------------------------------------------
-get_y_new <- function(object, newdata = NULL) {
-  if (is.null(newdata)) {
-    get_y(object)
-  } else {
-    eval(formula(object)[[2]], newdata)
-  }
-}
+# get_y_new <- function(object, newdata = NULL) {
+#   if (is.null(newdata)) {
+#     get_y(object)
+#   } else {
+#     eval(formula(object)[[2]], newdata)
+#   }
+# }
