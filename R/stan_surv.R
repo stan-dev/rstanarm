@@ -1461,11 +1461,10 @@ validate_surv <- function(x, ok_types = c("right", "counting",
   x
 }
 
-
 # Extract LHS of a formula
 #
-# @param x A formula object
-# @param as_formula Logical. If TRUE then the result is reformulated.
+# @param x A formula object.
+# @return An expression.
 lhs <- function(x, as_formula = FALSE) {
   len <- length(x)
   if (len == 3L) {
@@ -1478,8 +1477,8 @@ lhs <- function(x, as_formula = FALSE) {
 
 # Extract RHS of a formula
 #
-# @param x A formula object
-# @param as_formula Logical. If TRUE then the result is reformulated.
+# @param x A formula object.
+# @return An expression.
 rhs <- function(x, as_formula = FALSE) {
   len <- length(x)
   if (len == 3L) {
@@ -1492,26 +1491,23 @@ rhs <- function(x, as_formula = FALSE) {
 
 # Reformulate as LHS of a formula
 #
-# @param x A character string or expression object
-# @param as_formula Logical. If TRUE then the result is reformulated.
+# @param x A character string or expression.
+# @return A formula.
 reformulate_lhs <- function(x) {
-  #x <- deparse(x, 500L)
   x <- formula(substitute(LHS ~ 1, list(LHS = x)))
   x
 }
 
 # Reformulate as RHS of a formula
 #
-# @param x A formula object
-# @param as_formula Logical. If TRUE then the result is reformulated.
+# @param x A character string or expression.
+# @return A formula.
 reformulate_rhs <- function(x) {
-  #x <- deparse(x, 500L)
   x <- formula(substitute(~ RHS, list(RHS = x)))
   x
 }
 
-
-# Return the response vector (time) for estimation
+# Return the response vector (time)
 #
 # @param model_frame The model frame.
 # @param type The type of time variable to return:
@@ -1559,7 +1555,6 @@ make_t <- function(model_frame, type = c("beg", "end", "gap", "upp")) {
          stop("Bug found: cannot handle specified 'type'."))
 }
 
-
 # Return the response vector (status indicator)
 #
 # @param model_frame The model frame.
@@ -1582,7 +1577,9 @@ make_d <- function(model_frame) {
 # Return a data frame with NAs excluded
 #
 # @param formula The parsed model formula.
-# @param data The user specified data frame.
+# @param data The (user-specified) data frame.
+# @return A data frame, with only complete cases for the variables that
+#   appear in the model formula.
 make_model_data <- function(formula, data) {
   mf <- model.frame(formula, data, na.action = na.pass)
   include <- apply(mf, 1L, function(row) !any(is.na(row)))
@@ -1593,13 +1590,20 @@ make_model_data <- function(formula, data) {
 #
 # @param formula The parsed model formula.
 # @param data The model data frame.
-make_model_frame <- function(formula, data, check_constant = TRUE) {
+# @param xlev Passed to xlev argument of model.frame.
+# @param check_constant If TRUE then an error is thrown is the returned
+#   model frame contains any constant variables.
+# @return A list with the following elements:
+#   mf: the model frame based on the formula.
+#   mt: the model terms associated with the returned model frame.
+make_model_frame <- function(formula, data, xlevs = NULL, 
+                             check_constant = FALSE) {
 
   # construct terms object from formula 
   Terms <- terms(lme4::subbars(formula))
   
   # construct model frame
-  mf <- model.frame(Terms, data)
+  mf <- model.frame(Terms, data, xlev = xlevs)
   
   # check no constant vars
   if (check_constant)
@@ -1613,19 +1617,23 @@ make_model_frame <- function(formula, data, check_constant = TRUE) {
   nlist(mf, mt)
 }
 
-# Return the fe predictor matrix for estimation
+# Return the predictor matrix
 #
 # @param formula The parsed model formula.
 # @param model_frame The model frame.
+# @param xlev Passed to xlev argument of model.frame.
+# @param check_constant If TRUE then an error is thrown is the returned
+#   predictor matrix contains any constant columns.
 # @return A named list with the following elements:
-#   x: the fe model matrix, not centred and without intercept.
+#   x: the model matrix, not centred and without an intercept.
 #   xbar: the column means of the model matrix.
-#   N,K: number of rows (observations) and columns (predictors) in the
-#     fixed effects model matrix
-make_x <- function(formula, model_frame, xlevs = NULL, check_constant = FALSE) {
-
+#   N: number of rows (observations) in the model matrix.
+#   K: number of cols (predictors) in the model matrix.
+make_x <- function(formula, model_frame, xlevs = NULL, 
+                   check_constant = FALSE) {
+  
   # uncentred predictor matrix, without intercept
-  x <- model.matrix(formula, model_frame, xlevs = xlevs)
+  x <- model.matrix(formula, model_frame, xlev = xlevs)
   x <- drop_intercept(x)
   
   # column means of predictor matrix
@@ -1640,202 +1648,3 @@ make_x <- function(formula, model_frame, xlevs = NULL, check_constant = FALSE) {
   
   nlist(x, xbar, N = NROW(x), K = NCOL(x))
 }
-
-# Return a predictor for the tde spline terms
-#
-# @param formula The formula for the time-dependent effects part of the model.
-# @param data A data frame.
-# @param times The vector of times at which the predictor matrix should be 
-#   evaluated.
-# @param xlevs The factor levels to use for the predictor matrix.
-# @return A matrix.
-make_s <- function(formula, data, times, xlevs = NULL) {
-  
-  # add times (as a new variable) to the model data
-  if (!length(times) == nrow(data))
-    stop("Bug found: 'times' is the incorrect length.")
-  data <- data.frame(data, times__ = times)
-
-  # make model frame and predictor matrix
-  mf <- make_model_frame(formula, data, check_constant = FALSE)$mf
-  x  <- make_x(formula, mf, xlevs = xlevs, check_constant = FALSE)$x
-  return(x)
-}
-
-# Return the fe predictor matrix for prediction
-#
-# @param object A stansurv object.
-# @param model_frame The model frame.
-# @return A named list with the following elements:
-#   x: the fe model matrix, not centred and may have intercept depending on
-#     the requirement of the baseline hazard.
-#   N,K: number of rows (observations) and columns (predictors) in the
-#     fixed effects model matrix
-make_pp_x <- function(object, model_frame) {
-  
-  # formula for fe predictor matrix
-  tt <- delete.response(terms(object))
-  
-  # check data classes in the model frame match those used in model fitting
-  if (!is.null(cl <- attr(tt, "dataClasses"))) 
-    .checkMFClasses(cl, model_frame)
-  
-  # uncentered predictor matrix
-  x <- model.matrix(tt, model_frame, contrasts.arg = object$contrasts)
-  
-  # drop intercept if baseline hazard doesn't require one
-  if (!has_intercept(object$basehaz))
-    x <- drop_intercept(x)
-  
-  nlist(x, N = NROW(x), K = NCOL(x))  
-}
-
-# apply b-spline time-dependent effect
-apply_tde_fun <- function(model_terms, model_frame, times, bknots = NULL) {
-  
-  tde_stuff <- survival::untangle.specials(model_terms, "tde")
-
-  if (!length(tde_stuff$terms)) 
-    return(model_frame) # no time-dependent effects
-  
-  if (!nrow(model_frame))
-    return(model_frame) # no rows in model frame (e.g. no delayed entry)
-  
-  vars  <- attr(model_terms, 'variables')
-  pvars <- attr(model_terms, 'predvars')
-  
-  # loop over time-dependent terms in formula
-  K <- length(tde_stuff$terms)
-  for (i in 1:K) { 
-    indx_i <- tde_stuff$terms[i] + 2 # index in call; +2 for 'list' & 'Surv()'
-    var_i  <- vars [[indx_i]]        # var     in formula
-    pvar_i <- pvars[[indx_i]]        # predvar in formula
-    var_i  <- safe_deparse(var_i)    # treat call as a string
-    pvar_i <- safe_deparse(pvar_i)   # treat call as a string
-    # get the possible prefixes for the predvar (i.e. 'tde(x' or 'bs(x')
-    prefix <- "^bs\\([^,]+,[[:blank:]]*|^tde\\([^,]+,[[:blank:]]*"
-    # returns dots from 'tde(x, ...)' as a list
-    chck <- grepl(prefix, pvar_i)
-    if (chck) {
-      args_i <- eval_string(sub(prefix, "list\\(", pvar_i)) 
-    } else {
-      args_i <- list()
-    }
-    # combine the dots with the times at which to evaluate the b-spline basis
-    args_i$intercept <- TRUE
-    if (!is.null(bknots))
-      args_i$Boundary.knots <- bknots
-    args_i <- c(list(x = times), args_i)
-    # extract the variable from the model frame
-    oldx_i  <- model_frame[[var_i]]
-    # apply interaction with the b-spline basis evaluated at specified times
-    newx_i <- oldx_i * do.call(splines::bs, args_i)
-    # substitute back into the model frame
-    model_frame[[var_i]] <- newx_i
-  }
-  
-  return(model_frame)
-}
-
-update_tde_terms <- function(model_terms, model_frame) {
-  tde_terms <- survival::untangle.specials(model_terms, "tde")$terms
-  if (!length(tde_terms))
-    return(model_frame) # no time-dependent effects
-  vars  <- attr(model_terms, 'variables')
-  pvars <- attr(model_terms, 'predvars')
-  dclss <- attr(model_terms, "dataClasses")
-  K <- length(tde_terms)
-  for (i in 1:K) {
-    indx_i <- tde_terms[i] + 2       # index in call; +2 for 'list' & 'Surv()'
-    var_i  <- vars [[indx_i]]        # var     in formula
-    pvar_i <- pvars[[indx_i]]        # predvar in formula
-    var_i  <- safe_deparse(var_i)    # treat call as a string
-    pvar_i <- safe_deparse(pvar_i)   # treat call as a string
-    oldx_i <- model_frame[[var_i]]   # extract transformed variable from model frame
-    dummy  <- as.call(list(as.name(class(oldx_i)[[1L]]), vars[[indx_i]][[2]]))
-    ptemp  <- makepredictcall(oldx_i, dummy) # predvars call
-    pvars[[indx_i]] <- ptemp
-    dclss[[var_i]] <- class(oldx_i)[[1L]]
-  }
-  attr(model_terms, "predvars") <- pvars
-  #attr(model_terms, "dataClasses") <- dclss
-  return(model_terms)
-}
-
-
-#--------- not used; based on tt approach instead of tde approach
-
-# # Validate the user input to the 'tt' argument. This draws on the 
-# # code for the coxph modelling function in the survival package.
-# #
-# # Copyright (C) 2018 Sam Brilleman
-# # Copyright (C) 2018 Terry Therneau, Thomas Lumley
-# #
-# # @param tt The user input to the 'tt' argument.
-# # @param validate_length Integer specifying the required length of the 
-# #   returned list.
-# # @return A list of functions.
-# validate_tt_fun <- function(tt, validate_length) {
-#   
-#   if (is.null(tt))
-#     stop2("'tt' must be specified.")
-#   
-#   if (is.function(tt)) 
-#     tt <- list(tt) # convert since function to a one element list
-#   
-#   if (!is.list(tt))
-#     stop2("The 'tt' argument must contain a function or list of functions.")  
-#   
-#   if (!all(sapply(tt, is.function)))
-#     stop2("The 'tt' argument must contain function or list of functions.")
-#   
-#   if (!length(tt) %in% c(1, validate_length)) 
-#     stop2("The 'tt' argument contains a list of the incorrect length.")
-#   
-#   if (length(tt) == 1)
-#     tt <- rep(tt, validate_length)
-#   
-#   return(tt)
-# }
-# 
-# # apply time transform to the model frame; method based on survival package 
-# apply_tt_fun <- function(model_frame, tt_funs, tt_vars, tt_terms, times) {
-#   if (!length(tt_terms))
-#     return(model_frame)
-#   
-#   for (i in 1:length(tt_terms)) { # loop over time transform terms
-#     
-#     # extract quantities used in time transform
-#     varnm_i <- tt_vars[[i]] # varname in model frame
-#     ttfun_i <- tt_funs[[i]] # user defined tt function
-#     
-#     # time transform at event times
-#     oldx_i <- model_frame[[varnm_i]]   # extract var from model frame
-#     newx_i <- (ttfun_i)(oldx_i, times) # evaluate tt function at times
-#     model_frame[[varnm_i]] <- newx_i   # substitute back into model frame
-#   }
-#   
-#   return(model_frame)
-# }
-#
-# # update the predvars attribute for time transformed terms
-# update_predvars <- function(model_terms, model_frame, tt_vars, tt_terms) {
-#   tcall <- attr(model_terms, 'variables')[tt_terms + 2]
-#   pvars <- attr(model_terms, 'predvars')
-#   pmethod <- sub("makepredictcall.", "", as.vector(methods("makepredictcall")))
-#   for (i in 1:length(tt_terms)) {
-#     # update predvars if necessary
-#     varnm_i <- tt_vars[[i]]       # varname in model frame
-#     terms_i <- tt_terms[i] + 2    # index in terms object
-#     x_i <- model_frame[[varnm_i]] # extract transformed variable from model frame
-#     nclass <- class(x_i)          # check class of transformed variable
-#     if (any(nclass %in% pmethod)) { # it has a makepredictcall method...
-#       dummy <- as.call(list(as.name(class(x_i)[1]), tcall[[i]][[2]]))
-#       ptemp <- makepredictcall(x_i, dummy)
-#       pvars[[terms_i]] <- ptemp
-#     }
-#   }
-#   attr(model_terms, "predvars") <- pvars
-#   return(model_terms)
-# }
-
