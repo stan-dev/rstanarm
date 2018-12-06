@@ -252,6 +252,7 @@ pp_data <-
   formula <- object$formula
   basehaz <- object$basehaz
   
+  # data with row subsetting etc
   if (is.null(newdata))
     newdata <- get_model_data(object)
   
@@ -259,7 +260,8 @@ pp_data <-
   has_tde        <- object$has_tde
   has_quadrature <- object$has_quadrature
   
-  # define dimensions and times for quadrature
+  #----- dimensions and times
+  
   if (has_quadrature && at_quadpoints) {
     
     if (is.null(times))
@@ -286,46 +288,46 @@ pp_data <-
     
   } else { # predictions don't require quadrature
     
-    pts    <- times
-    wts    <- rep(NA, length(times))
-    ids    <- seq_along(times)
+    pts <- times
+    wts <- rep(NA, length(times))
+    ids <- seq_along(times)
 
   }
 
-  # time-fixed predictor matrix
-  tf_form <- reformulate_rhs(rhs(formula$tf_form))
-  mf <- make_model_frame(tf_form, newdata, check_constant = FALSE)$mf 
-  x  <- make_x(tf_form, mf, xlevs= object$xlevs, check_constant = FALSE)$x
-  if (has_quadrature && at_quadpoints) {
-    x <- rep_rows(x, times = qnodes)
+  #----- model frame for generating predictor matrices
+  
+  tt <- delete.response(terms(object))
+  
+  mf <- make_model_frame(tt, newdata, xlevs = object$xlevs)$mf
+  
+  if (has_quadrature && at_quadpoints)
+    mf <- rep_rows(mf, times = qnodes)
+  
+  if (has_tde) {
+    
+    # formula for generating spline basis for tde effects
+    bsf <- formula$bs_form
+    
+    # generate a model frame with time transformations for tde effects
+    mf_tde <- make_model_frame(bsf, data.frame(times__ = pts))$mf
+    
+    # NB next line avoids dropping terms attribute from 'mf'
+    mf[, colnames(mf_tde)] <- mf_tde
+    
   }
   
-  # time-varying predictor matrix
-  if (has_tde) { # model has tde
-    if (at_quadpoints) {
-      # expand covariate data
-      newdata <- rep_rows(newdata, times = qnodes)
-    }
-    if (all(is.na(pts))) {
-      # temporary replacement to avoid error in creating spline basis
-      pts_tmp <- rep(0, length(pts))
-    } else {
-      # else use prediction times or quadrature points
-      pts_tmp <- pts
-    }
-    s <- make_s(formula = object$formula$td_form,
-                data    = newdata,
-                times   = pts_tmp,
-                xlevs   = object$xlevs)
-    if (all(is.na(pts))) {
-      # if pts were all NA then replace the time-varying predictor
-      # matrix with all NA, but retain appropriate dimensions
-      s[] <- NaN
-    }
-  } else { # model does not have tde
-    s <- matrix(0, length(pts), 0)
-  }
-
+  # check data classes in the model frame match those used in model fitting
+  if (!is.null(cl <- attr(tt, "dataClasses"))) 
+    .checkMFClasses(cl, mf)
+  
+  #----- time-fixed predictor matrix
+  
+  x  <- make_x(tt, mf)$x
+  
+  #----- time-varying predictor matrix
+  
+  s <- if (has_tde) make_x(formula$tt_form, mf)$x else matrix(0, length(pts), 0)
+  
   # return object
   return(nlist(pts,
                wts,
