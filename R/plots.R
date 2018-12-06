@@ -254,7 +254,7 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       betas    <- cbind(betas_tf, betas_td)
 
       times__ <- times
-      basis   <- eval(parse(text = x$formula$td_basis[sel1]))
+      basis   <- eval(parse(text = x$formula$tt_basis[sel1]))
       basis   <- add_intercept(basis)
       coef  <- linear_predictor(betas, basis)
       
