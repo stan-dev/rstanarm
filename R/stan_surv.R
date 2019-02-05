@@ -383,16 +383,17 @@
 #' 
 stan_surv <- function(formula, 
                       data, 
-                      basehaz         = "ms",
+                      basehaz          = "ms",
                       basehaz_ops,
-                      qnodes          = 15, 
-                      prior           = normal(), 
-                      prior_intercept = normal(),
-                      prior_aux       = normal(), 
-                      prior_smooth    = exponential(autoscale = FALSE), 
-                      prior_PD        = FALSE,
-                      algorithm       = c("sampling", "meanfield", "fullrank"),
-                      adapt_delta     = 0.95, ...) {
+                      qnodes           = 15, 
+                      prior            = normal(), 
+                      prior_intercept  = normal(),
+                      prior_aux        = normal(), 
+                      prior_smooth     = exponential(autoscale = FALSE), 
+                      prior_covariance = decov(),
+                      prior_PD         = FALSE,
+                      algorithm        = c("sampling", "meanfield", "fullrank"),
+                      adapt_delta      = 0.95, ...) {
 
   #-----------------------------
   # Pre-processing of arguments
@@ -629,31 +630,10 @@ stan_surv <- function(formula,
 
   #----- time-fixed predictor matrices
   
-  tf <- formula$tf_form
-  
+  tf     <- formula$tf_form
   x      <- make_x(tf, mf,      xlevs = xlevs)$x # only used for scaling priors
   x_cpts <- make_x(tf, mf_cpts, xlevs = xlevs)$x
-  K <- ncol(x)
-  
-  #----- time-varying predictor matrices
-  
-  if (has_tde) {
-    
-    s_cpts <- make_x(formula$tt_form, mf_cpts, xlevs = xlevs)$x
-    smooth_map <- get_smooth_name(s_cpts, type = "smooth_map")
-    smooth_idx <- get_idx_array(table(smooth_map))
-    S <- ncol(s_cpts) # number of tde spline coefficients
-    
-  } else {
-    
-    s_cpts <- matrix(0,length(cpts),0)
-    smooth_idx <- matrix(0,0,2)
-    smooth_map <- integer(0)
-    S <- 0L
-
-  }
-  
-  #----- unstack predictor matrices
+  K      <- ncol(x)
   
   if (!has_quadrature) {
     
@@ -677,8 +657,25 @@ stan_surv <- function(formula,
     x_qpts_rcens <- x_cpts[idx_cpts[4,1]:idx_cpts[4,2], , drop = FALSE]
     x_qpts_icens <- x_cpts[idx_cpts[5,1]:idx_cpts[5,2], , drop = FALSE]
     x_qpts_delay <- x_cpts[idx_cpts[7,1]:idx_cpts[7,2], , drop = FALSE]
+ 
+  }
   
-    # time-varying predictor matrices
+  #----- time-varying predictor matrices
+  
+  if (has_tde) {
+    s_cpts <- make_x(formula$tt_form, mf_cpts, xlevs = xlevs)$x
+    smooth_map <- get_smooth_name(s_cpts, type = "smooth_map")
+    smooth_idx <- get_idx_array(table(smooth_map))
+    S <- ncol(s_cpts) # number of tde spline coefficients
+  } else {
+    s_cpts <- matrix(0,length(cpts),0)
+    smooth_idx <- matrix(0,0,2)
+    smooth_map <- integer(0)
+    S <- 0L
+  }
+  
+  if (has_quadrature) {
+    
     s_epts_event <- s_cpts[idx_cpts[1,1]:idx_cpts[1,2], , drop = FALSE]
     s_qpts_event <- s_cpts[idx_cpts[2,1]:idx_cpts[2,2], , drop = FALSE]
     s_qpts_lcens <- s_cpts[idx_cpts[3,1]:idx_cpts[3,2], , drop = FALSE]
@@ -686,8 +683,60 @@ stan_surv <- function(formula,
     s_qpts_icenl <- s_cpts[idx_cpts[5,1]:idx_cpts[5,2], , drop = FALSE]
     s_qpts_icenu <- s_cpts[idx_cpts[6,1]:idx_cpts[6,2], , drop = FALSE]
     s_qpts_delay <- s_cpts[idx_cpts[7,1]:idx_cpts[7,2], , drop = FALSE]
-    
+  
+  }
+
+  #----- random effects predictor matrices
+
+  # use 'stan_glmer' approach
+  if (length(formula$bars)) {
+    group <- lme4::mkReTrms(formula$bars, mf_cpts)  
+    group <- pad_reTrms(Ztlist = group$Ztlist,
+                        cnms   = group$cnms,
+                        flist  = group$flist)
+    z_cpts <- group$Z
+  } else {
+    group  <- NULL
+    z_cpts <- matrix(0,length(cpts),0)
   } 
+  
+  if (!has_quadrature) {
+    
+    # random effects predictor matrices, without quadrature
+    # NB skip index 5 on purpose, since time fixed predictor matrix is 
+    # identical for lower and upper limits of interval censoring time
+    z_event <- z_cpts[idx_cpts[1,1]:idx_cpts[1,2], , drop = FALSE]
+    z_lcens <- z_cpts[idx_cpts[2,1]:idx_cpts[2,2], , drop = FALSE]
+    z_rcens <- z_cpts[idx_cpts[3,1]:idx_cpts[3,2], , drop = FALSE]
+    z_icens <- z_cpts[idx_cpts[4,1]:idx_cpts[4,2], , drop = FALSE]
+    z_delay <- z_cpts[idx_cpts[6,1]:idx_cpts[6,2], , drop = FALSE]
+    
+    parts_event <- extract_sparse_parts(z_event)
+    parts_lcens <- extract_sparse_parts(z_lcens)
+    parts_rcens <- extract_sparse_parts(z_rcens)
+    parts_icens <- extract_sparse_parts(z_icens)
+    parts_delay <- extract_sparse_parts(z_delay)
+    
+  } else {
+    
+    # random effects predictor matrices, with quadrature
+    # NB skip index 6 on purpose, since time fixed predictor matrix is 
+    # identical for lower and upper limits of interval censoring time
+    z_epts_event <- z_cpts[idx_cpts[1,1]:idx_cpts[1,2], , drop = FALSE]
+    z_qpts_event <- z_cpts[idx_cpts[2,1]:idx_cpts[2,2], , drop = FALSE]
+    z_qpts_lcens <- z_cpts[idx_cpts[3,1]:idx_cpts[3,2], , drop = FALSE]
+    z_qpts_rcens <- z_cpts[idx_cpts[4,1]:idx_cpts[4,2], , drop = FALSE]
+    z_qpts_icens <- z_cpts[idx_cpts[5,1]:idx_cpts[5,2], , drop = FALSE]
+    z_qpts_delay <- z_cpts[idx_cpts[7,1]:idx_cpts[7,2], , drop = FALSE]
+    
+    parts_epts_event <- extract_sparse_parts(z_epts_event)
+    parts_qpts_event <- extract_sparse_parts(z_qpts_event)
+    parts_qpts_lcens <- extract_sparse_parts(z_qpts_lcens)
+    parts_qpts_rcens <- extract_sparse_parts(z_qpts_rcens)
+    parts_qpts_icens <- extract_sparse_parts(z_qpts_icens)
+    parts_qpts_delay <- extract_sparse_parts(z_qpts_delay)
+    
+  }
 
   #----- stan data
   
@@ -718,6 +767,30 @@ stan_surv <- function(formula,
     x_rcens      = if (has_quadrature) matrix(0,0,K) else x_rcens,
     x_icens      = if (has_quadrature) matrix(0,0,K) else x_icens,
     x_delay      = if (has_quadrature) matrix(0,0,K) else x_delay,
+
+    w_event      = if (has_quadrature || nevent == 0) double(0) else parts_event$w,
+    w_lcens      = if (has_quadrature || nlcens == 0) double(0) else parts_lcens$w,
+    w_rcens      = if (has_quadrature || nrcens == 0) double(0) else parts_rcens$w,
+    w_icens      = if (has_quadrature || nicens == 0) double(0) else parts_icens$w,
+    w_delay      = if (has_quadrature || ndelay == 0) double(0) else parts_delay$w,
+ 
+    v_event      = if (has_quadrature || nevent == 0) integer(0) else parts_event$v - 1L,
+    v_lcens      = if (has_quadrature || nlcens == 0) integer(0) else parts_lcens$v - 1L,
+    v_rcens      = if (has_quadrature || nrcens == 0) integer(0) else parts_rcens$v - 1L,
+    v_icens      = if (has_quadrature || nicens == 0) integer(0) else parts_icens$v - 1L,
+    v_delay      = if (has_quadrature || ndelay == 0) integer(0) else parts_delay$v - 1L,    
+    
+    u_event      = if (has_quadrature || nevent == 0) integer(0) else parts_event$u - 1L,
+    u_lcens      = if (has_quadrature || nlcens == 0) integer(0) else parts_lcens$u - 1L,
+    u_rcens      = if (has_quadrature || nrcens == 0) integer(0) else parts_rcens$u - 1L,
+    u_icens      = if (has_quadrature || nicens == 0) integer(0) else parts_icens$u - 1L,
+    u_delay      = if (has_quadrature || ndelay == 0) integer(0) else parts_delay$u - 1L,    
+  
+    nnz_event    = if (has_quadrature || nevent == 0) 0L else length(parts_event$w),
+    nnz_lcens    = if (has_quadrature || nlcens == 0) 0L else length(parts_lcens$w),
+    nnz_rcens    = if (has_quadrature || nrcens == 0) 0L else length(parts_rcens$w),
+    nnz_icens    = if (has_quadrature || nicens == 0) 0L else length(parts_icens$w),
+    nnz_delay    = if (has_quadrature || ndelay == 0) 0L else length(parts_delay$w),    
     
     basis_event  = if (has_quadrature) matrix(0,0,nvars) else basis_event,
     ibasis_event = if (has_quadrature) matrix(0,0,nvars) else ibasis_event,
@@ -771,6 +844,34 @@ stan_surv <- function(formula,
     s_qpts_icenu = if (!has_quadrature) matrix(0,0,S) else s_qpts_icenu,
     s_qpts_delay = if (!has_quadrature) matrix(0,0,S) else s_qpts_delay,
     
+    w_epts_event = if (!has_quadrature || qevent == 0) double(0) else parts_epts_event$w,
+    w_qpts_event = if (!has_quadrature || qevent == 0) double(0) else parts_qpts_event$w,
+    w_qpts_lcens = if (!has_quadrature || qlcens == 0) double(0) else parts_qpts_lcens$w,
+    w_qpts_rcens = if (!has_quadrature || qrcens == 0) double(0) else parts_qpts_rcens$w,
+    w_qpts_icens = if (!has_quadrature || qicens == 0) double(0) else parts_qpts_icens$w,
+    w_qpts_delay = if (!has_quadrature || qdelay == 0) double(0) else parts_qpts_delay$w,
+    
+    v_epts_event = if (!has_quadrature || qevent == 0) integer(0) else parts_epts_event$v - 1L,
+    v_qpts_event = if (!has_quadrature || qevent == 0) integer(0) else parts_qpts_event$v - 1L,
+    v_qpts_lcens = if (!has_quadrature || qlcens == 0) integer(0) else parts_qpts_lcens$v - 1L,
+    v_qpts_rcens = if (!has_quadrature || qrcens == 0) integer(0) else parts_qpts_rcens$v - 1L,
+    v_qpts_icens = if (!has_quadrature || qicens == 0) integer(0) else parts_qpts_icens$v - 1L,
+    v_qpts_delay = if (!has_quadrature || qdelay == 0) integer(0) else parts_qpts_delay$v - 1L,    
+    
+    u_epts_event = if (!has_quadrature || qevent == 0) integer(0) else parts_epts_event$u - 1L,
+    u_qpts_event = if (!has_quadrature || qevent == 0) integer(0) else parts_qpts_event$u - 1L,
+    u_qpts_lcens = if (!has_quadrature || qlcens == 0) integer(0) else parts_qpts_lcens$u - 1L,
+    u_qpts_rcens = if (!has_quadrature || qrcens == 0) integer(0) else parts_qpts_rcens$u - 1L,
+    u_qpts_icens = if (!has_quadrature || qicens == 0) integer(0) else parts_qpts_icens$u - 1L,
+    u_qpts_delay = if (!has_quadrature || qdelay == 0) integer(0) else parts_qpts_delay$u - 1L,    
+    
+    nnz_epts_event = if (!has_quadrature || qevent == 0) 0L else length(parts_epts_event$w),
+    nnz_qpts_event = if (!has_quadrature || qevent == 0) 0L else length(parts_qpts_event$w),
+    nnz_qpts_lcens = if (!has_quadrature || qlcens == 0) 0L else length(parts_qpts_lcens$w),
+    nnz_qpts_rcens = if (!has_quadrature || qrcens == 0) 0L else length(parts_qpts_rcens$w),
+    nnz_qpts_icens = if (!has_quadrature || qicens == 0) 0L else length(parts_qpts_icens$w),
+    nnz_qpts_delay = if (!has_quadrature || qdelay == 0) 0L else length(parts_qpts_delay$w),
+    
     basis_epts_event = if (!has_quadrature) matrix(0,0,nvars) else basis_epts_event,
     basis_qpts_event = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_event,
     basis_qpts_lcens = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_lcens,
@@ -779,7 +880,31 @@ stan_surv <- function(formula,
     basis_qpts_icenu = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_icenu,
     basis_qpts_delay = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_delay
   )
+ 
+  #----- random-effects structure
   
+  if (length(formula$bars)) {
+    
+    fl <- group$flist
+    p  <- sapply(group$cnms, FUN = length)
+    l  <- sapply(attr(fl, "assign"), function(i) nlevels(fl[[i]]))
+    t  <- length(l)
+    standata$p <- as.array(p) # num ranefs for each grouping factor
+    standata$l <- as.array(l) # num levels for each grouping factor
+    standata$t <- t           # num of grouping factors
+    standata$q <- ncol(z)     # p * l
+    standata$special_case <- all(sapply(group$cnms, intercept_only))
+    
+  } else { # no random effects structure
+    
+    standata$p <- integer(0)
+    standata$l <- integer(0)
+    standata$t <- 0L
+    standata$q <- 0L
+    standata$special_case <- 0L
+    
+  }
+
   #----- priors and hyperparameters
 
   # valid priors
@@ -790,9 +915,10 @@ stan_surv <- function(formula,
                     "hs_plus", 
                     "laplace", 
                     "lasso") # disallow product normal
-  ok_intercept_dists <- ok_dists[1:3]
-  ok_aux_dists       <- ok_dists[1:3]
-  ok_smooth_dists    <- c(ok_dists[1:3], "exponential")
+  ok_intercept_dists  <- ok_dists[1:3]
+  ok_aux_dists        <- ok_dists[1:3]
+  ok_smooth_dists     <- c(ok_dists[1:3], "exponential")
+  ok_covariance_dists <- c("decov")
   
   # priors
   user_prior_stuff <- prior_stuff <-
@@ -822,18 +948,25 @@ stan_surv <- function(formula,
                      default_scale = 1,
                      link = NULL,
                      ok_dists = ok_smooth_dists)
-  
-  # stop null priors if prior_PD is TRUE
+
+  user_prior_b_stuff <- prior_b_stuff <- 
+    handle_cov_prior(prior_covariance, 
+                     cnms = group$cnms, 
+                     ok_dists = ok_covariance_dists)
+    
+  # stop null priors
   if (prior_PD) {
     if (is.null(prior))
-      stop("'prior' cannot be NULL if 'prior_PD' is TRUE")
+      stop("'prior' cannot be NULL if 'prior_PD' is TRUE.")
     if (is.null(prior_intercept) && has_intercept)
-      stop("'prior_intercept' cannot be NULL if 'prior_PD' is TRUE")
+      stop("'prior_intercept' cannot be NULL if 'prior_PD' is TRUE.")
     if (is.null(prior_aux))
-      stop("'prior_aux' cannot be NULL if 'prior_PD' is TRUE")    
+      stop("'prior_aux' cannot be NULL if 'prior_PD' is TRUE.")    
     if (is.null(prior_smooth) && (S > 0))
-      stop("'prior_smooth' cannot be NULL if 'prior_PD' is TRUE")    
+      stop("'prior_smooth' cannot be NULL if 'prior_PD' is TRUE.")    
   }
+  if (is.null(prior_covariance) && length(group$bars))
+    stop("'prior_covariance' cannot be NULL.")
   
   # autoscaling of priors
   prior_stuff           <- autoscale_prior(prior_stuff, predictors = x)
@@ -846,6 +979,7 @@ stan_surv <- function(formula,
   standata$prior_dist_for_intercept<- prior_intercept_stuff$prior_dist
   standata$prior_dist_for_aux      <- prior_aux_stuff$prior_dist
   standata$prior_dist_for_smooth   <- prior_smooth_stuff$prior_dist
+  standata$prior_dist_for_cov      <- prior_b_stuff$prior_dist
   
   # hyperparameters
   standata$prior_mean               <- prior_stuff$prior_mean
@@ -863,10 +997,29 @@ stan_surv <- function(formula,
   standata$global_prior_df          <- prior_stuff$global_prior_df
   standata$slab_df                  <- prior_stuff$slab_df
   standata$slab_scale               <- prior_stuff$slab_scale
-
+  
+  # hyperparameters for covariance
+  if (!length(bars)) {
+    standata$b_prior_shape            <- prior_b_stuff$prior_shape
+    standata$b_prior_scale            <- prior_b_stuff$prior_scale
+    standata$b_prior_concentration    <- prior_b_stuff$prior_concentration
+    standata$b_prior_regularization   <- prior_b_stuff$prior_regularization
+    standata$len_concentration        <- length(standata$b_prior_concentration)
+    standata$len_regularization       <- length(standata$b_prior_regularization)
+    standata$len_theta_L              <- sum(choose(standata$p, 2), standata$p)  
+  } else { # no random effects structure
+    standata$len_concentration      <- 0L
+    standata$len_regularization     <- 0L    
+    standata$len_theta_L            <- 0L
+    standata$b_prior_shape          <- rep(0, 0)
+    standata$b_prior_scale          <- rep(0, 0)
+    standata$b_prior_concentration  <- rep(0, 0)
+    standata$b_prior_regularization <- rep(0, 0)
+  }
+  
   # any additional flags
   standata$prior_PD <- ai(prior_PD)
-  
+    
   #---------------
   # Prior summary
   #---------------
@@ -880,7 +1033,10 @@ stan_surv <- function(formula,
     adjusted_priorEvent_aux_scale       = prior_aux_stuff$prior_scale,
     e_has_intercept  = has_intercept,
     e_has_predictors = K > 0,
-    basehaz = basehaz
+    basehaz = basehaz,
+    user_prior_covariance = prior_covariance,
+    b_user_prior_stuff = user_prior_b_stuff,
+    b_prior_stuff = prior_b_stuff
   )
   
   #-----------
@@ -895,7 +1051,8 @@ stan_surv <- function(formula,
                 if (standata$K)             "beta",
                 if (standata$S)             "beta_tde",
                 if (standata$S)             "smooth_sd",
-                if (standata$nvars)         "coefs")
+                if (standata$nvars)         "coefs",
+                if (standata$t)             "b")
   
   # fit model using stan
   if (algorithm == "sampling") { # mcmc
@@ -926,11 +1083,13 @@ stan_surv <- function(formula,
   nms_smooth <- get_smooth_name(s_cpts, type = "smooth_sd")    # may be NULL
   nms_int    <- get_int_name_basehaz(basehaz)
   nms_aux    <- get_aux_name_basehaz(basehaz)
+  nms_b      <- if (standata$t) make_b_nms(group) else NULL
   nms_all    <- c(nms_int,
                   nms_beta,
                   nms_tde,
                   nms_smooth,
                   nms_aux,
+                  nms_b,
                   "log-posterior")
 
   # substitute new parameter names into 'stanfit' object
@@ -1296,15 +1455,6 @@ parse_formula <- function(formula, data) {
   if (length(bars) > 2L)
     stop2("A maximum of 2 grouping factors are allowed.")
 
-  # Handle 'tde(x, ...)' in formula
-  tde_stuff <- handle_tde(fe_terms)
-  tf_form   <- tde_stuff$tf_form
-  td_form   <- tde_stuff$td_form  # may be NULL
-  bs_form   <- tde_stuff$bs_form  # may be NULL
-  tt_form   <- tde_stuff$tt_form  # may be NULL
-  tt_basis  <- tde_stuff$tt_basis # may be NULL
-  tt_calls  <- tde_stuff$tt_calls # may be NULL
-
   # Evaluated response variables
   surv <- eval(lhs, envir = data) # Surv object
   surv <- validate_surv(surv)
@@ -1335,7 +1485,16 @@ parse_formula <- function(formula, data) {
     min_t    <- 0
     max_t    <- max(surv[, c("time1", "time2")])
   }
-
+  
+  # Handle 'tde(x, ...)' in formula
+  tde_stuff <- handle_tde(fe_terms, lhs = lhs, min_t = min_t, max_t = max_t)
+  tf_form   <- tde_stuff$tf_form
+  td_form   <- tde_stuff$td_form  # may be NULL
+  bs_form   <- tde_stuff$bs_form  # may be NULL
+  tt_form   <- tde_stuff$tt_form  # may be NULL
+  tt_basis  <- tde_stuff$tt_basis # may be NULL
+  tt_calls  <- tde_stuff$tt_calls # may be NULL
+  
   nlist(formula,
         lhs,
         lhs_form,
@@ -1348,6 +1507,7 @@ parse_formula <- function(formula, data) {
         tt_basis,
         tt_calls,
         fe_form,
+        bars,
         re_forms,
         re_parts,
         allvars,
@@ -1364,7 +1524,7 @@ parse_formula <- function(formula, data) {
 # @param Terms terms object for the fixed effect part of the model formula.
 # @return A named list with the following elements:
 # 
-handle_tde <- function(Terms) {
+handle_tde <- function(Terms, lhs, min_t, max_t) {
   
   sel <- attr(Terms, "specials")$tde
   
@@ -1674,4 +1834,12 @@ make_x <- function(formula, model_frame, xlevs = NULL,
   }
   
   nlist(x, xbar, N = NROW(x), K = NCOL(x))
+}
+
+# Check if the only element of a character vector is 'Intercept'
+#
+# @param x A character vector.
+# @return A logical.
+intercept_only <- function(x) {
+  length(x) == 1 && x == "(Intercept)"
 }
