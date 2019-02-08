@@ -630,9 +630,9 @@ stan_surv <- function(formula,
 
   #----- time-fixed predictor matrices
   
-  tf     <- formula$tf_form
-  x      <- make_x(tf, mf,      xlevs = xlevs)$x # only used for scaling priors
-  x_cpts <- make_x(tf, mf_cpts, xlevs = xlevs)$x
+  ff     <- formula$fe_form
+  x      <- make_x(ff, mf,      xlevs = xlevs)$x # only used for scaling priors
+  x_cpts <- make_x(ff, mf_cpts, xlevs = xlevs)$x
   K      <- ncol(x)
   
   if (!has_quadrature) {
@@ -663,15 +663,19 @@ stan_surv <- function(formula,
   #----- time-varying predictor matrices
   
   if (has_tde) {
+    
     s_cpts <- make_x(formula$tt_form, mf_cpts, xlevs = xlevs)$x
     smooth_map <- get_smooth_name(s_cpts, type = "smooth_map")
     smooth_idx <- get_idx_array(table(smooth_map))
     S <- ncol(s_cpts) # number of tde spline coefficients
+    
   } else {
+    
     s_cpts <- matrix(0,length(cpts),0)
     smooth_idx <- matrix(0,0,2)
     smooth_map <- integer(0)
     S <- 0L
+    
   }
   
   if (has_quadrature) {
@@ -688,16 +692,22 @@ stan_surv <- function(formula,
 
   #----- random effects predictor matrices
 
+  has_bars <- as.logical(length(formula$bars))
+  
   # use 'stan_glmer' approach
-  if (length(formula$bars)) {
+  if (has_bars) {
+    
     group <- lme4::mkReTrms(formula$bars, mf_cpts)  
     group <- pad_reTrms(Ztlist = group$Ztlist,
                         cnms   = group$cnms,
                         flist  = group$flist)
     z_cpts <- group$Z
+    
   } else {
+    
     group  <- NULL
     z_cpts <- matrix(0,length(cpts),0)
+    
   } 
   
   if (!has_quadrature) {
@@ -883,16 +893,16 @@ stan_surv <- function(formula,
  
   #----- random-effects structure
   
-  if (length(formula$bars)) {
+  if (has_bars) {
     
     fl <- group$flist
     p  <- sapply(group$cnms, FUN = length)
     l  <- sapply(attr(fl, "assign"), function(i) nlevels(fl[[i]]))
     t  <- length(l)
-    standata$p <- as.array(p) # num ranefs for each grouping factor
-    standata$l <- as.array(l) # num levels for each grouping factor
-    standata$t <- t           # num of grouping factors
-    standata$q <- ncol(z)     # p * l
+    standata$p <- as.array(p)   # num ranefs for each grouping factor
+    standata$l <- as.array(l)   # num levels for each grouping factor
+    standata$t <- t             # num of grouping factors
+    standata$q <- ncol(group$z) # p * l
     standata$special_case <- all(sapply(group$cnms, intercept_only))
     
   } else { # no random effects structure
@@ -948,13 +958,8 @@ stan_surv <- function(formula,
                      default_scale = 1,
                      link = NULL,
                      ok_dists = ok_smooth_dists)
-
-  user_prior_b_stuff <- prior_b_stuff <- 
-    handle_cov_prior(prior_covariance, 
-                     cnms = group$cnms, 
-                     ok_dists = ok_covariance_dists)
     
-  # stop null priors
+  # stop null priors when prior_PD is true
   if (prior_PD) {
     if (is.null(prior))
       stop("'prior' cannot be NULL if 'prior_PD' is TRUE.")
@@ -965,8 +970,23 @@ stan_surv <- function(formula,
     if (is.null(prior_smooth) && (S > 0))
       stop("'prior_smooth' cannot be NULL if 'prior_PD' is TRUE.")    
   }
-  if (is.null(prior_covariance) && length(group$bars))
-    stop("'prior_covariance' cannot be NULL.")
+  
+  # handle prior for random effects structure
+  if (has_bars) {
+    
+    user_prior_b_stuff <- prior_b_stuff <- 
+      handle_cov_prior(prior_covariance, 
+                       cnms = group$cnms, 
+                       ok_dists = ok_covariance_dists)
+    
+    if (is.null(prior_covariance))
+      stop("'prior_covariance' cannot be NULL.")
+  
+  } else {
+    user_prior_b_stuff <- NULL
+    prior_b_stuff      <- NULL
+    prior_covariance   <- NULL
+  }
   
   # autoscaling of priors
   prior_stuff           <- autoscale_prior(prior_stuff, predictors = x)
@@ -999,7 +1019,7 @@ stan_surv <- function(formula,
   standata$slab_scale               <- prior_stuff$slab_scale
   
   # hyperparameters for covariance
-  if (!length(bars)) {
+  if (has_bars) {
     standata$b_prior_shape            <- prior_b_stuff$prior_shape
     standata$b_prior_scale            <- prior_b_stuff$prior_scale
     standata$b_prior_concentration    <- prior_b_stuff$prior_concentration
@@ -1441,20 +1461,6 @@ parse_formula <- function(formula, data) {
   rhs       <- rhs(formula)         # RHS as expression
   rhs_form  <- reformulate_rhs(rhs) # RHS as formula
 
-  # LHS and fixed-effect part of formula, including 'tde(x, ...)' wrapper
-  nobars_form <- lme4::nobars(formula)
-    
-  # Just fixed-effect part of formula, including 'tde(x, ...)' wrapper
-  fe_form   <- lme4::nobars(rhs_form)
-  fe_terms  <- terms(fe_form, specials = "tde")    
-  
-  # Just random-effect part of formula
-  bars      <- lme4::findbars(rhs_form)
-  re_parts  <- lapply(bars, split_at_bars)
-  re_forms  <- fetch(re_parts, "re_form")  
-  if (length(bars) > 2L)
-    stop2("A maximum of 2 grouping factors are allowed.")
-
   # Evaluated response variables
   surv <- eval(lhs, envir = data) # Surv object
   surv <- validate_surv(surv)
@@ -1486,16 +1492,28 @@ parse_formula <- function(formula, data) {
     max_t    <- max(surv[, c("time1", "time2")])
   }
   
-  # Handle 'tde(x, ...)' in formula
-  tde_stuff <- handle_tde(fe_terms, lhs = lhs, min_t = min_t, max_t = max_t)
-  tf_form   <- tde_stuff$tf_form
-  td_form   <- tde_stuff$td_form  # may be NULL
-  bs_form   <- tde_stuff$bs_form  # may be NULL
-  tt_form   <- tde_stuff$tt_form  # may be NULL
-  tt_basis  <- tde_stuff$tt_basis # may be NULL
-  tt_calls  <- tde_stuff$tt_calls # may be NULL
+  # Deal with tde(x, ...)
+  tde_stuff <- handle_tde(formula, min_t = min_t, max_t = max_t)
+  tf_form  <- tde_stuff$tf_form
+  td_form  <- tde_stuff$td_form  # may be NULL
+  bs_form  <- tde_stuff$bs_form  # may be NULL
+  tt_form  <- tde_stuff$tt_form  # may be NULL
+  tt_basis <- tde_stuff$tt_basis # may be NULL
+  tt_calls <- tde_stuff$tt_calls # may be NULL  
   
+  # Just fixed-effect part of formula
+  fe_form   <- lme4::nobars(tf_form)
+
+  # Just random-effect part of formula
+  bars      <- lme4::findbars(tf_form)
+  re_parts  <- lapply(bars, split_at_bars)
+  re_forms  <- fetch(re_parts, "re_form")  
+  if (length(bars) > 2L)
+    stop2("A maximum of 2 grouping factors are allowed.")
+
   nlist(formula,
+        allvars,
+        allvars_form,
         lhs,
         lhs_form,
         rhs,
@@ -1508,11 +1526,8 @@ parse_formula <- function(formula, data) {
         tt_calls,
         fe_form,
         bars,
-        re_forms,
         re_parts,
-        allvars,
-        allvars_form,
-        nobars_form,
+        re_forms,
         tvar_beg,
         tvar_end,
         dvar,
@@ -1524,19 +1539,23 @@ parse_formula <- function(formula, data) {
 # @param Terms terms object for the fixed effect part of the model formula.
 # @return A named list with the following elements:
 # 
-handle_tde <- function(Terms, lhs, min_t, max_t) {
-  
-  sel <- attr(Terms, "specials")$tde
-  
-  if (is.null(sel)) # model does not have tde terms
-    return(list(tf_form  = formula(Terms),
+handle_tde <- function(formula, min_t, max_t) {
+
+  Terms <- terms(lme4::nobars(formula), specials = "tde")
+
+  # if no time-dependent effects then just return formula
+  if (is.null(attr(Terms, "specials")$tde)) {
+    return(list(tf_form  = formula,
                 td_form  = NULL,
                 bs_form  = NULL,
                 tt_form  = NULL,
                 tt_basis = NULL,
                 tt_calls = NULL))
-  
-  # otherwise model does has tde terms...
+  }
+   
+  # extract rhs of formula
+  Terms  <- delete.response(Terms)
+  sel    <- attr(Terms, "specials")$tde
   varnms <- rownames(attr(Terms, "factors"))
   
   # replace 'tde(x, ...)' in formula with 'x'
@@ -1590,11 +1609,18 @@ handle_tde <- function(Terms, lhs, min_t, max_t) {
     nlist(tde_calls, new_calls)
   })
   
+  # add on the terms labels from the random effects part of the formula
+  bars <- lme4::findbars(formula)
+  if (length(bars)) {
+    bars_term_labels <- sapply(bars, bracket_wrap)
+    tf_term_labels <- c(tf_term_labels, bars_term_labels)
+  }
+  
   # formula with all variables but no 'tde(x, ...)' wrappers
-  tf_form <- reformulate(tf_term_labels, response = lhs)
+  tf_form <- reformulate(tf_term_labels, response = lhs(formula))
   
   # formula with only tde variables but no 'tde(x, ...)' wrappers
-  td_form <- reformulate(td_term_labels, response = lhs)
+  td_form <- reformulate(td_term_labels, response = lhs(formula))
   
   # formula with 'bs(times__, ...)' terms based on 'tde(x, ...)' calls
   tt_basis <- fetch(tde_terms, "tde_calls"); utt <- unique(unlist(tt_basis))
@@ -1611,6 +1637,14 @@ handle_tde <- function(Terms, lhs, min_t, max_t) {
         tt_form,
         tt_basis,
         tt_calls)
+}
+
+# Deparse an expression and wrap it in brackets
+#
+# @param x An expression.
+# @return A character string.
+bracket_wrap <- function(x) {
+  paste0("(", deparse(x, 500), ")")
 }
 
 # Check input to the formula argument
