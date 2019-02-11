@@ -481,6 +481,13 @@ data {
   int<lower=1> smooth_map[S]; // indexing of smooth sds for tde spline coefs
   int<lower=0> smooth_idx[S > 0 ? max(smooth_map) : 0, 2];
 
+  // dimensions for random efffects structure, see table 3 of
+  // https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
+  int<lower=0> t;          // num. terms (maybe 0) with a | in the glmer formula
+  int<lower=1> p[t];       // num. variables on the LHS of each |
+  int<lower=1> l[t];       // num. levels for the factor(s) on the RHS of each |
+  int<lower=0> q;          // conceptually equals \sum_{i=1}^t p_i \times l_i
+
   // response and time variables
   vector[nevent] t_event;  // time of events
   vector[nlcens] t_lcens;  // time of left censoring
@@ -496,7 +503,6 @@ data {
   vector[qicens] qpts_icenl;  // qpts for time of lower limit for interval censoring
   vector[qicens] qpts_icenu;  // qpts for time of upper limit for interval censoring
   vector[qdelay] qpts_delay;  // qpts for time of entry for delayed entry
-
 
   // predictor matrices (time-fixed), without quadrature
   matrix[nevent,K] x_event; // for rows with events
@@ -521,6 +527,68 @@ data {
   matrix[qicens,S] s_qpts_icenl; // for rows with interval censoring
   matrix[qicens,S] s_qpts_icenu; // for rows with interval censoring
   matrix[qdelay,S] s_qpts_delay; // for rows with delayed entry
+
+  // random effects structure, without quadrature
+  //   nnz: number of non-zero elements in the Z matrix
+  //   w: non-zero elements in the implicit Z matrix
+  //   v: column indices for w
+  //   u: where the non-zeros start in each row
+  int<lower=0> nnz_event;
+  int<lower=0> nnz_lcens;
+  int<lower=0> nnz_rcens;
+  int<lower=0> nnz_icens;
+  int<lower=0> nnz_delay;
+
+  vector[nnz_event] w_event;
+  vector[nnz_lcens] w_lcens;
+  vector[nnz_rcens] w_rcens;
+  vector[nnz_icens] w_icens;
+  vector[nnz_delay] w_delay;
+
+  int<lower=0,upper=q-1> v_event[nnz_event];
+  int<lower=0,upper=q-1> v_lcens[nnz_lcens];
+  int<lower=0,upper=q-1> v_rcens[nnz_rcens];
+  int<lower=0,upper=q-1> v_icens[nnz_icens];
+  int<lower=0,upper=q-1> v_delay[nnz_delay];
+
+  int<lower=0,upper=rows(w_event)+1> u_event[t>0 ? N+1 : 0];
+  int<lower=0,upper=rows(w_lcens)+1> u_lcens[t>0 ? N+1 : 0];
+  int<lower=0,upper=rows(w_rcens)+1> u_rcens[t>0 ? N+1 : 0];
+  int<lower=0,upper=rows(w_icens)+1> u_icens[t>0 ? N+1 : 0];
+  int<lower=0,upper=rows(w_delay)+1> u_delay[t>0 ? N+1 : 0];
+
+  // random effects structure, with quadrature
+  //   nnz: number of non-zero elements in the Z matrix
+  //   w: non-zero elements in the implicit Z matrix
+  //   v: column indices for w
+  //   u: where the non-zeros start in each row
+  int<lower=0> nnz_epts_event;
+  int<lower=0> nnz_qpts_event;
+  int<lower=0> nnz_qpts_lcens;
+  int<lower=0> nnz_qpts_rcens;
+  int<lower=0> nnz_qpts_icens;
+  int<lower=0> nnz_qpts_delay;
+
+  vector[nnz_epts_event] w_epts_event;
+  vector[nnz_qpts_event] w_qpts_event;
+  vector[nnz_qpts_lcens] w_qpts_lcens;
+  vector[nnz_qpts_rcens] w_qpts_rcens;
+  vector[nnz_qpts_icens] w_qpts_icens;
+  vector[nnz_qpts_delay] w_qpts_delay;
+
+  int<lower=0,upper=q-1> v_epts_event[nnz_epts_event];
+  int<lower=0,upper=q-1> v_qpts_event[nnz_qpts_event];
+  int<lower=0,upper=q-1> v_qpts_lcens[nnz_qpts_lcens];
+  int<lower=0,upper=q-1> v_qpts_rcens[nnz_qpts_rcens];
+  int<lower=0,upper=q-1> v_qpts_icens[nnz_qpts_icens];
+  int<lower=0,upper=q-1> v_qpts_delay[nnz_qpts_delay];
+
+  int<lower=0,upper=rows(w_epts_event)+1> u_epts_event[t > 0 ? N + 1 : 0];
+  int<lower=0,upper=rows(w_qpts_event)+1> u_qpts_event[t > 0 ? N + 1 : 0];
+  int<lower=0,upper=rows(w_qpts_lcens)+1> u_qpts_lcens[t > 0 ? N + 1 : 0];
+  int<lower=0,upper=rows(w_qpts_rcens)+1> u_qpts_rcens[t > 0 ? N + 1 : 0];
+  int<lower=0,upper=rows(w_qpts_icens)+1> u_qpts_icens[t > 0 ? N + 1 : 0];
+  int<lower=0,upper=rows(w_qpts_delay)+1> u_qpts_delay[t > 0 ? N + 1 : 0];
 
   // basis matrices for M-splines / I-splines, without quadrature
   matrix[nevent,nvars] basis_event;  // at event time
@@ -594,7 +662,7 @@ data {
   //   3 = exponential
   int<lower=0,upper=3> prior_dist_for_smooth;
 
-  // hyperparameter (log hazard ratios), set to 0 if there is no prior
+  // hyperparameters (log hazard ratios), set to 0 if there is no prior
   vector[K]           prior_mean;
   vector<lower=0>[K]  prior_scale;
   vector<lower=0>[K]  prior_df;
@@ -617,11 +685,53 @@ data {
   vector<lower=0>[S > 0 ? max(smooth_map) : 0] prior_scale_for_smooth;
   vector<lower=0>[S > 0 ? max(smooth_map) : 0] prior_df_for_smooth;
 
+  // hyperparameters (random effects structure), set to 0 if there is no prior
+  vector<lower=0>[t]   b_prior_shape;
+  vector<lower=0>[t]   b_prior_scale;
+  int<lower=0>         len_theta_L; // length of the theta_L vector
+  int<lower=0>         len_concentration;
+  int<lower=0>         len_regularization;
+  real<lower=0>        concentration[len_concentration];
+  real<lower=0>        regularization[len_regularization];
+  int<lower=0,upper=1> special_case; // is the only term (1|group)
+
 }
 
 transformed data {
 
   int<lower=0> hs = get_nvars_for_hs(prior_dist);
+
+  int sc = special_case;
+
+  int<lower=1> V_event[sc ? t : 0, nevent] = make_V(nevent, sc ? t : 0, v_event);
+  int<lower=1> V_lcens[sc ? t : 0, nlcens] = make_V(nlcens, sc ? t : 0, v_lcens);
+  int<lower=1> V_rcens[sc ? t : 0, nrcens] = make_V(nrcens, sc ? t : 0, v_rcens);
+  int<lower=1> V_icens[sc ? t : 0, nicens] = make_V(nicens, sc ? t : 0, v_icens);
+  int<lower=1> V_delay[sc ? t : 0, ndelay] = make_V(ndelay, sc ? t : 0, v_delay);
+
+  int<lower=1> V_epts_event[sc ? t : 0, Nevent] = make_V(Nevent, sc ? t : 0, v_epts_event);
+  int<lower=1> V_qpts_event[sc ? t : 0, qevent] = make_V(qevent, sc ? t : 0, v_qpts_event);
+  int<lower=1> V_qpts_lcens[sc ? t : 0, qlcens] = make_V(qlcens, sc ? t : 0, v_qpts_lcens);
+  int<lower=1> V_qpts_rcens[sc ? t : 0, qrcens] = make_V(qrcens, sc ? t : 0, v_qpts_rcens);
+  int<lower=1> V_qpts_icens[sc ? t : 0, qicens] = make_V(qicens, sc ? t : 0, v_qpts_icens);
+  int<lower=1> V_qpts_delay[sc ? t : 0, qdelay] = make_V(qdelay, sc ? t : 0, v_qpts_delay);
+
+  int<lower=1>  pos = 1;
+  int<lower=0>  len_z_T = 0;
+  int<lower=0>  len_rho = sum(p) - t;
+  real<lower=0> delta[len_concentration];
+
+  for (i in 1:t) {
+    if (p[i] > 1) {
+      for (j in 1:p[i]) {
+        delta[pos] = concentration[j];
+        pos += 1;
+      }
+    }
+    for (j in 3:p[i]) len_z_T += p[i] - 1;
+  }
+
+
 
 }
 
@@ -647,6 +757,13 @@ parameters {
   // hyperparameter, the prior sd for the tde spline coefs
   vector<lower=0>[S > 0 ? max(smooth_map) : 0] smooth_sd_raw;
 
+  // parameters for random effects
+  vector[q] z_b;
+  vector[len_z_T] z_T;
+  vector<lower=0,upper=1>[len_rho] rho;
+  vector<lower=0>[len_concentration] zeta;
+  vector<lower=0>[t] tau;
+
   // parameters for priors
   real<lower=0> global[hs];
   vector<lower=0>[hs > 0 ? K : 0] local[hs];
@@ -657,15 +774,19 @@ parameters {
 
 transformed parameters {
 
-  // log hazard ratios
+  // declare log hazard ratios
   vector[K] beta;
 
-  // basehaz parameters
+  // declare basehaz parameters
   vector[nvars] coefs;
 
-  // tde spline coefficients and their hyperparameters
+  // declare tde spline coefficients and their hyperparameters
   vector[S] beta_tde;
   vector[S > 0 ? max(smooth_map) : 0] smooth_sd; // sd for tde splines
+
+  // declare random effects and var-cov parameters
+  vector[q] b;
+  vector[len_theta_L] theta_L;
 
   // define log hazard ratios
   if (K > 0) {
@@ -693,6 +814,26 @@ transformed parameters {
           beta_tde[j] = tmp + z_beta_tde[j] * smooth_sd[smooth_map[j]];
         }
       }
+    }
+  }
+
+  // define random effects and var-cov parameters
+  if (t > 0) {
+    if (special_case == 1) {
+      int start = 1;
+      theta_L = b_prior_scale .* tau * 1.0;
+      if (t == 1) {
+        b = theta_L[1] * z_b;
+      }
+      else for (i in 1:t) {
+        int end = start + l[i] - 1;
+        b[start:end] = theta_L[i] * z_b[start:end];
+        start = end + 1;
+      }
+    }
+    else {
+      theta_L = make_theta_L(len_theta_L, p, 1.0, tau, b_prior_scale, zeta, rho, z_T);
+      b = make_b(z_b, theta_L, p, l);
     }
   }
 
@@ -728,13 +869,36 @@ model {
         if (ndelay > 0) eta_delay = rep_vector(0.0, ndelay);
       }
 
-      // add intercept
+      // add on intercept to linear predictor
       if (has_intercept == 1) {
         if (nevent > 0) eta_event += gamma[1];
         if (nlcens > 0) eta_lcens += gamma[1];
         if (nrcens > 0) eta_rcens += gamma[1];
         if (nicens > 0) eta_icens += gamma[1];
         if (ndelay > 0) eta_delay += gamma[1];
+      }
+
+      // add on random effects terms to linear predictor
+      if (t > 0) {
+        if (special_case) for (i in 1:t) {
+          if (nevent > 0) eta_event += b[V_event[i]];
+          if (nlcens > 0) eta_lcens += b[V_lcens[i]];
+          if (nrcens > 0) eta_rcens += b[V_rcens[i]];
+          if (nicens > 0) eta_icens += b[V_icens[i]];
+          if (ndelay > 0) eta_delay += b[V_delay[i]];
+        }
+        else {
+          if (nevent > 0) eta_event +=
+            csr_matrix_times_vector2(nevent, q, w_event, v_event, u_event, b);
+          if (nlcens > 0) eta_lcens +=
+            csr_matrix_times_vector2(nlcens, q, w_lcens, v_lcens, u_lcens, b);
+          if (nrcens > 0) eta_rcens +=
+            csr_matrix_times_vector2(nrcens, q, w_rcens, v_rcens, u_rcens, b);
+          if (nicens > 0) eta_icens +=
+            csr_matrix_times_vector2(nicens, q, w_icens, v_icens, u_icens, b);
+          if (ndelay > 0) eta_delay +=
+            csr_matrix_times_vector2(ndelay, q, w_delay, v_delay, u_delay, b);
+        }
       }
 
       // aft models
@@ -868,6 +1032,35 @@ model {
         if (qicens > 0) eta_qpts_icenl += gamma[1];
         if (qicens > 0) eta_qpts_icenu += gamma[1];
         if (qdelay > 0) eta_qpts_delay += gamma[1];
+      }
+
+      // add on random effects terms to linear predictor
+      if (t > 0) {
+        if (special_case) for (i in 1:t) {
+          if (Nevent > 0) eta_epts_event += b[V_epts_event[i]];
+          if (qevent > 0) eta_qpts_event += b[V_qpts_event[i]];
+          if (qlcens > 0) eta_qpts_lcens += b[V_qpts_lcens[i]];
+          if (qrcens > 0) eta_qpts_rcens += b[V_qpts_rcens[i]];
+          if (qicens > 0) eta_qpts_icenl += b[V_qpts_icens[i]];
+          if (qicens > 0) eta_qpts_icenu += b[V_qpts_icens[i]];
+          if (qdelay > 0) eta_qpts_delay += b[V_qpts_delay[i]];
+        }
+        else {
+          if (Nevent > 0) eta_epts_event +=
+            csr_matrix_times_vector2(Nevent, q, w_epts_event, v_epts_event, u_epts_event, b);
+          if (qevent > 0) eta_qpts_event +=
+            csr_matrix_times_vector2(qevent, q, w_qpts_event, v_qpts_event, u_qpts_event, b);
+          if (qlcens > 0) eta_qpts_lcens +=
+            csr_matrix_times_vector2(qlcens, q, w_qpts_lcens, v_qpts_lcens, u_qpts_lcens, b);
+          if (qrcens > 0) eta_qpts_rcens +=
+            csr_matrix_times_vector2(qrcens, q, w_qpts_rcens, v_qpts_rcens, u_qpts_rcens, b);
+          if (qicens > 0) eta_qpts_icenl +=
+            csr_matrix_times_vector2(qicens, q, w_qpts_icens, v_qpts_icens, u_qpts_icens, b);
+          if (qicens > 0) eta_qpts_icenu +=
+            csr_matrix_times_vector2(qicens, q, w_qpts_icens, v_qpts_icens, u_qpts_icens, b);
+          if (qdelay > 0) eta_qpts_delay +=
+            csr_matrix_times_vector2(qdelay, q, w_qpts_delay, v_qpts_delay, u_qpts_delay, b);
+        }
       }
 
       // aft models
@@ -1016,6 +1209,12 @@ model {
   if (S > 0) {
     real dummy = smooth_lp(z_beta_tde, smooth_sd_raw,
                            prior_dist_for_smooth, prior_df_for_smooth);
+  }
+
+  // log prior for random effects
+  if (t > 0) {
+    real dummy = decov_lp(z_b, z_T, rho, zeta, tau,
+                          regularization, delta, b_prior_shape, t, p);
   }
 
 }

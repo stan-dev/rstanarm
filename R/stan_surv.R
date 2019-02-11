@@ -534,7 +534,7 @@ stan_surv <- function(formula,
     qrcens <- length(qwts_rcens)
     qicens <- length(qwts_icenl)
     qdelay <- length(qwts_delay)
-        
+
   } else {
     
     # times at all different event types
@@ -1020,21 +1020,21 @@ stan_surv <- function(formula,
   
   # hyperparameters for covariance
   if (has_bars) {
-    standata$b_prior_shape            <- prior_b_stuff$prior_shape
-    standata$b_prior_scale            <- prior_b_stuff$prior_scale
-    standata$b_prior_concentration    <- prior_b_stuff$prior_concentration
-    standata$b_prior_regularization   <- prior_b_stuff$prior_regularization
-    standata$len_concentration        <- length(standata$b_prior_concentration)
-    standata$len_regularization       <- length(standata$b_prior_regularization)
-    standata$len_theta_L              <- sum(choose(standata$p, 2), standata$p)  
+    standata$b_prior_shape          <- prior_b_stuff$prior_shape
+    standata$b_prior_scale          <- prior_b_stuff$prior_scale
+    standata$concentration          <- prior_b_stuff$prior_concentration
+    standata$regularization         <- prior_b_stuff$prior_regularization
+    standata$len_concentration      <- length(standata$concentration)
+    standata$len_regularization     <- length(standata$regularization)
+    standata$len_theta_L            <- sum(choose(standata$p, 2), standata$p)  
   } else { # no random effects structure
+    standata$b_prior_shape          <- rep(0, 0)
+    standata$b_prior_scale          <- rep(0, 0)
+    standata$concentration          <- rep(0, 0)
+    standata$regularization         <- rep(0, 0)
     standata$len_concentration      <- 0L
     standata$len_regularization     <- 0L    
     standata$len_theta_L            <- 0L
-    standata$b_prior_shape          <- rep(0, 0)
-    standata$b_prior_scale          <- rep(0, 0)
-    standata$b_prior_concentration  <- rep(0, 0)
-    standata$b_prior_regularization <- rep(0, 0)
   }
   
   # any additional flags
@@ -1072,7 +1072,8 @@ stan_surv <- function(formula,
                 if (standata$S)             "beta_tde",
                 if (standata$S)             "smooth_sd",
                 if (standata$nvars)         "coefs",
-                if (standata$t)             "b")
+                if (standata$t)             "b",
+                if (standata$t)             "theta_L")
   
   # fit model using stan
   if (algorithm == "sampling") { # mcmc
@@ -1104,12 +1105,14 @@ stan_surv <- function(formula,
   nms_int    <- get_int_name_basehaz(basehaz)
   nms_aux    <- get_aux_name_basehaz(basehaz)
   nms_b      <- if (standata$t) make_b_nms(group) else NULL
+  nms_sigma  <- if (standata$t) get_Sigma_nms(group$cnms, wrap = TRUE) else NULL
   nms_all    <- c(nms_int,
                   nms_beta,
                   nms_tde,
                   nms_smooth,
                   nms_aux,
                   nms_b,
+                  nms_sigma,
                   "log-posterior")
 
   # substitute new parameter names into 'stanfit' object

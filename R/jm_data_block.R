@@ -1979,7 +1979,7 @@ evaluate_Sigma <- function(stanfit, cnms) {
 # @param cnms The component names for the group level terms, combined
 #   across all glmer submodels
 # @return A character vector
-get_Sigma_nms <- function(cnms) {
+get_Sigma_nms <- function(cnms, prefix = FALSE) {
   nms <- names(cnms) 
   Sigma_nms <- lapply(cnms, FUN = function(grp) {
     nm <- outer(grp, grp, FUN = paste, sep = ",")
@@ -1988,7 +1988,11 @@ get_Sigma_nms <- function(cnms) {
   for (j in seq_along(Sigma_nms)) {
     Sigma_nms[[j]] <- paste0(nms[j], ":", Sigma_nms[[j]])
   }
-  unlist(Sigma_nms)
+  if (prefix = TRUE) {
+    paste0("Sigma[", unlist(Sigma_nms), "]")
+  } else {
+    unlist(Sigma_nms)
+  }
 }
 
 
