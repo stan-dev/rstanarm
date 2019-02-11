@@ -484,11 +484,11 @@ data {
   int<lower=0,upper=q-1> v_icens[nnz_icens];
   int<lower=0,upper=q-1> v_delay[nnz_delay];
 
-  int<lower=0,upper=rows(w_event)+1> u_event[t>0 ? N+1 : 0];
-  int<lower=0,upper=rows(w_lcens)+1> u_lcens[t>0 ? N+1 : 0];
-  int<lower=0,upper=rows(w_rcens)+1> u_rcens[t>0 ? N+1 : 0];
-  int<lower=0,upper=rows(w_icens)+1> u_icens[t>0 ? N+1 : 0];
-  int<lower=0,upper=rows(w_delay)+1> u_delay[t>0 ? N+1 : 0];
+  int<lower=0,upper=rows(w_event)+1> u_event[(t > 0 && nevent > 0) ? nevent + 1 : 0];
+  int<lower=0,upper=rows(w_lcens)+1> u_lcens[(t > 0 && nlcens > 0) ? nlcens + 1 : 0];
+  int<lower=0,upper=rows(w_rcens)+1> u_rcens[(t > 0 && nrcens > 0) ? nrcens + 1 : 0];
+  int<lower=0,upper=rows(w_icens)+1> u_icens[(t > 0 && nicens > 0) ? nicens + 1 : 0];
+  int<lower=0,upper=rows(w_delay)+1> u_delay[(t > 0 && ndelay > 0) ? ndelay + 1 : 0];
 
   // random effects structure, with quadrature
   //   nnz: number of non-zero elements in the Z matrix
@@ -516,12 +516,12 @@ data {
   int<lower=0,upper=q-1> v_qpts_icens[nnz_qpts_icens];
   int<lower=0,upper=q-1> v_qpts_delay[nnz_qpts_delay];
 
-  int<lower=0,upper=rows(w_epts_event)+1> u_epts_event[t > 0 ? N + 1 : 0];
-  int<lower=0,upper=rows(w_qpts_event)+1> u_qpts_event[t > 0 ? N + 1 : 0];
-  int<lower=0,upper=rows(w_qpts_lcens)+1> u_qpts_lcens[t > 0 ? N + 1 : 0];
-  int<lower=0,upper=rows(w_qpts_rcens)+1> u_qpts_rcens[t > 0 ? N + 1 : 0];
-  int<lower=0,upper=rows(w_qpts_icens)+1> u_qpts_icens[t > 0 ? N + 1 : 0];
-  int<lower=0,upper=rows(w_qpts_delay)+1> u_qpts_delay[t > 0 ? N + 1 : 0];
+  int<lower=0,upper=rows(w_epts_event)+1> u_epts_event[(t > 0 && Nevent > 0) ? Nevent + 1 : 0];
+  int<lower=0,upper=rows(w_qpts_event)+1> u_qpts_event[(t > 0 && qevent > 0) ? qevent + 1 : 0];
+  int<lower=0,upper=rows(w_qpts_lcens)+1> u_qpts_lcens[(t > 0 && qlcens > 0) ? qlcens + 1 : 0];
+  int<lower=0,upper=rows(w_qpts_rcens)+1> u_qpts_rcens[(t > 0 && qrcens > 0) ? qrcens + 1 : 0];
+  int<lower=0,upper=rows(w_qpts_icens)+1> u_qpts_icens[(t > 0 && qicens > 0) ? qicens + 1 : 0];
+  int<lower=0,upper=rows(w_qpts_delay)+1> u_qpts_delay[(t > 0 && qdelay > 0) ? qdelay + 1 : 0];
 
   // basis matrices for M-splines / I-splines, without quadrature
   matrix[nevent,nvars] basis_event;  // at event time
