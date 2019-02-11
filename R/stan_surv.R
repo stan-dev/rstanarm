@@ -778,29 +778,29 @@ stan_surv <- function(formula,
     x_icens      = if (has_quadrature) matrix(0,0,K) else x_icens,
     x_delay      = if (has_quadrature) matrix(0,0,K) else x_delay,
 
-    w_event      = if (has_quadrature || nevent == 0) double(0) else parts_event$w,
-    w_lcens      = if (has_quadrature || nlcens == 0) double(0) else parts_lcens$w,
-    w_rcens      = if (has_quadrature || nrcens == 0) double(0) else parts_rcens$w,
-    w_icens      = if (has_quadrature || nicens == 0) double(0) else parts_icens$w,
-    w_delay      = if (has_quadrature || ndelay == 0) double(0) else parts_delay$w,
+    w_event      = if (has_quadrature || !has_bars || nevent == 0) double(0) else parts_event$w,
+    w_lcens      = if (has_quadrature || !has_bars || nlcens == 0) double(0) else parts_lcens$w,
+    w_rcens      = if (has_quadrature || !has_bars || nrcens == 0) double(0) else parts_rcens$w,
+    w_icens      = if (has_quadrature || !has_bars || nicens == 0) double(0) else parts_icens$w,
+    w_delay      = if (has_quadrature || !has_bars || ndelay == 0) double(0) else parts_delay$w,
  
-    v_event      = if (has_quadrature || nevent == 0) integer(0) else parts_event$v - 1L,
-    v_lcens      = if (has_quadrature || nlcens == 0) integer(0) else parts_lcens$v - 1L,
-    v_rcens      = if (has_quadrature || nrcens == 0) integer(0) else parts_rcens$v - 1L,
-    v_icens      = if (has_quadrature || nicens == 0) integer(0) else parts_icens$v - 1L,
-    v_delay      = if (has_quadrature || ndelay == 0) integer(0) else parts_delay$v - 1L,    
+    v_event      = if (has_quadrature || !has_bars || nevent == 0) integer(0) else parts_event$v - 1L,
+    v_lcens      = if (has_quadrature || !has_bars || nlcens == 0) integer(0) else parts_lcens$v - 1L,
+    v_rcens      = if (has_quadrature || !has_bars || nrcens == 0) integer(0) else parts_rcens$v - 1L,
+    v_icens      = if (has_quadrature || !has_bars || nicens == 0) integer(0) else parts_icens$v - 1L,
+    v_delay      = if (has_quadrature || !has_bars || ndelay == 0) integer(0) else parts_delay$v - 1L,    
     
-    u_event      = if (has_quadrature || nevent == 0) integer(0) else parts_event$u - 1L,
-    u_lcens      = if (has_quadrature || nlcens == 0) integer(0) else parts_lcens$u - 1L,
-    u_rcens      = if (has_quadrature || nrcens == 0) integer(0) else parts_rcens$u - 1L,
-    u_icens      = if (has_quadrature || nicens == 0) integer(0) else parts_icens$u - 1L,
-    u_delay      = if (has_quadrature || ndelay == 0) integer(0) else parts_delay$u - 1L,    
+    u_event      = if (has_quadrature || !has_bars || nevent == 0) integer(0) else parts_event$u - 1L,
+    u_lcens      = if (has_quadrature || !has_bars || nlcens == 0) integer(0) else parts_lcens$u - 1L,
+    u_rcens      = if (has_quadrature || !has_bars || nrcens == 0) integer(0) else parts_rcens$u - 1L,
+    u_icens      = if (has_quadrature || !has_bars || nicens == 0) integer(0) else parts_icens$u - 1L,
+    u_delay      = if (has_quadrature || !has_bars || ndelay == 0) integer(0) else parts_delay$u - 1L,    
   
-    nnz_event    = if (has_quadrature || nevent == 0) 0L else length(parts_event$w),
-    nnz_lcens    = if (has_quadrature || nlcens == 0) 0L else length(parts_lcens$w),
-    nnz_rcens    = if (has_quadrature || nrcens == 0) 0L else length(parts_rcens$w),
-    nnz_icens    = if (has_quadrature || nicens == 0) 0L else length(parts_icens$w),
-    nnz_delay    = if (has_quadrature || ndelay == 0) 0L else length(parts_delay$w),    
+    nnz_event    = if (has_quadrature || !has_bars || nevent == 0) 0L else length(parts_event$w),
+    nnz_lcens    = if (has_quadrature || !has_bars || nlcens == 0) 0L else length(parts_lcens$w),
+    nnz_rcens    = if (has_quadrature || !has_bars || nrcens == 0) 0L else length(parts_rcens$w),
+    nnz_icens    = if (has_quadrature || !has_bars || nicens == 0) 0L else length(parts_icens$w),
+    nnz_delay    = if (has_quadrature || !has_bars || ndelay == 0) 0L else length(parts_delay$w),    
     
     basis_event  = if (has_quadrature) matrix(0,0,nvars) else basis_event,
     ibasis_event = if (has_quadrature) matrix(0,0,nvars) else ibasis_event,
@@ -854,33 +854,33 @@ stan_surv <- function(formula,
     s_qpts_icenu = if (!has_quadrature) matrix(0,0,S) else s_qpts_icenu,
     s_qpts_delay = if (!has_quadrature) matrix(0,0,S) else s_qpts_delay,
     
-    w_epts_event = if (!has_quadrature || qevent == 0) double(0) else parts_epts_event$w,
-    w_qpts_event = if (!has_quadrature || qevent == 0) double(0) else parts_qpts_event$w,
-    w_qpts_lcens = if (!has_quadrature || qlcens == 0) double(0) else parts_qpts_lcens$w,
-    w_qpts_rcens = if (!has_quadrature || qrcens == 0) double(0) else parts_qpts_rcens$w,
-    w_qpts_icens = if (!has_quadrature || qicens == 0) double(0) else parts_qpts_icens$w,
-    w_qpts_delay = if (!has_quadrature || qdelay == 0) double(0) else parts_qpts_delay$w,
+    w_epts_event = if (!has_quadrature || !has_bars || qevent == 0) double(0) else parts_epts_event$w,
+    w_qpts_event = if (!has_quadrature || !has_bars || qevent == 0) double(0) else parts_qpts_event$w,
+    w_qpts_lcens = if (!has_quadrature || !has_bars || qlcens == 0) double(0) else parts_qpts_lcens$w,
+    w_qpts_rcens = if (!has_quadrature || !has_bars || qrcens == 0) double(0) else parts_qpts_rcens$w,
+    w_qpts_icens = if (!has_quadrature || !has_bars || qicens == 0) double(0) else parts_qpts_icens$w,
+    w_qpts_delay = if (!has_quadrature || !has_bars || qdelay == 0) double(0) else parts_qpts_delay$w,
     
-    v_epts_event = if (!has_quadrature || qevent == 0) integer(0) else parts_epts_event$v - 1L,
-    v_qpts_event = if (!has_quadrature || qevent == 0) integer(0) else parts_qpts_event$v - 1L,
-    v_qpts_lcens = if (!has_quadrature || qlcens == 0) integer(0) else parts_qpts_lcens$v - 1L,
-    v_qpts_rcens = if (!has_quadrature || qrcens == 0) integer(0) else parts_qpts_rcens$v - 1L,
-    v_qpts_icens = if (!has_quadrature || qicens == 0) integer(0) else parts_qpts_icens$v - 1L,
-    v_qpts_delay = if (!has_quadrature || qdelay == 0) integer(0) else parts_qpts_delay$v - 1L,    
+    v_epts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_epts_event$v - 1L,
+    v_qpts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_qpts_event$v - 1L,
+    v_qpts_lcens = if (!has_quadrature || !has_bars || qlcens == 0) integer(0) else parts_qpts_lcens$v - 1L,
+    v_qpts_rcens = if (!has_quadrature || !has_bars || qrcens == 0) integer(0) else parts_qpts_rcens$v - 1L,
+    v_qpts_icens = if (!has_quadrature || !has_bars || qicens == 0) integer(0) else parts_qpts_icens$v - 1L,
+    v_qpts_delay = if (!has_quadrature || !has_bars || qdelay == 0) integer(0) else parts_qpts_delay$v - 1L,    
     
-    u_epts_event = if (!has_quadrature || qevent == 0) integer(0) else parts_epts_event$u - 1L,
-    u_qpts_event = if (!has_quadrature || qevent == 0) integer(0) else parts_qpts_event$u - 1L,
-    u_qpts_lcens = if (!has_quadrature || qlcens == 0) integer(0) else parts_qpts_lcens$u - 1L,
-    u_qpts_rcens = if (!has_quadrature || qrcens == 0) integer(0) else parts_qpts_rcens$u - 1L,
-    u_qpts_icens = if (!has_quadrature || qicens == 0) integer(0) else parts_qpts_icens$u - 1L,
-    u_qpts_delay = if (!has_quadrature || qdelay == 0) integer(0) else parts_qpts_delay$u - 1L,    
+    u_epts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_epts_event$u - 1L,
+    u_qpts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_qpts_event$u - 1L,
+    u_qpts_lcens = if (!has_quadrature || !has_bars || qlcens == 0) integer(0) else parts_qpts_lcens$u - 1L,
+    u_qpts_rcens = if (!has_quadrature || !has_bars || qrcens == 0) integer(0) else parts_qpts_rcens$u - 1L,
+    u_qpts_icens = if (!has_quadrature || !has_bars || qicens == 0) integer(0) else parts_qpts_icens$u - 1L,
+    u_qpts_delay = if (!has_quadrature || !has_bars || qdelay == 0) integer(0) else parts_qpts_delay$u - 1L,    
     
-    nnz_epts_event = if (!has_quadrature || qevent == 0) 0L else length(parts_epts_event$w),
-    nnz_qpts_event = if (!has_quadrature || qevent == 0) 0L else length(parts_qpts_event$w),
-    nnz_qpts_lcens = if (!has_quadrature || qlcens == 0) 0L else length(parts_qpts_lcens$w),
-    nnz_qpts_rcens = if (!has_quadrature || qrcens == 0) 0L else length(parts_qpts_rcens$w),
-    nnz_qpts_icens = if (!has_quadrature || qicens == 0) 0L else length(parts_qpts_icens$w),
-    nnz_qpts_delay = if (!has_quadrature || qdelay == 0) 0L else length(parts_qpts_delay$w),
+    nnz_epts_event = if (!has_quadrature || !has_bars || qevent == 0) 0L else length(parts_epts_event$w),
+    nnz_qpts_event = if (!has_quadrature || !has_bars || qevent == 0) 0L else length(parts_qpts_event$w),
+    nnz_qpts_lcens = if (!has_quadrature || !has_bars || qlcens == 0) 0L else length(parts_qpts_lcens$w),
+    nnz_qpts_rcens = if (!has_quadrature || !has_bars || qrcens == 0) 0L else length(parts_qpts_rcens$w),
+    nnz_qpts_icens = if (!has_quadrature || !has_bars || qicens == 0) 0L else length(parts_qpts_icens$w),
+    nnz_qpts_delay = if (!has_quadrature || !has_bars || qdelay == 0) 0L else length(parts_qpts_delay$w),
     
     basis_epts_event = if (!has_quadrature) matrix(0,0,nvars) else basis_epts_event,
     basis_qpts_event = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_event,
@@ -902,7 +902,7 @@ stan_surv <- function(formula,
     standata$p <- as.array(p)   # num ranefs for each grouping factor
     standata$l <- as.array(l)   # num levels for each grouping factor
     standata$t <- t             # num of grouping factors
-    standata$q <- ncol(group$z) # p * l
+    standata$q <- ncol(group$Z) # p * l
     standata$special_case <- all(sapply(group$cnms, intercept_only))
     
   } else { # no random effects structure
@@ -1104,15 +1104,15 @@ stan_surv <- function(formula,
   nms_smooth <- get_smooth_name(s_cpts, type = "smooth_sd")    # may be NULL
   nms_int    <- get_int_name_basehaz(basehaz)
   nms_aux    <- get_aux_name_basehaz(basehaz)
-  nms_b      <- if (standata$t) make_b_nms(group) else NULL
-  nms_sigma  <- if (standata$t) get_Sigma_nms(group$cnms, wrap = TRUE) else NULL
+  nms_b      <- get_b_names(group)                             # may be NULL
+  nms_vc     <- get_varcov_names(group)                        # may be NULL
   nms_all    <- c(nms_int,
                   nms_beta,
                   nms_tde,
                   nms_smooth,
                   nms_aux,
                   nms_b,
-                  nms_sigma,
+                  nms_vc,
                   "log-posterior")
 
   # substitute new parameter names into 'stanfit' object
@@ -1123,6 +1123,7 @@ stan_surv <- function(formula,
                formula,
                has_tde,
                has_quadrature,
+               has_bars,
                data,
                model_frame      = mf,
                terms            = mt,
@@ -1367,6 +1368,26 @@ get_smooth_name <- function(x, type = "smooth_coefs") {
          "smooth_map"   = rep(seq_along(tally), tally),
          "smooth_vars"  = unique(nms),
          stop2("Bug found: invalid input to 'type' argument."))
+}
+
+# Return the names for the group-specific parameters
+#
+# @param group List returned by rstanarm:::pad_reTerms.
+# @return A character vector.
+get_b_names <- function(group) {
+  if (is.null(group))
+    return(NULL) # no random effects structure
+  c(paste0("b[", make_b_nms(group), "]"))
+}
+
+# Return the names for the var-cov parameters
+#
+# @param group List returned by rstanarm:::pad_reTerms.
+# @return A character vector.
+get_varcov_names <- function(group) {
+  if (is.null(group))
+    return(NULL) # no random effects structure
+  paste0("Sigma[", get_Sigma_nms(group$cnms), "]")
 }
 
 # Return the default scale parameter for 'prior_aux'.
