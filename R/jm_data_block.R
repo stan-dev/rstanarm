@@ -171,7 +171,7 @@ reformulate_rhs <- function(x, subbars = FALSE) {
 handle_cov_prior <- function(prior, cnms, ok_dists = nlist("decov", "lkj")) {
   if (!is.list(prior)) 
     stop(sQuote(deparse(substitute(prior))), " should be a named list")
-  t <- length(unique(cnms)) # num grouping factors
+  t <- length(cnms)         # num grouping factors
   p <- sapply(cnms, length) # num terms for each grouping factor
   prior_dist_name <- prior$dist
   if (!prior_dist_name %in% unlist(ok_dists)) {
