@@ -697,10 +697,10 @@ stan_surv <- function(formula,
   # use 'stan_glmer' approach
   if (has_bars) {
     
-    group <- lme4::mkReTrms(formula$bars, mf_cpts)  
-    group <- pad_reTrms(Ztlist = group$Ztlist,
-                        cnms   = group$cnms,
-                        flist  = group$flist)
+    group_unpadded <- lme4::mkReTrms(formula$bars, mf_cpts)  
+    group <- pad_reTrms(Ztlist = group_unpadded$Ztlist,
+                        cnms   = group_unpadded$cnms,
+                        flist  = group_unpadded$flist)
     z_cpts <- group$Z
     
   } else {
@@ -1098,6 +1098,10 @@ stan_surv <- function(formula,
   }
   check_stanfit(stanfit)
   
+  # replace 'theta_L' with the variance-covariance matrix
+  if (has_bars)
+    stanfit <- evaluate_Sigma(stanfit, group$cnms)
+  
   # define new parameter names
   nms_beta   <- colnames(x) # may be NULL
   nms_tde    <- get_smooth_name(s_cpts, type = "smooth_coefs") # may be NULL
@@ -1132,8 +1136,8 @@ stan_surv <- function(formula,
                x_cpts           = if (has_tde)  x_cpts else NULL,
                s_cpts           = if (has_tde)  s_cpts else NULL,
                z_cpts           = if (has_bars) z_cpts else NULL,
-               cnms             = if (has_bars) group$cnms  else NULL,
-               flist            = if (has_bars) group$flist else NULL,
+               cnms             = if (has_bars) group_unpadded$cnms  else NULL,
+               flist            = if (has_bars) group_unpadded$flist else NULL,
                t_beg, 
                t_end,
                status,
