@@ -1419,14 +1419,14 @@ get_smooth_name <- function(x, type = "smooth_coefs") {
 get_ok_priors_for_aux <- function(basehaz) {
   nm <- get_basehaz_name(basehaz)
   switch(nm,
-         exp         = nlist(),
-         exp-aft     = nlist(),
-         weibull     = nlist("normal", student_t = "t", "cauchy", "exponential"),
-         weibull-aft = nlist("normal", student_t = "t", "cauchy", "exponential"),
-         gompertz    = nlist("normal", student_t = "t", "cauchy", "exponential"),
-         ms          = nlist("dirichlet"),
-         bs          = nlist("normal", student_t = "t", "cauchy"),
-         piecewise   = nlist("normal", student_t = "t", "cauchy"),
+         "exp"         = nlist(),
+         "exp-aft"     = nlist(),
+         "weibull"     = nlist("normal", student_t = "t", "cauchy", "exponential"),
+         "weibull-aft" = nlist("normal", student_t = "t", "cauchy", "exponential"),
+         "gompertz"    = nlist("normal", student_t = "t", "cauchy", "exponential"),
+         "ms"          = nlist("dirichlet"),
+         "bs"          = nlist("normal", student_t = "t", "cauchy"),
+         "piecewise"   = nlist("normal", student_t = "t", "cauchy"),
          stop2("Bug found: unknown type of baseline hazard."))
 }
 
