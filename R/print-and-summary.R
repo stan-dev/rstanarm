@@ -99,7 +99,7 @@ print.stanreg <- function(x, digits = 1, ...) {
   
   cat("\n------\n")
 
-  mer <- is.mer(x)
+  mer <- is.mer(x) || (surv && x$has_bars)
   gamm <- isTRUE(x$stan_function == "stan_gamm4")
   ord <- is_polr(x) && !("(Intercept)" %in% rownames(x$stan_summary))
 
@@ -803,12 +803,14 @@ print_anova_table <- function(x, digits, ...) {
 basehaz_string <- function(basehaz, break_and_indent = TRUE) {
   nm <- get_basehaz_name(basehaz)
   switch(nm,
-         exp      = "exponential",
-         weibull  = "weibull",
-         gompertz = "gompertz",
-         ms       = "M-splines on hazard scale",
-         bs       = "B-splines on log hazard scale",
-         piecewise= "piecewise constant on log hazard scale",
+         "exp"         = "exponential",
+         "exp-aft"     = "exponential, aft parameterisation",
+         "weibull"     = "weibull",
+         "weibull-aft" = "weibull, aft parameterisation",
+         "gompertz"    = "gompertz",
+         "ms"          = "M-splines on hazard scale",
+         "bs"          = "B-splines on log hazard scale",
+         "piecewise"   = "piecewise constant on log hazard scale",
          NULL)
 }
 

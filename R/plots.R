@@ -254,15 +254,17 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       betas    <- cbind(betas_tf, betas_td)
 
       times__ <- times
-      basis   <- eval(parse(text = x$formula$td_basis[sel1]))
+      basis   <- eval(parse(text = x$formula$tt_basis[sel1]))
       basis   <- add_intercept(basis)
-      log_hr  <- linear_predictor(betas, basis)
-      plotdat <- median_and_bounds(exp(log_hr), prob, na.rm = TRUE)
+      coef  <- linear_predictor(betas, basis)
+      
+      is_aft  <- get_basehaz_name(x$basehaz) %in% c("exp-aft", "weibull-aft")
+      
+      plotdat <- median_and_bounds(exp(coef), prob, na.rm = TRUE)  
       plotdat <- data.frame(times, plotdat)
 
-      ylab <- "Hazard ratio"
       xlab <- "Time"
-
+      ylab <- ifelse(is_aft, "Survival time ratio", "Hazard ratio")
     }
 
     geom_defs <- list(color = "black")  # default plot args

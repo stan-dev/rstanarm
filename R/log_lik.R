@@ -613,6 +613,10 @@ ll_args.stansurv <- function(object, newdata = NULL, ...) {
     
     eta  <- linear_predictor(draws$beta, .xdata_surv(data_i))
     eta  <- eta + linear_predictor(draws$beta_tde, .sdata_surv(data_i))
+    eta <- switch(get_basehaz_name(draws$basehaz),
+                  "exp-aft"     = sweep(eta, 1L, -1, `*`),
+                  "weibull-aft" = sweep(eta, 1L, -as.vector(draws$aux), `*`),
+                  eta) 
     lhaz <- eta + do.call(evaluate_log_basehaz, args)
     
     if (status == 1) {
@@ -668,7 +672,11 @@ ll_args.stansurv <- function(object, newdata = NULL, ...) {
                  intercept = draws$alpha)
     
     eta  <- linear_predictor(draws$beta, .xdata_surv(data_i))    
-        
+    eta <- switch(get_basehaz_name(draws$basehaz),
+                  "exp-aft"     = sweep(eta, 1L, -1, `*`),
+                  "weibull-aft" = sweep(eta, 1L, -as.vector(draws$aux), `*`),
+                  eta) 
+    
     if (status == 1) { 
       # uncensored
       args$times <- data_i$t_end
@@ -1095,20 +1103,28 @@ evaluate_log_survival.matrix <- function(log_haz, qnodes, qwts) {
 # @return A vector or matrix, depending on the input type of aux.
 evaluate_log_basehaz <- function(times, basehaz, aux, intercept = NULL) {
   switch(get_basehaz_name(basehaz),
-         "exp"       = log_basehaz_exponential(times, log_scale = intercept),
-         "weibull"   = log_basehaz_weibull (times, shape = aux, log_scale = intercept),
-         "gompertz"  = log_basehaz_gompertz(times, scale = aux, log_shape = intercept),
-         "ms"        = log_basehaz_ms(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
-         "bs"        = log_basehaz_bs(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
-         "piecewise" = log_basehaz_pw(times, coefs = aux, knots = basehaz$knots),
+         "exp"         = log_basehaz_exponential   (times, log_scale = intercept),
+         "exp-aft"     = log_basehaz_exponentialAFT(times, log_scale = intercept),
+         "weibull"     = log_basehaz_weibull   (times, shape = aux, log_scale = intercept),
+         "weibull-aft" = log_basehaz_weibullAFT(times, shape = aux, log_scale = intercept),
+         "gompertz"    = log_basehaz_gompertz(times, scale = aux, log_shape = intercept),
+         "ms"          = log_basehaz_ms(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
+         "bs"          = log_basehaz_bs(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
+         "piecewise"   = log_basehaz_pw(times, coefs = aux, knots = basehaz$knots),
          stop2("Bug found: unknown type of baseline hazard."))
 }
 
 log_basehaz_exponential <- function(x, log_scale) {
   linear_predictor(log_scale, rep(1, length(x)))
 }
+log_basehaz_exponentialAFT <- function(x, log_scale) {
+  linear_predictor(-log_scale, rep(1, length(x)))
+}
 log_basehaz_weibull  <- function(x, shape, log_scale) {
   as.vector(log_scale + log(shape)) + linear_predictor(shape - 1, log(x))
+}
+log_basehaz_weibullAFT  <- function(x, shape, log_scale) {
+  as.vector(-log_scale * shape + log(shape)) + linear_predictor(shape - 1, log(x))
 }
 log_basehaz_gompertz <- function(x, scale, log_shape) {
   as.vector(log_shape) + linear_predictor(scale, x)
@@ -1128,6 +1144,10 @@ evaluate_log_haz <- function(times, basehaz, betas, betas_tde, aux,
   eta <- linear_predictor(betas, x)
   if ((!is.null(s)) && ncol(s))
     eta <- eta + linear_predictor(betas_tde, s)
+  eta <- switch(get_basehaz_name(basehaz),
+                "exp-aft"     = sweep(eta, 1L, -1, `*`),
+                "weibull-aft" = sweep(eta, 1L, -as.vector(aux), `*`),
+                eta)  
   args <- nlist(times, basehaz, aux, intercept)
   do.call(evaluate_log_basehaz, args) + eta
 }
@@ -1148,18 +1168,26 @@ evaluate_basehaz <- function(times, basehaz, aux, intercept = NULL) {
 # @return A vector or matrix, depending on the input type of aux.
 evaluate_log_basesurv <- function(times, basehaz, aux, intercept = NULL) {
   switch(get_basehaz_name(basehaz),
-         "exp"       = log_basesurv_exponential(times, log_scale = intercept),
-         "weibull"   = log_basesurv_weibull (times, shape = aux, log_scale = intercept),
-         "gompertz"  = log_basesurv_gompertz(times, scale = aux, log_shape = intercept),
-         "ms"        = log_basesurv_ms(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
+         "exp"         = log_basesurv_exponential   (times, log_scale = intercept),
+         "exp-aft"     = log_basesurv_exponentialAFT(times, log_scale = intercept),
+         "weibull"     = log_basesurv_weibull   (times, shape = aux, log_scale = intercept),
+         "weibull-aft" = log_basesurv_weibullAFT(times, shape = aux, log_scale = intercept),
+         "gompertz"    = log_basesurv_gompertz(times, scale = aux, log_shape = intercept),
+         "ms"          = log_basesurv_ms(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
          stop2("Bug found: unknown type of baseline hazard."))
 }
 
 log_basesurv_exponential <- function(x, log_scale) {
   -linear_predictor(exp(log_scale), x)
 }
-log_basesurv_weibull  <- function(x, shape, log_scale) {
+log_basesurv_exponentialAFT <- function(x, log_scale) {
+  -linear_predictor(exp(-log_scale), x)
+}
+log_basesurv_weibull <- function(x, shape, log_scale) {
   -exp(as.vector(log_scale) + linear_predictor(shape, log(x)))
+}
+log_basesurv_weibullAFT <- function(x, shape, log_scale) {
+  -exp(as.vector(-shape * log_scale) + linear_predictor(shape, log(x)))
 }
 log_basesurv_gompertz <- function(x, scale, log_shape) {
   -(as.vector(exp(log_shape) / scale)) * (exp(linear_predictor(scale, x)) - 1)
@@ -1171,7 +1199,11 @@ log_basesurv_ms <- function(x, coefs, basis, intercept) {
 
 evaluate_log_surv <- function(times, basehaz, betas, aux, intercept = NULL, x, ...) {
   eta  <- linear_predictor(betas, x)
-  args <- nlist(times, basehaz, aux,  intercept)
+  eta  <- switch(get_basehaz_name(basehaz),
+                 "exp-aft"     = sweep(eta, 1L, -1, `*`),
+                 "weibull-aft" = sweep(eta, 1L, -as.vector(aux), `*`),
+                 eta)
+  args <- nlist(times, basehaz, aux, intercept)
   do.call(evaluate_log_basesurv, args) * exp(eta)
 }
 

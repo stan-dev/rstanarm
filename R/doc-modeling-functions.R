@@ -76,16 +76,17 @@
 #'    group-specific terms as in \code{\link{stan_glmer}}.
 #'  }
 #'  \item{\code{\link{stan_surv}}}{
-#'    Fits models to survival (i.e. time-to-event) data on the hazard scale.
-#'    The user can choose between a variety of standard parametric distributions
-#'    for the baseline hazard, or a flexible parametric model (using either
-#'    M-splines for modelling the baseline hazard, or B-splines for modelling
-#'    the log baseline hazard). Covariate effects can be accommodated under
-#'    proportional hazards or non-proportional hazards (i.e. time-dependent
-#'    effects).
+#'    Fits models to survival (i.e. time-to-event) data using either a hazard 
+#'    scale or accelerated failure time (AFT) formulation. The user can choose 
+#'    between either a flexible spline-based approximation for the baseline 
+#'    hazard or a standard parametric distributional assumption for the baseline 
+#'    hazard. Covariate effects can then be accommodated under proportional or 
+#'    non-proportional hazards assumptions (for models on the hazard scale) or 
+#'    using time-fixed or time-varying acceleration factors (for models on the 
+#'    AFT scale).
 #'  }
 #'  \item{\code{\link{stan_jm}}}{
-#'    Estimates shared parameter joint models for longitudinal and survival (i.e.
+#'    Fits shared parameter joint models for longitudinal and survival (i.e.
 #'    time-to-event) data. The joint model can be univariate (i.e. one longitudinal
 #'    outcome) or multivariate (i.e. more than one longitudinal outcome). A variety
 #'    of parameterisations are available for linking the longitudinal and event

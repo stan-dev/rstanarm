@@ -20,13 +20,20 @@
 #'
 #' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Bayesian inference for survival models (sometimes known as models for 
-#' time-to-event data). Currently, the command fits standard parametric 
-#' (exponential, Weibull and Gompertz) and flexible parametric (cubic 
-#' spline-based) survival models on the hazard scale, with covariates included 
-#' under assumptions of either proportional or non-proportional hazards. 
-#' Where relevant, non-proportional hazards are modelled using a flexible 
-#' cubic spline-based function for the time-dependent effect (i.e. the
-#' time-dependent hazard ratio).
+#' time-to-event data). Currently, the command fits:
+#' (i) flexible parametric (cubic spline-based) survival 
+#' models on the hazard scale, with covariates included under assumptions of 
+#' either proportional or non-proportional hazards;
+#' (ii) standard parametric (exponential, Weibull and Gompertz) survival 
+#' models on the hazard scale, with covariates included under assumptions of 
+#' either proportional or non-proportional hazards; and
+#' (iii) standard parametric (exponential, Weibull) accelerated failure time
+#' models, with covariates included under assumptions of either time-fixed or 
+#' time-dependent acceleration factors.
+#' Where relevant, time-dependent effects (i.e. time-dependent hazard ratios
+#' or time-dependent acceleration factors) are modelled using a flexible 
+#' cubic spline-based function for the time-dependent coefficient in the
+#' linear predictor.
 #'
 #' @export
 #' @importFrom splines bs
@@ -44,16 +51,18 @@
 #'   are allowed, as well as delayed entry (i.e. left truncation). See 
 #'   \code{\link[survival]{Surv}} for how to specify these outcome types. 
 #'   If you wish to include time-dependent effects (i.e. time-dependent 
-#'   coefficients, also known as non-proportional hazards) in the model
+#'   coefficients, e.g. non-proportional hazards) in the model
 #'   then any covariate(s) that you wish to estimate a time-dependent 
-#'   coefficient for should be specified as \code{tde(varname)}  where 
+#'   coefficient for should be specified as \code{tde(varname)} where 
 #'   \code{varname} is the name of the covariate. See the \strong{Details} 
 #'   section for more information on how the time-dependent effects are 
 #'   formulated, as well as the \strong{Examples} section.
 #' @param data A data frame containing the variables specified in 
 #'   \code{formula}.
-#' @param basehaz A character string indicating which baseline hazard to use
-#'   for the event submodel. Current options are: 
+#' @param basehaz A character string indicating which baseline hazard or
+#'   baseline survival distribution to use for the event submodel. 
+#'   
+#'   The following are available under a hazard scale formulation: 
 #'   \itemize{
 #'     \item \code{"ms"}: a flexible parametric model using cubic M-splines to 
 #'     model the baseline hazard. The default locations for the internal knots, 
@@ -73,10 +82,17 @@
 #'     the cumulative hazard at each MCMC iteration. Therefore, if your model
 #'     does not include any time-dependent effects, then estimation using the 
 #'     \code{"ms"} baseline hazard will be faster.
-#'     \item \code{"exp"}: an exponential distribution for the event times. 
-#'     (i.e. a constant baseline hazard)
+#'     \item \code{"exp"}: an exponential distribution for the event times
+#'     (i.e. a constant baseline hazard).
 #'     \item \code{"weibull"}: a Weibull distribution for the event times.
 #'     \item \code{"gompertz"}: a Gompertz distribution for the event times.
+#'    }
+#'   
+#'   The following are available under an accelerated failure time (AFT)
+#'   formulation: 
+#'   \itemize{
+#'     \item \code{"exp-aft"}: an exponential distribution for the event times.
+#'     \item \code{"weibull-aft"}: a Weibull distribution for the event times.
 #'   }
 #' @param basehaz_ops A named list specifying options related to the baseline
 #'   hazard. Currently this can include: \cr
@@ -143,10 +159,12 @@
 #'     coefficients for the B-spline basis terms on the log baseline hazard. 
 #'     These parameters are unbounded. The default prior is a normal 
 #'     distribution with mean 0 and scale 20.
-#'     \item \code{basehaz = "exp"}: there is \strong{no} auxiliary parameter, 
+#'     \item \code{basehaz = "exp"} or \code{basehaz = "exp-aft"}: 
+#'     there is \strong{no} auxiliary parameter,
 #'     since the log scale parameter for the exponential distribution is 
 #'     incorporated as an intercept in the linear predictor.
-#'     \item \code{basehaz = "weibull"}: the auxiliary parameter is the Weibull 
+#'     \item \code{basehaz = "weibull"} or \code{basehaz = "weibull-aft"}: 
+#'     the auxiliary parameter is the Weibull 
 #'     shape parameter, while the log scale parameter for the Weibull 
 #'     distribution is incorporated as an intercept in the linear predictor.
 #'     The auxiliary parameter has a lower bound at zero. The default prior is  
@@ -181,11 +199,85 @@
 #'   to the appropriate length.
 #'  
 #' @details
-#' \subsection{Time dependent effects (i.e. non-proportional hazards)}{
+#' \subsection{Model formulations}{
+#'   Let \eqn{h_i(t)} denote the hazard for individual \eqn{i} at time 
+#'   \eqn{t}, \eqn{h_0(t)} the baseline hazard at time \eqn{t}, \eqn{X_i} 
+#'   a vector of covariates for individual \eqn{i}, \eqn{\beta} a vector of 
+#'   coefficients, \eqn{S_i(t)} the survival probability for individual 
+#'   \eqn{i} at time \eqn{t}, and \eqn{S_0(t)} the baseline survival 
+#'   probability at time \eqn{t}. Without time-dependent effects in the 
+#'   model formula our linear predictor is \eqn{\eta_i = X_i \beta}, whereas
+#'   with time-dependent effects in the model formula our linear predictor
+#'   is \eqn{\eta_i(t) = X_i(t) \beta(t)}. Then the following definitions of 
+#'   the hazard function and survival function apply:
+#'   
+#'   \tabular{llll}{
+#'     \strong{Scale    }                                                \tab 
+#'     \strong{TDE      }                                                \tab
+#'     \strong{Hazard   }                                                \tab 
+#'     \strong{Survival }                                                \cr
+#'     \emph{Hazard}                                                     \tab 
+#'     \emph{No}                                                         \tab
+#'     \eqn{h_i(t) = h_0(t) \exp(\eta_i)}                                \tab
+#'     \eqn{S_i(t) = [S_0(t)]^{\exp(\eta_i)}}                            \cr 
+#'     \emph{Hazard}                                                     \tab 
+#'     \emph{Yes}                                                        \tab
+#'     \eqn{h_i(t) = h_0(t) \exp(\eta_i(t))}                             \tab
+#'     \eqn{S_i(t) = \exp(- \int_0^t h_i(u) du )}                        \cr
+#'     \emph{AFT}                                                        \tab 
+#'     \emph{No}                                                         \tab
+#'     \eqn{h_i(t) = \exp(-\eta_i) h_0 (t \exp(-\eta_i))}                \tab
+#'     \eqn{S_i(t) = S_0 ( t \exp(-\eta_i) )}                            \cr     
+#'     \emph{AFT}                                                        \tab 
+#'     \emph{Yes}                                                        \tab
+#'     \eqn{h_i(t) = \exp(-\eta_i(t)) h_0(\int_0^t \exp(-\eta_i(u)) du)} \tab
+#'     \eqn{S_i(t) = S_0 (\int_0^t \exp(-\eta_i(u)) du)}                 \cr
+#'   }
+#'   
+#'   where \emph{AFT} stands for an accelerated failure time formulation, 
+#'   and \emph{TDE} stands for time dependent effects in the model formula.
+#'   
+#'   For models without time-dependent effects, the value of \eqn{S_i(t)} can
+#'   be calculated analytically (with the one exception being when B-splines 
+#'   are used to model the log baseline hazard, i.e. \code{basehaz = "bs"}).
+#'   
+#'   For models with time-dependent effects \eqn{S_i(t)} cannot be calculated 
+#'   analytically and so Gauss-Kronrod quadrature is used to approximate the 
+#'   relevant integral. The number of nodes used in the quadrature can be 
+#'   controlled via the \code{nodes} argument.
+#'   
+#'   For models estimated on the hazard scale, a hazard ratio can be calculated 
+#'   as \eqn{\exp(\beta)}. For models estimated on the AFT scale, a survival 
+#'   time ratio can be calculated as \eqn{\exp(\beta)} and an acceleration 
+#'   factor can be calculated as \eqn{\exp(-\beta)}.
+#'   
+#'   Note that the \emph{stan_surv: Survival (Time-to-Event) Models} vignette 
+#'   provides more extensive details on the model formulations, including the
+#'   parameterisations for each of the parametric distributions.
+#' }
+#' \subsection{More details on time dependent effects}{
 #'   By default, any covariate effects specified in the \code{formula} are
-#'   included in the model under a proportional hazards assumption. To relax
-#'   this assumption, it is possible to estimate a time-dependent coefficient
-#'   for a given covariate. This can be specified in the model \code{formula}
+#'   included in the model under a proportional hazards assumption (for models
+#'   estimated using a hazard scale formulation) or under the assumption of
+#'   time-fixed acceleration factors (for models estimated using an accelerated
+#'   failure time formulation). To relax this assumption, it is possible to 
+#'   estimate a time-dependent coefficient for a given covariate. Note the 
+#'   following:
+#'   
+#'   \itemize{
+#'   \item Estimating a time-dependent coefficient under a hazard scale model 
+#'   formulation (i.e. when \code{basehaz} is set equal to \code{"ms"}, 
+#'   \code{"bs"}, \code{"exp"}, \code{"weibull"} or \code{"gompertz"}) leads
+#'   to the estimation of a time-dependent hazard ratio for the relevant 
+#'   covariate (i.e. non-proportional hazards). 
+#'   \item Estimating a time-dependent coefficient under an accelerated failure 
+#'   time model formulation (i.e. when \code{basehaz} is set equal to 
+#'   \code{"exp-aft"}, or \code{"weibull-aft"}) leads to the estimation of a 
+#'   time-dependent acceleration factor -- or equivalently, a
+#'   time-dependent survival time ratio -- for the relevant covariate.
+#'   }
+#'   
+#'   A time-dependent effect can be specified in the model \code{formula}
 #'   by wrapping the covariate name in the \code{tde()} function (note that
 #'   this function is not an exported function, rather it is an internal function
 #'   that can only be evaluated within the formula of a \code{stan_surv} call).
@@ -249,7 +341,7 @@
 #'                           plot(m1c), 
 #'                           plot(m1d), 
 #'                           ylim = c(0, 0.8))
-#' 
+#'     
 #' #---------- Left and right censored data
 #' 
 #' # Mice tumor data
@@ -274,20 +366,48 @@
 #'                 data = d3, chains = 1, refresh = 0, iter = 600)
 #' print(m3, 4)
 #' plot(m3, "tde") # time-dependent hazard ratio
+#' 
+#' #---------- Compare PH and AFT parameterisations
+#' 
+#' # Breast cancer data
+#' sel <- sample(1:nrow(bcancer), 100)
+#' 
+#' m_ph  <- stan_surv(Surv(recyrs, status) ~ group, 
+#'                    data    = bcancer[sel,], 
+#'                    basehaz = "weibull", 
+#'                    chains  = 1,
+#'                    refresh = 0,
+#'                    iter    = 600,
+#'                    seed    = 123)
+#' m_aft <- stan_surv(Surv(recyrs, status) ~ group, 
+#'                    data    = bcancer[sel,], 
+#'                    basehaz = "weibull-aft", 
+#'                    chains  = 1,
+#'                    refresh = 0,
+#'                    iter    = 600,
+#'                    seed    = 123)
+#'
+#' exp(fixef(m_ph)) [c('groupMedium', 'groupPoor')] # hazard ratios
+#' exp(fixef(m_aft))[c('groupMedium', 'groupPoor')] # survival time ratios
+#' 
+#' # same model (...slight differences due to sampling)
+#' summary(m_ph,  par = "log-posterior")[, 'mean'] 
+#' summary(m_aft, par = "log-posterior")[, 'mean'] 
 #' }
 #' 
 stan_surv <- function(formula, 
                       data, 
-                      basehaz         = "ms", 
-                      basehaz_ops, 
-                      qnodes          = 15, 
-                      prior           = normal(), 
-                      prior_intercept = normal(),
-                      prior_aux       = normal(), 
-                      prior_smooth    = exponential(autoscale = FALSE), 
-                      prior_PD        = FALSE,
-                      algorithm       = c("sampling", "meanfield", "fullrank"),
-                      adapt_delta     = 0.95, ...) {
+                      basehaz          = "ms",
+                      basehaz_ops,
+                      qnodes           = 15, 
+                      prior            = normal(), 
+                      prior_intercept  = normal(),
+                      prior_aux        = normal(), 
+                      prior_smooth     = exponential(autoscale = FALSE), 
+                      prior_covariance = decov(),
+                      prior_PD         = FALSE,
+                      algorithm        = c("sampling", "meanfield", "fullrank"),
+                      adapt_delta      = 0.95, ...) {
 
   #-----------------------------
   # Pre-processing of arguments
@@ -305,7 +425,7 @@ stan_surv <- function(formula,
   algorithm <- match.arg(algorithm)
   
   formula   <- parse_formula(formula, data)
-  data      <- make_model_data(formula$tf_form, data) # row subsetting etc.
+  data      <- make_model_data(formula$allvars_form, data) # row subsetting etc.
   
   #----------------
   # Construct data
@@ -349,10 +469,11 @@ stan_surv <- function(formula,
   t_icenu <- t_upp[status == 3] # upper limit of interval censoring time
   t_delay <- t_beg[delayed]     # delayed entry time
 
-  # calculate log crude event rate
+  # calculate log(crude event rate) and -log(mean event time)
   t_tmp <- sum(rowMeans(cbind(t_end, t_upp), na.rm = TRUE) - t_beg)
   d_tmp <- sum(!status == 0)
   log_crude_event_rate = log(d_tmp / t_tmp)
+  log_crude_event_time = log(t_tmp / d_tmp)
   
   # dimensions
   nevent <- sum(status == 1)
@@ -363,12 +484,16 @@ stan_surv <- function(formula,
   
   #----- baseline hazard
 
-  ok_basehaz <- c("exp", "weibull", "gompertz", "ms", "bs")
-  ok_basehaz_ops <- get_ok_basehaz_ops(basehaz)
+  ok_basehaz <- c("exp",
+                  "exp-aft",
+                  "weibull",
+                  "weibull-aft",
+                  "gompertz", 
+                  "ms", 
+                  "bs")
   basehaz <- handle_basehaz_surv(basehaz        = basehaz, 
-                                 basehaz_ops    = basehaz_ops, 
+                                 basehaz_ops    = basehaz_ops,
                                  ok_basehaz     = ok_basehaz,
-                                 ok_basehaz_ops = ok_basehaz_ops,
                                  times          = t_end, 
                                  status         = status,
                                  min_t          = min(t_beg),
@@ -391,19 +516,20 @@ stan_surv <- function(formula,
   
   if (has_quadrature) { # model uses quadrature
     
-    # standardised weights and nodes for quadrature
+    # standardised nodes and weights for quadrature
     qq <- get_quadpoints(nodes = qnodes)
     qp <- qq$points
     qw <- qq$weights
     
-    # quadrature points & weights, evaluated for each row of data
+    # quadrature points, evaluated for each row of data
     qpts_event <- uapply(qp, unstandardise_qpts, 0, t_event)
     qpts_lcens <- uapply(qp, unstandardise_qpts, 0, t_lcens)
     qpts_rcens <- uapply(qp, unstandardise_qpts, 0, t_rcens)
     qpts_icenl <- uapply(qp, unstandardise_qpts, 0, t_icenl)
     qpts_icenu <- uapply(qp, unstandardise_qpts, 0, t_icenu)
     qpts_delay <- uapply(qp, unstandardise_qpts, 0, t_delay)
-    
+
+    # quadrature weights, evaluated for each row of data
     qwts_event <- uapply(qw, unstandardise_qwts, 0, t_event)
     qwts_lcens <- uapply(qw, unstandardise_qwts, 0, t_lcens)
     qwts_rcens <- uapply(qw, unstandardise_qwts, 0, t_rcens)
@@ -420,93 +546,227 @@ stan_surv <- function(formula,
                       qpts_icenu,
                       qpts_delay)
     idx_cpts <- get_idx_array(sapply(cpts_list, length))
-    cpts     <- unlist(cpts_list) # as vector for stan
-    len_cpts <- length(cpts)
-
+    cpts     <- unlist(cpts_list) # as vector 
+    
     # number of quadrature points
     qevent <- length(qwts_event)
     qlcens <- length(qwts_lcens)
     qrcens <- length(qwts_rcens)
     qicens <- length(qwts_icenl)
     qdelay <- length(qwts_delay)
-        
+
   } else {
     
-    cpts     <- rep(0,0)
-    len_cpts <- 0L
-    idx_cpts <- matrix(0,7,2)
+    # times at all different event types
+    cpts_list <- list(t_event,
+                      t_lcens,
+                      t_rcens,
+                      t_icenl,
+                      t_icenu,
+                      t_delay)
+    idx_cpts <- get_idx_array(sapply(cpts_list, length))    
+    cpts     <- unlist(cpts_list) # as vector
+    
+    # dud entries for stan
+    qpts_event <- rep(0,0) 
+    qpts_lcens <- rep(0,0)
+    qpts_rcens <- rep(0,0)
+    qpts_icenl <- rep(0,0)
+    qpts_icenu <- rep(0,0)
+    qpts_delay <- rep(0,0)
     
     if (!qnodes == 15) # warn user if qnodes is not equal to the default
       warning2("There is no quadrature required so 'qnodes' is being ignored.")
+    
   }
 
   #----- basis terms for baseline hazard
 
-  if (has_quadrature) {
-    
-    basis_cpts <- make_basis(cpts, basehaz)   
-    
-  } else {
+  if (!has_quadrature) {
     
     basis_event  <- make_basis(t_event, basehaz)
-    
     ibasis_event <- make_basis(t_event, basehaz, integrate = TRUE)
     ibasis_lcens <- make_basis(t_lcens, basehaz, integrate = TRUE)
     ibasis_rcens <- make_basis(t_rcens, basehaz, integrate = TRUE)
     ibasis_icenl <- make_basis(t_icenl, basehaz, integrate = TRUE)
     ibasis_icenu <- make_basis(t_icenu, basehaz, integrate = TRUE)
     ibasis_delay <- make_basis(t_delay, basehaz, integrate = TRUE)
- 
+    
+  } else {
+    
+    basis_epts_event <- make_basis(t_event,    basehaz)
+    basis_qpts_event <- make_basis(qpts_event, basehaz)
+    basis_qpts_lcens <- make_basis(qpts_lcens, basehaz)
+    basis_qpts_rcens <- make_basis(qpts_rcens, basehaz)
+    basis_qpts_icenl <- make_basis(qpts_icenl, basehaz)
+    basis_qpts_icenu <- make_basis(qpts_icenu, basehaz)
+    basis_qpts_delay <- make_basis(qpts_delay, basehaz)
+    
   }
     
-  #----- predictor matrices
+  #----- model frames for generating predictor matrices
+
+  mf_event <- keep_rows(mf, status == 1)
+  mf_lcens <- keep_rows(mf, status == 2)
+  mf_rcens <- keep_rows(mf, status == 0)
+  mf_icens <- keep_rows(mf, status == 3)
+  mf_delay <- keep_rows(mf, delayed)  
+   
+  if (!has_quadrature) {
+    
+    # combined model frame, without quadrature
+    mf_cpts <- rbind(mf_event,
+                     mf_lcens,
+                     mf_rcens,
+                     mf_icens,
+                     mf_icens,
+                     mf_delay)
+    
+  } else {
+    
+    # combined model frame, with quadrature
+    mf_cpts <- rbind(mf_event,
+                     rep_rows(mf_event, times = qnodes),
+                     rep_rows(mf_lcens, times = qnodes),
+                     rep_rows(mf_rcens, times = qnodes),
+                     rep_rows(mf_icens, times = qnodes),
+                     rep_rows(mf_icens, times = qnodes),
+                     rep_rows(mf_delay, times = qnodes))
+
+  }
+
+  if (has_tde) {
+    
+    # formula for generating spline basis for tde effects
+    bsf <- formula$bs_form
+    
+    # generate a model frame with time transformations for tde effects
+    mf_tde_times <- make_model_frame(bsf, data.frame(times__ = cpts))$mf
+    
+    # NB next line avoids dropping terms attribute from 'mf_cpts'
+    mf_cpts[, colnames(mf_tde_times)] <- mf_tde_times
+    
+  }  
+
+  #----- time-fixed predictor matrices
   
-  # time-fixed predictor matrix
-  x_stuff <- make_x(formula$tf_form, mf)
-  x          <- x_stuff$x
-  x_bar      <- x_stuff$x_bar
-  x_centered <- x_stuff$x_centered
-  x_event <- keep_rows(x_centered, status == 1)
-  x_lcens <- keep_rows(x_centered, status == 2)
-  x_rcens <- keep_rows(x_centered, status == 0)
-  x_icens <- keep_rows(x_centered, status == 3)
-  x_delay <- keep_rows(x_centered, delayed)
-  K <- ncol(x)
-  if (has_quadrature) {
-    x_cpts <- rbind(x_event,
-                    rep_rows(x_event, times = qnodes),
-                    rep_rows(x_lcens, times = qnodes),
-                    rep_rows(x_rcens, times = qnodes),
-                    rep_rows(x_icens, times = qnodes),
-                    rep_rows(x_icens, times = qnodes),
-                    rep_rows(x_delay, times = qnodes))
+  ff        <- formula$fe_form
+  x_stuff   <- make_x(ff, mf,      xlevs = xlevs) 
+  x_cpts    <- make_x(ff, mf_cpts, xlevs = xlevs)$x
+  x_centred <- sweep(x_cpts, 2, x_stuff$x_bar, FUN = "-")
+  K         <- ncol(x_cpts)
+  
+  if (!has_quadrature) {
+    
+    # time-fixed predictor matrices, without quadrature
+    # NB skip index 5 on purpose, since time fixed predictor matrix is 
+    # identical for lower and upper limits of interval censoring time
+    x_event <- x_centred[idx_cpts[1,1]:idx_cpts[1,2], , drop = FALSE]
+    x_lcens <- x_centred[idx_cpts[2,1]:idx_cpts[2,2], , drop = FALSE]
+    x_rcens <- x_centred[idx_cpts[3,1]:idx_cpts[3,2], , drop = FALSE]
+    x_icens <- x_centred[idx_cpts[4,1]:idx_cpts[4,2], , drop = FALSE]
+    x_delay <- x_centred[idx_cpts[6,1]:idx_cpts[6,2], , drop = FALSE]
+    
+  } else {
+    
+    # time-fixed predictor matrices, with quadrature
+    # NB skip index 6 on purpose, since time fixed predictor matrix is 
+    # identical for lower and upper limits of interval censoring time
+    x_epts_event <- x_centred[idx_cpts[1,1]:idx_cpts[1,2], , drop = FALSE]
+    x_qpts_event <- x_centred[idx_cpts[2,1]:idx_cpts[2,2], , drop = FALSE]
+    x_qpts_lcens <- x_centred[idx_cpts[3,1]:idx_cpts[3,2], , drop = FALSE]
+    x_qpts_rcens <- x_centred[idx_cpts[4,1]:idx_cpts[4,2], , drop = FALSE]
+    x_qpts_icens <- x_centred[idx_cpts[5,1]:idx_cpts[5,2], , drop = FALSE]
+    x_qpts_delay <- x_centred[idx_cpts[7,1]:idx_cpts[7,2], , drop = FALSE]
+ 
   }
   
-  # time-varying predictor matrix
-  if (has_tde) { 
-    tdfm  <- formula$td_form 
-    xlevs <- .getXlevels(mt, mf)
-    data_event <- keep_rows(data, status == 1)
-    data_lcens <- keep_rows(data, status == 2)
-    data_rcens <- keep_rows(data, status == 0)
-    data_icens <- keep_rows(data, status == 3)
-    data_delay <- keep_rows(data, delayed)
-    data_cpts  <- rbind(data_event,
-                        rep_rows(data_event, times = qnodes),
-                        rep_rows(data_lcens, times = qnodes),
-                        rep_rows(data_rcens, times = qnodes),
-                        rep_rows(data_icens, times = qnodes),
-                        rep_rows(data_icens, times = qnodes),
-                        rep_rows(data_delay, times = qnodes))
-    s_cpts <- make_s(tdfm, data_cpts, times = cpts, xlevs = xlevs)
+  #----- time-varying predictor matrices
+  
+  if (has_tde) {
+    
+    s_cpts <- make_x(formula$tt_form, mf_cpts, xlevs = xlevs)$x
     smooth_map <- get_smooth_name(s_cpts, type = "smooth_map")
     smooth_idx <- get_idx_array(table(smooth_map))
-    S <- ncol(s_cpts) # num. of tde spline coefficients
-  } else { # model does not have tde
-    s_cpts     <- matrix(0,len_cpts,0)
+    S <- ncol(s_cpts) # number of tde spline coefficients
+    
+  } else {
+    
+    s_cpts <- matrix(0,length(cpts),0)
     smooth_idx <- matrix(0,0,2)
     smooth_map <- integer(0)
-    S          <- 0L
+    S <- 0L
+    
+  }
+  
+  if (has_quadrature) {
+    
+    s_epts_event <- s_cpts[idx_cpts[1,1]:idx_cpts[1,2], , drop = FALSE]
+    s_qpts_event <- s_cpts[idx_cpts[2,1]:idx_cpts[2,2], , drop = FALSE]
+    s_qpts_lcens <- s_cpts[idx_cpts[3,1]:idx_cpts[3,2], , drop = FALSE]
+    s_qpts_rcens <- s_cpts[idx_cpts[4,1]:idx_cpts[4,2], , drop = FALSE]
+    s_qpts_icenl <- s_cpts[idx_cpts[5,1]:idx_cpts[5,2], , drop = FALSE]
+    s_qpts_icenu <- s_cpts[idx_cpts[6,1]:idx_cpts[6,2], , drop = FALSE]
+    s_qpts_delay <- s_cpts[idx_cpts[7,1]:idx_cpts[7,2], , drop = FALSE]
+  
+  }
+
+  #----- random effects predictor matrices
+
+  has_bars <- as.logical(length(formula$bars))
+  
+  # use 'stan_glmer' approach
+  if (has_bars) {
+    
+    group_unpadded <- lme4::mkReTrms(formula$bars, mf_cpts)  
+    group <- pad_reTrms(Ztlist = group_unpadded$Ztlist,
+                        cnms   = group_unpadded$cnms,
+                        flist  = group_unpadded$flist)
+    z_cpts <- group$Z
+    
+  } else {
+    
+    group  <- NULL
+    z_cpts <- matrix(0,length(cpts),0)
+    
+  } 
+  
+  if (!has_quadrature) {
+    
+    # random effects predictor matrices, without quadrature
+    # NB skip index 5 on purpose, since time fixed predictor matrix is 
+    # identical for lower and upper limits of interval censoring time
+    z_event <- z_cpts[idx_cpts[1,1]:idx_cpts[1,2], , drop = FALSE]
+    z_lcens <- z_cpts[idx_cpts[2,1]:idx_cpts[2,2], , drop = FALSE]
+    z_rcens <- z_cpts[idx_cpts[3,1]:idx_cpts[3,2], , drop = FALSE]
+    z_icens <- z_cpts[idx_cpts[4,1]:idx_cpts[4,2], , drop = FALSE]
+    z_delay <- z_cpts[idx_cpts[6,1]:idx_cpts[6,2], , drop = FALSE]
+    
+    parts_event <- extract_sparse_parts(z_event)
+    parts_lcens <- extract_sparse_parts(z_lcens)
+    parts_rcens <- extract_sparse_parts(z_rcens)
+    parts_icens <- extract_sparse_parts(z_icens)
+    parts_delay <- extract_sparse_parts(z_delay)
+    
+  } else {
+    
+    # random effects predictor matrices, with quadrature
+    # NB skip index 6 on purpose, since time fixed predictor matrix is 
+    # identical for lower and upper limits of interval censoring time
+    z_epts_event <- z_cpts[idx_cpts[1,1]:idx_cpts[1,2], , drop = FALSE]
+    z_qpts_event <- z_cpts[idx_cpts[2,1]:idx_cpts[2,2], , drop = FALSE]
+    z_qpts_lcens <- z_cpts[idx_cpts[3,1]:idx_cpts[3,2], , drop = FALSE]
+    z_qpts_rcens <- z_cpts[idx_cpts[4,1]:idx_cpts[4,2], , drop = FALSE]
+    z_qpts_icens <- z_cpts[idx_cpts[5,1]:idx_cpts[5,2], , drop = FALSE]
+    z_qpts_delay <- z_cpts[idx_cpts[7,1]:idx_cpts[7,2], , drop = FALSE]
+    
+    parts_epts_event <- extract_sparse_parts(z_epts_event)
+    parts_qpts_event <- extract_sparse_parts(z_qpts_event)
+    parts_qpts_lcens <- extract_sparse_parts(z_qpts_lcens)
+    parts_qpts_rcens <- extract_sparse_parts(z_qpts_rcens)
+    parts_qpts_icens <- extract_sparse_parts(z_qpts_icens)
+    parts_qpts_delay <- extract_sparse_parts(z_qpts_delay)
+    
   }
 
   #----- stan data
@@ -519,11 +779,9 @@ stan_surv <- function(formula,
     has_quadrature,
     smooth_map,
     smooth_idx,
-    cpts,
-    len_cpts,
-    idx_cpts,
     type = basehaz$type,
     log_crude_event_rate,
+    log_crude_event_time,
     
     nevent       = if (has_quadrature) 0L else nevent,
     nlcens       = if (has_quadrature) 0L else nlcens,
@@ -543,6 +801,30 @@ stan_surv <- function(formula,
     x_rcens      = if (has_quadrature) matrix(0,0,K) else x_rcens,
     x_icens      = if (has_quadrature) matrix(0,0,K) else x_icens,
     x_delay      = if (has_quadrature) matrix(0,0,K) else x_delay,
+
+    w_event      = if (has_quadrature || !has_bars || nevent == 0) double(0) else parts_event$w,
+    w_lcens      = if (has_quadrature || !has_bars || nlcens == 0) double(0) else parts_lcens$w,
+    w_rcens      = if (has_quadrature || !has_bars || nrcens == 0) double(0) else parts_rcens$w,
+    w_icens      = if (has_quadrature || !has_bars || nicens == 0) double(0) else parts_icens$w,
+    w_delay      = if (has_quadrature || !has_bars || ndelay == 0) double(0) else parts_delay$w,
+ 
+    v_event      = if (has_quadrature || !has_bars || nevent == 0) integer(0) else parts_event$v - 1L,
+    v_lcens      = if (has_quadrature || !has_bars || nlcens == 0) integer(0) else parts_lcens$v - 1L,
+    v_rcens      = if (has_quadrature || !has_bars || nrcens == 0) integer(0) else parts_rcens$v - 1L,
+    v_icens      = if (has_quadrature || !has_bars || nicens == 0) integer(0) else parts_icens$v - 1L,
+    v_delay      = if (has_quadrature || !has_bars || ndelay == 0) integer(0) else parts_delay$v - 1L,    
+    
+    u_event      = if (has_quadrature || !has_bars || nevent == 0) integer(0) else parts_event$u - 1L,
+    u_lcens      = if (has_quadrature || !has_bars || nlcens == 0) integer(0) else parts_lcens$u - 1L,
+    u_rcens      = if (has_quadrature || !has_bars || nrcens == 0) integer(0) else parts_rcens$u - 1L,
+    u_icens      = if (has_quadrature || !has_bars || nicens == 0) integer(0) else parts_icens$u - 1L,
+    u_delay      = if (has_quadrature || !has_bars || ndelay == 0) integer(0) else parts_delay$u - 1L,    
+  
+    nnz_event    = if (has_quadrature || !has_bars || nevent == 0) 0L else length(parts_event$w),
+    nnz_lcens    = if (has_quadrature || !has_bars || nlcens == 0) 0L else length(parts_lcens$w),
+    nnz_rcens    = if (has_quadrature || !has_bars || nrcens == 0) 0L else length(parts_rcens$w),
+    nnz_icens    = if (has_quadrature || !has_bars || nicens == 0) 0L else length(parts_icens$w),
+    nnz_delay    = if (has_quadrature || !has_bars || ndelay == 0) 0L else length(parts_delay$w),    
     
     basis_event  = if (has_quadrature) matrix(0,0,nvars) else basis_event,
     ibasis_event = if (has_quadrature) matrix(0,0,nvars) else ibasis_event,
@@ -551,30 +833,112 @@ stan_surv <- function(formula,
     ibasis_icenl = if (has_quadrature) matrix(0,0,nvars) else ibasis_icenl,
     ibasis_icenu = if (has_quadrature) matrix(0,0,nvars) else ibasis_icenu,
     ibasis_delay = if (has_quadrature) matrix(0,0,nvars) else ibasis_delay,
-    
+
     qnodes       = if (!has_quadrature) 0L else qnodes,
     
     Nevent       = if (!has_quadrature) 0L else nevent,
+    Nlcens       = if (!has_quadrature) 0L else nlcens, 
+    Nrcens       = if (!has_quadrature) 0L else nrcens, 
+    Nicens       = if (!has_quadrature) 0L else nicens,
+    Ndelay       = if (!has_quadrature) 0L else ndelay,
+    
     qevent       = if (!has_quadrature) 0L else qevent,
     qlcens       = if (!has_quadrature) 0L else qlcens,
     qrcens       = if (!has_quadrature) 0L else qrcens,
     qicens       = if (!has_quadrature) 0L else qicens,
     qdelay       = if (!has_quadrature) 0L else qdelay,
-    Nlcens       = if (!has_quadrature) 0L else nlcens, 
-    Nicens       = if (!has_quadrature) 0L else nicens,
-
-    x_cpts       = if (!has_quadrature) matrix(0,0,K)     else x_cpts,
-    s_cpts       = if (!has_quadrature) matrix(0,0,S)     else s_cpts,
-    basis_cpts   = if (!has_quadrature) matrix(0,0,nvars) else basis_cpts,
+    
+    epts_event   = if (!has_quadrature) rep(0,0) else t_event,
+    qpts_event   = if (!has_quadrature) rep(0,0) else qpts_event,
+    qpts_lcens   = if (!has_quadrature) rep(0,0) else qpts_lcens,
+    qpts_rcens   = if (!has_quadrature) rep(0,0) else qpts_rcens,
+    qpts_icenl   = if (!has_quadrature) rep(0,0) else qpts_icenl,
+    qpts_icenu   = if (!has_quadrature) rep(0,0) else qpts_icenu,
+    qpts_delay   = if (!has_quadrature) rep(0,0) else qpts_delay,
     
     qwts_event   = if (!has_quadrature) rep(0,0) else qwts_event,
     qwts_lcens   = if (!has_quadrature) rep(0,0) else qwts_lcens,
     qwts_rcens   = if (!has_quadrature) rep(0,0) else qwts_rcens,
     qwts_icenl   = if (!has_quadrature) rep(0,0) else qwts_icenl,
     qwts_icenu   = if (!has_quadrature) rep(0,0) else qwts_icenu,
-    qwts_delay   = if (!has_quadrature) rep(0,0) else qwts_delay
+    qwts_delay   = if (!has_quadrature) rep(0,0) else qwts_delay,
+    
+    x_epts_event = if (!has_quadrature) matrix(0,0,K) else x_epts_event,
+    x_qpts_event = if (!has_quadrature) matrix(0,0,K) else x_qpts_event,
+    x_qpts_lcens = if (!has_quadrature) matrix(0,0,K) else x_qpts_lcens,
+    x_qpts_rcens = if (!has_quadrature) matrix(0,0,K) else x_qpts_rcens,
+    x_qpts_icens = if (!has_quadrature) matrix(0,0,K) else x_qpts_icens,
+    x_qpts_delay = if (!has_quadrature) matrix(0,0,K) else x_qpts_delay,
+    
+    s_epts_event = if (!has_quadrature) matrix(0,0,S) else s_epts_event,
+    s_qpts_event = if (!has_quadrature) matrix(0,0,S) else s_qpts_event,
+    s_qpts_lcens = if (!has_quadrature) matrix(0,0,S) else s_qpts_lcens,
+    s_qpts_rcens = if (!has_quadrature) matrix(0,0,S) else s_qpts_rcens,
+    s_qpts_icenl = if (!has_quadrature) matrix(0,0,S) else s_qpts_icenl,
+    s_qpts_icenu = if (!has_quadrature) matrix(0,0,S) else s_qpts_icenu,
+    s_qpts_delay = if (!has_quadrature) matrix(0,0,S) else s_qpts_delay,
+    
+    w_epts_event = if (!has_quadrature || !has_bars || qevent == 0) double(0) else parts_epts_event$w,
+    w_qpts_event = if (!has_quadrature || !has_bars || qevent == 0) double(0) else parts_qpts_event$w,
+    w_qpts_lcens = if (!has_quadrature || !has_bars || qlcens == 0) double(0) else parts_qpts_lcens$w,
+    w_qpts_rcens = if (!has_quadrature || !has_bars || qrcens == 0) double(0) else parts_qpts_rcens$w,
+    w_qpts_icens = if (!has_quadrature || !has_bars || qicens == 0) double(0) else parts_qpts_icens$w,
+    w_qpts_delay = if (!has_quadrature || !has_bars || qdelay == 0) double(0) else parts_qpts_delay$w,
+    
+    v_epts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_epts_event$v - 1L,
+    v_qpts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_qpts_event$v - 1L,
+    v_qpts_lcens = if (!has_quadrature || !has_bars || qlcens == 0) integer(0) else parts_qpts_lcens$v - 1L,
+    v_qpts_rcens = if (!has_quadrature || !has_bars || qrcens == 0) integer(0) else parts_qpts_rcens$v - 1L,
+    v_qpts_icens = if (!has_quadrature || !has_bars || qicens == 0) integer(0) else parts_qpts_icens$v - 1L,
+    v_qpts_delay = if (!has_quadrature || !has_bars || qdelay == 0) integer(0) else parts_qpts_delay$v - 1L,    
+    
+    u_epts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_epts_event$u - 1L,
+    u_qpts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_qpts_event$u - 1L,
+    u_qpts_lcens = if (!has_quadrature || !has_bars || qlcens == 0) integer(0) else parts_qpts_lcens$u - 1L,
+    u_qpts_rcens = if (!has_quadrature || !has_bars || qrcens == 0) integer(0) else parts_qpts_rcens$u - 1L,
+    u_qpts_icens = if (!has_quadrature || !has_bars || qicens == 0) integer(0) else parts_qpts_icens$u - 1L,
+    u_qpts_delay = if (!has_quadrature || !has_bars || qdelay == 0) integer(0) else parts_qpts_delay$u - 1L,    
+    
+    nnz_epts_event = if (!has_quadrature || !has_bars || qevent == 0) 0L else length(parts_epts_event$w),
+    nnz_qpts_event = if (!has_quadrature || !has_bars || qevent == 0) 0L else length(parts_qpts_event$w),
+    nnz_qpts_lcens = if (!has_quadrature || !has_bars || qlcens == 0) 0L else length(parts_qpts_lcens$w),
+    nnz_qpts_rcens = if (!has_quadrature || !has_bars || qrcens == 0) 0L else length(parts_qpts_rcens$w),
+    nnz_qpts_icens = if (!has_quadrature || !has_bars || qicens == 0) 0L else length(parts_qpts_icens$w),
+    nnz_qpts_delay = if (!has_quadrature || !has_bars || qdelay == 0) 0L else length(parts_qpts_delay$w),
+    
+    basis_epts_event = if (!has_quadrature) matrix(0,0,nvars) else basis_epts_event,
+    basis_qpts_event = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_event,
+    basis_qpts_lcens = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_lcens,
+    basis_qpts_rcens = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_rcens,
+    basis_qpts_icenl = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_icenl,
+    basis_qpts_icenu = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_icenu,
+    basis_qpts_delay = if (!has_quadrature) matrix(0,0,nvars) else basis_qpts_delay
   )
+ 
+  #----- random-effects structure
   
+  if (has_bars) {
+    
+    fl <- group$flist
+    p  <- sapply(group$cnms, FUN = length)
+    l  <- sapply(attr(fl, "assign"), function(i) nlevels(fl[[i]]))
+    t  <- length(l)
+    standata$p <- as.array(p)   # num ranefs for each grouping factor
+    standata$l <- as.array(l)   # num levels for each grouping factor
+    standata$t <- t             # num of grouping factors
+    standata$q <- ncol(group$Z) # p * l
+    standata$special_case <- all(sapply(group$cnms, intercept_only))
+    
+  } else { # no random effects structure
+    
+    standata$p <- integer(0)
+    standata$l <- integer(0)
+    standata$t <- 0L
+    standata$q <- 0L
+    standata$special_case <- 0L
+    
+  }
+
   #----- priors and hyperparameters
 
   # valid priors
@@ -585,9 +949,10 @@ stan_surv <- function(formula,
                     "hs_plus", 
                     "laplace", 
                     "lasso") # disallow product normal
-  ok_intercept_dists <- ok_dists[1:3]
-  ok_aux_dists       <- get_ok_priors_for_aux(basehaz)
-  ok_smooth_dists    <- c(ok_dists[1:3], "exponential")
+  ok_intercept_dists  <- ok_dists[1:3]
+  ok_aux_dists        <- get_ok_priors_for_aux(basehaz)
+  ok_smooth_dists     <- c(ok_dists[1:3], "exponential")
+  ok_covariance_dists <- c("decov")
   
   if (missing(prior_aux))
     prior_aux <- get_default_prior_for_aux(basehaz)
@@ -620,21 +985,38 @@ stan_surv <- function(formula,
                      default_scale = 1,
                      link = NULL,
                      ok_dists = ok_smooth_dists)
-  
-  # stop null priors if prior_PD is TRUE
+    
+  # stop null priors when prior_PD is true
   if (prior_PD) {
     if (is.null(prior))
-      stop("'prior' cannot be NULL if 'prior_PD' is TRUE")
+      stop("'prior' cannot be NULL if 'prior_PD' is TRUE.")
     if (is.null(prior_intercept) && has_intercept)
-      stop("'prior_intercept' cannot be NULL if 'prior_PD' is TRUE")
+      stop("'prior_intercept' cannot be NULL if 'prior_PD' is TRUE.")
     if (is.null(prior_aux))
-      stop("'prior_aux' cannot be NULL if 'prior_PD' is TRUE")    
+      stop("'prior_aux' cannot be NULL if 'prior_PD' is TRUE.")    
     if (is.null(prior_smooth) && (S > 0))
-      stop("'prior_smooth' cannot be NULL if 'prior_PD' is TRUE")    
+      stop("'prior_smooth' cannot be NULL if 'prior_PD' is TRUE.")    
+  }
+  
+  # handle prior for random effects structure
+  if (has_bars) {
+    
+    user_prior_b_stuff <- prior_b_stuff <- 
+      handle_cov_prior(prior_covariance, 
+                       cnms = group$cnms, 
+                       ok_dists = ok_covariance_dists)
+    
+    if (is.null(prior_covariance))
+      stop("'prior_covariance' cannot be NULL.")
+  
+  } else {
+    user_prior_b_stuff <- NULL
+    prior_b_stuff      <- NULL
+    prior_covariance   <- NULL
   }
   
   # autoscaling of priors
-  prior_stuff           <- autoscale_prior(prior_stuff, predictors = x)
+  prior_stuff           <- autoscale_prior(prior_stuff, predictors = x_stuff$x)
   prior_intercept_stuff <- autoscale_prior(prior_intercept_stuff)
   prior_aux_stuff       <- autoscale_prior(prior_aux_stuff)
   prior_smooth_stuff    <- autoscale_prior(prior_smooth_stuff)
@@ -644,6 +1026,7 @@ stan_surv <- function(formula,
   standata$prior_dist_for_intercept<- prior_intercept_stuff$prior_dist
   standata$prior_dist_for_aux      <- prior_aux_stuff$prior_dist
   standata$prior_dist_for_smooth   <- prior_smooth_stuff$prior_dist
+  standata$prior_dist_for_cov      <- prior_b_stuff$prior_dist
   
   # hyperparameters
   standata$prior_mean               <- prior_stuff$prior_mean
@@ -662,10 +1045,29 @@ stan_surv <- function(formula,
   standata$global_prior_df          <- prior_stuff$global_prior_df
   standata$slab_df                  <- prior_stuff$slab_df
   standata$slab_scale               <- prior_stuff$slab_scale
-
+  
+  # hyperparameters for covariance
+  if (has_bars) {
+    standata$b_prior_shape          <- prior_b_stuff$prior_shape
+    standata$b_prior_scale          <- prior_b_stuff$prior_scale
+    standata$concentration          <- prior_b_stuff$prior_concentration
+    standata$regularization         <- prior_b_stuff$prior_regularization
+    standata$len_concentration      <- length(standata$concentration)
+    standata$len_regularization     <- length(standata$regularization)
+    standata$len_theta_L            <- sum(choose(standata$p, 2), standata$p)  
+  } else { # no random effects structure
+    standata$b_prior_shape          <- rep(0, 0)
+    standata$b_prior_scale          <- rep(0, 0)
+    standata$concentration          <- rep(0, 0)
+    standata$regularization         <- rep(0, 0)
+    standata$len_concentration      <- 0L
+    standata$len_regularization     <- 0L    
+    standata$len_theta_L            <- 0L
+  }
+  
   # any additional flags
   standata$prior_PD <- ai(prior_PD)
-  
+    
   #---------------
   # Prior summary
   #---------------
@@ -679,7 +1081,10 @@ stan_surv <- function(formula,
     adjusted_priorEvent_aux_scale       = prior_aux_stuff$prior_scale,
     e_has_intercept  = has_intercept,
     e_has_predictors = K > 0,
-    basehaz = basehaz
+    basehaz = basehaz,
+    user_prior_covariance = prior_covariance,
+    b_user_prior_stuff = user_prior_b_stuff,
+    b_prior_stuff = prior_b_stuff
   )
   
   #-----------
@@ -694,7 +1099,9 @@ stan_surv <- function(formula,
                 if (standata$K)             "beta",
                 if (standata$S)             "beta_tde",
                 if (standata$S)             "smooth_sd",
-                if (standata$nvars)         "aux")
+                if (standata$nvars)         "aux",
+                if (standata$t)             "b",
+                if (standata$t)             "theta_L")
   
   # fit model using stan
   if (algorithm == "sampling") { # mcmc
@@ -719,17 +1126,25 @@ stan_surv <- function(formula,
   }
   check_stanfit(stanfit)
   
+  # replace 'theta_L' with the variance-covariance matrix
+  if (has_bars)
+    stanfit <- evaluate_Sigma(stanfit, group$cnms)
+  
   # define new parameter names
-  nms_beta   <- colnames(x) # may be NULL
+  nms_beta   <- colnames(x_cpts) # may be NULL
   nms_tde    <- get_smooth_name(s_cpts, type = "smooth_coefs") # may be NULL
   nms_smooth <- get_smooth_name(s_cpts, type = "smooth_sd")    # may be NULL
   nms_int    <- get_int_name_basehaz(basehaz)
   nms_aux    <- get_aux_name_basehaz(basehaz)
+  nms_b      <- get_b_names(group)                             # may be NULL
+  nms_vc     <- get_varcov_names(group)                        # may be NULL
   nms_all    <- c(nms_int,
                   nms_beta,
                   nms_tde,
                   nms_smooth,
                   nms_aux,
+                  nms_b,
+                  nms_vc,
                   "log-posterior")
 
   # substitute new parameter names into 'stanfit' object
@@ -740,12 +1155,17 @@ stan_surv <- function(formula,
                formula,
                has_tde,
                has_quadrature,
+               has_bars,
                data,
                model_frame      = mf,
                terms            = mt,
                xlevels          = .getXlevels(mt, mf),
-               x,
-               s_cpts           = if (has_tde) s_cpts else NULL,
+               x                = x_stuff$x,
+               x_cpts,
+               s_cpts           = if (has_tde)  s_cpts else NULL,
+               z_cpts           = if (has_bars) z_cpts else NULL,
+               cnms             = if (has_bars) group_unpadded$cnms  else NULL,
+               flist            = if (has_bars) group_unpadded$flist else NULL,
                t_beg, 
                t_end,
                status,
@@ -794,9 +1214,8 @@ stan_surv <- function(formula,
 #     predictions since it contains information about the knot locations
 #     for the baseline hazard (this is implemented via splines::predict.bs). 
 handle_basehaz_surv <- function(basehaz, 
-                                basehaz_ops, 
-                                ok_basehaz     = c("weibull", "bs", "piecewise"),
-                                ok_basehaz_ops = c("df", "knots"),
+                                basehaz_ops,
+                                ok_basehaz,
                                 times, 
                                 status,
                                 min_t, max_t) {
@@ -804,31 +1223,11 @@ handle_basehaz_surv <- function(basehaz,
   if (!basehaz %in% ok_basehaz)
     stop2("'basehaz' should be one of: ", comma(ok_basehaz))
   
+  ok_basehaz_ops <- get_ok_basehaz_ops(basehaz)
   if (!all(names(basehaz_ops) %in% ok_basehaz_ops))
     stop2("'basehaz_ops' can only include: ", comma(ok_basehaz_ops))
-  
-  if (basehaz == "exp") {
-    
-    bknots <- NULL # boundary knot locations
-    iknots <- NULL # internal knot locations
-    basis  <- NULL # spline basis
-    nvars  <- 0L   # number of aux parameters, none
-    
-  } else if (basehaz == "gompertz") {
-    
-    bknots <- NULL # boundary knot locations
-    iknots <- NULL # internal knot locations
-    basis  <- NULL # spline basis
-    nvars  <- 1L   # number of aux parameters, Gompertz scale
-    
-  } else if (basehaz == "weibull") {
-    
-    bknots <- NULL # boundary knot locations
-    iknots <- NULL # internal knot locations
-    basis  <- NULL # spline basis
-    nvars  <- 1L   # number of aux parameters, Weibull shape
-    
-  } else if (basehaz == "bs") {
+
+  if (basehaz %in% c("ms", "bs", "piecewise")) {
     
     df    <- basehaz_ops$df
     knots <- basehaz_ops$knots
@@ -837,8 +1236,7 @@ handle_basehaz_surv <- function(basehaz,
       stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
     
     if (is.null(df))
-      df <- 5L # default df for B-splines, assuming no intercept 
-    # NB this is ignored if the user specified knots
+      df <- 5L # assumes no intercept, ignored if the user specified knots
     
     tt <- times[status == 1] # uncensored event times
     if (is.null(knots) && !length(tt)) {
@@ -852,41 +1250,38 @@ handle_basehaz_surv <- function(basehaz,
         stop2("'knots' cannot be placed before the earliest entry time.")
       if (any(knots > max_t))
         stop2("'knots' cannot be placed beyond the latest event time.")
-    } 
-        
+    }
+  }
+  
+  if (basehaz %in% c("exp", "exp-aft")) {
+    
+    bknots <- NULL # boundary knot locations
+    iknots <- NULL # internal knot locations
+    basis  <- NULL # spline basis
+    nvars  <- 0L   # number of aux parameters, none
+    
+  } else if (basehaz %in% c("weibull", "weibull-aft")) {
+    
+    bknots <- NULL # boundary knot locations
+    iknots <- NULL # internal knot locations
+    basis  <- NULL # spline basis
+    nvars  <- 1L   # number of aux parameters, Weibull shape
+    
+  } else if (basehaz == "gompertz") {
+    
+    bknots <- NULL # boundary knot locations
+    iknots <- NULL # internal knot locations
+    basis  <- NULL # spline basis
+    nvars  <- 1L   # number of aux parameters, Gompertz scale
+    
+  } else if (basehaz == "bs") {
+ 
     bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- get_basis(tt, iknots = iknots, bknots = bknots, type = "bs")      
     nvars  <- ncol(basis)  # number of aux parameters, basis terms
     
   } else if (basehaz == "ms") {
-    
-    df    <- basehaz_ops$df
-    knots <- basehaz_ops$knots
-    
-    if (!is.null(df) && !is.null(knots)) {
-      stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
-    }
-    
-    tt <- times[status == 1] # uncensored event times
-    if (is.null(df)) {
-      df <- 5L # default df for M-splines, assuming no intercept 
-      # NB this is ignored if the user specified knots
-    }
-
-    tt <- times[status == 1] # uncensored event times
-    if (is.null(knots) && !length(tt)) {
-      warning2("No observed events found in the data. Censoring times will ",
-               "be used to evaluate default knot locations for splines.")
-      tt <- times
-    }    
-    
-    if (!is.null(knots)) {
-      if (any(knots < min_t))
-        stop2("'knots' cannot be placed before the earliest entry time.")
-      if (any(knots > max_t))
-        stop2("'knots' cannot be placed beyond the latest event time.")
-    }
     
     bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
@@ -895,40 +1290,15 @@ handle_basehaz_surv <- function(basehaz,
     
   } else if (basehaz == "piecewise") {
     
-    df    <- basehaz_ops$df
-    knots <- basehaz_ops$knots
-    
-    if (!is.null(df) && !is.null(knots)) {
-      stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
-    }
-    
-    if (is.null(df)) {
-      df <- 6L # default number of segments for piecewise constant
-      # NB this is ignored if the user specified knots
-    }
-
-    if (is.null(knots) && !length(tt)) {
-      warning2("No observed events found in the data. Censoring times will ",
-               "be used to evaluate default knot locations for piecewise basehaz.")
-      tt <- times
-    }    
-    
-    if (!is.null(knots)) {
-      if (any(knots < min_t))
-        stop2("'knots' cannot be placed before the earliest entry time.")
-      if (any(knots > max_t))
-        stop2("'knots' cannot be placed beyond the latest event time.")
-    }
-    
     bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- NULL               # spline basis
     nvars  <- length(iknots) + 1 # number of aux parameters, dummy indicators
     
-  }  
+  }
   
   nlist(type_name = basehaz, 
-        type = basehaz_for_stan(basehaz), 
+        type = basehaz_for_stan(basehaz),
         nvars, 
         iknots, 
         bknots, 
@@ -946,25 +1316,26 @@ handle_basehaz_surv <- function(basehaz,
 # @return A character vector, or NA if unmatched.
 get_ok_basehaz_ops <- function(basehaz_name) {
   switch(basehaz_name,
-         weibull   = c(),
-         bs        = c("df", "knots"),
-         piecewise = c("df", "knots"),
-         ms        = c("df", "knots"),
+         "bs"        = c("df", "knots"),
+         "ms"        = c("df", "knots"),
+         "piecewise" = c("df", "knots"),
          NA)
 }
 
-# Return the integer respresentation for the baseline hazard, used by Stan
+# Return the integer representation for the baseline hazard, used by Stan
 #
 # @param basehaz_name A character string, the type of baseline hazard.
 # @return An integer, or NA if unmatched.
 basehaz_for_stan <- function(basehaz_name) {
   switch(basehaz_name, 
-         weibull   = 1L, 
-         bs        = 2L,
-         piecewise = 3L,
-         ms        = 4L,
-         exp       = 5L,
-         gompertz  = 6L,
+         "weibull"     = 1L,
+         "bs"          = 2L,
+         "piecewise"   = 3L,
+         "ms"          = 4L,
+         "exp"         = 5L,
+         "gompertz"    = 6L,
+         "exp-aft"     = 7L,
+         "weibull-aft" = 8L,
          NA)
 }
 
@@ -1008,7 +1379,13 @@ get_iknots <- function(x, df = 5L, degree = 3L, iknots = NULL, intercept = FALSE
 # @return A Logical.
 has_intercept <- function(basehaz) {
   nm <- get_basehaz_name(basehaz)
-  (nm %in% c("ms", "bs", "exp", "weibull", "gompertz"))
+  (nm %in% c("exp", 
+             "exp-aft", 
+             "weibull", 
+             "weibull-aft", 
+             "gompertz", 
+             "ms", 
+             "bs"))
 }
 
 # Return the name of the tde spline coefs or smoothing parameters.
@@ -1027,10 +1404,10 @@ get_smooth_name <- function(x, type = "smooth_coefs") {
   suffix  <- paste0(":tde-spline-coef", indices)
   
   switch(type,
-         smooth_coefs = paste0(nms, suffix),
-         smooth_sd    = paste0("smooth_sd[", unique(nms), "]"),
-         smooth_map   = rep(seq_along(tally), tally),
-         smooth_vars  = unique(nms),
+         "smooth_coefs" = paste0(nms, suffix),
+         "smooth_sd"    = paste0("smooth_sd[", unique(nms), "]"),
+         "smooth_map"   = rep(seq_along(tally), tally),
+         "smooth_vars"  = unique(nms),
          stop2("Bug found: invalid input to 'type' argument."))
 }
 
@@ -1064,6 +1441,25 @@ get_default_prior_for_aux <- function(basehaz) {
          bs        = normal(),
          piecewise = normal(),
          stop2("Bug found: unknown type of baseline hazard."))
+
+# Return the names for the group-specific parameters
+#
+# @param group List returned by rstanarm:::pad_reTerms.
+# @return A character vector.
+get_b_names <- function(group) {
+  if (is.null(group))
+    return(NULL) # no random effects structure
+  c(paste0("b[", make_b_nms(group), "]"))
+}
+
+# Return the names for the var-cov parameters
+#
+# @param group List returned by rstanarm:::pad_reTerms.
+# @return A character vector.
+get_varcov_names <- function(group) {
+  if (is.null(group))
+    return(NULL) # no random effects structure
+  paste0("Sigma[", get_Sigma_nms(group$cnms), "]")
 }
 
 # Return the default scale parameter for 'prior_aux'.
@@ -1072,7 +1468,7 @@ get_default_prior_for_aux <- function(basehaz) {
 # @return A scalar.
 get_default_aux_scale <- function(basehaz) {
   nm <- get_basehaz_name(basehaz)
-  if (nm %in% c("weibull", "gompertz")) 2 else 20
+  if (nm %in% c("weibull", "weibull-aft", "gompertz")) 2 else 20
 }
 
 # Check if the type of baseline hazard has a closed form
@@ -1082,7 +1478,9 @@ get_default_aux_scale <- function(basehaz) {
 check_for_closed_form <- function(basehaz) {
   nm <- get_basehaz_name(basehaz)
   nm %in% c("exp",
+            "exp-aft",
             "weibull",
+            "weibull-aft",
             "gompertz",
             "ms")
 }
@@ -1112,12 +1510,14 @@ make_basis <- function(times, basehaz, integrate = FALSE) {
     return(matrix(0, 0, K))
   } 
   switch(basehaz$type_name,
-         "exp"       = matrix(0, N, K), # dud matrix for Stan
-         "weibull"   = matrix(0, N, K), # dud matrix for Stan
-         "gompertz"  = matrix(0, N, K), # dud matrix for Stan
-         "ms"        = basis_matrix(times, basis = basehaz$basis, integrate = integrate),
-         "bs"        = basis_matrix(times, basis = basehaz$basis),
-         "piecewise" = dummy_matrix(times, knots = basehaz$knots),
+         "exp"         = matrix(0, N, K), # dud matrix for Stan
+         "exp-aft"     = matrix(0, N, K), # dud matrix for Stan
+         "weibull"     = matrix(0, N, K), # dud matrix for Stan
+         "weibull-aft" = matrix(0, N, K), # dud matrix for Stan
+         "gompertz"    = matrix(0, N, K), # dud matrix for Stan
+         "ms"          = basis_matrix(times, basis = basehaz$basis, integrate = integrate),
+         "bs"          = basis_matrix(times, basis = basehaz$basis),
+         "piecewise"   = dummy_matrix(times, knots = basehaz$knots),
          stop2("Bug found: unknown type of baseline hazard."))
 }
 
@@ -1145,17 +1545,19 @@ parse_formula <- function(formula, data) {
   
   formula <- validate_formula(formula, needs_response = TRUE)
   
-  lhs      <- lhs(formula) # full LHS of formula
-  lhs_form <- reformulate_lhs(lhs)
-  
-  rhs        <- rhs(formula)         # RHS as expression
-  rhs_form   <- reformulate_rhs(rhs) # RHS as formula
-  rhs_terms  <- terms(rhs_form, specials = "tde")
-  rhs_vars   <- rownames(attr(rhs_terms, "factors"))
-  
+  # All variables of entire formula
   allvars <- all.vars(formula)
   allvars_form <- reformulate(allvars)
   
+  # LHS of entire formula
+  lhs       <- lhs(formula)         # LHS as expression
+  lhs_form  <- reformulate_lhs(lhs) # LHS as formula
+  
+  # RHS of entire formula
+  rhs       <- rhs(formula)         # RHS as expression
+  rhs_form  <- reformulate_rhs(rhs) # RHS as formula
+
+  # Evaluated response variables
   surv <- eval(lhs, envir = data) # Surv object
   surv <- validate_surv(surv)
   type <- attr(surv, "type")
@@ -1185,91 +1587,167 @@ parse_formula <- function(formula, data) {
     min_t    <- 0
     max_t    <- max(surv[, c("time1", "time2")])
   }
-
-  sel <- attr(rhs_terms, "specials")$tde
   
-  if (!is.null(sel)) { # model has tde
-    
-    # replace 'tde(x, ...)' in formula with 'x'
-    tde_oldvars <- rhs_vars
-    tde_newvars <- sapply(tde_oldvars, function(oldvar) {
-      if (oldvar %in% rhs_vars[sel]) {
-        tde <- function(newvar, ...) { # define tde function locally
-          safe_deparse(substitute(newvar)) 
-        }
-        eval(parse(text = oldvar))
-      } else oldvar
-    }, USE.NAMES = FALSE)
-    term_labels <- attr(rhs_terms, "term.labels")
-    for (i in sel) {
-      sel_terms <- which(attr(rhs_terms, "factors")[i, ] > 0)
-      for (j in sel_terms) {
-        term_labels[j] <- gsub(tde_oldvars[i], 
-                               tde_newvars[i], 
-                               term_labels[j], 
-                               fixed = TRUE)
-      }
-    }
-    tf_form <- reformulate(term_labels, response = lhs)
-    
-    # extract 'tde(x, ...)' from formula and construct 'bs(times, ...)'
-    tde_terms <- lapply(rhs_vars[sel], function(x) {
-      tde <- function(vn, ...) { # define tde function locally
-        dots <- list(...)
-        ok_args <- c("df")
-        if (!isTRUE(all(names(dots) %in% ok_args)))
-          stop2("Invalid argument to 'tde' function. ",
-                "Valid arguments are: ", comma(ok_args))
-        df <- if (is.null(dots$df)) 3 else dots$df
-        degree <- 3
-        if (df == 3) {
-          dots[["knots"]] <- numeric(0)
-        } else {
-          dx <- (max_t - min_t) / (df - degree + 1)
-          dots[["knots"]] <- seq(min_t + dx, max_t - dx, dx)
-        }
-        dots[["Boundary.knots"]] <- c(min_t, max_t) 
-        sub("^list\\(", "bs\\(times__, ", safe_deparse(dots))
-      }
-      tde_calls <- eval(parse(text = x))
-      sel_terms <- which(attr(rhs_terms, "factors")[x, ] > 0)
-      new_calls <- sapply(seq_along(sel_terms), function(j) {
-        paste0(term_labels[sel_terms[j]], ":", tde_calls)
-      })
-      nlist(tde_calls, new_calls)
-    })
-    td_basis <- fetch(tde_terms, "tde_calls")
-    new_calls <- fetch_(tde_terms, "new_calls")
-    td_form <- reformulate(new_calls, response = NULL, intercept = FALSE)
-    
-  } else { # model doesn't have tde
-    tf_form  <- formula
-    td_form  <- NULL
-    td_basis <- NULL
-  }
+  # Deal with tde(x, ...)
+  tde_stuff <- handle_tde(formula, min_t = min_t, max_t = max_t)
+  tf_form  <- tde_stuff$tf_form
+  td_form  <- tde_stuff$td_form  # may be NULL
+  bs_form  <- tde_stuff$bs_form  # may be NULL
+  tt_form  <- tde_stuff$tt_form  # may be NULL
+  tt_basis <- tde_stuff$tt_basis # may be NULL
+  tt_calls <- tde_stuff$tt_calls # may be NULL  
+  
+  # Just fixed-effect part of formula
+  fe_form   <- lme4::nobars(tf_form)
+
+  # Just random-effect part of formula
+  bars      <- lme4::findbars(tf_form)
+  re_parts  <- lapply(bars, split_at_bars)
+  re_forms  <- fetch(re_parts, "re_form")  
+  if (length(bars) > 2L)
+    stop2("A maximum of 2 grouping factors are allowed.")
 
   nlist(formula,
+        allvars,
+        allvars_form,
         lhs,
-        rhs,
         lhs_form,
+        rhs,
         rhs_form,
         tf_form,
         td_form,
-        td_basis,
-        fe_form = rhs_form, # no re terms accommodated yet
-        re_form = NULL,     # no re terms accommodated yet
-        allvars,
-        allvars_form,
+        bs_form,
+        tt_form,
+        tt_basis,
+        tt_calls,
+        fe_form,
+        bars,
+        re_parts,
+        re_forms,
         tvar_beg,
         tvar_end,
         dvar,
         surv_type = attr(surv, "type"))
 }
 
-# Check formula object
+# Handle the 'tde(x, ...)' terms in the model formula
+#
+# @param Terms terms object for the fixed effect part of the model formula.
+# @return A named list with the following elements:
+# 
+handle_tde <- function(formula, min_t, max_t) {
+
+  Terms <- terms(lme4::nobars(formula), specials = "tde")
+
+  # if no time-dependent effects then just return formula
+  if (is.null(attr(Terms, "specials")$tde)) {
+    return(list(tf_form  = formula,
+                td_form  = NULL,
+                bs_form  = NULL,
+                tt_form  = NULL,
+                tt_basis = NULL,
+                tt_calls = NULL))
+  }
+   
+  # extract rhs of formula
+  Terms  <- delete.response(Terms)
+  sel    <- attr(Terms, "specials")$tde
+  varnms <- rownames(attr(Terms, "factors"))
+  
+  # replace 'tde(x, ...)' in formula with 'x'
+  tde_oldvars <- varnms
+  tde_newvars <- sapply(tde_oldvars, function(oldvar) {
+    if (oldvar %in% varnms[sel]) {
+      tde <- function(newvar, ...) { # define tde function locally
+        safe_deparse(substitute(newvar)) 
+      }
+      eval(parse(text = oldvar))
+    } else oldvar
+  }, USE.NAMES = FALSE)
+  tf_term_labels <- attr(Terms, "term.labels")
+  td_term_labels <- c()
+  k <- 0 # initialise td_term_labels indexing (for creating a new formula)
+  for (i in sel) {
+    sel_terms <- which(attr(Terms, "factors")[i, ] > 0)
+    for (j in sel_terms) {
+      k <- k + 1
+      tf_term_labels[j] <- td_term_labels[k] <- gsub(tde_oldvars[i], 
+                                                     tde_newvars[i], 
+                                                     tf_term_labels[j], 
+                                                     fixed = TRUE)
+    }
+  }
+  
+  # extract 'tde(x, ...)' from formula and construct 'bs(times, ...)'
+  tde_terms <- lapply(varnms[sel], function(x) {
+    tde <- function(vn, ...) { # define tde function locally
+      dots <- list(...)
+      ok_args <- c("df")
+      if (!isTRUE(all(names(dots) %in% ok_args)))
+        stop2("Invalid argument to 'tde' function. ",
+              "Valid arguments are: ", comma(ok_args))
+      df <- if (is.null(dots$df)) 3 else dots$df
+      degree <- 3
+      if (df == 3) {
+        dots[["knots"]] <- numeric(0)
+      } else {
+        dx <- (max_t - min_t) / (df - degree + 1)
+        dots[["knots"]] <- seq(min_t + dx, max_t - dx, dx)
+      }
+      dots[["Boundary.knots"]] <- c(min_t, max_t) 
+      sub("^list\\(", "bs\\(times__, ", safe_deparse(dots))
+    }
+    tde_calls <- eval(parse(text = x))
+    sel_terms <- which(attr(Terms, "factors")[x, ] > 0)
+    new_calls <- sapply(seq_along(sel_terms), function(j) {
+      paste0(tf_term_labels[sel_terms[j]], ":", tde_calls)
+    })
+    nlist(tde_calls, new_calls)
+  })
+  
+  # add on the terms labels from the random effects part of the formula
+  bars <- lme4::findbars(formula)
+  if (length(bars)) {
+    bars_term_labels <- sapply(bars, bracket_wrap)
+    tf_term_labels <- c(tf_term_labels, bars_term_labels)
+  }
+  
+  # formula with all variables but no 'tde(x, ...)' wrappers
+  tf_form <- reformulate(tf_term_labels, response = lhs(formula))
+  
+  # formula with only tde variables but no 'tde(x, ...)' wrappers
+  td_form <- reformulate(td_term_labels, response = lhs(formula))
+  
+  # formula with 'bs(times__, ...)' terms based on 'tde(x, ...)' calls
+  tt_basis <- fetch(tde_terms, "tde_calls"); utt <- unique(unlist(tt_basis))
+  bs_form  <- reformulate(utt, response  = NULL, intercept = FALSE)
+  
+  # formula with 'x:bs(times__, ...)' terms based on 'tde(x, ...)' calls
+  tt_calls <- fetch_(tde_terms, "new_calls")
+  tt_form  <- reformulate(tt_calls, response  = NULL, intercept = FALSE)
+  
+  # return object
+  nlist(tf_form,
+        td_form,
+        bs_form,
+        tt_form,
+        tt_basis,
+        tt_calls)
+}
+
+# Deparse an expression and wrap it in brackets
+#
+# @param x An expression.
+# @return A character string.
+bracket_wrap <- function(x) {
+  paste0("(", deparse(x, 500), ")")
+}
+
+# Check input to the formula argument
 #
 # @param formula The user input to the formula argument.
 # @param needs_response A logical; if TRUE then formula must contain a LHS.
+# @return A formula.
 validate_formula <- function(formula, needs_response = TRUE) {
   
   if (!inherits(formula, "formula")) {
@@ -1287,8 +1765,10 @@ validate_formula <- function(formula, needs_response = TRUE) {
 
 # Check object is a Surv object with a valid type
 #
-# @param x A Surv object; the LHS of a formula evaluated in a data frame environment.
-# @param ok_types A character vector giving the allowed types of Surv object.
+# @param x A Surv object. That is, the LHS of a formula as evaluated in a 
+#   data frame environment.
+# @param ok_types A character vector giving the valid types of Surv object.
+# @return A Surv object.
 validate_surv <- function(x, ok_types = c("right", "counting",
                                           "interval", "interval2")) {
   if (!inherits(x, "Surv"))
@@ -1298,11 +1778,10 @@ validate_surv <- function(x, ok_types = c("right", "counting",
   x
 }
 
-
 # Extract LHS of a formula
 #
-# @param x A formula object
-# @param as_formula Logical. If TRUE then the result is reformulated.
+# @param x A formula object.
+# @return An expression.
 lhs <- function(x, as_formula = FALSE) {
   len <- length(x)
   if (len == 3L) {
@@ -1315,8 +1794,8 @@ lhs <- function(x, as_formula = FALSE) {
 
 # Extract RHS of a formula
 #
-# @param x A formula object
-# @param as_formula Logical. If TRUE then the result is reformulated.
+# @param x A formula object.
+# @return An expression.
 rhs <- function(x, as_formula = FALSE) {
   len <- length(x)
   if (len == 3L) {
@@ -1329,26 +1808,23 @@ rhs <- function(x, as_formula = FALSE) {
 
 # Reformulate as LHS of a formula
 #
-# @param x A character string or expression object
-# @param as_formula Logical. If TRUE then the result is reformulated.
+# @param x A character string or expression.
+# @return A formula.
 reformulate_lhs <- function(x) {
-  #x <- deparse(x, 500L)
   x <- formula(substitute(LHS ~ 1, list(LHS = x)))
   x
 }
 
 # Reformulate as RHS of a formula
 #
-# @param x A formula object
-# @param as_formula Logical. If TRUE then the result is reformulated.
+# @param x A character string or expression.
+# @return A formula.
 reformulate_rhs <- function(x) {
-  #x <- deparse(x, 500L)
   x <- formula(substitute(~ RHS, list(RHS = x)))
   x
 }
 
-
-# Return the response vector (time) for estimation
+# Return the response vector (time)
 #
 # @param model_frame The model frame.
 # @param type The type of time variable to return:
@@ -1396,7 +1872,6 @@ make_t <- function(model_frame, type = c("beg", "end", "gap", "upp")) {
          stop("Bug found: cannot handle specified 'type'."))
 }
 
-
 # Return the response vector (status indicator)
 #
 # @param model_frame The model frame.
@@ -1419,7 +1894,9 @@ make_d <- function(model_frame) {
 # Return a data frame with NAs excluded
 #
 # @param formula The parsed model formula.
-# @param data The user specified data frame.
+# @param data The (user-specified) data frame.
+# @return A data frame, with only complete cases for the variables that
+#   appear in the model formula.
 make_model_data <- function(formula, data) {
   mf <- model.frame(formula, data, na.action = na.pass)
   include <- apply(mf, 1L, function(row) !any(is.na(row)))
@@ -1430,13 +1907,20 @@ make_model_data <- function(formula, data) {
 #
 # @param formula The parsed model formula.
 # @param data The model data frame.
-make_model_frame <- function(formula, data, check_constant = TRUE) {
+# @param xlev Passed to xlev argument of model.frame.
+# @param check_constant If TRUE then an error is thrown is the returned
+#   model frame contains any constant variables.
+# @return A list with the following elements:
+#   mf: the model frame based on the formula.
+#   mt: the model terms associated with the returned model frame.
+make_model_frame <- function(formula, data, xlevs = NULL, 
+                             check_constant = FALSE) {
 
   # construct terms object from formula 
-  Terms <- terms(formula)
+  Terms <- terms(lme4::subbars(formula))
   
   # construct model frame
-  mf <- model.frame(Terms, data)
+  mf <- model.frame(Terms, data, xlev = xlevs)
   
   # check no constant vars
   if (check_constant)
@@ -1450,20 +1934,24 @@ make_model_frame <- function(formula, data, check_constant = TRUE) {
   nlist(mf, mt)
 }
 
-# Return the fe predictor matrix for estimation
+# Return the predictor matrix
 #
 # @param formula The parsed model formula.
 # @param model_frame The model frame.
+# @param xlev Passed to xlev argument of model.frame.
+# @param check_constant If TRUE then an error is thrown is the returned
+#   predictor matrix contains any constant columns.
 # @return A named list with the following elements:
 #   x: the fe model matrix, not centered and without intercept.
 #   x_bar: the column means of the model matrix.
 #   x_centered: the fe model matrix, centered.
-#   N,K: number of rows (observations) and columns (predictors) in the
-#     fixed effects model matrix
-make_x <- function(formula, model_frame, xlevs = NULL, check_constant = TRUE) {
+#   N: number of rows (observations) in the model matrix.
+#   K: number of cols (predictors) in the model matrix.
+make_x <- function(formula, model_frame, xlevs = NULL, 
+                   check_constant = TRUE) {
 
   # uncentred predictor matrix, without intercept
-  x <- model.matrix(formula, model_frame, xlevs = xlevs)
+  x <- model.matrix(formula, model_frame, xlev = xlevs)
   x <- drop_intercept(x)
   
   # column means of predictor matrix
@@ -1482,201 +1970,10 @@ make_x <- function(formula, model_frame, xlevs = NULL, check_constant = TRUE) {
   nlist(x, x_centered, x_bar, N = NROW(x), K = NCOL(x))
 }
 
-# Return a predictor for the tde spline terms
+# Check if the only element of a character vector is 'Intercept'
 #
-# @param formula The formula for the time-dependent effects part of the model.
-# @param data A data frame.
-# @param times The vector of times at which the predictor matrix should be 
-#   evaluated.
-# @param xlevs The factor levels to use for the predictor matrix.
-# @return A matrix.
-make_s <- function(formula, data, times, xlevs = NULL) {
-  
-  # add times (as a new variable) to the model data
-  if (!length(times) == nrow(data))
-    stop("Bug found: 'times' is the incorrect length.")
-  data <- data.frame(data, times__ = times)
-
-  # make model frame and predictor matrix
-  mf <- make_model_frame(formula, data, check_constant = FALSE)$mf
-  x  <- make_x(formula, mf, xlevs = xlevs, check_constant = FALSE)$x
-  return(x)
+# @param x A character vector.
+# @return A logical.
+intercept_only <- function(x) {
+  length(x) == 1 && x == "(Intercept)"
 }
-
-# Return the fe predictor matrix for prediction
-#
-# @param object A stansurv object.
-# @param model_frame The model frame.
-# @return A named list with the following elements:
-#   x: the fe model matrix, not centred and may have intercept depending on
-#     the requirement of the baseline hazard.
-#   N,K: number of rows (observations) and columns (predictors) in the
-#     fixed effects model matrix
-make_pp_x <- function(object, model_frame) {
-  
-  # formula for fe predictor matrix
-  tt <- delete.response(terms(object))
-  
-  # check data classes in the model frame match those used in model fitting
-  if (!is.null(cl <- attr(tt, "dataClasses"))) 
-    .checkMFClasses(cl, model_frame)
-  
-  # uncentered predictor matrix
-  x <- model.matrix(tt, model_frame, contrasts.arg = object$contrasts)
-  
-  # drop intercept if baseline hazard doesn't require one
-  if (!has_intercept(object$basehaz))
-    x <- drop_intercept(x)
-  
-  nlist(x, N = NROW(x), K = NCOL(x))  
-}
-
-# apply b-spline time-dependent effect
-apply_tde_fun <- function(model_terms, model_frame, times, bknots = NULL) {
-  
-  tde_stuff <- survival::untangle.specials(model_terms, "tde")
-
-  if (!length(tde_stuff$terms)) 
-    return(model_frame) # no time-dependent effects
-  
-  if (!nrow(model_frame))
-    return(model_frame) # no rows in model frame (e.g. no delayed entry)
-  
-  vars  <- attr(model_terms, 'variables')
-  pvars <- attr(model_terms, 'predvars')
-  
-  # loop over time-dependent terms in formula
-  K <- length(tde_stuff$terms)
-  for (i in 1:K) { 
-    indx_i <- tde_stuff$terms[i] + 2 # index in call; +2 for 'list' & 'Surv()'
-    var_i  <- vars [[indx_i]]        # var     in formula
-    pvar_i <- pvars[[indx_i]]        # predvar in formula
-    var_i  <- safe_deparse(var_i)    # treat call as a string
-    pvar_i <- safe_deparse(pvar_i)   # treat call as a string
-    # get the possible prefixes for the predvar (i.e. 'tde(x' or 'bs(x')
-    prefix <- "^bs\\([^,]+,[[:blank:]]*|^tde\\([^,]+,[[:blank:]]*"
-    # returns dots from 'tde(x, ...)' as a list
-    chck <- grepl(prefix, pvar_i)
-    if (chck) {
-      args_i <- eval_string(sub(prefix, "list\\(", pvar_i)) 
-    } else {
-      args_i <- list()
-    }
-    # combine the dots with the times at which to evaluate the b-spline basis
-    args_i$intercept <- TRUE
-    if (!is.null(bknots))
-      args_i$Boundary.knots <- bknots
-    args_i <- c(list(x = times), args_i)
-    # extract the variable from the model frame
-    oldx_i  <- model_frame[[var_i]]
-    # apply interaction with the b-spline basis evaluated at specified times
-    newx_i <- oldx_i * do.call(splines::bs, args_i)
-    # substitute back into the model frame
-    model_frame[[var_i]] <- newx_i
-  }
-  
-  return(model_frame)
-}
-
-update_tde_terms <- function(model_terms, model_frame) {
-  tde_terms <- survival::untangle.specials(model_terms, "tde")$terms
-  if (!length(tde_terms))
-    return(model_frame) # no time-dependent effects
-  vars  <- attr(model_terms, 'variables')
-  pvars <- attr(model_terms, 'predvars')
-  dclss <- attr(model_terms, "dataClasses")
-  K <- length(tde_terms)
-  for (i in 1:K) {
-    indx_i <- tde_terms[i] + 2       # index in call; +2 for 'list' & 'Surv()'
-    var_i  <- vars [[indx_i]]        # var     in formula
-    pvar_i <- pvars[[indx_i]]        # predvar in formula
-    var_i  <- safe_deparse(var_i)    # treat call as a string
-    pvar_i <- safe_deparse(pvar_i)   # treat call as a string
-    oldx_i <- model_frame[[var_i]]   # extract transformed variable from model frame
-    dummy  <- as.call(list(as.name(class(oldx_i)[[1L]]), vars[[indx_i]][[2]]))
-    ptemp  <- makepredictcall(oldx_i, dummy) # predvars call
-    pvars[[indx_i]] <- ptemp
-    dclss[[var_i]] <- class(oldx_i)[[1L]]
-  }
-  attr(model_terms, "predvars") <- pvars
-  #attr(model_terms, "dataClasses") <- dclss
-  return(model_terms)
-}
-
-
-#--------- not used; based on tt approach instead of tde approach
-
-# # Validate the user input to the 'tt' argument. This draws on the 
-# # code for the coxph modelling function in the survival package.
-# #
-# # Copyright (C) 2018 Sam Brilleman
-# # Copyright (C) 2018 Terry Therneau, Thomas Lumley
-# #
-# # @param tt The user input to the 'tt' argument.
-# # @param validate_length Integer specifying the required length of the 
-# #   returned list.
-# # @return A list of functions.
-# validate_tt_fun <- function(tt, validate_length) {
-#   
-#   if (is.null(tt))
-#     stop2("'tt' must be specified.")
-#   
-#   if (is.function(tt)) 
-#     tt <- list(tt) # convert since function to a one element list
-#   
-#   if (!is.list(tt))
-#     stop2("The 'tt' argument must contain a function or list of functions.")  
-#   
-#   if (!all(sapply(tt, is.function)))
-#     stop2("The 'tt' argument must contain function or list of functions.")
-#   
-#   if (!length(tt) %in% c(1, validate_length)) 
-#     stop2("The 'tt' argument contains a list of the incorrect length.")
-#   
-#   if (length(tt) == 1)
-#     tt <- rep(tt, validate_length)
-#   
-#   return(tt)
-# }
-# 
-# # apply time transform to the model frame; method based on survival package 
-# apply_tt_fun <- function(model_frame, tt_funs, tt_vars, tt_terms, times) {
-#   if (!length(tt_terms))
-#     return(model_frame)
-#   
-#   for (i in 1:length(tt_terms)) { # loop over time transform terms
-#     
-#     # extract quantities used in time transform
-#     varnm_i <- tt_vars[[i]] # varname in model frame
-#     ttfun_i <- tt_funs[[i]] # user defined tt function
-#     
-#     # time transform at event times
-#     oldx_i <- model_frame[[varnm_i]]   # extract var from model frame
-#     newx_i <- (ttfun_i)(oldx_i, times) # evaluate tt function at times
-#     model_frame[[varnm_i]] <- newx_i   # substitute back into model frame
-#   }
-#   
-#   return(model_frame)
-# }
-#
-# # update the predvars attribute for time transformed terms
-# update_predvars <- function(model_terms, model_frame, tt_vars, tt_terms) {
-#   tcall <- attr(model_terms, 'variables')[tt_terms + 2]
-#   pvars <- attr(model_terms, 'predvars')
-#   pmethod <- sub("makepredictcall.", "", as.vector(methods("makepredictcall")))
-#   for (i in 1:length(tt_terms)) {
-#     # update predvars if necessary
-#     varnm_i <- tt_vars[[i]]       # varname in model frame
-#     terms_i <- tt_terms[i] + 2    # index in terms object
-#     x_i <- model_frame[[varnm_i]] # extract transformed variable from model frame
-#     nclass <- class(x_i)          # check class of transformed variable
-#     if (any(nclass %in% pmethod)) { # it has a makepredictcall method...
-#       dummy <- as.call(list(as.name(class(x_i)[1]), tcall[[i]][[2]]))
-#       ptemp <- makepredictcall(x_i, dummy)
-#       pvars[[terms_i]] <- ptemp
-#     }
-#   }
-#   attr(model_terms, "predvars") <- pvars
-#   return(model_terms)
-# }
-

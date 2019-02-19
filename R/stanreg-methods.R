@@ -413,10 +413,16 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
   .glmer_check(object)
   object$glmod$reTrms$cnms
 }
+.cnms.stansurv <- function(object, ...) {
+  object$cnms
+}
 .flist <- function(object, ...) UseMethod(".flist")
 .flist.stanreg <- function(object, ...) {
   .glmer_check(object)
   as.list(object$glmod$reTrms$flist)
+}
+.flist.stansurv <- function(object, ...) {
+  as.list(object$flist)
 }
 
 coef_mer <- function(object, ...) {
