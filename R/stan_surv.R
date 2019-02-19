@@ -774,7 +774,7 @@ stan_surv <- function(formula,
   standata <- nlist(
     K, S, 
     nvars,
-    x_bar,
+    x_bar = x_stuff$x_bar,
     has_intercept, 
     has_quadrature,
     smooth_map,
@@ -1251,6 +1251,7 @@ handle_basehaz_surv <- function(basehaz,
       if (any(knots > max_t))
         stop2("'knots' cannot be placed beyond the latest event time.")
     }
+    
   }
   
   if (basehaz %in% c("exp", "exp-aft")) {
@@ -1418,12 +1419,14 @@ get_smooth_name <- function(x, type = "smooth_coefs") {
 get_ok_priors_for_aux <- function(basehaz) {
   nm <- get_basehaz_name(basehaz)
   switch(nm,
-         exp       = nlist(),
-         weibull   = nlist("normal", student_t = "t", "cauchy", "exponential"),
-         gompertz  = nlist("normal", student_t = "t", "cauchy", "exponential"),
-         ms        = nlist("dirichlet"),
-         bs        = nlist("normal", student_t = "t", "cauchy"),
-         piecewise = nlist("normal", student_t = "t", "cauchy"),
+         exp         = nlist(),
+         exp-aft     = nlist(),
+         weibull     = nlist("normal", student_t = "t", "cauchy", "exponential"),
+         weibull-aft = nlist("normal", student_t = "t", "cauchy", "exponential"),
+         gompertz    = nlist("normal", student_t = "t", "cauchy", "exponential"),
+         ms          = nlist("dirichlet"),
+         bs          = nlist("normal", student_t = "t", "cauchy"),
+         piecewise   = nlist("normal", student_t = "t", "cauchy"),
          stop2("Bug found: unknown type of baseline hazard."))
 }
 
@@ -1441,6 +1444,7 @@ get_default_prior_for_aux <- function(basehaz) {
          bs        = normal(),
          piecewise = normal(),
          stop2("Bug found: unknown type of baseline hazard."))
+}
 
 # Return the names for the group-specific parameters
 #

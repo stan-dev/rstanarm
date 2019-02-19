@@ -916,12 +916,12 @@ model {
           if (ndelay > 0) target += -gompertz_log_surv(eta_delay, t_delay, scale);
         }
         else if (type == 4) { // M-splines, on haz scale
-          if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, coefs);
-          if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, coefs);
-          if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, coefs);
-          if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, coefs);
-          if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, coefs);
-          if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, coefs);
+          if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, ms_coefs[1]);
+          if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, ms_coefs[1]);
+          if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, ms_coefs[1]);
+          if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, ms_coefs[1]);
+          if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, ms_coefs[1]);
+          if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, ms_coefs[1]);
         }
         else {
           reject("Bug found: invalid baseline hazard (without quadrature).");
@@ -1108,13 +1108,13 @@ model {
           if (qdelay > 0) lhaz_qpts_delay = gompertz_log_haz(eta_qpts_delay, qpts_delay, scale);
         }
         else if (type == 4) { // M-splines, on haz scale
-          if (Nevent > 0) lhaz_epts_event = mspline_log_haz(eta_epts_event, basis_epts_event, coefs);
-          if (qevent > 0) lhaz_qpts_event = mspline_log_haz(eta_qpts_event, basis_qpts_event, coefs);
-          if (qlcens > 0) lhaz_qpts_lcens = mspline_log_haz(eta_qpts_lcens, basis_qpts_lcens, coefs);
-          if (qrcens > 0) lhaz_qpts_rcens = mspline_log_haz(eta_qpts_rcens, basis_qpts_rcens, coefs);
-          if (qicens > 0) lhaz_qpts_icenl = mspline_log_haz(eta_qpts_icenl, basis_qpts_icenl, coefs);
-          if (qicens > 0) lhaz_qpts_icenu = mspline_log_haz(eta_qpts_icenu, basis_qpts_icenu, coefs);
-          if (qdelay > 0) lhaz_qpts_delay = mspline_log_haz(eta_qpts_delay, basis_qpts_delay, coefs);
+          if (Nevent > 0) lhaz_epts_event = mspline_log_haz(eta_epts_event, basis_epts_event, ms_coefs[1]);
+          if (qevent > 0) lhaz_qpts_event = mspline_log_haz(eta_qpts_event, basis_qpts_event, ms_coefs[1]);
+          if (qlcens > 0) lhaz_qpts_lcens = mspline_log_haz(eta_qpts_lcens, basis_qpts_lcens, ms_coefs[1]);
+          if (qrcens > 0) lhaz_qpts_rcens = mspline_log_haz(eta_qpts_rcens, basis_qpts_rcens, ms_coefs[1]);
+          if (qicens > 0) lhaz_qpts_icenl = mspline_log_haz(eta_qpts_icenl, basis_qpts_icenl, ms_coefs[1]);
+          if (qicens > 0) lhaz_qpts_icenu = mspline_log_haz(eta_qpts_icenu, basis_qpts_icenu, ms_coefs[1]);
+          if (qdelay > 0) lhaz_qpts_delay = mspline_log_haz(eta_qpts_delay, basis_qpts_delay, ms_coefs[1]);
         }
         else if (type == 2) { // B-splines, on log haz scale
           if (Nevent > 0) lhaz_epts_event = bspline_log_haz(eta_epts_event, basis_epts_event, coefs);
