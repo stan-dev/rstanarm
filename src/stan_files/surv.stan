@@ -157,7 +157,8 @@ functions {
   * @param aux_unscaled Vector (potentially of length 1) of unscaled
   *   auxiliary parameter(s)
   * @param dist Integer specifying the type of prior distribution
-  * @param df Real specifying the df for the prior distribution
+  * @param df Real specifying the df for the prior distribution, or in the case
+  *   of the dirichlet distribution it is the concentration parameter(s)
   * @return Nothing
   */
   real basehaz_lp(vector aux_unscaled, int dist, vector df) {
@@ -166,8 +167,10 @@ functions {
         target += normal_lpdf(aux_unscaled | 0, 1);
       else if (dist == 2)
         target += student_t_lpdf(aux_unscaled | df, 0, 1);
-      else
+      else if (dist == 3)
         target += exponential_lpdf(aux_unscaled | 1);
+      else
+        target += dirichlet_lpdf(aux_unscaled | df); // df is concentration here
     }
     return target();
   }
@@ -421,6 +424,9 @@ data {
   int<lower=1> l[t];       // num. levels for the factor(s) on the RHS of each |
   int<lower=0> q;          // conceptually equals \sum_{i=1}^t p_i \times l_i
 
+  // log crude event rate / time (for centering linear predictor)
+  real log_crude_event_rate;
+
   // response and time variables
   vector[nevent] t_event;  // time of events
   vector[nlcens] t_lcens;  // time of left censoring
@@ -438,6 +444,7 @@ data {
   vector[qdelay] qpts_delay;  // qpts for time of entry for delayed entry
 
   // predictor matrices (time-fixed), without quadrature
+  vector[K] x_bar;          // predictor means
   matrix[nevent,K] x_event; // for rows with events
   matrix[nlcens,K] x_lcens; // for rows with left censoring
   matrix[nrcens,K] x_rcens; // for rows with right censoring
@@ -586,7 +593,8 @@ data {
   //   1 = normal
   //   2 = student_t
   //   3 = exponential
-  int<lower=0,upper=3> prior_dist_for_aux;
+  //   4 = dirichlet
+  int<lower=0,upper=4> prior_dist_for_aux;
 
   // prior family:
   //   0 = none
@@ -612,6 +620,7 @@ data {
   // hyperparameters (basehaz pars), set to 0 if there is no prior
   vector<lower=0>[nvars] prior_scale_for_aux;
   vector<lower=0>[nvars] prior_df_for_aux;
+  vector<lower=0>[nvars] prior_conc_for_aux; // dirichlet concentration pars
 
   // hyperparameters (tde smooths), set to 0 if there is no prior
   vector         [S > 0 ? max(smooth_map) : 0] prior_mean_for_smooth;
@@ -682,7 +691,8 @@ parameters {
   //   gompertz model: nvars = 1, ie. scale parameter
   //   M-spline model: nvars = number of basis terms, ie. spline coefs
   //   B-spline model: nvars = number of basis terms, ie. spline coefs
-  vector<lower=coefs_lb(type)>[nvars] z_coefs;
+  vector<lower=coefs_lb(type)>[type == 4 ? 0 : nvars] z_coefs;
+  simplex[nvars] ms_coefs[type == 4]; // constrained coefs for M-splines
 
   // unscaled tde spline coefficients
   vector[S] z_beta_tde;
@@ -711,7 +721,7 @@ transformed parameters {
   vector[K] beta;
 
   // declare basehaz parameters
-  vector[nvars] coefs;
+  vector[type == 4 ? 0 : nvars] coefs;
 
   // declare tde spline coefficients and their hyperparameters
   vector[S] beta_tde;
@@ -730,7 +740,7 @@ transformed parameters {
   }
 
   // define basehaz parameters
-  if (nvars > 0) {
+  if (type != 4 && nvars > 0) {
     coefs = z_coefs .* prior_scale_for_aux;
   }
 
@@ -802,6 +812,13 @@ model {
         if (ndelay > 0) eta_delay = rep_vector(0.0, ndelay);
       }
 
+      // add on log crude event rate / time (helps to center intercept)
+      if (nevent > 0) eta_event += log_crude_event_rate;
+      if (nlcens > 0) eta_lcens += log_crude_event_rate;
+      if (nrcens > 0) eta_rcens += log_crude_event_rate;
+      if (nicens > 0) eta_icens += log_crude_event_rate;
+      if (ndelay > 0) eta_delay += log_crude_event_rate;
+      
       // add on intercept to linear predictor
       if (has_intercept == 1) {
         if (nevent > 0) eta_event += gamma[1];
@@ -899,12 +916,12 @@ model {
           if (ndelay > 0) target += -gompertz_log_surv(eta_delay, t_delay, scale);
         }
         else if (type == 4) { // M-splines, on haz scale
-          if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, coefs);
-          if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, coefs);
-          if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, coefs);
-          if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, coefs);
-          if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, coefs);
-          if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, coefs);
+          if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, ms_coefs[1]);
+          if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, ms_coefs[1]);
+          if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, ms_coefs[1]);
+          if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, ms_coefs[1]);
+          if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, ms_coefs[1]);
+          if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, ms_coefs[1]);
         }
         else {
           reject("Bug found: invalid baseline hazard (without quadrature).");
@@ -956,6 +973,15 @@ model {
         if (qdelay > 0) eta_qpts_delay += s_qpts_delay * beta_tde;
       }
 
+      // add on log crude event rate / time (helps to center intercept)
+      if (Nevent > 0) eta_epts_event += log_crude_event_rate;
+      if (qevent > 0) eta_qpts_event += log_crude_event_rate;
+      if (qlcens > 0) eta_qpts_lcens += log_crude_event_rate;
+      if (qrcens > 0) eta_qpts_rcens += log_crude_event_rate;
+      if (qicens > 0) eta_qpts_icenl += log_crude_event_rate;
+      if (qicens > 0) eta_qpts_icenu += log_crude_event_rate;
+      if (qdelay > 0) eta_qpts_delay += log_crude_event_rate;      
+      
       // add on intercept to linear predictor
       if (has_intercept == 1) {
         if (Nevent > 0) eta_epts_event += gamma[1];
@@ -994,6 +1020,7 @@ model {
           if (qdelay > 0) eta_qpts_delay +=
             csr_matrix_times_vector2(qdelay, q, w_qpts_delay, v_qpts_delay, u_qpts_delay, b);
         }
+
       }
 
       // aft models
@@ -1081,13 +1108,13 @@ model {
           if (qdelay > 0) lhaz_qpts_delay = gompertz_log_haz(eta_qpts_delay, qpts_delay, scale);
         }
         else if (type == 4) { // M-splines, on haz scale
-          if (Nevent > 0) lhaz_epts_event = mspline_log_haz(eta_epts_event, basis_epts_event, coefs);
-          if (qevent > 0) lhaz_qpts_event = mspline_log_haz(eta_qpts_event, basis_qpts_event, coefs);
-          if (qlcens > 0) lhaz_qpts_lcens = mspline_log_haz(eta_qpts_lcens, basis_qpts_lcens, coefs);
-          if (qrcens > 0) lhaz_qpts_rcens = mspline_log_haz(eta_qpts_rcens, basis_qpts_rcens, coefs);
-          if (qicens > 0) lhaz_qpts_icenl = mspline_log_haz(eta_qpts_icenl, basis_qpts_icenl, coefs);
-          if (qicens > 0) lhaz_qpts_icenu = mspline_log_haz(eta_qpts_icenu, basis_qpts_icenu, coefs);
-          if (qdelay > 0) lhaz_qpts_delay = mspline_log_haz(eta_qpts_delay, basis_qpts_delay, coefs);
+          if (Nevent > 0) lhaz_epts_event = mspline_log_haz(eta_epts_event, basis_epts_event, ms_coefs[1]);
+          if (qevent > 0) lhaz_qpts_event = mspline_log_haz(eta_qpts_event, basis_qpts_event, ms_coefs[1]);
+          if (qlcens > 0) lhaz_qpts_lcens = mspline_log_haz(eta_qpts_lcens, basis_qpts_lcens, ms_coefs[1]);
+          if (qrcens > 0) lhaz_qpts_rcens = mspline_log_haz(eta_qpts_rcens, basis_qpts_rcens, ms_coefs[1]);
+          if (qicens > 0) lhaz_qpts_icenl = mspline_log_haz(eta_qpts_icenl, basis_qpts_icenl, ms_coefs[1]);
+          if (qicens > 0) lhaz_qpts_icenu = mspline_log_haz(eta_qpts_icenu, basis_qpts_icenu, ms_coefs[1]);
+          if (qdelay > 0) lhaz_qpts_delay = mspline_log_haz(eta_qpts_delay, basis_qpts_delay, ms_coefs[1]);
         }
         else if (type == 2) { // B-splines, on log haz scale
           if (Nevent > 0) lhaz_epts_event = bspline_log_haz(eta_epts_event, basis_epts_event, coefs);
@@ -1134,7 +1161,10 @@ model {
   }
 
   // log priors for baseline hazard parameters
-  if (nvars > 0) {
+  if (type == 4) {
+    real dummy = basehaz_lp(ms_coefs[1], prior_dist_for_aux, prior_conc_for_aux);
+  }
+  else if (nvars > 0) {
     real dummy = basehaz_lp(z_coefs, prior_dist_for_aux, prior_df_for_aux);
   }
 
@@ -1150,4 +1180,17 @@ model {
                           regularization, delta, b_prior_shape, t, p);
   }
 
+}
+
+generated quantities {
+  // baseline hazard parameters to return
+  vector[nvars] aux = (type == 4) ? ms_coefs[1] : coefs;
+
+  // transformed intercept
+  real alpha;
+  if (has_intercept == 1) {
+    alpha = log_crude_event_rate - dot_product(x_bar, beta) + gamma[1];
+  } else {
+    alpha = log_crude_event_rate - dot_product(x_bar, beta);
+  }
 }

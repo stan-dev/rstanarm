@@ -98,15 +98,13 @@
 #'   hazard. Currently this can include: \cr
 #'   \itemize{
 #'     \item \code{df}: a positive integer specifying the degrees of freedom 
-#'     for the M-splines or B-splines. An intercept is included in the spline
-#'     basis and included in the count of the degrees of freedom, such that
-#'     two boundary knots and \code{df - 4} internal knots are used to generate 
-#'     the cubic spline basis. The default is \code{df = 6}; that is, two 
-#'     boundary knots and two internal knots.
+#'     for the M-splines or B-splines. Two boundary knots and \code{df - 3} 
+#'     internal knots are used to generate the cubic spline basis. The default 
+#'     is \code{df = 5}; that is, two boundary knots and two internal knots.
 #'     \item \code{knots}: An optional numeric vector specifying internal 
 #'     knot locations for the M-splines or B-splines. Note that \code{knots} 
 #'     cannot be specified if \code{df} is specified. If \code{knots} are 
-#'     \strong{not} specified, then \code{df - 4} internal knots are placed 
+#'     \strong{not} specified, then \code{df - 3} internal knots are placed 
 #'     at equally spaced percentiles of the distribution of uncensored event 
 #'     times.
 #'   }
@@ -119,52 +117,68 @@
 #'   that is used to evaluate the cumulative hazard when \code{basehaz = "bs"}
 #'   or when time-dependent effects (i.e. non-proportional hazards) are 
 #'   specified. Options are 15 (the default), 11 or 7.
-#' @param prior_intercept The prior distribution for the intercept. Note 
-#'   that there will only be an intercept parameter when \code{basehaz} is set
-#'   equal to one of the standard parametric distributions, i.e. \code{"exp"}, 
-#'   \code{"weibull"}, \code{"gompertz"}, \code{"exp-aft"}, or 
-#'   \code{"weibull-aft"}. See the \emph{stan_surv: Survival (Time-to-Event) 
-#'   Models} vignette for technical details on the model formulation. 
-#'   
-#'   For the spline-based baseline hazards there is no intercept parameter since 
-#'   it is absorbed into the spline basis and, therefore, the prior for the 
-#'   intercept is effectively specified as part of \code{prior_aux}.  
-#'   
-#'   Where relevant, \code{prior_intercept} can be a call to \code{normal}, 
+#' @param prior_intercept The prior distribution for the intercept in the 
+#'   linear predictor. All models include an intercept parameter.
+#'   \code{prior_intercept} can be a call to \code{normal}, 
 #'   \code{student_t} or \code{cauchy}. See the \link[=priors]{priors help page} 
-#'   for details on these functions. Note however that default scale for 
+#'   for details on these functions. However, note that default scale for 
 #'   \code{prior_intercept} is 20 for \code{stan_surv} models (rather than 10,
 #'   which is the default scale used for \code{prior_intercept} by most 
 #'   \pkg{rstanarm} modelling functions). To omit a prior on the intercept 
 #'   ---i.e., to use a flat (improper) uniform prior--- \code{prior_intercept} 
 #'   can be set to \code{NULL}.
+#'   
+#'   \strong{Note:} The prior distribution for the intercept is set so it
+#'   applies to the value \emph{when all predictors are centered} and with an  
+#'   adjustment (i.e. "constant shift") equal to the \emph{log crude event rate}.
+#'   However, the reported \emph{estimates} for the intercept always correspond 
+#'   to a parameterization without centered predictors and without the 
+#'   "constant shift". That is, these adjustments are made internally to help
+#'   with numerical stability and sampling, but the necessary 
+#'   back-transformations are made so that they are not relevant for the 
+#'   estimates returned to the user.
 #' @param prior_aux The prior distribution for "auxiliary" parameters related to 
 #'   the baseline hazard. The relevant parameters differ depending 
 #'   on the type of baseline hazard specified in the \code{basehaz} 
-#'   argument. The following applies:
+#'   argument. The following applies (however, for further technical details, 
+#'   refer to the \emph{stan_surv: Survival (Time-to-Event) Models vignette)}:
 #'   \itemize{
-#'     \item \code{basehaz = "ms"}: the auxiliary parameters are the coefficients
-#'     for the M-spline basis terms on the baseline hazard. These parameters
-#'     have a lower bound at zero.
-#'     \item \code{basehaz = "bs"}: the auxiliary parameters are the coefficients
-#'     for the B-spline basis terms on the log baseline hazard. These parameters
-#'     are unbounded.
+#'     \item \code{basehaz = "ms"}: the auxiliary parameters are the 
+#'     coefficients for the M-spline basis terms on the baseline hazard. 
+#'     These coefficients are defined using a simplex; that is, they are 
+#'     all between 0 and 1, and constrained to sum to 1. This constraint 
+#'     is necessary for identifiability of the intercept in the linear 
+#'     predictor. The default prior is a Dirichlet distribution with all 
+#'     concentration parameters set equal to 1. That is, a uniform 
+#'     prior over all points defined within the support of the simplex. 
+#'     Specifying all concentration parameters equal and > 1 supports a more 
+#'     even distribution (i.e. a smoother spline function), while specifying a 
+#'     all concentration parameters equal and < 1 supports a more sparse 
+#'     distribution (i.e. a less smooth spline function).
+#'     \item \code{basehaz = "bs"}: the auxiliary parameters are the 
+#'     coefficients for the B-spline basis terms on the log baseline hazard. 
+#'     These parameters are unbounded. The default prior is a normal 
+#'     distribution with mean 0 and scale 20.
 #'     \item \code{basehaz = "exp"} or \code{basehaz = "exp-aft"}: 
-#'     there is \strong{no} auxiliary parameter, 
+#'     there is \strong{no} auxiliary parameter,
 #'     since the log scale parameter for the exponential distribution is 
 #'     incorporated as an intercept in the linear predictor.
 #'     \item \code{basehaz = "weibull"} or \code{basehaz = "weibull-aft"}: 
 #'     the auxiliary parameter is the Weibull 
 #'     shape parameter, while the log scale parameter for the Weibull 
 #'     distribution is incorporated as an intercept in the linear predictor.
-#'     The auxiliary parameter has a lower bound at zero. 
+#'     The auxiliary parameter has a lower bound at zero. The default prior is  
+#'     a half-normal distribution with mean 0 and scale 2.
 #'     \item \code{basehaz = "gompertz"}: the auxiliary parameter is the Gompertz 
 #'     scale parameter, while the log shape parameter for the Gompertz 
 #'     distribution is incorporated as an intercept in the linear predictor.
-#'     The auxiliary parameter has a lower bound at zero. 
+#'     The auxiliary parameter has a lower bound at zero. The default prior is  
+#'     a half-normal distribution with mean 0 and scale 2.
 #'   }
-#'   Currently, \code{prior_aux} can be a call to \code{normal}, \code{student_t} 
-#'   or \code{cauchy}. See \code{\link{priors}} for details on these functions. 
+#'   Currently, \code{prior_aux} can be a call to \code{dirichlet}, 
+#'   \code{normal}, \code{student_t}, \code{cauchy} or \code{exponential}. 
+#'   See \code{\link{priors}} for details on these functions. Note that not 
+#'   all prior distributions are allowed with all types of baseline hazard. 
 #'   To omit a prior ---i.e., to use a flat (improper) uniform prior--- set 
 #'   \code{prior_aux} to \code{NULL}. 
 #' @param prior_smooth This is only relevant when time-dependent effects are 
@@ -455,6 +469,12 @@ stan_surv <- function(formula,
   t_icenu <- t_upp[status == 3] # upper limit of interval censoring time
   t_delay <- t_beg[delayed]     # delayed entry time
 
+  # calculate log(crude event rate) and -log(mean event time)
+  t_tmp <- sum(rowMeans(cbind(t_end, t_upp), na.rm = TRUE) - t_beg)
+  d_tmp <- sum(!status == 0)
+  log_crude_event_rate = log(d_tmp / t_tmp)
+  log_crude_event_time = log(t_tmp / d_tmp)
+  
   # dimensions
   nevent <- sum(status == 1)
   nrcens <- sum(status == 0)
@@ -614,7 +634,7 @@ stan_surv <- function(formula,
                      rep_rows(mf_delay, times = qnodes))
 
   }
-  
+
   if (has_tde) {
     
     # formula for generating spline basis for tde effects
@@ -630,33 +650,34 @@ stan_surv <- function(formula,
 
   #----- time-fixed predictor matrices
   
-  ff     <- formula$fe_form
-  x      <- make_x(ff, mf,      xlevs = xlevs)$x # only used for scaling priors
-  x_cpts <- make_x(ff, mf_cpts, xlevs = xlevs)$x
-  K      <- ncol(x)
+  ff        <- formula$fe_form
+  x_stuff   <- make_x(ff, mf,      xlevs = xlevs) 
+  x_cpts    <- make_x(ff, mf_cpts, xlevs = xlevs)$x
+  x_centred <- sweep(x_cpts, 2, x_stuff$x_bar, FUN = "-")
+  K         <- ncol(x_cpts)
   
   if (!has_quadrature) {
     
     # time-fixed predictor matrices, without quadrature
     # NB skip index 5 on purpose, since time fixed predictor matrix is 
     # identical for lower and upper limits of interval censoring time
-    x_event <- x_cpts[idx_cpts[1,1]:idx_cpts[1,2], , drop = FALSE]
-    x_lcens <- x_cpts[idx_cpts[2,1]:idx_cpts[2,2], , drop = FALSE]
-    x_rcens <- x_cpts[idx_cpts[3,1]:idx_cpts[3,2], , drop = FALSE]
-    x_icens <- x_cpts[idx_cpts[4,1]:idx_cpts[4,2], , drop = FALSE]
-    x_delay <- x_cpts[idx_cpts[6,1]:idx_cpts[6,2], , drop = FALSE]
+    x_event <- x_centred[idx_cpts[1,1]:idx_cpts[1,2], , drop = FALSE]
+    x_lcens <- x_centred[idx_cpts[2,1]:idx_cpts[2,2], , drop = FALSE]
+    x_rcens <- x_centred[idx_cpts[3,1]:idx_cpts[3,2], , drop = FALSE]
+    x_icens <- x_centred[idx_cpts[4,1]:idx_cpts[4,2], , drop = FALSE]
+    x_delay <- x_centred[idx_cpts[6,1]:idx_cpts[6,2], , drop = FALSE]
     
   } else {
     
     # time-fixed predictor matrices, with quadrature
     # NB skip index 6 on purpose, since time fixed predictor matrix is 
     # identical for lower and upper limits of interval censoring time
-    x_epts_event <- x_cpts[idx_cpts[1,1]:idx_cpts[1,2], , drop = FALSE]
-    x_qpts_event <- x_cpts[idx_cpts[2,1]:idx_cpts[2,2], , drop = FALSE]
-    x_qpts_lcens <- x_cpts[idx_cpts[3,1]:idx_cpts[3,2], , drop = FALSE]
-    x_qpts_rcens <- x_cpts[idx_cpts[4,1]:idx_cpts[4,2], , drop = FALSE]
-    x_qpts_icens <- x_cpts[idx_cpts[5,1]:idx_cpts[5,2], , drop = FALSE]
-    x_qpts_delay <- x_cpts[idx_cpts[7,1]:idx_cpts[7,2], , drop = FALSE]
+    x_epts_event <- x_centred[idx_cpts[1,1]:idx_cpts[1,2], , drop = FALSE]
+    x_qpts_event <- x_centred[idx_cpts[2,1]:idx_cpts[2,2], , drop = FALSE]
+    x_qpts_lcens <- x_centred[idx_cpts[3,1]:idx_cpts[3,2], , drop = FALSE]
+    x_qpts_rcens <- x_centred[idx_cpts[4,1]:idx_cpts[4,2], , drop = FALSE]
+    x_qpts_icens <- x_centred[idx_cpts[5,1]:idx_cpts[5,2], , drop = FALSE]
+    x_qpts_delay <- x_centred[idx_cpts[7,1]:idx_cpts[7,2], , drop = FALSE]
  
   }
   
@@ -752,13 +773,16 @@ stan_surv <- function(formula,
   
   standata <- nlist(
     K, S, 
-    nvars, 
+    nvars,
+    x_bar = x_stuff$x_bar,
     has_intercept, 
     has_quadrature,
     smooth_map,
     smooth_idx,
     type = basehaz$type,
-
+    log_crude_event_rate,
+    log_crude_event_time,
+    
     nevent       = if (has_quadrature) 0L else nevent,
     nlcens       = if (has_quadrature) 0L else nlcens,
     nrcens       = if (has_quadrature) 0L else nrcens,
@@ -926,9 +950,12 @@ stan_surv <- function(formula,
                     "laplace", 
                     "lasso") # disallow product normal
   ok_intercept_dists  <- ok_dists[1:3]
-  ok_aux_dists        <- ok_dists[1:3]
+  ok_aux_dists        <- get_ok_priors_for_aux(basehaz)
   ok_smooth_dists     <- c(ok_dists[1:3], "exponential")
   ok_covariance_dists <- c("decov")
+  
+  if (missing(prior_aux))
+    prior_aux <- get_default_prior_for_aux(basehaz)
   
   # priors
   user_prior_stuff <- prior_stuff <-
@@ -989,7 +1016,7 @@ stan_surv <- function(formula,
   }
   
   # autoscaling of priors
-  prior_stuff           <- autoscale_prior(prior_stuff, predictors = x)
+  prior_stuff           <- autoscale_prior(prior_stuff, predictors = x_stuff$x)
   prior_intercept_stuff <- autoscale_prior(prior_intercept_stuff)
   prior_aux_stuff       <- autoscale_prior(prior_aux_stuff)
   prior_smooth_stuff    <- autoscale_prior(prior_smooth_stuff)
@@ -1010,6 +1037,7 @@ stan_surv <- function(formula,
   standata$prior_df_for_intercept   <- c(prior_intercept_stuff$prior_df)
   standata$prior_scale_for_aux      <- prior_aux_stuff$prior_scale
   standata$prior_df_for_aux         <- prior_aux_stuff$prior_df
+  standata$prior_conc_for_aux       <- prior_aux_stuff$prior_concentration
   standata$prior_mean_for_smooth    <- prior_smooth_stuff$prior_mean
   standata$prior_scale_for_smooth   <- prior_smooth_stuff$prior_scale
   standata$prior_df_for_smooth      <- prior_smooth_stuff$prior_df
@@ -1067,11 +1095,11 @@ stan_surv <- function(formula,
   stanfit  <- stanmodels$surv
   
   # specify parameters for stan to monitor
-  stanpars <- c(if (standata$has_intercept) "gamma",
+  stanpars <- c(if (standata$has_intercept) "alpha",
                 if (standata$K)             "beta",
                 if (standata$S)             "beta_tde",
                 if (standata$S)             "smooth_sd",
-                if (standata$nvars)         "coefs",
+                if (standata$nvars)         "aux",
                 if (standata$t)             "b",
                 if (standata$t)             "theta_L")
   
@@ -1103,7 +1131,7 @@ stan_surv <- function(formula,
     stanfit <- evaluate_Sigma(stanfit, group$cnms)
   
   # define new parameter names
-  nms_beta   <- colnames(x) # may be NULL
+  nms_beta   <- colnames(x_cpts) # may be NULL
   nms_tde    <- get_smooth_name(s_cpts, type = "smooth_coefs") # may be NULL
   nms_smooth <- get_smooth_name(s_cpts, type = "smooth_sd")    # may be NULL
   nms_int    <- get_int_name_basehaz(basehaz)
@@ -1132,8 +1160,8 @@ stan_surv <- function(formula,
                model_frame      = mf,
                terms            = mt,
                xlevels          = .getXlevels(mt, mf),
-               x,
-               x_cpts           = if (has_tde)  x_cpts else NULL,
+               x                = x_stuff$x,
+               x_cpts,
                s_cpts           = if (has_tde)  s_cpts else NULL,
                z_cpts           = if (has_bars) z_cpts else NULL,
                cnms             = if (has_bars) group_unpadded$cnms  else NULL,
@@ -1208,7 +1236,7 @@ handle_basehaz_surv <- function(basehaz,
       stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
     
     if (is.null(df))
-      df <- 6L # NB this is ignored if the user specified knots
+      df <- 5L # assumes no intercept, ignored if the user specified knots
     
     tt <- times[status == 1] # uncensored event times
     if (is.null(knots) && !length(tt)) {
@@ -1223,6 +1251,7 @@ handle_basehaz_surv <- function(basehaz,
       if (any(knots > max_t))
         stop2("'knots' cannot be placed beyond the latest event time.")
     }
+    
   }
   
   if (basehaz %in% c("exp", "exp-aft")) {
@@ -1289,8 +1318,8 @@ handle_basehaz_surv <- function(basehaz,
 get_ok_basehaz_ops <- function(basehaz_name) {
   switch(basehaz_name,
          "bs"        = c("df", "knots"),
-         "piecewise" = c("df", "knots"),
          "ms"        = c("df", "knots"),
+         "piecewise" = c("df", "knots"),
          NA)
 }
 
@@ -1319,7 +1348,7 @@ basehaz_for_stan <- function(basehaz_name) {
 #   specified then 'df' is ignored.
 # @return A numeric vector of internal knot locations, or NULL if there are
 #   no internal knots.
-get_iknots <- function(x, df = 6L, degree = 3L, iknots = NULL, intercept = TRUE) {
+get_iknots <- function(x, df = 5L, degree = 3L, iknots = NULL, intercept = FALSE) {
   
   # obtain number of internal knots
   if (is.null(iknots)) {
@@ -1351,7 +1380,13 @@ get_iknots <- function(x, df = 6L, degree = 3L, iknots = NULL, intercept = TRUE)
 # @return A Logical.
 has_intercept <- function(basehaz) {
   nm <- get_basehaz_name(basehaz)
-  (nm %in% c("exp", "exp-aft", "weibull", "weibull-aft", "gompertz"))
+  (nm %in% c("exp", 
+             "exp-aft", 
+             "weibull", 
+             "weibull-aft", 
+             "gompertz", 
+             "ms", 
+             "bs"))
 }
 
 # Return the name of the tde spline coefs or smoothing parameters.
@@ -1375,6 +1410,42 @@ get_smooth_name <- function(x, type = "smooth_coefs") {
          "smooth_map"   = rep(seq_along(tally), tally),
          "smooth_vars"  = unique(nms),
          stop2("Bug found: invalid input to 'type' argument."))
+}
+
+# Return the valid prior distributions for 'prior_aux'.
+#
+# @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
+# @return A named list.
+get_ok_priors_for_aux <- function(basehaz) {
+  nm <- get_basehaz_name(basehaz)
+  switch(nm,
+         "exp"         = nlist(),
+         "exp-aft"     = nlist(),
+         "weibull"     = nlist("normal", student_t = "t", "cauchy", "exponential"),
+         "weibull-aft" = nlist("normal", student_t = "t", "cauchy", "exponential"),
+         "gompertz"    = nlist("normal", student_t = "t", "cauchy", "exponential"),
+         "ms"          = nlist("dirichlet"),
+         "bs"          = nlist("normal", student_t = "t", "cauchy"),
+         "piecewise"   = nlist("normal", student_t = "t", "cauchy"),
+         stop2("Bug found: unknown type of baseline hazard."))
+}
+
+# Return the default prior distribution for 'prior_aux'.
+#
+# @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
+# @return A list corresponding to the default prior.
+get_default_prior_for_aux <- function(basehaz) {
+  nm <- get_basehaz_name(basehaz)
+  switch(nm,
+         "exp"         = NULL,
+         "exp-aft"     = NULL,
+         "weibull"     = normal(),
+         "weibull-aft" = normal(),
+         "gompertz"    = normal(),
+         "ms"          = dirichlet(),
+         "bs"          = normal(),
+         "piecewise"   = normal(),
+         stop2("Bug found: unknown type of baseline hazard."))
 }
 
 # Return the names for the group-specific parameters
@@ -1453,7 +1524,7 @@ make_basis <- function(times, basehaz, integrate = FALSE) {
          "ms"          = basis_matrix(times, basis = basehaz$basis, integrate = integrate),
          "bs"          = basis_matrix(times, basis = basehaz$basis),
          "piecewise"   = dummy_matrix(times, knots = basehaz$knots),
-         stop2("Bug found: type of baseline hazard unknown."))
+         stop2("Bug found: unknown type of baseline hazard."))
 }
 
 # Evaluate a spline basis matrix at the specified times
@@ -1877,19 +1948,23 @@ make_model_frame <- function(formula, data, xlevs = NULL,
 # @param check_constant If TRUE then an error is thrown is the returned
 #   predictor matrix contains any constant columns.
 # @return A named list with the following elements:
-#   x: the model matrix, not centred and without an intercept.
-#   xbar: the column means of the model matrix.
+#   x: the fe model matrix, not centered and without intercept.
+#   x_bar: the column means of the model matrix.
+#   x_centered: the fe model matrix, centered.
 #   N: number of rows (observations) in the model matrix.
 #   K: number of cols (predictors) in the model matrix.
 make_x <- function(formula, model_frame, xlevs = NULL, 
-                   check_constant = FALSE) {
-  
+                   check_constant = TRUE) {
+
   # uncentred predictor matrix, without intercept
   x <- model.matrix(formula, model_frame, xlev = xlevs)
   x <- drop_intercept(x)
   
   # column means of predictor matrix
-  xbar <- colMeans(x)
+  x_bar <- aa(colMeans(x))
+
+  # centered predictor matrix
+  x_centered <- sweep(x, 2, x_bar, FUN = "-")
   
   # identify any column of x with < 2 unique values (empty interaction levels)
   sel <- (apply(x, 2L, n_distinct) < 2)
@@ -1898,7 +1973,7 @@ make_x <- function(formula, model_frame, xlevs = NULL,
     stop2("Cannot deal with empty interaction levels found in columns: ", cols)
   }
   
-  nlist(x, xbar, N = NROW(x), K = NCOL(x))
+  nlist(x, x_centered, x_bar, N = NROW(x), K = NCOL(x))
 }
 
 # Check if the only element of a character vector is 'Intercept'
