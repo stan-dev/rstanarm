@@ -1437,12 +1437,14 @@ get_ok_priors_for_aux <- function(basehaz) {
 get_default_prior_for_aux <- function(basehaz) {
   nm <- get_basehaz_name(basehaz)
   switch(nm,
-         exp       = NULL,
-         weibull   = normal(),
-         gompertz  = normal(),
-         ms        = dirichlet(),
-         bs        = normal(),
-         piecewise = normal(),
+         "exp"         = NULL,
+         "exp-aft"     = NULL,
+         "weibull"     = normal(),
+         "weibull-aft" = normal(),
+         "gompertz"    = normal(),
+         "ms"          = dirichlet(),
+         "bs"          = normal(),
+         "piecewise"   = normal(),
          stop2("Bug found: unknown type of baseline hazard."))
 }
 
