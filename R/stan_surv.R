@@ -469,11 +469,12 @@ stan_surv <- function(formula,
   t_icenu <- t_upp[status == 3] # upper limit of interval censoring time
   t_delay <- t_beg[delayed]     # delayed entry time
 
-  # calculate log(crude event rate) and -log(mean event time)
+  # calculate log crude event rate
   t_tmp <- sum(rowMeans(cbind(t_end, t_upp), na.rm = TRUE) - t_beg)
   d_tmp <- sum(!status == 0)
-  log_crude_event_rate = log(d_tmp / t_tmp)
-  log_crude_event_time = log(t_tmp / d_tmp)
+  log_crude_event_rate <- log(d_tmp / t_tmp)
+  if (is.infinite(log_crude_event_rate))
+    log_crude_event_rate <- 0 # avoids error when there are zero events
   
   # dimensions
   nevent <- sum(status == 1)
@@ -501,8 +502,11 @@ stan_surv <- function(formula,
   nvars <- basehaz$nvars # number of basehaz aux parameters
   
   # flag if intercept is required for baseline hazard
-  has_intercept   <- ai(has_intercept(basehaz))
+  has_intercept <- ai(has_intercept(basehaz))
 
+  # flag if AFT specification
+  is_aft <- get_basehaz_name(basehaz) %in% c("exp-aft", "weibull-aft")
+  
   #----- define dimensions and times for quadrature
 
   # flag if formula uses time-dependent effects
@@ -780,9 +784,9 @@ stan_surv <- function(formula,
     smooth_map,
     smooth_idx,
     type = basehaz$type,
-    log_crude_event_rate,
-    log_crude_event_time,
-    
+    log_crude_event_rate = 
+      ifelse(is_aft, -log_crude_event_rate, log_crude_event_rate),
+
     nevent       = if (has_quadrature) 0L else nevent,
     nlcens       = if (has_quadrature) 0L else nlcens,
     nrcens       = if (has_quadrature) 0L else nrcens,
@@ -1067,7 +1071,7 @@ stan_surv <- function(formula,
   
   # any additional flags
   standata$prior_PD <- ai(prior_PD)
-    
+
   #---------------
   # Prior summary
   #---------------
