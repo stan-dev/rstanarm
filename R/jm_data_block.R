@@ -529,11 +529,12 @@ summarize_jm_prior <-
 .rename_e_aux <- function(basehaz) {
   nm <- basehaz$type_name
   switch(nm,
-         weibull   = "weibull-shape",
-         gompertz  = "gompertz-scale",
-         bs        = "B-spline-coefficients",
-         ms        = "M-spline-coefficients",
-         piecewise = "piecewise-coefficients",
+         "weibull"     = "weibull-shape",
+         "weibull-aft" = "weibull-shape",
+         "gompertz"    = "gompertz-scale",
+         "bs"          = "B-spline-coefficients",
+         "ms"          = "M-spline-coefficients",
+         "piecewise"   = "piecewise-coefficients",
          NA)
 }
 
