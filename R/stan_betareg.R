@@ -188,8 +188,10 @@ stan_betareg <-
             na.action = attr(mf, "na.action"), contrasts = attr(X, "contrasts"), 
             stan_function = "stan_betareg")
     out <- stanreg(fit)
-    out$log_p <- stanfit$log_p
-    out$log_g <- stanfit$log_g
+    if (algorithm == "optimizing") {
+      out$log_p <- stanfit$log_p
+      out$log_g <- stanfit$log_g
+    }
     out$xlevels <- lapply(mf[,-1], FUN = function(x) {
       xlev <- if (is.factor(x) || is.character(x)) levels(x) else NULL
       xlev[!vapply(xlev, is.null, NA)]

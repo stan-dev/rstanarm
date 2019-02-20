@@ -268,8 +268,10 @@ stan_glm <-
                stan_function = "stan_glm")
   
   out <- stanreg(fit)
-  out$log_p <- stanfit$log_p
-  out$log_g <- stanfit$log_g
+  if (algorithm == "optimizing") {
+    out$log_p <- stanfit$log_p
+    out$log_g <- stanfit$log_g
+  }
   out$compute_mean_PPD <- mean_PPD
   out$xlevels <- .getXlevels(mt, mf)
   if (!x) 
