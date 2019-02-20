@@ -43,7 +43,8 @@ stan_glm.fit <-
            mean_PPD = algorithm != "optimizing",
            adapt_delta = NULL, 
            QR = FALSE, 
-           sparse = FALSE) {
+           sparse = FALSE,
+           draws = 4000) {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
