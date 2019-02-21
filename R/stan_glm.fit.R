@@ -46,7 +46,7 @@ stan_glm.fit <-
            sparse = FALSE,
            draws = 4000,
            sir = TRUE,
-           thin = 2) {
+           nthin = 2) {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
