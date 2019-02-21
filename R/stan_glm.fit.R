@@ -556,6 +556,18 @@ stan_glm.fit <-
               if (is_beta) "(phi)" else NA
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
+    ## begin: psis diagnostics and sampling importance resampling
+    lr <- out$log_p-out$log_g
+    p <- loo::psis(lr, r_eff=1)
+    ## add somewhere warning if p$diagnostics$pareto_k>0.5, 0.6, 0.7?
+    p$log_weights <- p$log_weights-logSumExp(p$log_weights)
+    p$h_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k))
+    out$psis <- p
+    ## SIR  
+    siri <- .sample_indices(exp(p$log_weights), n_draws=draws)
+    out$theta_tilde <- out$theta_tilde[siri,]
+    out$siri <- siri
+    ## end: sampling importance resampling
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
                                              chains = 0))
     return(structure(out, prior.info = prior_info))
@@ -933,3 +945,27 @@ summarize_glm_prior <-
         if (is.nb(fam)) "reciprocal_dispersion" else NA
 }
 
+.sample_indices <- function(wts, n_draws) {
+  K <- length(wts)
+  w <- n_draws * wts # expected number of draws from each model
+  idx <- rep(NA, n_draws)
+
+  c <- 0
+  j <- 0
+
+  for (k in 1:K) {
+    c <- c + w[k]
+    if (c >= 1) {
+      a <- floor(c)
+      c <- c - a
+      idx[j + 1:a] <- k
+      j <- j + a
+    }
+    if (j < n_draws && c >= runif(1)) {
+      c <- c - 1
+      j <- j + 1
+      idx[j] <- k
+    }
+  }
+  return(idx)
+}

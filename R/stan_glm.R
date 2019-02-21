@@ -271,6 +271,8 @@ stan_glm <-
   if (algorithm == "optimizing") {
     out$log_p <- stanfit$log_p
     out$log_g <- stanfit$log_g
+    out$psis <- stanfit$psis
+    out$siri <- stanfit$siri
   }
   out$compute_mean_PPD <- mean_PPD
   out$xlevels <- .getXlevels(mt, mf)
