@@ -44,7 +44,9 @@ stan_glm.fit <-
            adapt_delta = NULL, 
            QR = FALSE, 
            sparse = FALSE,
-           draws = 4000) {
+           draws = 4000,
+           sir = TRUE,
+           thin = 2) {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
@@ -561,12 +563,15 @@ stan_glm.fit <-
     p <- loo::psis(lr, r_eff=1)
     ## add somewhere warning if p$diagnostics$pareto_k>0.5, 0.6, 0.7?
     p$log_weights <- p$log_weights-logSumExp(p$log_weights)
-    p$h_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k))
-    out$psis <- p
-    ## SIR  
-    siri <- .sample_indices(exp(p$log_weights), n_draws=draws)
-    out$theta_tilde <- out$theta_tilde[siri,]
-    out$siri <- siri
+    theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k))
+    out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff/nthin, theta_pareto_k)
+    ## SIR
+    out$siri <- NULL
+    if (sir) {  
+      siri <- .sample_indices(exp(p$log_weights), n_draws=draws)
+      out$theta_tilde <- out$theta_tilde[siri,]
+      out$siri <- siri
+    }
     ## end: sampling importance resampling
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
                                              chains = 0))
