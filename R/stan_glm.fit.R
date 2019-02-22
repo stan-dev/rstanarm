@@ -574,7 +574,7 @@ stan_glm.fit <-
       ## SIR mcse and n_eff
       w_sir <- as.numeric(table(siri))/length(siri)
       mcse <- apply(out$theta_tilde[!duplicated(siri),], 2L, function(col) if (all(is.finite(col))) sqrt(sum(w_sir^2*(col-mean(col))^2)) else NaN)
-      n_eff <- apply(out$theta_tilde[!duplicated(siri),], 2L, var)/mcse^2
+      n_eff <- round(apply(out$theta_tilde[!duplicated(siri),], 2L, var)/mcse^2,0)
     } else {
       mcse <- rep(NaN,length(theta_pareto_k))
       n_eff <- rep(NaN,length(theta_pareto_k))
