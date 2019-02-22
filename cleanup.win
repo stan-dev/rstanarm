@@ -6,5 +6,5 @@ mkdir -p src/include
 cp src/*.hpp src/include || echo "OK, no user-defined functions to include."
 cat src/*.cc > src/Modules.cpp
 rm src/*.cc
-"${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(clean = TRUE)'
+#"${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(clean = TRUE)'
 exit $?
