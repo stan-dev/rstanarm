@@ -390,6 +390,13 @@ summary.stanreg <- function(object,
       colnames(out)[stats %in% "se_mean"] <- "mcse"
     }
   } else { # used optimization
+    if (!is.null(probs)) {
+    stanmat <- object$asymptotic_sampling_dist
+    object$stan_summary <- cbind(Median = apply(stanmat, 2L, median), 
+                                 MAD_SD = apply(stanmat, 2L, mad),
+                                 t(apply(stanmat, 2L, quantile, probs)))
+    }
+    object$stan_summary <- cbind(object$stan_summary, object$diagnostics)
     if (is.null(pars)) {
       famname <- family(object)$family
       mark <- names(object$coefficients)
@@ -459,8 +466,16 @@ print.summary.stanreg <-
     }
     
     cat("\n\nEstimates:\n")
-    
-    sel <- which(colnames(x) %in% c("mcse", "n_eff", "Rhat"))
+    if (!used.optimizing(atts)) {
+        hat <- "Rhat"
+        str1 <- "and Rhat is the potential scale reduction factor on split chains"
+        str2 <- " (at convergence Rhat=1).\n"
+    } else {
+        hat <- "khat"
+        str1 <- "and khat is the Pareto k diagnostic for importance sampling"
+        str2 <- " (usually good perfomance when khat<0.7).\n"
+    }
+    sel <- which(colnames(x) %in% c("mcse", "n_eff", hat))
     has_mcmc_diagnostic <- length(sel) > 0
     if (has_mcmc_diagnostic) {
       xtemp <- x[, -sel, drop = FALSE]
@@ -493,14 +508,14 @@ print.summary.stanreg <-
     
     if (has_mcmc_diagnostic) {
       cat("\nMCMC diagnostics:\n")
-      mcse_rhat <- format(round(x[, c("mcse", "Rhat"), drop = FALSE], digits), 
+      mcse_hat <- format(round(x[, c("mcse", hat), drop = FALSE], digits), 
                           nsmall = digits)
       n_eff <- format(x[, "n_eff", drop = FALSE], drop0trailing = TRUE)
-      print(cbind(mcse_rhat, n_eff), quote = FALSE)
+      print(cbind(mcse_hat, n_eff), quote = FALSE)
       cat("\nFor each parameter, mcse is Monte Carlo standard error, ", 
           "n_eff is a crude measure of effective sample size, ", 
-          "and Rhat is the potential scale reduction factor on split chains", 
-          " (at convergence Rhat=1).\n", sep = '')
+          str1, 
+          str2, sep = '')
     }
     
     invisible(x)
