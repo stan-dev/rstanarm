@@ -273,6 +273,7 @@ stan_glm <-
     out$log_g <- stanfit$log_g
     out$psis <- stanfit$psis
     out$siri <- stanfit$siri
+    out$diagnostics <- stanfit$diagnostics
   }
   out$compute_mean_PPD <- mean_PPD
   out$xlevels <- .getXlevels(mt, mf)

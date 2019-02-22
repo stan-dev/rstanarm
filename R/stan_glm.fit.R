@@ -563,15 +563,24 @@ stan_glm.fit <-
     p <- suppressWarnings(loo::psis(lr, r_eff=1))
     ## todo: add somewhere later warning if p$diagnostics$pareto_k>0.5, 0.6, 0.7?
     p$log_weights <- p$log_weights-logSumExp(p$log_weights)
-    theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k))
-    out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff/nthin, theta_pareto_k)
+    theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k else NaN))
+    out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff/nthin)
     ## SIR
     out$siri <- NULL
     if (sir) {  
       siri <- .sample_indices(exp(p$log_weights), n_draws=draws)
       out$theta_tilde <- out$theta_tilde[siri,]
       out$siri <- siri
+      ## SIR mcse and n_eff
+      w_sir <- as.numeric(table(siri))/length(siri)
+      mcse <- apply(out$theta_tilde[!duplicated(siri),], 2L, function(col) if (all(is.finite(col))) sqrt(sum(w_sir^2*(col-mean(col))^2)) else NaN)
+      n_eff <- apply(out$theta_tilde[!duplicated(siri),], 2L, var)/mcse^2
+    } else {
+      mcse <- rep(NaN,length(theta_pareto_k))
+      n_eff <- rep(NaN,length(theta_pareto_k))
     }
+    out$diagnostics <- cbind(mcse, theta_pareto_k, n_eff)
+    colnames(out$diagnostics) <- c("mcse", "khat", "n_eff")
     ## end: psis diagnostics and SIR
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
                                              chains = 0))
