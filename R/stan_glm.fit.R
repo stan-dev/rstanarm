@@ -561,7 +561,7 @@ stan_glm.fit <-
     ## begin: psis diagnostics and SIR
     lr <- out$log_p-out$log_g
     p <- suppressWarnings(loo::psis(lr, r_eff=1))
-    p$log_weights <- p$log_weights-logSumExp(p$log_weights)
+    p$log_weights <- p$log_weights-log_sum_exp(p$log_weights)
     theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k else NaN))
     ## todo: change fixed threshold to an option
     if (any(theta_pareto_k > 0.7, na.rm = TRUE)) {
