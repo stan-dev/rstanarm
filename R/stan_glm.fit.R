@@ -408,6 +408,7 @@ stan_glm.fit <- function(x, y,
       standata$v1 <- parts1$v
       standata$u0 <- parts0$u
       standata$u1 <- parts1$u
+      standata$clogit <- 0L
     } else {
       parts <- extract_sparse_parts(Z)
       standata$num_non_zero <- length(parts$w)
