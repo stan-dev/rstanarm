@@ -46,7 +46,7 @@ stan_glm.fit <-
            sparse = FALSE,
            draws = 4000,
            sir = TRUE,
-           nthin = 2) {
+           thin = 2) {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
@@ -564,7 +564,7 @@ stan_glm.fit <-
     ## todo: add somewhere later warning if p$diagnostics$pareto_k>0.5, 0.6, 0.7?
     p$log_weights <- p$log_weights-logSumExp(p$log_weights)
     theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k else NaN))
-    out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff/nthin)
+    out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff/thin)
     ## SIR
     out$siri <- NULL
     if (sir) {  
