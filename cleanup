@@ -7,5 +7,5 @@ cp src/*.hpp src/include || echo "OK, no user-defined functions to include."
 sed -i.bak '/current_statement_begin__ = [0-9]/d' src/include/models.hpp
 cat src/*.cc > src/Modules.cpp
 rm src/*.cc
-"${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(clean = TRUE)'
+#"${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(clean = TRUE)'
 exit $?
