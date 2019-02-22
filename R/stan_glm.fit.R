@@ -558,10 +558,10 @@ stan_glm.fit <-
               if (is_beta) "(phi)" else NA
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
-    ## begin: psis diagnostics and sampling importance resampling
+    ## begin: psis diagnostics and SIR
     lr <- out$log_p-out$log_g
-    p <- loo::psis(lr, r_eff=1)
-    ## add somewhere warning if p$diagnostics$pareto_k>0.5, 0.6, 0.7?
+    p <- suppressWarnings(loo::psis(lr, r_eff=1))
+    ## todo: add somewhere later warning if p$diagnostics$pareto_k>0.5, 0.6, 0.7?
     p$log_weights <- p$log_weights-logSumExp(p$log_weights)
     theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k))
     out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff/nthin, theta_pareto_k)
@@ -572,7 +572,7 @@ stan_glm.fit <-
       out$theta_tilde <- out$theta_tilde[siri,]
       out$siri <- siri
     }
-    ## end: sampling importance resampling
+    ## end: psis diagnostics and SIR
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
                                              chains = 0))
     return(structure(out, prior.info = prior_info))
