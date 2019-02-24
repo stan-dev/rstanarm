@@ -183,8 +183,8 @@ loo.stanreg <-
            cores = getOption("mc.cores", 1),
            save_psis = FALSE,
            k_threshold = NULL) {
-    if (!used.sampling(x))
-      STOP_sampling_only("loo")
+    if (!used.sampling(x) & !used.optimizing(x))
+      STOP_not_VB("loo")
     if (model_has_weights(x))
       recommend_exact_loo(reason = "model has weights")
 
@@ -195,8 +195,11 @@ loo.stanreg <-
       k_threshold <- 0.7
     }
 
-    # chain_id to pass to loo::relative_eff
-    chain_id <- chain_id_for_loo(x)
+    
+    if (used.sampling(x)) # chain_id to pass to loo::relative_eff
+        chain_id <- chain_id_for_loo(x)
+    else # siri_id to pass to loo::relative_eff_sir
+        siri <- x$siri
 
     if (is.stanjm(x)) {
       ll <- log_lik(x)
@@ -244,15 +247,23 @@ loo.stanreg <-
       likfun <- function(data_i, draws) {
         exp(llfun(data_i, draws))
       }
-      r_eff <- loo::relative_eff(
-        # using function method
-        x = likfun,
-        chain_id = chain_id,
-        data = args$data,
-        draws = args$draws,
-        cores = cores,
-        ...
-      )
+      if (used.sampling(x)) {
+        r_eff <- loo::relative_eff(
+          # using function method
+          x = likfun,
+          chain_id = chain_id,
+          data = args$data,
+          draws = args$draws,
+          cores = cores,
+          ...
+        )
+      } else {
+        w_sir <- as.numeric(table(siri))/length(siri)
+        sirii <- which(!duplicated(siri))
+        draws <- args$draws
+        data <- args$data
+        r_eff <- sapply(1:dim(data)[1], function(i) {lik_i <- likfun(data[i,], draws)[sirii]; var(lik_i)/(sum(w_sir^2*(lik_i-mean(lik_i))^2))})/length(x$siri)
+      }
       loo_x <- suppressWarnings(
         loo.function(
           llfun,
