@@ -592,16 +592,26 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
       strata_id <- model.weights(model.frame(x))
       omitted <- which(strata_id == strata_id[obs[j]])
     }
-    
-    fit_j_call <-
-      update(
-        x,
-        data = d[-omitted, , drop = FALSE],
-        subset = rep(TRUE, nrow(d) - length(omitted)),
-        evaluate = FALSE,
-        refresh = 0,
-        open_progress = FALSE
-      )
+
+    if (used.optimizing(x)) {
+      fit_j_call <-
+        update(
+          x,
+          data = d[-omitted, , drop = FALSE],
+          subset = rep(TRUE, nrow(d) - length(omitted)),
+          evaluate = FALSE
+        )
+    } else {
+      fit_j_call <-
+        update(
+          x,
+          data = d[-omitted, , drop = FALSE],
+          subset = rep(TRUE, nrow(d) - length(omitted)),
+          evaluate = FALSE,
+          refresh = 0,
+          open_progress = FALSE
+        )
+    }
     fit_j_call$subset <- eval(fit_j_call$subset)
     fit_j_call$data <- eval(fit_j_call$data)
     if (!is.null(getCall(x)$offset)) {
