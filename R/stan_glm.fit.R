@@ -568,7 +568,7 @@ stan_glm.fit <-
     if (any(theta_pareto_k > 0.7, na.rm = TRUE)) {
         warning("Some Pareto k diagnostic values are too high. Consider using sampling instead of optimizing.", call.=FALSE, immediate. = TRUE)
     } else if (any(theta_pareto_k > 0.5, na.rm = TRUE)) { 
-        warning("Some Pareto k diagnostic values are slightly high. Increasing thin or draws may help.", call.=FALSE, immediate. = TRUE)
+        warning("Some Pareto k diagnostic values are slightly high. Increasing the number of draws may help.", call.=FALSE, immediate. = TRUE)
     }
     out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff/thin)
     ## importance_resampling
