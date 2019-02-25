@@ -272,7 +272,7 @@ stan_glm <-
     out$log_p <- stanfit$log_p
     out$log_g <- stanfit$log_g
     out$psis <- stanfit$psis
-    out$siri <- stanfit$siri
+    out$ir_idx <- stanfit$ir_idx
     out$diagnostics <- stanfit$diagnostics
   }
   out$compute_mean_PPD <- mean_PPD

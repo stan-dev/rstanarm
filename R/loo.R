@@ -198,8 +198,8 @@ loo.stanreg <-
     
     if (used.sampling(x)) # chain_id to pass to loo::relative_eff
         chain_id <- chain_id_for_loo(x)
-    else # siri_id to pass to loo::relative_eff_sir
-        siri <- x$siri
+    else # ir_idx to pass to ...
+        ir_idx <- x$ir_idx
 
     if (is.stanjm(x)) {
       ll <- log_lik(x)
@@ -258,11 +258,11 @@ loo.stanreg <-
           ...
         )
       } else {
-        w_sir <- as.numeric(table(siri))/length(siri)
-        sirii <- which(!duplicated(siri))
+        w_ir <- as.numeric(table(ir_idx))/length(ir_idx)
+        ir_uidx <- which(!duplicated(ir_idx))
         draws <- args$draws
         data <- args$data
-        r_eff <- sapply(1:dim(data)[1], function(i) {lik_i <- likfun(data[i,], draws)[sirii]; var(lik_i)/(sum(w_sir^2*(lik_i-mean(lik_i))^2))})/length(x$siri)
+        r_eff <- sapply(1:dim(data)[1], function(i) {lik_i <- likfun(data[i,], draws)[ir_uidx]; var(lik_i)/(sum(w_ir^2*(lik_i-mean(lik_i))^2))})/length(ir_idx)
       }
       loo_x <- suppressWarnings(
         loo.function(

@@ -45,7 +45,7 @@ stan_glm.fit <-
            QR = FALSE, 
            sparse = FALSE,
            draws = 4000,
-           sir = TRUE,
+           importance_resampling = TRUE,
            thin = 1) {
   
   # prior_ops deprecated but make sure it still works until 
@@ -558,7 +558,7 @@ stan_glm.fit <-
               if (is_beta) "(phi)" else NA
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
-    ## begin: psis diagnostics and SIR
+    ## begin: psis diagnostics and importance resampling
     lr <- out$log_p-out$log_g
     lr[lr==-Inf] <- -800
     p <- suppressWarnings(loo::psis(lr, r_eff=1))
@@ -571,17 +571,17 @@ stan_glm.fit <-
         warning("Some Pareto k diagnostic values are slightly high. Increasing thin or draws may help.", call.=FALSE, immediate. = TRUE)
     }
     out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff/thin)
-    ## SIR
-    out$siri <- NULL
-    if (sir) {  
-      siri <- .sample_indices(exp(p$log_weights), n_draws=ceiling(draws/thin))
-      out$theta_tilde <- out$theta_tilde[siri,]
-      out$siri <- siri
+    ## importance_resampling
+    if (importance_resampling) {  
+      ir_idx <- .sample_indices(exp(p$log_weights), n_draws=ceiling(draws/thin))
+      out$theta_tilde <- out$theta_tilde[ir_idx,]
+      out$ir_idx <- ir_idx
       ## SIR mcse and n_eff
-      w_sir <- as.numeric(table(siri))/length(siri)
-      mcse <- apply(out$theta_tilde[!duplicated(siri),], 2L, function(col) if (all(is.finite(col))) sqrt(sum(w_sir^2*(col-mean(col))^2)) else NaN)
-      n_eff <- round(apply(out$theta_tilde[!duplicated(siri),], 2L, var)/mcse^2,0)
+      w_sir <- as.numeric(table(ir_idx))/length(ir_idx)
+      mcse <- apply(out$theta_tilde[!duplicated(ir_idx),], 2L, function(col) if (all(is.finite(col))) sqrt(sum(w_sir^2*(col-mean(col))^2)) else NaN)
+      n_eff <- round(apply(out$theta_tilde[!duplicated(ir_idx),], 2L, var)/mcse^2,0)
     } else {
+      out$ir_idx <- NULL
       mcse <- rep(NaN,length(theta_pareto_k))
       n_eff <- rep(NaN,length(theta_pareto_k))
     }
