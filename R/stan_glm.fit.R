@@ -566,9 +566,10 @@ stan_glm.fit <-
     theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k else NaN))
     ## todo: change fixed threshold to an option
     if (any(theta_pareto_k > 0.7, na.rm = TRUE)) {
-        warning("Some Pareto k diagnostic values are too high. Consider using sampling instead of optimizing.", call.=FALSE, immediate. = TRUE)
+        warning("Some Pareto k diagnostic values are too high. Resampling disabled. Decreasing tol_rel_grad may help if optimization has terminated prematurely. Otherwise consider using sampling instead of optimizing.", call.=FALSE, immediate. = TRUE)
+        importance_resampling <- FALSE
     } else if (any(theta_pareto_k > 0.5, na.rm = TRUE)) { 
-        warning("Some Pareto k diagnostic values are slightly high. Increasing the number of draws may help.", call.=FALSE, immediate. = TRUE)
+        warning("Some Pareto k diagnostic values are slightly high. Increasing the number of draws or decreasing tol_rel_grad may help.", call.=FALSE, immediate. = TRUE)
     }
     out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff/thin)
     ## importance_resampling
