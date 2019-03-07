@@ -391,6 +391,7 @@ kfold <- function(x, K = 10, save_fits = FALSE, folds = NULL) {
   if (is.null(folds)) {
     folds <- loo::kfold_split_random(K = K, N = N)
   } else {
+    K <- length(unique(folds))
     stopifnot(
       length(folds) == N,
       all(folds == as.integer(folds)),
