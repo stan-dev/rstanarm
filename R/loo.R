@@ -180,7 +180,7 @@
 #' print(kfold4)
 #' }
 #'
-#' @importFrom loo loo loo.function loo.matrix
+#' @importFrom loo loo loo.function loo.matrix is.loo is.waic is.kfold
 #'
 loo.stanreg <-
   function(x,
@@ -457,17 +457,18 @@ kfold.stanreg <- function(x, K = 10, ..., save_fits = FALSE, folds = NULL) {
   obs_order <- unlist(lapply(1:K, function(k) which(folds == k)))
   elpds <- rep(NA, length(elpds_unord))
   elpds[obs_order] <- elpds_unord
-
-
-  elpd_kfold <- sum(elpds)
-  se_elpd_kfold <- sqrt(N * var(elpds))
+  
+  pointwise <- cbind(elpd_kfold = elpds, p_kfold = NA, kfoldic = -2 * elpds)
+  est <- colSums(pointwise)
+  se_est <- sqrt(N * apply(pointwise, 2, var))
+  
   out <- list(
-    estimates = cbind(Estimate = elpd_kfold, SE = se_elpd_kfold),
-    pointwise = cbind(elpd_kfold = elpds),
-    elpd_kfold = elpd_kfold,
-    se_elpd_kfold = se_elpd_kfold
+    estimates = cbind(Estimate = est, SE = se_est),
+    pointwise = pointwise,
+    elpd_kfold = est[1],
+    se_elpd_kfold = se_est[1]
   )
-  rownames(out$estimates) <- c("elpd_kfold")
+  rownames(out$estimates) <- colnames(pointwise)
 
   if (save_fits) {
     out$fits <- fits
@@ -496,12 +497,14 @@ kfold.stanreg <- function(x, K = 10, ..., save_fits = FALSE, folds = NULL) {
 #' @return \code{loo_compare} returns a matrix with class 'compare.loo'. See the
 #'   \strong{Comparing models} section below for more details.
 #'
-#' @section Comparing models: \code{loo_compare} is a method for the
-#'   \code{\link[loo]{loo_compare}} function in the \pkg{loo} package that
-#'   performs some extra checks to make sure the \pkg{rstanarm} models are
-#'   suitable for comparison. These extra checks include verifying that all
-#'   models to be compared were fit using the same outcome variable and
-#'   likelihood family.
+#' @section Comparing models: "loo" objects can be passed to the
+#'   \code{\link[loo]{loo_compare}} function in the \pkg{loo} package to perform
+#'   model comparison. \pkg{rstanarm} also provides a \code{loo_compare.stanreg}
+#'   method that can be used if the "loo" object has been added to the fitted
+#'   model object (see the \strong{Examples} section below for how to do this).
+#'   This second method allows \pkg{rstanarm} to perform some extra checks that
+#'   can't be done by the \pkg{loo} package itself (e.g., verifying that all
+#'   models to be compared were fit using the same outcome variable).
 #'
 #'   \code{loo_compare} will return a matrix with one row per model and columns
 #'   containing the ELPD difference and the standard error of the difference. In
@@ -531,6 +534,7 @@ loo_compare.stanreg_list <- function(x, ..., detail = FALSE) {
   if (any(sapply(loos, is.null))) {
     stop("Not all objects have a ", criterion," component.")
   }
+  loos <- validate_loos(loos)
   comp <- loo::loo_compare(x = loos)
   structure(
     comp,
@@ -831,10 +835,6 @@ is_discrete <- function(object) {
   fam <- family(object)$family
   is.binomial(fam) || is.poisson(fam) || is.nb(fam)
 }
-
-is.loo <- function(x) inherits(x, "loo")
-is.kfold <- function(x) is.loo(x) && inherits(x, "kfold")
-is.waic <- function(x) is.loo(x) && inherits(x, "waic")
 
 # validate objects for model comparison
 validate_loos <- function(loos = list()) {
