@@ -208,27 +208,30 @@ test_that("loo_compare throws correct errors", {
   }))
 
 
+  # this uses loo::loo_compare
   expect_error(loo_compare(l1, l2),
+               "Not all models have the same number of data points")
+  expect_error(loo_compare(list(l4, l2, l3)),
+               "Not all models have the same number of data points")
+  
+  # using loo_compare.stanreg (can do extra checks)
+  fit1$loo <- l1
+  fit2$loo <- l2
+  fit3$loo <- l3
+  fit4$loo <- l4
+  
+  expect_error(loo_compare(fit1, fit2),
                "Not all models have the same y variable")
-  expect_error(loo_compare(l1, l3),
+  expect_error(loo_compare(fit1, fit3),
                "Not all models have the same y variable")
-  expect_error(loo_compare(loos = list(l4, l2, l3)),
-               "Not all models have the same y variable")
-  expect_error(loo_compare(l1, l4),
+  expect_error(loo_compare(fit1, fit4),
                "Discrete and continuous observation models can't be compared")
 
 
   expect_error(loo_compare(l1, fit1),
-               "All objects must have class 'loo'")
-  expect_error(loo_compare(l1, k1),
-               "Can't mix objects computed using 'loo', 'waic', and 'kfold'.")
-  expect_error(loo_compare(k1, w1, k1, w1),
-               "Can't mix objects computed using 'loo', 'waic', and 'kfold'.")
-
-  expect_error(loo_compare(l1, loos = list(l2, l3)),
-               "'...' and 'loos' can't both be specified")
+               "All inputs should have class 'loo'")
   expect_error(loo_compare(l1),
-               "At least two objects are required for model comparison")
+               "requires at least two models")
 })
 
 test_that("loo_compare works", {
@@ -279,10 +282,9 @@ test_that("loo_compare works", {
   # expect_equal(ncol(comp3), 3)
   expect_s3_class(comp3, "compare.loo")
 
-  expect_true(attr(l4, "discrete"))
-  expect_true(attr(l5, "discrete"))
-  expect_silent(comp4 <- loo_compare(l4, l5))
-  expect_silent(loo_compare(loos = list(l4, l5)))
+  expect_true(attr(fit4$loo, "discrete"))
+  expect_true(attr(fit5$loo, "discrete"))
+  expect_silent(comp4 <- loo_compare(fit4, fit5))
   expect_s3_class(comp4, "compare.loo")
 
   expect_true(attr(k4, "discrete"))
