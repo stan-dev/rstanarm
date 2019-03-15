@@ -357,7 +357,8 @@ waic.stanreg <- function(x, ...) {
 #'   \eqn{K}-fold cross-validation. The model is refit \code{K} times, each time
 #'   leaving out one of the \code{K} folds. If \code{K} is equal to the total
 #'   number of observations in the data then \eqn{K}-fold cross-validation is
-#'   equivalent to exact leave-one-out cross-validation.
+#'   equivalent to exact leave-one-out cross-validation. If the \code{folds} argument is
+#'   specified then \code{K} will be set to \code{length(unique(folds))}.                                  
 #' @param save_fits For \code{kfold}, if \code{TRUE}, a component \code{'fits'}
 #'   is added to the returned object to store the cross-validated
 #'   \link[=stanreg-objects]{stanreg} objects and the indices of the omitted
@@ -407,6 +408,7 @@ kfold.stanreg <- function(x, K = 10, ..., save_fits = FALSE, folds = NULL) {
   if (is.null(folds)) {
     folds <- loo::kfold_split_random(K = K, N = N)
   } else {
+    K <- length(unique(folds))
     stopifnot(
       length(folds) == N,
       all(folds == as.integer(folds)),
