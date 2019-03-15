@@ -163,12 +163,15 @@
 #' loo_list <- list(A = loo1, B = loo2, C = loo3) # names optional (affects printing)
 #' loo_model_weights(loo_list)
 #' 
+#' 
+#' # K-fold cross-validation
+#' #
 #' # 10-fold cross-validation
 #' (kfold1 <- kfold(fit1, K = 10))
 #' kfold2 <- kfold(fit2, K = 10)
 #' loo_compare(kfold1, kfold2)
 #'
-#' # Cross-validation stratifying by a grouping variable
+#' # stratifying by a grouping variable
 #' # (note: might get some divergences warnings with this model but 
 #' # this is just intended as a quick example of how to code this)
 #' library(loo)
