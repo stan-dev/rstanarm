@@ -388,105 +388,153 @@ waic.stanreg <- function(x, ...) {
 #'   equivalent to exact leave-one-out cross-validation (to which \code{loo} is
 #'   an efficient approximation).
 #'
-kfold.stanreg <- function(x, K = 10, ..., save_fits = FALSE, folds = NULL) {
-  validate_stanreg_object(x)
-  stopifnot(K > 1, K <= nobs(x))
-  if (!used.sampling(x)) {
-    STOP_sampling_only("kfold")
-  }
-  if (is.stanmvreg(x)) {
-    STOP_if_stanmvreg("kfold")
-  }
-  if (model_has_weights(x)) {
-    stop("kfold is not currently available for models fit using weights.")
-  }
-
-  d <- kfold_and_reloo_data(x)
-  N <- nrow(d)
-  K <- as.integer(K)
-
-  if (is.null(folds)) {
-    folds <- loo::kfold_split_random(K = K, N = N)
-  } else {
-    K <- length(unique(folds))
-    stopifnot(
-      length(folds) == N,
-      all(folds == as.integer(folds)),
-      all(folds %in% 1L:K),
-      all(1:K %in% folds)
-    )
-    folds <- as.integer(folds)
-  }
-
-  lppds <- list()
-  fits <- array(list(), c(K, 2), list(NULL, c("fit", "omitted")))
-  for (k in 1:K) {
-    message("Fitting model ", k, " out of ", K)
-    omitted <- which(folds == k)
-    fit_k_call <- update.stanreg(
-      object = x,
-      data = d[-omitted,, drop=FALSE],
-      subset = rep(TRUE, nrow(d) - length(omitted)),
-      weights = NULL,
-      refresh = 0,
-      open_progress = FALSE,
-      evaluate = FALSE
-    )
-    if (!is.null(getCall(x)$offset)) {
-      fit_k_call$offset <- x$offset[-omitted]
+kfold.stanreg <-
+  function(x,
+           K = 10,
+           ...,
+           save_fits = FALSE,
+           folds = NULL,
+           cores = getOption("mc.cores", 1)) {
+    
+    validate_stanreg_object(x)
+    stopifnot(K > 1, K <= nobs(x), cores == as.integer(cores), cores >= 1)
+    if (!used.sampling(x)) {
+      STOP_sampling_only("kfold")
     }
-    fit_k_call$subset <- eval(fit_k_call$subset)
-    fit_k_call$data <- eval(fit_k_call$data)
-    capture.output(
-      fit_k <- eval(fit_k_call)
-    )
-
-    lppds[[k]] <-
-      log_lik.stanreg(
-        fit_k,
-        newdata = d[omitted, , drop = FALSE],
-        offset = x$offset[omitted],
-        newx = get_x(x)[omitted, , drop = FALSE],
-        newz = x$z[omitted, , drop = FALSE], # NULL other than for some stan_betareg models
-        stanmat = as.matrix.stanreg(fit_k)
+    if (is.stanmvreg(x)) {
+      STOP_if_stanmvreg("kfold")
+    }
+    if (model_has_weights(x)) {
+      stop("kfold is not currently available for models fit using weights.")
+    }
+    
+    d <- kfold_and_reloo_data(x)
+    N <- nrow(d)
+    K <- as.integer(K)
+    
+    if (is.null(folds)) {
+      folds <- loo::kfold_split_random(K = K, N = N)
+    } else {
+      K <- length(unique(folds))
+      stopifnot(
+        length(folds) == N,
+        all(folds == as.integer(folds)),
+        all(folds %in% 1L:K),
+        all(1:K %in% folds)
       )
-    if (save_fits) {
-      fits[k, ] <- list(fit = fit_k, omitted = omitted)
+      folds <- as.integer(folds)
     }
+    
+    calls <- list()
+    omitteds <- list()
+    for (k in 1:K) {
+      omitted_k <- which(folds == k)
+      fit_k_call <- update.stanreg(
+        object = x,
+        data = d[-omitted_k,, drop=FALSE],
+        subset = rep(TRUE, nrow(d) - length(omitted_k)),
+        weights = NULL,
+        cores = 1,
+        refresh = 0,
+        open_progress = FALSE,
+        evaluate = FALSE
+      )
+      if (!is.null(getCall(x)$offset)) {
+        fit_k_call$offset <- x$offset[-omitted_k]
+      }
+      fit_k_call$subset <- eval(fit_k_call$subset)
+      fit_k_call$data <- eval(fit_k_call$data)
+      fit_k_call$offset <- eval(fit_k_call$offset)
+      
+      omitteds[[k]] <- omitted_k
+      calls[[k]] <- fit_k_call
+    }
+    
+    
+    fits <- array(list(), c(K, 2), list(NULL, c("fit", "omitted")))
+    if (cores == 1) {
+      lppds <- list()
+      for (k in 1:K) {
+        message("Fitting model ", k, " out of ", K)
+        capture.output(
+          fit_k <- eval(calls[[k]])
+        )
+        
+        omitted_k <- omitteds[[k]]
+        lppds[[k]] <-
+          log_lik.stanreg(
+            fit_k,
+            newdata = d[omitted_k, , drop = FALSE],
+            offset = x$offset[omitted_k],
+            newx = get_x(x)[omitted_k, , drop = FALSE],
+            newz = x$z[omitted_k, , drop = FALSE], # NULL other than for some stan_betareg models
+            stanmat = as.matrix.stanreg(fit_k)
+          )
+        if (save_fits) {
+          fits[k, ] <- list(fit = fit_k, omitted = omitted_k)
+        }
+      }
+    } else {
+      message("Fitting ", K, " models")
+      out <- parallel::mclapply(
+        X = 1:K, 
+        FUN = function(k) {
+          fit_k <- eval(calls[[k]])
+          omitted_k <- omitteds[[k]]
+          lppds_k <-
+            log_lik.stanreg(
+              fit_k,
+              newdata = d[omitted_k, , drop = FALSE],
+              offset = x$offset[omitted_k],
+              newx = get_x(x)[omitted_k, , drop = FALSE],
+              newz = x$z[omitted_k, , drop = FALSE], # NULL other than for some stan_betareg models
+              stanmat = as.matrix.stanreg(fit_k)
+            )
+          return(list(lppds = lppds_k, fit = if (save_fits) fit_k else NULL))
+        }, 
+        mc.cores = cores
+      )
+      lppds <- lapply(out, "[[", "lppds")
+      if (save_fits) {
+        for (k in 1:K) {
+          fits[k, ] <- list(fit = out[[k]][["fit"]], omitted = omitteds[[k]])
+        }
+      }
+    }
+    
+    elpds_unord <- unlist(lapply(lppds, function(x) {
+      apply(x, 2, log_mean_exp)
+    }))
+    
+    # make sure elpds are put back in the right order
+    obs_order <- unlist(lapply(1:K, function(k) which(folds == k)))
+    elpds <- rep(NA, length(elpds_unord))
+    elpds[obs_order] <- elpds_unord
+    
+    pointwise <- cbind(elpd_kfold = elpds, p_kfold = NA, kfoldic = -2 * elpds)
+    est <- colSums(pointwise)
+    se_est <- sqrt(N * apply(pointwise, 2, var))
+    
+    out <- list(
+      estimates = cbind(Estimate = est, SE = se_est),
+      pointwise = pointwise,
+      elpd_kfold = est[1],
+      se_elpd_kfold = se_est[1]
+    )
+    rownames(out$estimates) <- colnames(pointwise)
+    
+    if (save_fits) {
+      out$fits <- fits
+    }
+    
+    structure(out,
+              class = c("kfold", "loo"),
+              K = K,
+              model_name = deparse(substitute(x)),
+              discrete = is_discrete(x),
+              yhash = hash_y(x),
+              formula = loo_model_formula(x))
   }
-  elpds_unord <- unlist(lapply(lppds, function(x) {
-    apply(x, 2, log_mean_exp)
-  }))
-
-  # make sure elpds are put back in the right order
-  obs_order <- unlist(lapply(1:K, function(k) which(folds == k)))
-  elpds <- rep(NA, length(elpds_unord))
-  elpds[obs_order] <- elpds_unord
-  
-  pointwise <- cbind(elpd_kfold = elpds, p_kfold = NA, kfoldic = -2 * elpds)
-  est <- colSums(pointwise)
-  se_est <- sqrt(N * apply(pointwise, 2, var))
-  
-  out <- list(
-    estimates = cbind(Estimate = est, SE = se_est),
-    pointwise = pointwise,
-    elpd_kfold = est[1],
-    se_elpd_kfold = se_est[1]
-  )
-  rownames(out$estimates) <- colnames(pointwise)
-
-  if (save_fits) {
-    out$fits <- fits
-  }
-
-  structure(out,
-            class = c("kfold", "loo"),
-            K = K,
-            model_name = deparse(substitute(x)),
-            discrete = is_discrete(x),
-            yhash = hash_y(x),
-            formula = loo_model_formula(x))
-}
 
 
 #' @rdname loo.stanreg
@@ -569,7 +617,7 @@ print.compare_rstanarm_loos <- function(x, ...) {
   xcopy <- x
   class(xcopy) <- "compare.loo"
   print(xcopy, ...)
-
+  
   return(invisible(x))
 }
 
@@ -595,7 +643,7 @@ loo_model_weights.stanreg_list <-
            ...,
            cores = getOption("mc.cores", 1),
            k_threshold = NULL) {
-
+    
     loos <- lapply(x, function(object) object[["loo"]])
     no_loo <- sapply(loos, is.null)
     if (!any(no_loo)) {
@@ -676,7 +724,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
   if (is.stanmvreg(x))
     STOP_if_stanmvreg("reloo")
   stopifnot(!is.null(x$data), is.loo(loo_x))
-
+  
   J <- length(obs)
   d <- kfold_and_reloo_data(x)
   lls <- vector("list", J)
@@ -684,22 +732,22 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     J, " problematic observation(s) found.",
     "\nModel will be refit ", J, " times."
   )
-
+  
   if (!refit)
     return(NULL)
-
+  
   for (j in 1:J) {
     message(
       "\nFitting model ", j, " out of ", J,
       " (leaving out observation ", obs[j], ")"
     )
     omitted <- obs[j]
-
+    
     if (is_clogit(x)) {
       strata_id <- model.weights(model.frame(x))
       omitted <- which(strata_id == strata_id[obs[j]])
     }
-
+    
     fit_j_call <-
       update(
         x,
@@ -717,7 +765,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     capture.output(
       fit_j <- suppressWarnings(eval(fit_j_call))
     )
-
+    
     lls[[j]] <-
       log_lik.stanreg(
         fit_j,
@@ -728,10 +776,10 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
         stanmat = as.matrix.stanreg(fit_j)
       )
   }
-
+  
   # compute elpd_{loo,j} for each of the held out observations
   elpd_loo <- unlist(lapply(lls, log_mean_exp))
-
+  
   # compute \hat{lpd}_j for each of the held out observations (using log-lik
   # matrix from full posterior, not the leave-one-out posteriors)
   ll_x <- log_lik(
@@ -740,10 +788,10 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     offset = x$offset[obs]
   )
   hat_lpd <- apply(ll_x, 2, log_mean_exp)
-
+  
   # compute effective number of parameters
   p_loo <- hat_lpd - elpd_loo
-
+  
   # replace parts of the loo object with these computed quantities
   sel <- c("elpd_loo", "p_loo", "looic")
   loo_x$pointwise[obs, sel] <- cbind(elpd_loo, p_loo,  -2 * elpd_loo)
@@ -753,7 +801,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     sqrt(N * apply(pointwise[, sel], 2, var))
   })
   loo_x$diagnostics$pareto_k[obs] <- NA
-
+  
   return(loo_x)
 }
 
@@ -780,12 +828,12 @@ log_mean_exp <- function(x) {
 kfold_and_reloo_data <- function(x) {
   # either data frame or environment
   d <- x[["data"]] 
-
+  
   sub <- getCall(x)[["subset"]]
   if (!is.null(sub)) {
     keep <- eval(substitute(sub), envir = d)
   }
-
+  
   if (is.environment(d)) {
     # make data frame
     d <- get_all_vars(formula(x), data = d) 
@@ -801,9 +849,9 @@ kfold_and_reloo_data <- function(x) {
   if (!is.null(sub)) {
     d <- d[keep,, drop=FALSE]
   }
-
+  
   d <- na.omit(d)
-
+  
   if (is_clogit(x)) {
     strata_var <- as.character(getCall(x)$strata)
     d[[strata_var]] <- model.weights(model.frame(x))
@@ -846,7 +894,7 @@ validate_loos <- function(loos = list()) {
   if (length(loos) <= 1)
     stop("At least two objects are required for model comparison.",
          call. = FALSE)
-
+  
   is_loo <- sapply(loos, is.loo)
   is_waic <- sapply(loos, is.waic)
   is_kfold <- sapply(loos, is.kfold)
@@ -856,19 +904,19 @@ validate_loos <- function(loos = list()) {
        (any(is_kfold) && !all(is_kfold))))
     stop("Can't mix objects computed using 'loo', 'waic', and 'kfold'.",
          call. = FALSE)
-
+  
   yhash <- lapply(loos, attr, which = "yhash")
   yhash_check <- sapply(yhash, function(x) {
     isTRUE(all.equal(x, yhash[[1]]))
   })
   if (!all(yhash_check))
     stop("Not all models have the same y variable.", call. = FALSE)
-
+  
   discrete <- sapply(loos, attr, which = "discrete")
   if (!all(discrete == discrete[1]))
     stop("Discrete and continuous observation models can't be compared.",
          call. = FALSE)
-
+  
   setNames(loos, nm = lapply(loos, attr, which = "model_name"))
 }
 
