@@ -44,9 +44,9 @@
 #'   \code{\link{stanreg_list}}. \code{loo_compare} also allows \code{x} to be a
 #'   single stanreg object, with the remaining objects passed via \code{...}.
 #'
-#' @param ... For \code{loo_compare.stanreg}, \code{...} can contain
-#'   objects returned by the \code{loo}, \code{kfold}, or \code{waic} method
-#'   (see the \strong{Examples} section, below).
+#' @param ... For \code{loo_compare.stanreg}, \code{...} can contain objects
+#'   returned by the \code{loo}, \code{\link[=kfold.stanreg]{kfold}}, or
+#'   \code{waic} method (see the \strong{Examples} section, below).
 #'
 #'   For \code{loo_model_weights}, \code{...} should contain arguments (e.g.
 #'   \code{method}) to pass to the default \code{\link[loo]{loo_model_weights}}
@@ -94,7 +94,9 @@
 #'   problematic observations. The pointwise contributions of these observations
 #'   to the total ELPD are then computed directly and substituted for the
 #'   previous estimates from these \eqn{J} observations that are stored in the
-#'   object created by \code{loo}.
+#'   object created by \code{loo}. Another option to consider is K-fold
+#'   cross-validation, which is documented on a separate page (see
+#'   \code{\link[=kfold.stanreg]{kfold}}).
 #'
 #'   \strong{Note}: in the warning messages issued by \code{loo} about large
 #'   Pareto \eqn{k} estimates we recommend setting \code{k_threshold} to at
@@ -162,28 +164,9 @@
 #' # you can also pass precomputed loo objects directly to loo_model_weights
 #' loo_list <- list(A = loo1, B = loo2, C = loo3) # names optional (affects printing)
 #' loo_model_weights(loo_list)
-#' 
-#' 
-#' # K-fold cross-validation
-#' #
-#' # 10-fold cross-validation
-#' (kfold1 <- kfold(fit1, K = 10))
-#' kfold2 <- kfold(fit2, K = 10)
-#' loo_compare(kfold1, kfold2)
-#'
-#' # stratifying by a grouping variable
-#' # (note: might get some divergences warnings with this model but 
-#' # this is just intended as a quick example of how to code this)
-#' library(loo)
-#' fit4 <- stan_lmer(mpg ~ disp + (1|cyl), data = mtcars)
-#' table(mtcars$cyl)
-#' folds_cyl <- kfold_split_stratified(K = 3, x = mtcars$cyl)
-#' table(cyl = mtcars$cyl, fold = folds_cyl)
-#' kfold4 <- kfold(fit4, K = 3, folds = folds_cyl)
-#' print(kfold4)
 #' }
 #'
-#' @importFrom loo loo loo.function loo.matrix is.loo is.waic is.kfold
+#' @importFrom loo loo loo.function loo.matrix is.loo is.waic
 #'
 loo.stanreg <-
   function(x,
@@ -343,198 +326,6 @@ waic.stanreg <- function(x, ...) {
             yhash = hash_y(x),
             formula = loo_model_formula(x))
 }
-
-
-# K-fold CV
-#
-#' @rdname loo.stanreg
-#' @importFrom loo kfold
-#' @export kfold
-#' @export kfold.stanreg
-#' 
-#' @param K For \code{kfold}, the number of subsets (folds)
-#'   into which the data will be partitioned for performing
-#'   \eqn{K}-fold cross-validation. The model is refit \code{K} times, each time
-#'   leaving out one of the \code{K} folds. If \code{K} is equal to the total
-#'   number of observations in the data then \eqn{K}-fold cross-validation is
-#'   equivalent to exact leave-one-out cross-validation. If the \code{folds} argument is
-#'   specified then \code{K} will be set to \code{length(unique(folds))}.                                  
-#' @param save_fits For \code{kfold}, if \code{TRUE}, a component \code{'fits'}
-#'   is added to the returned object to store the cross-validated
-#'   \link[=stanreg-objects]{stanreg} objects and the indices of the omitted
-#'   observations for each fold. Defaults to \code{FALSE}.
-#' @param folds For \code{kfold}, an optional integer vector with one element
-#'   per observation in the data used to fit the model. Each element of the
-#'   vector is an integer in \code{1:K} indicating to which of the \code{K}
-#'   folds the corresponding observation belongs. There are some convenience
-#'   functions available in the \pkg{loo} package that create integer vectors to
-#'   use for this purpose (see the \strong{Examples} section below and also the
-#'   \link[loo]{kfold-helpers} page).
-#'
-#'   If \code{folds} is not specified then the default is to call
-#'   \code{loo::\link[loo]{kfold_split_random}} to randomly partition the data
-#'   into \code{K} subsets of equal (or as close to equal as possible) size.
-#'
-#' @return \code{kfold} returns an object with classes 'kfold' and 'loo' that
-#'   has a similar structure as the objects returned by the \code{loo} and
-#'   \code{waic} methods.
-#'
-#' @section K-fold CV: The \code{kfold} function performs exact \eqn{K}-fold
-#'   cross-validation. First the data are randomly partitioned into \eqn{K}
-#'   subsets of equal (or as close to equal as possible) size (unless the folds
-#'   are specified manually). Then the model is refit \eqn{K} times, each time
-#'   leaving out one of the \eqn{K} subsets. If \eqn{K} is equal to the total
-#'   number of observations in the data then \eqn{K}-fold cross-validation is
-#'   equivalent to exact leave-one-out cross-validation (to which \code{loo} is
-#'   an efficient approximation).
-#'
-kfold.stanreg <-
-  function(x,
-           K = 10,
-           ...,
-           save_fits = FALSE,
-           folds = NULL,
-           cores = getOption("mc.cores", 1)) {
-    
-    validate_stanreg_object(x)
-    stopifnot(K > 1, K <= nobs(x), cores == as.integer(cores), cores >= 1)
-    if (!used.sampling(x)) {
-      STOP_sampling_only("kfold")
-    }
-    if (is.stanmvreg(x)) {
-      STOP_if_stanmvreg("kfold")
-    }
-    if (model_has_weights(x)) {
-      stop("kfold is not currently available for models fit using weights.")
-    }
-    
-    d <- kfold_and_reloo_data(x)
-    N <- nrow(d)
-    K <- as.integer(K)
-    
-    if (is.null(folds)) {
-      folds <- loo::kfold_split_random(K = K, N = N)
-    } else {
-      K <- length(unique(folds))
-      stopifnot(
-        length(folds) == N,
-        all(folds == as.integer(folds)),
-        all(folds %in% 1L:K),
-        all(1:K %in% folds)
-      )
-      folds <- as.integer(folds)
-    }
-    
-    calls <- list()
-    omitteds <- list()
-    for (k in 1:K) {
-      omitted_k <- which(folds == k)
-      fit_k_call <- update.stanreg(
-        object = x,
-        data = d[-omitted_k,, drop=FALSE],
-        subset = rep(TRUE, nrow(d) - length(omitted_k)),
-        weights = NULL,
-        cores = 1,
-        refresh = 0,
-        open_progress = FALSE,
-        evaluate = FALSE
-      )
-      if (!is.null(getCall(x)$offset)) {
-        fit_k_call$offset <- x$offset[-omitted_k]
-      }
-      fit_k_call$subset <- eval(fit_k_call$subset)
-      fit_k_call$data <- eval(fit_k_call$data)
-      fit_k_call$offset <- eval(fit_k_call$offset)
-      
-      omitteds[[k]] <- omitted_k
-      calls[[k]] <- fit_k_call
-    }
-    
-    
-    fits <- array(list(), c(K, 2), list(NULL, c("fit", "omitted")))
-    if (cores == 1) {
-      lppds <- list()
-      for (k in 1:K) {
-        message("Fitting model ", k, " out of ", K)
-        capture.output(
-          fit_k <- eval(calls[[k]])
-        )
-        
-        omitted_k <- omitteds[[k]]
-        lppds[[k]] <-
-          log_lik.stanreg(
-            fit_k,
-            newdata = d[omitted_k, , drop = FALSE],
-            offset = x$offset[omitted_k],
-            newx = get_x(x)[omitted_k, , drop = FALSE],
-            newz = x$z[omitted_k, , drop = FALSE], # NULL other than for some stan_betareg models
-            stanmat = as.matrix.stanreg(fit_k)
-          )
-        if (save_fits) {
-          fits[k, ] <- list(fit = fit_k, omitted = omitted_k)
-        }
-      }
-    } else {
-      message("Fitting ", K, " models")
-      out <- parallel::mclapply(
-        X = 1:K, 
-        FUN = function(k) {
-          fit_k <- eval(calls[[k]])
-          omitted_k <- omitteds[[k]]
-          lppds_k <-
-            log_lik.stanreg(
-              fit_k,
-              newdata = d[omitted_k, , drop = FALSE],
-              offset = x$offset[omitted_k],
-              newx = get_x(x)[omitted_k, , drop = FALSE],
-              newz = x$z[omitted_k, , drop = FALSE], # NULL other than for some stan_betareg models
-              stanmat = as.matrix.stanreg(fit_k)
-            )
-          return(list(lppds = lppds_k, fit = if (save_fits) fit_k else NULL))
-        }, 
-        mc.cores = cores
-      )
-      lppds <- lapply(out, "[[", "lppds")
-      if (save_fits) {
-        for (k in 1:K) {
-          fits[k, ] <- list(fit = out[[k]][["fit"]], omitted = omitteds[[k]])
-        }
-      }
-    }
-    
-    elpds_unord <- unlist(lapply(lppds, function(x) {
-      apply(x, 2, log_mean_exp)
-    }))
-    
-    # make sure elpds are put back in the right order
-    obs_order <- unlist(lapply(1:K, function(k) which(folds == k)))
-    elpds <- rep(NA, length(elpds_unord))
-    elpds[obs_order] <- elpds_unord
-    
-    pointwise <- cbind(elpd_kfold = elpds, p_kfold = NA, kfoldic = -2 * elpds)
-    est <- colSums(pointwise)
-    se_est <- sqrt(N * apply(pointwise, 2, var))
-    
-    out <- list(
-      estimates = cbind(Estimate = est, SE = se_est),
-      pointwise = pointwise,
-      elpd_kfold = est[1],
-      se_elpd_kfold = se_est[1]
-    )
-    rownames(out$estimates) <- colnames(pointwise)
-    
-    if (save_fits) {
-      out$fits <- fits
-    }
-    
-    structure(out,
-              class = c("kfold", "loo"),
-              K = K,
-              model_name = deparse(substitute(x)),
-              discrete = is_discrete(x),
-              yhash = hash_y(x),
-              formula = loo_model_formula(x))
-  }
 
 
 #' @rdname loo.stanreg

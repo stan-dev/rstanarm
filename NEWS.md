@@ -1,3 +1,9 @@
+# stuff for next release
+
+* `compare_models` is deprecated in favor of `loo_compare`
+* The `kfold` method now parallelizes by fold by default rather than by Markov chain, 
+which should be much more efficient when many cores are available. 
+
 # rstanarm 2.18.1
 
 ### Bug fixes
