@@ -24,34 +24,48 @@
 #'   objects, existing \code{"stan*_list"} objects to combine, or one existing
 #'   \code{"stan*_list"} object followed by fitted model objects to append to
 #'   the list.
+#' @param ... model_names Optionally, a character vector of model names. If not
+#'   specified then the names are inferred from the name of the objects passed
+#'   in via \code{...}. These model names are used, for example, when printing
+#'   the results of the \code{loo_compare.stanreg_list} and
+#'   \code{loo_model_weights.stanreg_list} methods.
 #' @return A list of class \code{"stanreg_list"}, \code{"stanmvreg_list"}, or
 #'   \code{"stanjm_list"}, containing the fitted model objects and some metadata
 #'   stored as attributes.
 #'   
 #' @seealso \code{\link{loo_model_weights}} for usage of \code{stanreg_list}.
 #' 
-stanreg_list <- function(...) {
+stanreg_list <- function(..., model_names = NULL) {
   mods <- list(...)
-  mc_dots <- match.call(expand.dots = FALSE)$...
-  names(mods) <- sapply(mc_dots, FUN = deparse)
+  names(mods) <- stanreg_list_names(
+    model_names, 
+    n_models = length(mods), 
+    call_dots = match.call(expand.dots = FALSE)$...
+  )
   .stanreg_list(mods, model_class = "stanreg")
 }
 
 #' @rdname stanreg_list
 #' @export
-stanmvreg_list <- function(...) {
+stanmvreg_list <- function(..., model_names = NULL) {
   mods <- list(...)
-  mc_dots <- match.call(expand.dots = FALSE)$...
-  names(mods) <- sapply(mc_dots, FUN = deparse)
+  names(mods) <- stanreg_list_names(
+    model_names, 
+    n_models = length(mods), 
+    call_dots = match.call(expand.dots = FALSE)$...
+  )
   .stanreg_list(mods, model_class = "stanmvreg")
 }
 
 #' @rdname stanreg_list
 #' @export
-stanjm_list <- function(...) {
+stanjm_list <- function(..., model_names = NULL) {
   mods <- list(...)
-  mc_dots <- match.call(expand.dots = FALSE)$...
-  names(mods) <- sapply(mc_dots, FUN = deparse)
+  names(mods) <- stanreg_list_names(
+    model_names, 
+    n_models = length(mods), 
+    call_dots = match.call(expand.dots = FALSE)$...
+  )
   .stanreg_list(mods, model_class = "stanjm")
 }
 
@@ -109,6 +123,9 @@ print.stanreg_list <- function(x, ...) {
     out <- stanreg_list_append(base_list = mods[[1]], mods = mods[-1], 
                                model_class = model_class)
   }
+  
+  # set model_name attributes of loo/waic/kfold objects to stanreg_list names
+  out <- rename_loos.stanreg_list(out)
   
   return(out)
 }
@@ -218,6 +235,32 @@ is.stanjm_list <- function(x) is.stanreg_list(x) && inherits(x, "stanjm_list")
 
 
 
+#' Determine names of the models in a stanreg_list 
+#' @noRd 
+#' @param user_model_names Either NULL or user-specified model_names argument
+#' @param n_models The number of models in the stanreg_list
+#' @param call_dots The result of match.call(expand.dots = FALSE)$...
+#' @return Either the user-specified model names or names inferred from the
+#'   names of the fitted model objects passed to '...'.
+#'   
+stanreg_list_names <- function(user_model_names, n_models, call_dots) {
+  if (!is.null(user_model_names)) {
+    stopifnot(is.character(user_model_names))
+    if (length(user_model_names) != n_models) {
+      stop("Length of 'model_names' must be the same as the number of models.")
+    }
+    nms <- user_model_names
+  } else {
+    nms <- sapply(call_dots, FUN = deparse) 
+  }
+  return(nms)
+}
+
+#' Determine the families of the models in a stanreg_list 
+#' @noRd 
+#' @param mods List of fitted model objects
+#' @return Character vector of family names
+#' 
 stanreg_list_families <- function(mods) {
   fams <- sapply(mods, FUN = function(x) {
     fam <- family(x)
@@ -225,5 +268,32 @@ stanreg_list_families <- function(mods) {
     return(fam)
   })
   unname(fams)
+}
+
+
+
+# loo/waic/kfold objects created by rstanarm have a model_name attribute. 
+# when a stanreg_list is created those attributes should be changed to match 
+# the names of the models used for the stanreg_list in case user has specified 
+# the model_names argument
+rename_loos <- function(x,...) UseMethod("rename_loos")
+
+# Change model_name attributes of a loo/waic/kfold object stored in a stanreg object,
+rename_loos.stanreg <- function(x, new_model_name,...) {
+  for (criterion in c("loo", "waic", "kfold")) {
+     if (!is.null(x[[criterion]])) {
+       attr(x[[criterion]], "model_name") <- new_model_name
+     }
+  }
+  return(x)
+}
+
+# Change model_name attributes of loo/waic/kfold objects to correspond to 
+# model names used for stanreg_list
+rename_loos.stanreg_list <- function(x, ...) {
+  for (j in seq_along(x)) {
+    x[[j]] <- rename_loos.stanreg(x[[j]], new_model_name = names(x)[j])
+  }
+  return(x)
 }
 

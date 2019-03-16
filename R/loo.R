@@ -40,10 +40,11 @@
 #' @param x For \code{loo} and \code{waic}, a fitted model object returned by
 #'   one of the rstanarm modeling functions. See \link{stanreg-objects}.
 #'
-#'   For \code{loo_model_weights} and \code{loo_compare}, \code{x} should be a
+#'   For the \code{loo_model_weights} method, \code{x} should be a
 #'   "stanreg_list" object, which is a list of fitted model objects created by
 #'   \code{\link{stanreg_list}}. \code{loo_compare} also allows \code{x} to be a
-#'   single stanreg object, with the remaining objects passed via \code{...}.
+#'   single stanreg object, with the remaining objects passed via \code{...}, or
+#'   a single \code{stanreg_list} object.
 #'
 #' @param ... For \code{loo_compare.stanreg}, \code{...} can contain objects
 #'   returned by the \code{loo}, \code{\link[=kfold.stanreg]{kfold}}, or
@@ -140,11 +141,20 @@
 #' fit2$loo <- loo2
 #' loo_compare(fit1, fit2)
 #' 
-#' model_list <- stanreg_list(fit1, fit2)
+#' # if the fitted model objects contain a loo object _and_ a waic or kfold
+#' # object, then the criterion argument determines which of them the comparison
+#' # is based on 
+#' fit1$waic <- waic(fit1)
+#' fit2$waic <- waic(fit2)
+#' loo_compare(fit1, fit2, criterion = "waic")
+#' 
+#' # the models can also be combined into a stanreg_list object, and more 
+#' # informative model names can be provided to use when printing
+#' model_list <- stanreg_list(fit1, fit2, model_names = c("Fewer predictors", "More predictors"))
 #' loo_compare(model_list)
 #'
 #' fit3 <- stan_glm(mpg ~ disp * as.factor(cyl), data = mtcars)
-#' loo3 <- loo(fit3, cores = 2, k_threshold = 0.7)
+#' loo3 <- loo(fit3), cores = 2, k_threshold = 0.7)
 #' loo_compare(loo1, loo2, loo3)
 #'
 #' # setting detail=TRUE will also print model formulas if used with
@@ -342,8 +352,8 @@ waic.stanreg <- function(x, ...) {
 #' @param criterion For \code{loo_compare.stanreg} and
 #'   \code{loo_compare.stanreg_list}, should the comparison be based on LOO-CV
 #'   (\code{criterion="loo"}), K-fold-CV (\code{criterion="kfold"}), or WAIC
-#'   (\code{criterion="waic"}). See the \strong{Comparing models} and
-#'   \strong{Examples} sections below.
+#'   (\code{criterion="waic"}). The default is LOO-CV. See the \strong{Comparing
+#'   models} and \strong{Examples} sections below.
 #'
 #' @return \code{loo_compare} returns a matrix with class 'compare.loo'. See the
 #'   \strong{Comparing models} section below for more details.
@@ -368,33 +378,50 @@ waic.stanreg <- function(x, ...) {
 #'   \code{\link[loo]{loo_compare}} page in the \pkg{loo} package for more
 #'   information.
 #'
-loo_compare.stanreg <- function(x, ..., criterion = c("loo", "kfold", "waic"), detail = FALSE) {
-  criterion <- match.arg(criterion)
-  dots <- list(...)
-  fits <- c(list(x), dots)
-  .loo_comparison(fits, detail = detail, criterion = criterion)
-}
+loo_compare.stanreg <-
+  function(x,
+           ...,
+           criterion = c("loo", "kfold", "waic"),
+           detail = FALSE) {
+    criterion <- match.arg(criterion)
+    dots <- list(...)
+    fits <- c(list(x), dots)
+    .loo_comparison(fits, criterion = criterion, detail = detail)
+  }
 
 
 #' @rdname loo.stanreg
 #' @export
-loo_compare.stanreg_list <- function(x, ..., criterion = c("loo", "kfold", "waic"), detail = FALSE) {
-  .loo_comparison(x, detail = detail, criterion = "loo")
-}
+loo_compare.stanreg_list <-
+  function(x,
+           ...,
+           criterion = c("loo", "kfold", "waic"),
+           detail = FALSE) {
+    criterion <- match.arg(criterion)
+    .loo_comparison(x, criterion = criterion, detail = detail)
+  }
 
-.loo_comparison <- function(fits, detail = FALSE, criterion = c("loo", "kfold", "waic")) {
-  criterion <- match.arg(criterion)
+.loo_comparison <- function(fits, criterion, detail = FALSE) {
   loos <- lapply(fits, "[[", criterion)
   if (any(sapply(loos, is.null))) {
     stop("Not all objects have a ", criterion," component.", call. = FALSE)
   }
   loos <- validate_loos(loos)
   comp <- loo::loo_compare(x = loos)
+  
+  if (!detail) {
+    formulas <- NULL
+  } else {
+    formulas <- lapply(loos, attr, "formula")
+    names(formulas) <- sapply(loos, attr, "model_name")
+  }
+  
+  # Note : rows of comp are ordered by ELPD, but formulas are in same order as
+  # as initial order of models when passed in by user
   structure(
     comp,
     class = c("compare_rstanarm_loos", class(comp)),
-    model_names = sapply(loos, attr, "model_name"),
-    formulas = if (!detail) NULL else lapply(loos, attr, "formula"), 
+    formulas = formulas, 
     criterion = criterion
   )
 }
@@ -410,16 +437,16 @@ print.compare_rstanarm_loos <- function(x, ...) {
     "waic" = "WAIC"
   )
   formulas <- attr(x, "formulas")
-  nms <- attr(x, "model_names")
   if (is.null(formulas)) {
-    cat("Model comparison based on ", criterion, ": \n")
+    cat("Model comparison based on", paste0(criterion, ":"), "\n")
   } else {
     cat("Model formulas: ")
+    nms <- names(formulas)
     for (j in seq_len(NROW(x))) {
       cat("\n", paste0(nms[j], ": "),
           formula_string(formulas[[j]]))
     }
-    cat("\n\nModel comparison based on ", criterion, ": \n")
+    cat("\n\nModel comparison based on", paste0(criterion, ":"), "\n")
   }
   
   xcopy <- x
@@ -457,6 +484,7 @@ loo_model_weights.stanreg_list <-
     if (!any(no_loo)) {
       loo_list <- loos
     } else if (all(no_loo)) {
+      message("Computing approximate LOO-CV (models do not already have 'loo' components). ")
       loo_list <- vector(mode = "list", length = length(x))
       for (j in seq_along(x)) {
         loo_list[[j]] <-
