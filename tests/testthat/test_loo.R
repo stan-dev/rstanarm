@@ -66,8 +66,8 @@ test_that("loo & waic throw error for non mcmc models", {
   SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
                       seed = 1234L, prior_intercept = NULL,
                       prior = NULL, prior_aux = NULL))
-  SW(fitvb1 <- update(fito, algorithm = "meanfield", iter = ITER))
-  SW(fitvb2 <- update(fito, algorithm = "fullrank", iter = ITER))
+  capture.output(SW(fitvb1 <- update(fito, algorithm = "meanfield", iter = ITER)))
+  capture.output(SW(fitvb2 <- update(fito, algorithm = "fullrank", iter = ITER)))
   mcmc_only_error(fito)
   mcmc_only_error(fitvb1)
   mcmc_only_error(fitvb2)
@@ -172,14 +172,12 @@ test_that("kfold works on some examples", {
   SW(kf <- kfold(fit_gaus, 4))
   SW(kf2 <- kfold(example_model, 2))
 
+  expect_named(kf, c("estimates", "pointwise", "elpd_kfold", "se_elpd_kfold"))
+  expect_named(kf2, c("estimates", "pointwise", "elpd_kfold", "se_elpd_kfold"))
   expect_named(attributes(kf), c("names", "class", "K", "model_name", "discrete", "yhash", "formula"))
+  expect_named(attributes(kf2), c("names", "class", "K", "model_name", "discrete", "yhash", "formula"))
   expect_s3_class(kf, c("kfold", "loo"))
-  expect_identical(invisible(print(kf)), kf)
-  expect_output(print(kf), "4-fold cross-validation")
-
   expect_s3_class(kf2, c("kfold", "loo"))
-  expect_identical(invisible(print(kf2)), kf2)
-  expect_output(print(kf2), "2-fold cross-validation")
 
   SW(kf <- kfold(fit_gaus, K = 2, save_fits = TRUE))
 
