@@ -37,7 +37,7 @@
 #' @template reference-loo
 #' @template reference-bayesvis
 #'
-#' @param x For \code{loo}, \code{waic}, and \code{kfold} methods, a fitted
+#' @param x For \code{loo} and \code{waic}, a fitted
 #'   model object returned by one of the rstanarm modeling functions. See
 #'   \link{stanreg-objects}.
 #'

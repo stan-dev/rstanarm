@@ -1,9 +1,9 @@
 #' K-fold cross-validation
 #' 
 #' The \code{kfold} method performs exact \eqn{K}-fold cross-validation. First
-#' the data are randomly partitioned into \eqn{K} subsets of equal (or as close
-#' to equal as possible) size (unless the folds are specified manually via the
-#' \code{folds} argument). Then the model is refit \eqn{K} times, each time
+#' the data are randomly partitioned into \eqn{K} subsets of equal size (or as close
+#' to equal as possible), or the user can specify the \code{folds} argument
+#' to determine the partitioning. Then the model is refit \eqn{K} times, each time
 #' leaving out one of the \eqn{K} subsets. If \eqn{K} is equal to the total
 #' number of observations in the data then \eqn{K}-fold cross-validation is
 #' equivalent to exact leave-one-out cross-validation (to which
@@ -18,13 +18,14 @@
 #' 
 #' @param x A fitted model object returned by one of the rstanarm modeling
 #'   functions. See \link{stanreg-objects}.
-#' @param K For \code{kfold}, the number of subsets (folds)
-#'   into which the data will be partitioned for performing
-#'   \eqn{K}-fold cross-validation. The model is refit \code{K} times, each time
-#'   leaving out one of the \code{K} folds. If \code{K} is equal to the total
-#'   number of observations in the data then \eqn{K}-fold cross-validation is
-#'   equivalent to exact leave-one-out cross-validation. If the \code{folds} argument is
-#'   specified then \code{K} will be set to \code{length(unique(folds))}.                                  
+#' @param K For \code{kfold}, the number of subsets (folds) into which the data
+#'   will be partitioned for performing \eqn{K}-fold cross-validation. The model
+#'   is refit \code{K} times, each time leaving out one of the \code{K} folds.
+#'   If the \code{folds} argument is specified then \code{K} will automatically
+#'   be set to \code{length(unique(folds))}, otherwise the specified value of
+#'   \code{K} is passed to \code{loo::\link[loo]{kfold_split_random}} to
+#'   randomly partition the data into \code{K} subsets of equal (or as close to
+#'   equal as possible) size.
 #' @param save_fits For \code{kfold}, if \code{TRUE}, a component \code{'fits'}
 #'   is added to the returned object to store the cross-validated
 #'   \link[=stanreg-objects]{stanreg} objects and the indices of the omitted
@@ -36,21 +37,17 @@
 #'   functions available in the \pkg{loo} package that create integer vectors to
 #'   use for this purpose (see the \strong{Examples} section below and also the
 #'   \link[loo]{kfold-helpers} page).
-#'
-#'   If \code{folds} is not specified then the default is to call
-#'   \code{loo::\link[loo]{kfold_split_random}} to randomly partition the data
-#'   into \code{K} subsets of equal (or as close to equal as possible) size.
 #'   
 #' @param cores The number of cores to use for parallelization. Instead fitting
-#'   separate Markov chains for the same model on different cores, \code{kfold}
-#'   will use the cores to fit different models. For example, if \code{K=10}
-#'   (10-fold CV) and you have 10 available cores, then setting \code{cores=10}
-#'   will result in the 10 separate models being fit simultaneously but the
-#'   Markov chains for each model will be run sequentially. This will often be
-#'   the most efficient option, especially if many cores are available, but in
-#'   some cases it may be preferable to fit the \code{K} models sequentially and
-#'   instead use the cores for the Markov chains. This can be accomplished by
-#'   setting \code{options{mc.cores}} to be the desired number of cores to use
+#'   separate Markov chains for the same model on different cores, by default
+#'   \code{kfold} will distribute the \code{K} models to be fit across the cores
+#'   (using \code{\link[parallel]{parLapply}} on Windows and
+#'   \code{\link[parallel]{mclapply}} otherwise). The Markov chains for each
+#'   model will be run sequentially. This will often be the most efficient
+#'   option, especially if many cores are available, but in some cases it may be
+#'   preferable to fit the \code{K} models sequentially and instead use the
+#'   cores for the Markov chains. This can be accomplished by setting
+#'   \code{options(mc.cores)} to be the desired number of cores to use
 #'   for the Markov chains \emph{and} also manually specifying \code{cores=1}
 #'   when calling the \code{kfold} function. See the end of the
 #'   \strong{Examples} section for a demonstration.
@@ -110,8 +107,6 @@ kfold.stanreg <-
            save_fits = FALSE,
            cores = getOption("mc.cores", 1)) {
     
-    validate_stanreg_object(x)
-    stopifnot(K > 1, K <= nobs(x))
     if (!used.sampling(x)) {
       STOP_sampling_only("kfold")
     }
@@ -130,11 +125,12 @@ kfold.stanreg <-
     }
     
     
-    d <- kfold_and_reloo_data(x)
+    d <- kfold_and_reloo_data(x) # defined in loo.R
     N <- nrow(d)
-    K <- as.integer(K)
     
     if (is.null(folds)) {
+      stopifnot(K > 1, K <= nobs(x))
+      K <- as.integer(K)
       folds <- loo::kfold_split_random(K = K, N = N)
     } else {
       K <- length(unique(folds))
@@ -159,7 +155,7 @@ kfold.stanreg <-
         cores = stan_cores,
         refresh = 0,
         open_progress = FALSE,
-        evaluate = FALSE
+        evaluate = FALSE # just store unevaluated calls for now
       )
       if (!is.null(getCall(x)$offset)) {
         fit_k_call$offset <- x$offset[-omitted_k]
@@ -197,11 +193,12 @@ kfold.stanreg <-
           fits[k, ] <- list(fit = fit_k, omitted = omitted_k)
         }
       }
-    } else {
-      message("Fitting ", K, " models using ", cores, " cores")
+    } else { # parallelize by fold
+      message("Fitting K = ", K, " models distributed over ", cores, " cores")
       if (.Platform$OS.type != "windows") {
         out <- parallel::mclapply(
           mc.cores = kfold_cores,
+          mc.preschedule = FALSE,
           X = 1:K, 
           FUN = function(k) {
             fit_k <- eval(calls[[k]])
@@ -218,12 +215,13 @@ kfold.stanreg <-
             return(list(lppds = lppds_k, fit = if (save_fits) fit_k else NULL))
           }
         )
-      } else {
+      } else { # windows
         cl <- parallel::makePSOCKcluster(kfold_cores)
         on.exit(parallel::stopCluster(cl))
         out <- parallel::parLapply(
           cl = cl,
           X = 1:K,
+          ...,
           fun = function(k) {
             fit_k <- eval(calls[[k]])
             omitted_k <- omitteds[[k]]
