@@ -339,18 +339,24 @@ waic.stanreg <- function(x, ...) {
 #'   \code{loo_compare.stanreg_list}, if \code{TRUE} then extra information
 #'   about each model (currently just the model formulas) will be printed with
 #'   the output.
+#' @param criterion For \code{loo_compare.stanreg} and
+#'   \code{loo_compare.stanreg_list}, should the comparison be based on LOO-CV
+#'   (\code{criterion="loo"}), K-fold-CV (\code{criterion="kfold"}), or WAIC
+#'   (\code{criterion="waic"}). See the \strong{Comparing models} and
+#'   \strong{Examples} sections below.
 #'
 #' @return \code{loo_compare} returns a matrix with class 'compare.loo'. See the
 #'   \strong{Comparing models} section below for more details.
 #'
-#' @section Comparing models: "loo" objects can be passed to the
-#'   \code{\link[loo]{loo_compare}} function in the \pkg{loo} package to perform
-#'   model comparison. \pkg{rstanarm} also provides a \code{loo_compare.stanreg}
-#'   method that can be used if the "loo" object has been added to the fitted
-#'   model object (see the \strong{Examples} section below for how to do this).
-#'   This second method allows \pkg{rstanarm} to perform some extra checks that
-#'   can't be done by the \pkg{loo} package itself (e.g., verifying that all
-#'   models to be compared were fit using the same outcome variable).
+#' @section Comparing models: "loo" (or "waic" or "kfold") objects can be passed
+#'   to the \code{\link[loo]{loo_compare}} function in the \pkg{loo} package to
+#'   perform model comparison. \pkg{rstanarm} also provides a
+#'   \code{loo_compare.stanreg} method that can be used if the "loo" (or "waic"
+#'   or "kfold") object has been added to the fitted model object (see the
+#'   \strong{Examples} section below for how to do this). This second method
+#'   allows \pkg{rstanarm} to perform some extra checks that can't be done by
+#'   the \pkg{loo} package itself (e.g., verifying that all models to be
+#'   compared were fit using the same outcome variable).
 #'
 #'   \code{loo_compare} will return a matrix with one row per model and columns
 #'   containing the ELPD difference and the standard error of the difference. In
@@ -362,15 +368,17 @@ waic.stanreg <- function(x, ...) {
 #'   \code{\link[loo]{loo_compare}} page in the \pkg{loo} package for more
 #'   information.
 #'
-loo_compare.stanreg <- function(x, ..., detail = FALSE) {
+loo_compare.stanreg <- function(x, ..., criterion = c("loo", "kfold", "waic"), detail = FALSE) {
+  criterion <- match.arg(criterion)
   dots <- list(...)
   fits <- c(list(x), dots)
-  .loo_comparison(fits, detail = detail, criterion = "loo")
+  .loo_comparison(fits, detail = detail, criterion = criterion)
 }
+
 
 #' @rdname loo.stanreg
 #' @export
-loo_compare.stanreg_list <- function(x, ..., detail = FALSE) {
+loo_compare.stanreg_list <- function(x, ..., criterion = c("loo", "kfold", "waic"), detail = FALSE) {
   .loo_comparison(x, detail = detail, criterion = "loo")
 }
 
@@ -378,7 +386,7 @@ loo_compare.stanreg_list <- function(x, ..., detail = FALSE) {
   criterion <- match.arg(criterion)
   loos <- lapply(fits, "[[", criterion)
   if (any(sapply(loos, is.null))) {
-    stop("Not all objects have a ", criterion," component.")
+    stop("Not all objects have a ", criterion," component.", call. = FALSE)
   }
   loos <- validate_loos(loos)
   comp <- loo::loo_compare(x = loos)
@@ -386,7 +394,8 @@ loo_compare.stanreg_list <- function(x, ..., detail = FALSE) {
     comp,
     class = c("compare_rstanarm_loos", class(comp)),
     model_names = sapply(loos, attr, "model_name"),
-    formulas = if (!detail) NULL else lapply(loos, attr, "formula")
+    formulas = if (!detail) NULL else lapply(loos, attr, "formula"), 
+    criterion = criterion
   )
 }
 
@@ -394,17 +403,23 @@ loo_compare.stanreg_list <- function(x, ..., detail = FALSE) {
 #' @export
 #' @method print compare_rstanarm_loos
 print.compare_rstanarm_loos <- function(x, ...) {
+  criterion <- switch(
+    attr(x, "criterion"),
+    "loo" = "LOO-CV",
+    "kfold" = "K-fold-CV",
+    "waic" = "WAIC"
+  )
   formulas <- attr(x, "formulas")
   nms <- attr(x, "model_names")
   if (is.null(formulas)) {
-    cat("Model comparison: \n")
+    cat("Model comparison based on ", criterion, ": \n")
   } else {
     cat("Model formulas: ")
     for (j in seq_len(NROW(x))) {
       cat("\n", paste0(nms[j], ": "),
           formula_string(formulas[[j]]))
     }
-    cat("\n\nModel comparison: \n")
+    cat("\n\nModel comparison based on ", criterion, ": \n")
   }
   
   xcopy <- x
