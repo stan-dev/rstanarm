@@ -37,9 +37,8 @@
 #' @template reference-loo
 #' @template reference-bayesvis
 #'
-#' @param x For \code{loo} and \code{waic}, a fitted
-#'   model object returned by one of the rstanarm modeling functions. See
-#'   \link{stanreg-objects}.
+#' @param x For \code{loo} and \code{waic}, a fitted model object returned by
+#'   one of the rstanarm modeling functions. See \link{stanreg-objects}.
 #'
 #'   For \code{loo_model_weights} and \code{loo_compare}, \code{x} should be a
 #'   "stanreg_list" object, which is a list of fitted model objects created by
