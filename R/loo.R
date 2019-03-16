@@ -20,17 +20,19 @@
 #' @description For models fit using MCMC, compute approximate leave-one-out
 #'   cross-validation (LOO, LOOIC) or, less preferably, the Widely Applicable
 #'   Information Criterion (WAIC) using the \pkg{\link[=loo-package]{loo}}
-#'   package. Functions for \eqn{K}-fold cross-validation, model comparison,
-#'   and model weighting/averaging are also provided. \strong{Note}:
-#'   these functions are not guaranteed to work properly unless the \code{data}
-#'   argument was specified when the model was fit. Also, as of \pkg{loo}
-#'   version \code{2.0.0} the default number of cores is now only 1,  but we
-#'   recommend using as many (or close to as many) cores as possible by setting
-#'   the \code{cores} argument or using \code{options(mc.cores = VALUE)} to set
-#'   it for an entire session.
+#'   package. (For \eqn{K}-fold cross-validation see \code{\link{kfold.stanreg}}.)
+#'   Functions for  model comparison, and model weighting/averaging are also
+#'   provided. 
+#'   
+#'   \strong{Note}: these functions are not guaranteed to work
+#'   properly unless the \code{data} argument was specified when the model was
+#'   fit. Also, as of \pkg{loo} version \code{2.0.0} the default number of cores
+#'   is now only 1, but we recommend using as many (or close to as many) cores
+#'   as possible by setting the \code{cores} argument or using
+#'   \code{options(mc.cores = VALUE)} to set it for an entire session.
 #'
-#' @aliases loo waic
-#'
+#' @aliases loo
+#' @importFrom loo loo loo.function loo.matrix is.loo
 #' @export
 #' @template reference-loo
 #' @template reference-bayesvis
@@ -166,8 +168,6 @@
 #' loo_model_weights(loo_list)
 #' }
 #'
-#' @importFrom loo loo loo.function loo.matrix is.loo is.waic
-#'
 loo.stanreg <-
   function(x,
            ...,
@@ -300,9 +300,11 @@ loo.stanreg <-
 
 # WAIC
 #
+#' @aliases waic
 #' @rdname loo.stanreg
-#' @export
-#' @importFrom loo waic waic.function waic.matrix
+#' @export waic
+#' @export waic.stanreg
+#' @importFrom loo waic waic.function waic.matrix is.waic
 #'
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x))
@@ -329,6 +331,7 @@ waic.stanreg <- function(x, ...) {
 
 
 #' @rdname loo.stanreg
+#' @aliases loo_compare
 #' @importFrom loo loo_compare
 #' @export loo_compare
 #' @export loo_compare.stanreg
