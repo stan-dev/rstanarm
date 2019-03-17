@@ -727,24 +727,16 @@ is_discrete <- function(object) {
 
 # validate objects for model comparison
 validate_loos <- function(loos = list()) {
-  if (length(loos) <= 1) {
-    stop("At least two objects are required for model comparison.",
-         call. = FALSE)
-  }
   
-  is_loo <- sapply(loos, is.loo)
-  is_waic <- sapply(loos, is.waic)
-  is_kfold <- sapply(loos, is.kfold)
-  if (!all(is_loo)) {
-    stop("All objects must have class 'loo'", call. = FALSE)
-  }
-  
-  yhash <- lapply(loos, attr, which = "yhash")
-  yhash_check <- sapply(yhash, function(x) {
-    isTRUE(all.equal(x, yhash[[1]]))
-  })
-  if (!all(yhash_check)) {
-    warning("Not all models have the same y variable.", call. = FALSE)
+  if (packageVersion("loo") <= "2.1.0") {
+    # will be checked by loo in later versions
+    yhash <- lapply(loos, attr, which = "yhash")
+    yhash_check <- sapply(yhash, function(x) {
+      isTRUE(all.equal(x, yhash[[1]]))
+    })
+    if (!all(yhash_check)) {
+      warning("Not all models have the same y variable.", call. = FALSE)
+    }
   }
   
   discrete <- sapply(loos, attr, which = "discrete")

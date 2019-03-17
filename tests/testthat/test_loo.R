@@ -218,13 +218,8 @@ test_that("loo_compare throws correct errors", {
   fit3$loo <- l3
   fit4$loo <- l4
   
-  expect_error(
-    expect_warning(loo_compare(fit1, fit2),
-                   "Not all models have the same y variable"),
-    "Not all models have the same number of data points"
-  )
-  expect_warning(loo_compare(fit1, fit3),
-               "Not all models have the same y variable")
+  expect_error(loo_compare(fit1, fit2), "Not all models have the same number of data points")
+  expect_warning(loo_compare(fit1, fit3), "Not all models have the same y variable")
   expect_error(loo_compare(fit1, fit4),
                "Discrete and continuous observation models can't be compared")
 
