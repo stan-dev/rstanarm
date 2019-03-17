@@ -218,9 +218,12 @@ test_that("loo_compare throws correct errors", {
   fit3$loo <- l3
   fit4$loo <- l4
   
-  expect_error(loo_compare(fit1, fit2),
-               "Not all models have the same y variable")
-  expect_error(loo_compare(fit1, fit3),
+  expect_error(
+    expect_warning(loo_compare(fit1, fit2),
+                   "Not all models have the same y variable"),
+    "Not all models have the same number of data points"
+  )
+  expect_warning(loo_compare(fit1, fit3),
                "Not all models have the same y variable")
   expect_error(loo_compare(fit1, fit4),
                "Discrete and continuous observation models can't be compared")
@@ -257,34 +260,24 @@ test_that("loo_compare works", {
   expect_false(attr(fit1$loo, "discrete"))
   expect_false(attr(fit2$loo, "discrete"))
   expect_false(attr(fit3$loo, "discrete"))
+  expect_true(attr(fit4$loo, "discrete"))
+  expect_true(attr(fit5$loo, "discrete"))
 
   comp1 <- loo_compare(fit1, fit2)
   comp2 <- loo_compare(fit1, fit2, fit3)
-  comp1_detail <- loo_compare(fit1, fit2, detail=TRUE)
-  comp2_detail <- loo_compare(fit1, fit2, fit3, detail=TRUE)
-
-  expect_output(print(comp1_detail), "Model formulas")
-  expect_output(print(comp2_detail), "Model formulas")
-
-  expect_true(is.matrix(comp1))
-  expect_true(is.matrix(comp2))
-  expect_equal(colnames(comp1)[1:2], c("elpd_diff", "se_diff"))
   expect_s3_class(comp1, "compare.loo")
   expect_s3_class(comp2, "compare.loo")
   expect_equal(comp1[, "elpd_diff"], loo_compare(list(fit1$loo, fit2$loo))[, "elpd_diff"])
   expect_equal(comp2[, "elpd_diff"], loo_compare(list(fit1$loo, fit2$loo, fit3$loo))[, "elpd_diff"])
-
+  
+  comp1_detail <- loo_compare(fit1, fit2, detail=TRUE)
+  expect_output(print(comp1_detail), "Model formulas")
+  
+  # equivalent to stanreg_list method
   expect_equivalent(comp2, loo_compare(stanreg_list(fit1, fit2, fit3)))
 
+  # for kfold
   comp3 <- loo_compare(k1, k2, k3)
-  # expect_equal(ncol(comp3), 3)
-  expect_s3_class(comp3, "compare.loo")
-
-  expect_true(attr(fit4$loo, "discrete"))
-  expect_true(attr(fit5$loo, "discrete"))
-  expect_silent(comp4 <- loo_compare(fit4, fit5))
-  expect_s3_class(comp4, "compare.loo")
-
   expect_true(attr(k4, "discrete"))
   expect_true(attr(k5, "discrete"))
   expect_s3_class(loo_compare(k4, k5), "compare.loo")

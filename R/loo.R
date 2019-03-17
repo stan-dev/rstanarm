@@ -727,31 +727,31 @@ is_discrete <- function(object) {
 
 # validate objects for model comparison
 validate_loos <- function(loos = list()) {
-  if (length(loos) <= 1)
+  if (length(loos) <= 1) {
     stop("At least two objects are required for model comparison.",
          call. = FALSE)
+  }
   
   is_loo <- sapply(loos, is.loo)
   is_waic <- sapply(loos, is.waic)
   is_kfold <- sapply(loos, is.kfold)
-  if (!all(is_loo))
+  if (!all(is_loo)) {
     stop("All objects must have class 'loo'", call. = FALSE)
-  if ((any(is_waic) && !all(is_waic) ||
-       (any(is_kfold) && !all(is_kfold))))
-    stop("Can't mix objects computed using 'loo', 'waic', and 'kfold'.",
-         call. = FALSE)
+  }
   
   yhash <- lapply(loos, attr, which = "yhash")
   yhash_check <- sapply(yhash, function(x) {
     isTRUE(all.equal(x, yhash[[1]]))
   })
-  if (!all(yhash_check))
-    stop("Not all models have the same y variable.", call. = FALSE)
+  if (!all(yhash_check)) {
+    warning("Not all models have the same y variable.", call. = FALSE)
+  }
   
   discrete <- sapply(loos, attr, which = "discrete")
-  if (!all(discrete == discrete[1]))
+  if (!all(discrete == discrete[1])) {
     stop("Discrete and continuous observation models can't be compared.",
          call. = FALSE)
+  }
   
   setNames(loos, nm = lapply(loos, attr, which = "model_name"))
 }
