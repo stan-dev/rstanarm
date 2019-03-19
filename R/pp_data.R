@@ -259,6 +259,7 @@ pp_data <-
   # flags
   has_tde        <- object$has_tde
   has_quadrature <- object$has_quadrature
+  has_bars       <- object$has_bars
   
   #----- dimensions and times
   
@@ -296,7 +297,7 @@ pp_data <-
 
   #----- model frame for generating predictor matrices
   
-  tt <- delete.response(terms(object))
+  tt <- delete.response(terms(object, fixed.only = FALSE))
   
   mf <- make_model_frame(tt, newdata, xlevs = object$xlevs)$mf
   
@@ -322,19 +323,35 @@ pp_data <-
   
   #----- time-fixed predictor matrix
   
-  x  <- make_x(tt, mf)$x
+  x  <- make_x(tt, mf, check_constant = FALSE)$x
   
   #----- time-varying predictor matrix
   
-  s <- if (has_tde) make_x(formula$tt_form, mf)$x else matrix(0, length(pts), 0)
+  if (has_tde) {
+    s <- make_x(formula$tt_form, mf, check_constant = FALSE)$x 
+  } else {
+    s <- matrix(0, nrow(mf), 0)
+  }
   
+  #----- random effects predictor matrices
+  
+  if (has_bars) {
+    ReTrms <- lme4::mkReTrms(formula$bars, mf)
+    z <- nlist(Zt = ReTrms$Zt, Z_names = make_b_nms(ReTrms))
+  } else {
+    z <- list()
+  }
+
   # return object
   return(nlist(pts,
                wts,
                ids,
                x,
                s,
+               z,
                has_quadrature,
+               has_tde,
+               has_bars,
                at_quadpoints,
                qnodes = object$qnodes))
 }
@@ -492,7 +509,7 @@ get_model_data <- function(object, ...) UseMethod("get_model_data")
 
 get_model_data.stansurv <- function(object, ...) {
   validate_stansurv_object(object)
-  terms <- terms(object)
+  terms <- terms(object, fixed.only = FALSE)
   row_nms <- row.names(model.frame(object))
   get_all_vars(terms, object$data)[row_nms, , drop = FALSE]
 }
