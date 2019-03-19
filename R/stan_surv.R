@@ -1926,15 +1926,30 @@ make_model_data <- function(formula, data) {
 make_model_frame <- function(formula, data, xlevs = NULL, 
                              check_constant = FALSE) {
 
-  # construct terms object from formula 
-  Terms <- terms(lme4::subbars(formula))
-  
   # construct model frame
-  mf <- model.frame(Terms, data, xlev = xlevs)
+  Terms <- terms(lme4::subbars(formula))
+  mf <- stats::model.frame(Terms, data, xlev = xlevs, drop.unused.levels = TRUE)
+  
+  # get predvars for fixed part of formula
+  TermsF <- terms(lme4::nobars(formula)) 
+  mfF <- stats::model.frame(TermsF, data, xlev = xlevs, drop.unused.levels = TRUE)
+  attr(attr(mf, "terms"), "predvars.fixed") <- attr(attr(mfF, "terms"), "predvars")
+  
+  # get predvars for random part of formula
+  has_bars <- length(lme4::findbars(formula)) > 0
+  if (has_bars) {
+    TermsR <- terms(lme4::subbars(justRE(formula, response = TRUE)))
+    mfR <- stats::model.frame(TermsR, data, xlev = xlevs, drop.unused.levels = TRUE)
+    attr(attr(mf, "terms"), "predvars.random") <- attr(attr(mfR, "terms"), "predvars")
+  } else {
+    attr(attr(mf, "terms"), "predvars.random") <- NULL
+  }
   
   # check no constant vars
   if (check_constant)
     mf <- check_constant_vars(mf)
+  
+  # add additional predvars attributes
   
   # check for terms
   mt <- attr(mf, "terms")
