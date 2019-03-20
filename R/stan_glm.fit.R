@@ -337,12 +337,12 @@ stan_glm.fit <-
       parts0 <- extract_sparse_parts(Z[y == 0, , drop = FALSE])
       parts1 <- extract_sparse_parts(Z[y == 1, , drop = FALSE])
       standata$num_non_zero <- c(length(parts0$w), length(parts1$w))
-      standata$w0 <- parts0$w
-      standata$w1 <- parts1$w
-      standata$v0 <- parts0$v - 1L
-      standata$v1 <- parts1$v - 1L
-      standata$u0 <- parts0$u - 1L
-      standata$u1 <- parts1$u - 1L
+      standata$w0 <- as.array(parts0$w)
+      standata$w1 <- as.array(parts1$w)
+      standata$v0 <- as.array(parts0$v - 1L)
+      standata$v1 <- as.array(parts1$v - 1L)
+      standata$u0 <- as.array(parts0$u - 1L)
+      standata$u1 <- as.array(parts1$u - 1L)
     } else {
       parts <- extract_sparse_parts(Z)
       standata$num_non_zero <- length(parts$w)
