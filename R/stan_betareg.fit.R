@@ -34,7 +34,8 @@ stan_betareg.fit <-
            prior_PD = FALSE, 
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            adapt_delta = NULL, 
-           QR = FALSE) {
+           QR = FALSE,
+           draws = 1000) {
   
   algorithm <- match.arg(algorithm)
   
@@ -309,7 +310,7 @@ stan_betareg.fit <-
     out <-
       optimizing(stanfit,
                  data = standata,
-                 draws = 1000,
+                 draws = draws,
                  constrained = TRUE,
                  ...)
     check_stanfit(out)
