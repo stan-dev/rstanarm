@@ -37,7 +37,6 @@
           mark += 1;
           e_eta_q += a_beta[mark] * (val - a_xbar[mark]);
         }
-        mark2 += 1; // count even if assoc type isn't used
         if (has_assoc[9,m] == 1) { // etavalue*data
           int J = a_K_data[mark2];
           int j_shift = (mark2 == 1) ? 0 : sum(a_K_data[1:(mark2-1)]);
