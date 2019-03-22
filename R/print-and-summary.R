@@ -468,16 +468,18 @@ print.summary.stanreg <-
     cat("\n\nEstimates:\n")
     if (!used.optimizing(atts)) {
         hat <- "Rhat"
+        str_diag <- "MCMC diagnostics"
         str1 <- "and Rhat is the potential scale reduction factor on split chains"
         str2 <- " (at convergence Rhat=1).\n"
     } else {
         hat <- "khat"
+        str_diag <- "Monte Carlo diagnostics"
         str1 <- "and khat is the Pareto k diagnostic for importance sampling"
         str2 <- " (usually good perfomance when khat<0.7).\n"
     }
     sel <- which(colnames(x) %in% c("mcse", "n_eff", hat))
-    has_mcmc_diagnostic <- length(sel) > 0
-    if (has_mcmc_diagnostic) {
+    has_mc_diagnostic <- length(sel) > 0
+    if (has_mc_diagnostic) {
       xtemp <- x[, -sel, drop = FALSE]
       colnames(xtemp) <- paste(" ", colnames(xtemp))
     } else {
@@ -506,8 +508,8 @@ print.summary.stanreg <-
           sep = '')
     }
     
-    if (has_mcmc_diagnostic) {
-      cat("\nMCMC diagnostics:\n")
+    if (has_mc_diagnostic) {
+      cat("\n", str_diag, "\n", sep = '')
       mcse_hat <- format(round(x[, c("mcse", hat), drop = FALSE], digits), 
                           nsmall = digits)
       n_eff <- format(x[, "n_eff", drop = FALSE], drop0trailing = TRUE)
