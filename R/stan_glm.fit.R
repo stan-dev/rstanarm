@@ -560,20 +560,25 @@ stan_glm.fit <-
               if (is_beta) "(phi)" else NA
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
-    ## begin: psis diagnostics and importance resampling
-    lr <- out$log_p-out$log_g
-    lr[lr==-Inf] <- -800
-    p <- suppressWarnings(loo::psis(lr, r_eff=1))
-    p$log_weights <- p$log_weights-log_sum_exp(p$log_weights)
-    theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k else NaN))
-    ## todo: change fixed threshold to an option
-    if (any(theta_pareto_k > 0.7, na.rm = TRUE)) {
-        warning("Some Pareto k diagnostic values are too high. Resampling disabled. Decreasing tol_rel_grad may help if optimization has terminated prematurely. Otherwise consider using sampling instead of optimizing.", call.=FALSE, immediate. = TRUE)
-        importance_resampling <- FALSE
-    } else if (any(theta_pareto_k > 0.5, na.rm = TRUE)) { 
-        warning("Some Pareto k diagnostic values are slightly high. Increasing the number of draws or decreasing tol_rel_grad may help.", call.=FALSE, immediate. = TRUE)
+    if (draws>0) {
+        ## begin: psis diagnostics and importance resampling
+        lr <- out$log_p-out$log_g
+        lr[lr==-Inf] <- -800
+        p <- suppressWarnings(loo::psis(lr, r_eff=1))
+        p$log_weights <- p$log_weights-log_sum_exp(p$log_weights)
+        theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k else NaN))
+        ## todo: change fixed threshold to an option
+        if (any(theta_pareto_k > 0.7, na.rm = TRUE)) {
+            warning("Some Pareto k diagnostic values are too high. Resampling disabled. Decreasing tol_rel_grad may help if optimization has terminated prematurely. Otherwise consider using sampling instead of optimizing.", call.=FALSE, immediate. = TRUE)
+            importance_resampling <- FALSE
+        } else if (any(theta_pareto_k > 0.5, na.rm = TRUE)) { 
+            warning("Some Pareto k diagnostic values are slightly high. Increasing the number of draws or decreasing tol_rel_grad may help.", call.=FALSE, immediate. = TRUE)
+        }
+        out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff/thin)
+    } else {
+      theta_pareto_k <- rep(NaN,length(new_names))
+      importance_resampling <- FALSE
     }
-    out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff/thin)
     ## importance_resampling
     if (importance_resampling) {  
       ir_idx <- .sample_indices(exp(p$log_weights), n_draws=ceiling(draws/thin))
