@@ -275,6 +275,7 @@ kfold.stanreg <-
     structure(out,
               class = c("kfold", "loo"),
               K = K,
+              dims = c(posterior_sample_size(fit1), N),
               model_name = deparse(substitute(x)),
               discrete = is_discrete(x),
               yhash = hash_y(x),
