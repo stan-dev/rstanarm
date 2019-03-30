@@ -1,8 +1,12 @@
-# rstanarm 2.18.2
+# rstanarm 2.19.1
 
 ### Bug fixes
 
 * src/Makevars{.win} now uses a more robust way to find StanHeaders
+* `compare_models` is deprecated in favor of `loo_compare`
+* The `kfold` method now has a `cores` argument and parallelizes by fold rather
+than by Markov chain (unless otherwise specified), which should be much more
+efficient when many cores are available.
 
 # rstanarm 2.18.1
 

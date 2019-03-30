@@ -26,6 +26,8 @@
 #' @method print stanreg
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
+#' @param detail Logical, defaulting to \code{TRUE}. If \code{FALSE} a more
+#'   minimal summary is printed consisting only of the parameter estimates.
 #' @param digits Number of digits to use for formatting numbers.
 #' @param ... Ignored.
 #' @return Returns \code{x}, invisibly.
@@ -50,15 +52,6 @@
 #' }
 #' \subsection{Additional output}{
 #' \itemize{
-#' \item The median and MAD_SD are also reported for \code{mean_PPD}, the sample
-#' average posterior predictive distribution of the outcome. This is useful as a
-#' quick diagnostic. A useful heuristic is to check if \code{mean_PPD} is
-#' plausible when compared to \code{mean(y)}. If it is plausible then this does
-#' \emph{not} mean that the model is good in general (only that it can reproduce
-#' the sample mean), however if \code{mean_PPD} is implausible then it is a sign
-#' that something is wrong (severe model misspecification, problems with the
-#' data, computational issues, etc.).
-#' 
 #' \item For GLMs with group-specific terms (see \code{\link{stan_glmer}}) the printed 
 #' output also shows point estimates of the standard deviations of the group 
 #' effects (and correlations if there are both intercept and slopes that vary by
@@ -74,17 +67,19 @@
 #' 
 #' @seealso \code{\link{summary.stanreg}}, \code{\link{stanreg-methods}}
 #' 
-print.stanreg <- function(x, digits = 1, ...) {
-  cat(x$stan_function)
-  cat("\n family:      ", family_plus_link(x))
-  cat("\n formula:     ", formula_string(formula(x)))
-  cat("\n observations:", nobs(x))
-  if (isTRUE(x$stan_function %in% 
-             c("stan_glm", "stan_glm.nb", "stan_lm", "stan_aov"))) {
-    cat("\n predictors:  ", length(coef(x)))
-  }
+print.stanreg <- function(x, digits = 1, detail = TRUE, ...) {
+  if (detail) {
+    cat(x$stan_function)
+    cat("\n family:      ", family_plus_link(x))
+    cat("\n formula:     ", formula_string(formula(x)))
+    cat("\n observations:", nobs(x))
+    if (isTRUE(x$stan_function %in% 
+               c("stan_glm", "stan_glm.nb", "stan_lm", "stan_aov"))) {
+      cat("\n predictors:  ", length(coef(x)))
+    }
   
-  cat("\n------\n")
+    cat("\n------\n")
+  }
 
   mer <- is.mer(x)
   gamm <- isTRUE(x$stan_function == "stan_gamm4")
@@ -148,13 +143,6 @@ print.stanreg <- function(x, digits = 1, ...) {
     if (is(x, "aov")) {
       print_anova_table(x, digits, ...)
     }
-    if (!no_mean_PPD(x) && !is_clogit(x)) {
-      ppd_mat <- mat[, ppd_nms, drop = FALSE]
-      ppd_estimates <- .median_and_madsd(ppd_mat)
-      
-      cat("\nSample avg. posterior predictive distribution of y:\n")
-      .printfr(ppd_estimates, digits, ...)
-    }
     
   } else { 
     # used optimization
@@ -168,16 +156,13 @@ print.stanreg <- function(x, digits = 1, ...) {
       cat("\nAuxiliary parameter(s):\n")
       .printfr(x$stan_summary[aux_nms, 1:2, drop=FALSE], digits, ...)
     }
-    if (length(ppd_nms) && !no_mean_PPD(x)) {
-      cat("\nSample avg. posterior predictive distribution of y:\n")
-      .printfr(x$stan_summary[ppd_nms, 1:2, drop=FALSE], digits, ...)
-    }
   }
   
-  cat("\n------\n")
-  cat("* For help interpreting the printed output see ?print.stanreg\n")
-  cat("* For info on the priors used see ?prior_summary.stanreg\n")
-  
+  if (detail) {
+    cat("\n------\n")
+    cat("* For help interpreting the printed output see ?print.stanreg\n")
+    cat("* For info on the priors used see ?prior_summary.stanreg\n")
+  }
   invisible(x)
 }
 
@@ -345,6 +330,18 @@ print.stanmvreg <- function(x, digits = 3, ...) {
 #'   objects converts the matrix to a data.frame, preserving row and column 
 #'   names but dropping the \code{print}-related attributes.
 #' 
+#' @details 
+#' \subsection{mean_PPD diagnostic}{
+#' Summary statistics are also reported for \code{mean_PPD}, the sample
+#' average posterior predictive distribution of the outcome. This is useful as a
+#' quick diagnostic. A useful heuristic is to check if \code{mean_PPD} is
+#' plausible when compared to \code{mean(y)}. If it is plausible then this does
+#' \emph{not} mean that the model is good in general (only that it can reproduce
+#' the sample mean), however if \code{mean_PPD} is implausible then it is a sign
+#' that something is wrong (severe model misspecification, problems with the
+#' data, computational issues, etc.).
+#' }
+#' 
 #' @seealso \code{\link{prior_summary}} to extract or print a summary of the 
 #'   priors used for a particular model.
 #' 
@@ -363,19 +360,22 @@ print.stanmvreg <- function(x, digits = 3, ...) {
 #' as.data.frame(summary(example_model, pars = "varying"))
 #' 
 #' @importMethodsFrom rstan summary
-summary.stanreg <- function(object, pars = NULL, regex_pars = NULL, 
-                            probs = NULL, ..., digits = 1) {
+summary.stanreg <- function(object,
+                            pars = NULL,
+                            regex_pars = NULL,
+                            probs = c(0.1, 0.5, 0.9),
+                            ...,
+                            digits = 1) {
   mer <- is.mer(object)
   pars <- collect_pars(object, pars, regex_pars)
   
   if (!used.optimizing(object)) {
-    args <- list(object = object$stanfit)
-    if (!is.null(probs)) 
-      args$probs <- probs
+    args <- list(object = object$stanfit, probs = probs)
     out <- do.call("summary", args)$summary
-    
-    if (is.null(pars) && used.variational(object))
+  
+    if (is.null(pars) && used.variational(object)) {
       out <- out[!rownames(out) %in% "log-posterior", , drop = FALSE]
+    }
     if (!is.null(pars)) {
       pars <- allow_special_parnames(object, pars)
       out <- out[rownames(out) %in% pars, , drop = FALSE]
@@ -383,15 +383,13 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
     
     out <- out[!grepl(":_NEW_", rownames(out), fixed = TRUE), , drop = FALSE]
     stats <- colnames(out)
-    if ("n_eff" %in% stats)
+    if ("n_eff" %in% stats) {
       out[, "n_eff"] <- round(out[, "n_eff"])
-    if ("se_mean" %in% stats) # So people don't confuse se_mean and sd
+    }
+    if ("se_mean" %in% stats) {# So people don't confuse se_mean and sd
       colnames(out)[stats %in% "se_mean"] <- "mcse"
-    
+    }
   } else { # used optimization
-    if (!is.null(probs)) 
-      warning("'probs' ignored if for models fit using optimization.",
-              call. = FALSE)
     if (is.null(pars)) {
       famname <- family(object)$family
       mark <- names(object$coefficients)
@@ -425,6 +423,7 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
     ngrps = if (mer) ngrps(object) else NULL,
     print.digits = digits,
     priors = object$prior.info,
+    no_ppd_diagnostic = no_mean_PPD(object),
     class = "summary.stanreg"
   )
 }
@@ -434,45 +433,78 @@ summary.stanreg <- function(object, pars = NULL, regex_pars = NULL,
 #' @method print summary.stanreg
 #'
 #' @param x An object of class \code{"summary.stanreg"}.
-print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")), 
-                                  ...) {
-  atts <- attributes(x)
-  cat("\nModel Info:\n")
-  cat("\n function:    ", atts$stan_function)
-  cat("\n family:      ", atts$family)
-  cat("\n formula:     ", formula_string(atts$formula))
-  cat("\n algorithm:   ", atts$algorithm)
-  cat("\n priors:      ", "see help('prior_summary')")
-  if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
-    cat("\n sample:      ", atts$posterior_sample_size, "(posterior sample size)")
-  cat("\n observations:", atts$nobs)
-  if (!is.null(atts$npreds))
-    cat("\n predictors:  ", atts$npreds)
-  if (!is.null(atts$ngrps))
-    cat("\n groups:      ", paste0(names(atts$ngrps), " (", 
-                                   unname(atts$ngrps), ")", 
-                                   collapse = ", "))
-  
-  cat("\n\nEstimates:\n")
-  sel <- which(colnames(x) %in% c("mcse", "n_eff", "Rhat"))
-  if (!length(sel)) {
-    .printfr(x, digits)
-  } else {
-    xtemp <- x[, -sel, drop = FALSE]
-    colnames(xtemp) <- paste(" ", colnames(xtemp))
+print.summary.stanreg <-
+  function(x, digits = max(1, attr(x, "print.digits")),
+           ...) {
+    atts <- attributes(x)
+    cat("\nModel Info:")
+    cat("\n function:    ", atts$stan_function)
+    cat("\n family:      ", atts$family)
+    cat("\n formula:     ", formula_string(atts$formula))
+    cat("\n algorithm:   ", atts$algorithm)
+    if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling") {
+      cat("\n sample:      ", atts$posterior_sample_size, 
+          "(posterior sample size)")
+    }
+    cat("\n priors:      ", "see help('prior_summary')")
+    
+    cat("\n observations:", atts$nobs)
+    if (!is.null(atts$npreds)) {
+      cat("\n predictors:  ", atts$npreds)
+    }
+    if (!is.null(atts$ngrps)) {
+      cat("\n groups:      ", paste0(names(atts$ngrps), " (", 
+                                     unname(atts$ngrps), ")", 
+                                     collapse = ", "))
+    }
+    
+    cat("\n\nEstimates:\n")
+    
+    sel <- which(colnames(x) %in% c("mcse", "n_eff", "Rhat"))
+    has_mcmc_diagnostic <- length(sel) > 0
+    if (has_mcmc_diagnostic) {
+      xtemp <- x[, -sel, drop = FALSE]
+      colnames(xtemp) <- paste(" ", colnames(xtemp))
+    } else {
+      xtemp <- x
+    }
+    
+    ppd_nms <- grep("^mean_PPD", rownames(x), value = TRUE)
+    has_ppd_diagnostic <- !atts$no_ppd_diagnostic && length(ppd_nms) > 0
+    
+    if (has_ppd_diagnostic) {
+      ppd_estimates <- xtemp[rownames(xtemp) %in% ppd_nms, , drop=FALSE]
+    } else {
+      ppd_estimates <- NULL
+    }
+    xtemp <- xtemp[!rownames(xtemp) %in% c(ppd_nms, "log-posterior"), , drop=FALSE]
+    
+    # print table of parameter stats
     .printfr(xtemp, digits)
-    cat("\nDiagnostics:\n")
-    mcse_rhat <- format(round(x[, c("mcse", "Rhat"), drop = FALSE], digits), 
-                        nsmall = digits)
-    n_eff <- format(x[, "n_eff", drop = FALSE], drop0trailing = TRUE)
-    print(cbind(mcse_rhat, n_eff), quote = FALSE)
-    cat("\nFor each parameter, mcse is Monte Carlo standard error, ", 
-        "n_eff is a crude measure of effective sample size, ", 
-        "and Rhat is the potential scale reduction factor on split chains", 
-        " (at convergence Rhat=1).\n", sep = '')
+    
+    if (has_ppd_diagnostic) {
+      cat("\nFit Diagnostics:\n")
+      .printfr(ppd_estimates, digits)
+      cat("\nThe mean_ppd is the sample average posterior predictive ", 
+          "distribution of the outcome variable ", 
+          "(for details see help('summary.stanreg').\n",
+          sep = '')
+    }
+    
+    if (has_mcmc_diagnostic) {
+      cat("\nMCMC diagnostics:\n")
+      mcse_rhat <- format(round(x[, c("mcse", "Rhat"), drop = FALSE], digits), 
+                          nsmall = digits)
+      n_eff <- format(x[, "n_eff", drop = FALSE], drop0trailing = TRUE)
+      print(cbind(mcse_rhat, n_eff), quote = FALSE)
+      cat("\nFor each parameter, mcse is Monte Carlo standard error, ", 
+          "n_eff is a crude measure of effective sample size, ", 
+          "and Rhat is the potential scale reduction factor on split chains", 
+          " (at convergence Rhat=1).\n", sep = '')
+    }
+    
+    invisible(x)
   }
-  invisible(x)
-}
 
 #' @rdname summary.stanreg
 #' @method as.data.frame summary.stanreg
@@ -654,6 +686,12 @@ print.summary.stanmvreg <- function(x, digits = max(1, attr(x, "print.digits")),
   cbind(Median = apply(x, 2, median), MAD_SD = apply(x, 2, mad))
 }
 
+# equivalent to isFALSE(object$compute_mean_PPD)
+no_mean_PPD <- function(object) {
+  x <- object$compute_mean_PPD
+  is.logical(x) && length(x) == 1L && !is.na(x) && !x
+}
+
 # Allow "alpha", "beta", "varying" as shortcuts 
 #
 # @param object stanreg object
@@ -744,11 +782,4 @@ print_anova_table <- function(x, digits, ...) {
   anova_table <- .median_and_madsd(effects)
   cat("\nANOVA-like table:\n")
   .printfr(anova_table, digits, ...)
-}
-
-
-# equivalent to isFALSE(object$compute_mean_PPD)
-no_mean_PPD <- function(object) {
-  x <- object$compute_mean_PPD
-  is.logical(x) && length(x) == 1L && !is.na(x) && !x
 }
