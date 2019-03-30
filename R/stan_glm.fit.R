@@ -540,6 +540,10 @@ stan_glm.fit <-
     optimizing_args$tol_rel_grad <- tol_rel_grad
     out <- do.call(optimizing, args = optimizing_args)
     check_stanfit(out)
+    if (draws==0) {
+      out$theta_tilde <- out$par
+      dim(out$theta_tilde) <- c(1,length(out$par))
+    }
     new_names <- names(out$par)
     mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
     if (QR) {
