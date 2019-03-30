@@ -1,3 +1,6 @@
+#ifndef RSTANARM__CSR_MATRIX_TIMES_VECTOR2_HPP
+#define RSTANARM__CSR_MATRIX_TIMES_VECTOR2_HPP
+
 /*
  * This works exactly like csr_matrix_times_vector but faster and less safe
  */
@@ -48,3 +51,4 @@ csr_matrix_times_vector2(const int& m,
   return out;
 }
 */
+#endif
