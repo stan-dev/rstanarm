@@ -192,7 +192,7 @@ package.
 ``` {r simulated-loo}
 loo1 <- loo(fit1)
 loo2 <- loo(fit2)
-compare_models(loo1, loo2)
+loo_compare(loo1, loo2)
 ```
 
 The difference in `elpd` is negative indicating that the expected predictive
@@ -244,7 +244,7 @@ bayesplot_grid(
 ``` {r, gas-loo}
 gas_loo1 <- loo(gas_fit1)
 gas_loo2 <- loo(gas_fit2)
-compare_models(gas_loo1, gas_loo2)
+loo_compare(gas_loo1, gas_loo2)
 ```
 
 Evaluating the expected log predictive distribution using `loo` 
