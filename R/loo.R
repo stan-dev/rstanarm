@@ -271,7 +271,7 @@ loo.stanreg <-
         ir_uidx <- which(!duplicated(ir_idx))
         draws <- args$draws
         data <- args$data
-        r_eff <- sapply(1:dim(data)[1], function(i) {lik_i <- likfun(data[i,], draws)[ir_uidx]; var(lik_i)/(sum(w_ir^2*(lik_i-mean(lik_i))^2))})/length(ir_idx)
+        r_eff <- pmin(sapply(1:dim(data)[1], function(i) {lik_i <- likfun(data[i,], draws)[ir_uidx]; var(lik_i)/(sum(w_ir^2*(lik_i-mean(lik_i))^2))}),length(ir_uidx))/length(ir_idx)
       }
       loo_x <- suppressWarnings(
         loo.function(
