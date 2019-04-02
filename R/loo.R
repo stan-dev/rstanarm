@@ -197,9 +197,18 @@ loo.stanreg <-
 
     
     if (used.sampling(x)) # chain_id to pass to loo::relative_eff
-        chain_id <- chain_id_for_loo(x)
-    else # ir_idx to pass to ...
+      chain_id <- chain_id_for_loo(x)
+    else { # ir_idx to pass to ...
+      if (exists("ir_idx",x)) {
         ir_idx <- x$ir_idx
+      } else if ("diagnostics" %in% names(x$stanfit@sim) &
+               "ir_idx" %in% names(x$stanfit@sim$diagnostics)) {
+        ir_idx <- x$stanfit@sim$diagnostics$ir_idx
+      } else {
+        stop("loo not available for models fit using algorithm='", x$algorithm,
+             "' and importance_resampling=FALSE.", call. = FALSE)
+      }
+    }
 
     if (is.stanjm(x)) {
       ll <- log_lik(x)
