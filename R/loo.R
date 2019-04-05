@@ -726,6 +726,7 @@ is_discrete <- function(object) {
 }
 
 # validate objects for model comparison
+#' importFrom utils packageVersion
 validate_loos <- function(loos = list()) {
   
   if (packageVersion("loo") <= "2.1.0") {

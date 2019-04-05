@@ -130,7 +130,7 @@ stanreg <- function(object) {
     algorithm = object$algorithm,
     stan_summary,  
     stanfit = if (opt) stanfit$stanfit else stanfit,
-    rstan_version = utils::packageVersion("rstan"),
+    rstan_version = packageVersion("rstan"),
     call = object$call, 
     # sometimes 'call' is no good (e.g. if using do.call(stan_glm, args)) so
     # also include the name of the modeling function (for use when printing,
