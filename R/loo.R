@@ -154,7 +154,7 @@
 #' loo_compare(model_list)
 #'
 #' fit3 <- stan_glm(mpg ~ disp * as.factor(cyl), data = mtcars)
-#' loo3 <- loo(fit3), cores = 2, k_threshold = 0.7)
+#' loo3 <- loo(fit3, cores = 2, k_threshold = 0.7)
 #' loo_compare(loo1, loo2, loo3)
 #'
 #' # setting detail=TRUE will also print model formulas if used with
@@ -726,7 +726,6 @@ is_discrete <- function(object) {
 }
 
 # validate objects for model comparison
-#' importFrom utils packageVersion
 validate_loos <- function(loos = list()) {
   
   if (packageVersion("loo") <= "2.1.0") {
@@ -772,7 +771,8 @@ loo_model_formula <- function(x) {
 
 
 # deprecated --------------------------------------------------------------
-
+#' @rdname loo.stanreg
+#' @param loos a list of objects produced by the \code{\link{loo}} function
 #' @export 
 compare_models <- function(..., loos = list(), detail = FALSE) {
   .Deprecated("loo_compare")
@@ -795,5 +795,3 @@ compare_models <- function(..., loos = list(), detail = FALSE) {
     formulas = if (!detail) NULL else lapply(loos, attr, "formula")
   )
 }
-
-

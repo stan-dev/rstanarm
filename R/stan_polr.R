@@ -127,6 +127,7 @@
 #'  plot(fit)
 #' }
 #'
+#' @importFrom utils packageVersion
 stan_polr <- function(formula, data, weights, ..., subset,
                       na.action = getOption("na.action", "na.omit"),
                       contrasts = NULL, model = TRUE,

@@ -24,7 +24,7 @@
 #'   objects, existing \code{"stan*_list"} objects to combine, or one existing
 #'   \code{"stan*_list"} object followed by fitted model objects to append to
 #'   the list.
-#' @param ... model_names Optionally, a character vector of model names. If not
+#' @param model_names Optionally, a character vector of model names. If not
 #'   specified then the names are inferred from the name of the objects passed
 #'   in via \code{...}. These model names are used, for example, when printing
 #'   the results of the \code{loo_compare.stanreg_list} and
