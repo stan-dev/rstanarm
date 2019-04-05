@@ -224,7 +224,7 @@ ngrps.stanreg <- function(object, ...) {
 #' @export nsamples
 #' @importFrom rstantools nsamples
 nsamples.stanreg <- function(object, ...) {
-  prod(dim(object$stanfit)[1:2])
+  posterior_sample_size(object)
 }
 
 #' @rdname stanreg-methods
