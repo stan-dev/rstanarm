@@ -79,7 +79,7 @@
 #' table(mtcars$cyl)
 #' folds_cyl <- loo::kfold_split_stratified(K = 3, x = mtcars$cyl)
 #' table(cyl = mtcars$cyl, fold = folds_cyl)
-#' kfold4 <- kfold(fit4, folds = folds_cyl, cores = 3)
+#' kfold4 <- kfold(fit4, folds = folds_cyl, cores = 2)
 #' print(kfold4)
 #' }
 #' 
