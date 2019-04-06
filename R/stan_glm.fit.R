@@ -43,8 +43,7 @@ stan_glm.fit <-
            mean_PPD = algorithm != "optimizing",
            adapt_delta = NULL, 
            QR = FALSE, 
-           sparse = FALSE,
-           draws = 1000) {
+           sparse = FALSE) {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
@@ -529,8 +528,12 @@ stan_glm.fit <-
             if (standata$len_theta_L) "theta_L",
             if (!standata$clogit) "mean_PPD")
   if (algorithm == "optimizing") {
-    out <- optimizing(stanfit, data = standata, 
-                      draws = draws, constrained = TRUE, ...)
+    optimizing_args <- list(...)
+    if (is.null(optimizing_args$draws)) optimizing_args$draws <- 1000L
+    optimizing_args$object <- stanfit
+    optimizing_args$data <- standata
+    optimizing_args$constrained <- TRUE
+    out <- do.call(optimizing, args = optimizing_args)
     check_stanfit(out)
     new_names <- names(out$par)
     mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)

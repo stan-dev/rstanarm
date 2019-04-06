@@ -34,8 +34,7 @@ stan_betareg.fit <-
            prior_PD = FALSE, 
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            adapt_delta = NULL, 
-           QR = FALSE,
-           draws = 1000) {
+           QR = FALSE) {
   
   algorithm <- match.arg(algorithm)
   
@@ -307,12 +306,12 @@ stan_betareg.fit <-
   
 
   if (algorithm == "optimizing") {
-    out <-
-      optimizing(stanfit,
-                 data = standata,
-                 draws = draws,
-                 constrained = TRUE,
-                 ...)
+    optimizing_args <- list(...)
+    if (is.null(optimizing_args$draws)) optimizing_args$draws <- 1000L
+    optimizing_args$object <- stanfit
+    optimizing_args$data <- standata
+    optimizing_args$constrained <- TRUE
+    out <- do.call(optimizing, args = optimizing_args)
     check_stanfit(out)
     out$par <- out$par[!grepl("eta_z", names(out$par))]
     out$theta_tilde <- out$theta_tilde[, !grepl("eta_z", colnames(out$theta_tilde))]
