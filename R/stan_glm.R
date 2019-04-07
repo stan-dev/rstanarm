@@ -257,7 +257,7 @@ stan_glm <-
   if (family$family == "Beta regression") {
     family$family <- "beta"
   }
-  
+
   sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
   X <- X[ , !sel, drop = FALSE]  
   

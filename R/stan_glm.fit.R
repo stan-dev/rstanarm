@@ -643,7 +643,10 @@ stan_glm.fit <-
     } else {
       # meanfield or fullrank vb
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
-                           algorithm = algorithm, ...)
+                           algorithm = algorithm, output_samples = draws,
+                           importance_resampling = importance_resampling,
+                           thin = thin,
+                           ...)
       if (!QR) 
         recommend_QR_for_vb()
     }

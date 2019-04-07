@@ -466,16 +466,16 @@ print.summary.stanreg <-
     }
     
     cat("\n\nEstimates:\n")
-    if (!used.optimizing(atts)) {
-        hat <- "Rhat"
-        str_diag <- "MCMC diagnostics"
-        str1 <- "and Rhat is the potential scale reduction factor on split chains"
-        str2 <- " (at convergence Rhat=1).\n"
-    } else {
+    if (used.optimizing(atts) || used.variational(atts)) {
         hat <- "khat"
         str_diag <- "Monte Carlo diagnostics"
         str1 <- "and khat is the Pareto k diagnostic for importance sampling"
         str2 <- " (usually good perfomance when khat<0.7).\n"
+    } else {
+        hat <- "Rhat"
+        str_diag <- "MCMC diagnostics"
+        str1 <- "and Rhat is the potential scale reduction factor on split chains"
+        str2 <- " (at convergence Rhat=1).\n"
     }
     sel <- which(colnames(x) %in% c("mcse", "n_eff", hat))
     has_mc_diagnostic <- length(sel) > 0
