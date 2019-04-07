@@ -728,7 +728,7 @@ is_discrete <- function(object) {
 # validate objects for model comparison
 validate_loos <- function(loos = list()) {
   
-  if (packageVersion("loo") <= "2.1.0") {
+  if (utils::packageVersion("loo") <= "2.1.0") {
     # will be checked by loo in later versions
     yhash <- lapply(loos, attr, which = "yhash")
     yhash_check <- sapply(yhash, function(x) {
