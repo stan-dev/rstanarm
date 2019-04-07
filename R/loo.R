@@ -309,11 +309,10 @@ loo.stanreg <-
 
 # WAIC
 #
-#' @aliases waic
 #' @rdname loo.stanreg
-#' @export waic
-#' @export waic.stanreg
+#' @aliases waic
 #' @importFrom loo waic waic.function waic.matrix is.waic
+#' @export
 #'
 waic.stanreg <- function(x, ...) {
   if (!used.sampling(x))
@@ -342,8 +341,7 @@ waic.stanreg <- function(x, ...) {
 #' @rdname loo.stanreg
 #' @aliases loo_compare
 #' @importFrom loo loo_compare
-#' @export loo_compare
-#' @export loo_compare.stanreg
+#' @export
 #'
 #' @param detail For \code{loo_compare.stanreg} and
 #'   \code{loo_compare.stanreg_list}, if \code{TRUE} then extra information

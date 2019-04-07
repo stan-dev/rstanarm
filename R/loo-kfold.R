@@ -9,11 +9,9 @@
 #' equivalent to exact leave-one-out cross-validation (to which
 #' \code{\link[=loo.stanreg]{loo}} is an efficient approximation).
 #'
-#' @importFrom loo kfold is.kfold
-#' @export kfold
-#' @export kfold.stanreg
 #' @aliases kfold
-#' 
+#' @importFrom loo kfold is.kfold
+#' @export
 #' @template reference-loo
 #' 
 #' @param x A fitted model object returned by one of the rstanarm modeling
