@@ -136,7 +136,7 @@ transformed parameters {
   }
 }
 model {
-  vector[z_dim > 0 ? N : 0] eta_z; // beta regression linear predictor for phi
+  vector[link_phi > 0 ? N : 0] eta_z; // beta regression linear predictor for phi
 #include /model/make_eta.stan
   if (t > 0) {
 #include /model/eta_add_Zb.stan
