@@ -105,9 +105,6 @@ kfold.stanreg <-
            save_fits = FALSE,
            cores = getOption("mc.cores", 1)) {
     
-    if (!used.sampling(x) & !used.optimizing(x)) {
-        STOP_not_VB("kfold")
-    }
     if (is.stanmvreg(x)) {
       STOP_if_stanmvreg("kfold")
     }
