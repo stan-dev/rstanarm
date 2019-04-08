@@ -25,7 +25,17 @@
 #'   have elements for the \code{regularization}, \code{concentration} 
 #'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
+#' @param importance_resampling Logical scalar indicating whether to use 
+#'   importance resampling when approximating the posterior distribution with
+#'   a multivariate normal around the posterior mode, which only applies
+#'   when \code{algorithm} is \code{"optimizing"} but defaults to \code{TRUE}
+#'   in that case
+#' @param keep_every Positive integer, which defaults to 1, but can be higher
+#'   in order to thin the importance sampling realizations and also only
+#'   apples when \code{algorithm} is \code{"optimizing"} but defaults to
+#'   \code{TRUE} in that case
 #' @importFrom lme4 mkVarCorr
+#' @importFrom loo psis
 stan_glm.fit <- 
   function(x, y, 
            weights = rep(1, NROW(y)), 
@@ -44,10 +54,8 @@ stan_glm.fit <-
            adapt_delta = NULL, 
            QR = FALSE, 
            sparse = FALSE,
-           tol_rel_grad = 1e4, 
-           draws = 1000,
-           importance_resampling = TRUE,
-           thin = 1) {
+           importance_resampling = algorithm == "optimizing",
+           keep_every = algorithm == "optimizing") {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
@@ -533,14 +541,15 @@ stan_glm.fit <-
             if (!standata$clogit) "mean_PPD")
   if (algorithm == "optimizing") {
     optimizing_args <- list(...)
-    if (is.null(optimizing_args$draws)) optimizing_args$draws <- draws
+    if (is.null(optimizing_args$draws)) optimizing_args$draws <- 1000L
     optimizing_args$object <- stanfit
     optimizing_args$data <- standata
     optimizing_args$constrained <- TRUE
-    optimizing_args$tol_rel_grad <- tol_rel_grad
+    if (is.null(optimizing_args$tol_rel_grad)) 
+      optimizing_args$tol_rel_grad <- 10000L
     out <- do.call(optimizing, args = optimizing_args)
     check_stanfit(out)
-    if (draws==0) {
+    if (optimizing_args$draws == 0) {
       out$theta_tilde <- out$par
       dim(out$theta_tilde) <- c(1,length(out$par))
     }
@@ -564,38 +573,54 @@ stan_glm.fit <-
               if (is_beta) "(phi)" else NA
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
-    if (draws>0) {
+    if (optimizing_args$draws > 0) {
         ## begin: psis diagnostics and importance resampling
         lr <- out$log_p-out$log_g
         lr[lr==-Inf] <- -800
-        p <- suppressWarnings(loo::psis(lr, r_eff=1))
+        p <- suppressWarnings(psis(lr, r_eff = 1))
         p$log_weights <- p$log_weights-log_sum_exp(p$log_weights)
-        theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k else NaN))
+        theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) {
+          if (all(is.finite(col))) 
+            psis(log1p(col ^ 2) / 2 + lr, r_eff = 1)$diagnostics$pareto_k 
+          else NaN
+          }))
         ## todo: change fixed threshold to an option
-        if (p$diagnostics$pareto_k>1) {
-          warning("Pareto k diagnostic value is ", round(p$diagnostics$pareto_k,2), ". Resampling is disabled. Decreasing tol_rel_grad may help if optimization has terminated prematurely. Otherwise consider using sampling.", call.=FALSE, immediate. = TRUE)
+        if (p$diagnostics$pareto_k > 1) {
+          warning("Pareto k diagnostic value is ", 
+                  round(p$diagnostics$pareto_k, digits = 2),
+                  ". Resampling is disabled. ", 
+                  "Decreasing tol_rel_grad may help if optimization has terminated prematurely. ", 
+                  "Otherwise consider using sampling.", call. = FALSE, immediate. = TRUE)
           importance_resampling <- FALSE
         } else if (p$diagnostics$pareto_k > 0.7) { 
-          warning("Pareto k diagnostic value is ", round(p$diagnostics$pareto_k,2), ". Resampling is unreliable. Increasing the number of draws or decreasing tol_rel_grad may help.", call.=FALSE, immediate. = TRUE)
+          warning("Pareto k diagnostic value is ", 
+                  round(p$diagnostics$pareto_k, digits = 2), 
+                  ". Resampling is unreliable. ",
+                  "Increasing the number of draws or decreasing tol_rel_grad may help.", 
+                  call. = FALSE, immediate. = TRUE)
         }
-        out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff/thin)
+        out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, 
+                          n_eff = p$diagnostics$n_eff / keep_every)
     } else {
       theta_pareto_k <- rep(NaN,length(new_names))
       importance_resampling <- FALSE
     }
     ## importance_resampling
     if (importance_resampling) {  
-      ir_idx <- .sample_indices(exp(p$log_weights), n_draws=ceiling(draws/thin))
+      ir_idx <- .sample_indices(exp(p$log_weights), 
+                                n_draws = ceiling(optimizing_args$draws / keep_every))
       out$theta_tilde <- out$theta_tilde[ir_idx,]
       out$ir_idx <- ir_idx
       ## SIR mcse and n_eff
-      w_sir <- as.numeric(table(ir_idx))/length(ir_idx)
-      mcse <- apply(out$theta_tilde[!duplicated(ir_idx),], 2L, function(col) if (all(is.finite(col))) sqrt(sum(w_sir^2*(col-mean(col))^2)) else NaN)
-      n_eff <- round(apply(out$theta_tilde[!duplicated(ir_idx),], 2L, var)/mcse^2,0)
+      w_sir <- as.numeric(table(ir_idx)) / length(ir_idx)
+      mcse <- apply(out$theta_tilde[!duplicated(ir_idx),], 2L, function(col) {
+        if (all(is.finite(col))) sqrt(sum(w_sir^2*(col-mean(col))^2)) else NaN
+      })
+      n_eff <- round(apply(out$theta_tilde[!duplicated(ir_idx),], 2L, var)/ (mcse ^ 2), digits = 0)
     } else {
       out$ir_idx <- NULL
-      mcse <- rep(NaN,length(theta_pareto_k))
-      n_eff <- rep(NaN,length(theta_pareto_k))
+      mcse <- rep(NaN, length(theta_pareto_k))
+      n_eff <- rep(NaN, length(theta_pareto_k))
     }
     out$diagnostics <- cbind(mcse, theta_pareto_k, n_eff)
     colnames(out$diagnostics) <- c("mcse", "khat", "n_eff")
