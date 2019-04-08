@@ -54,8 +54,8 @@ stan_glm.fit <-
            adapt_delta = NULL, 
            QR = FALSE, 
            sparse = FALSE,
-           importance_resampling = algorithm == "optimizing",
-           keep_every = algorithm == "optimizing") {
+           importance_resampling = algorithm != "sampling",
+           keep_every = algorithm != "sampling") {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
@@ -642,11 +642,16 @@ stan_glm.fit <-
       stanfit <- do.call(rstan::sampling, sampling_args)
     } else {
       # meanfield or fullrank vb
-      stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
-                           algorithm = algorithm, output_samples = draws,
-                           importance_resampling = importance_resampling,
-                           thin = thin,
-                           ...)
+      vb_args <- list(...)
+      if (is.null(vb_args$output_samples)) vb_args$output_samples <- 1000L
+      if (is.null(vb_args$tol_rel_obj)) vb_args$tol_rel_obj <- 1e-4
+      if (is.null(vb_args$thin)) vb_args$thin <- keep_every
+      vb_args$object <- stanfit
+      vb_args$data <- standata
+      vb_args$pars <- pars
+      vb_args$algorithm <- algorithm
+      vb_args$importance_resampling <- importance_resampling
+      stanfit <- do.call(vb, args = vb_args)
       if (!QR) 
         recommend_QR_for_vb()
     }
