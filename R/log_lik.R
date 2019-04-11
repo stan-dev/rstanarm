@@ -68,7 +68,7 @@
 #' }
 #'
 log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
-  if (!used.sampling(object))
+  if (!used.sampling(object) & !used.optimizing(object))
     STOP_sampling_only("Pointwise log-likelihood matrix")
   newdata <- validate_newdata(newdata)
   calling_fun <- as.character(sys.call(-1))[1]

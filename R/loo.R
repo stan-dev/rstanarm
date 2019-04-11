@@ -183,8 +183,8 @@ loo.stanreg <-
            cores = getOption("mc.cores", 1),
            save_psis = FALSE,
            k_threshold = NULL) {
-    if (!used.sampling(x))
-      STOP_sampling_only("loo")
+    if (!used.sampling(x) & !used.optimizing(x))
+      STOP_not_VB("loo")
     if (model_has_weights(x))
       recommend_exact_loo(reason = "model has weights")
 
@@ -195,8 +195,20 @@ loo.stanreg <-
       k_threshold <- 0.7
     }
 
-    # chain_id to pass to loo::relative_eff
-    chain_id <- chain_id_for_loo(x)
+    
+    if (used.sampling(x)) # chain_id to pass to loo::relative_eff
+      chain_id <- chain_id_for_loo(x)
+    else { # ir_idx to pass to ...
+      if (exists("ir_idx",x)) {
+        ir_idx <- x$ir_idx
+      } else if ("diagnostics" %in% names(x$stanfit@sim) &
+               "ir_idx" %in% names(x$stanfit@sim$diagnostics)) {
+        ir_idx <- x$stanfit@sim$diagnostics$ir_idx
+      } else {
+        stop("loo not available for models fit using algorithm='", x$algorithm,
+             "' and importance_resampling=FALSE.", call. = FALSE)
+      }
+    }
 
     if (is.stanjm(x)) {
       ll <- log_lik(x)
@@ -244,15 +256,23 @@ loo.stanreg <-
       likfun <- function(data_i, draws) {
         exp(llfun(data_i, draws))
       }
-      r_eff <- loo::relative_eff(
-        # using function method
-        x = likfun,
-        chain_id = chain_id,
-        data = args$data,
-        draws = args$draws,
-        cores = cores,
-        ...
-      )
+      if (used.sampling(x)) {
+        r_eff <- loo::relative_eff(
+          # using function method
+          x = likfun,
+          chain_id = chain_id,
+          data = args$data,
+          draws = args$draws,
+          cores = cores,
+          ...
+        )
+      } else {
+        w_ir <- as.numeric(table(ir_idx))/length(ir_idx)
+        ir_uidx <- which(!duplicated(ir_idx))
+        draws <- args$draws
+        data <- args$data
+        r_eff <- pmin(sapply(1:dim(data)[1], function(i) {lik_i <- likfun(data[i,], draws)[ir_uidx]; var(lik_i)/(sum(w_ir^2*(lik_i-mean(lik_i))^2))}),length(ir_uidx))/length(ir_idx)
+      }
       loo_x <- suppressWarnings(
         loo.function(
           llfun,
@@ -581,16 +601,26 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
       strata_id <- model.weights(model.frame(x))
       omitted <- which(strata_id == strata_id[obs[j]])
     }
-    
-    fit_j_call <-
-      update(
-        x,
-        data = d[-omitted, , drop = FALSE],
-        subset = rep(TRUE, nrow(d) - length(omitted)),
-        evaluate = FALSE,
-        refresh = 0,
-        open_progress = FALSE
-      )
+
+    if (used.optimizing(x)) {
+      fit_j_call <-
+        update(
+          x,
+          data = d[-omitted, , drop = FALSE],
+          subset = rep(TRUE, nrow(d) - length(omitted)),
+          evaluate = FALSE
+        )
+    } else {
+      fit_j_call <-
+        update(
+          x,
+          data = d[-omitted, , drop = FALSE],
+          subset = rep(TRUE, nrow(d) - length(omitted)),
+          evaluate = FALSE,
+          refresh = 0,
+          open_progress = FALSE
+        )
+    }
     fit_j_call$subset <- eval(fit_j_call$subset)
     fit_j_call$data <- eval(fit_j_call$data)
     if (!is.null(getCall(x)$offset)) {

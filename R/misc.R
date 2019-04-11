@@ -187,6 +187,17 @@ STOP_not_optimizing <- function(what) {
   stop(msg, call. = FALSE)
 }
 
+# Consistent error message to use when something is only available for models
+# fit using MCMC or optimization but not VB
+# 
+# @param what An optional message to prepend to the default message.
+STOP_not_VB <- function(what) {
+  msg <- "not available for models fit using algorithm='meanfield|fullrank'."
+  if (!missing(what)) 
+    msg <- paste(what, msg)
+  stop(msg, call. = FALSE)
+}
+
 # Message to issue when fitting model with ADVI but 'QR=FALSE'. 
 recommend_QR_for_vb <- function() {
   message(
@@ -1694,3 +1705,8 @@ is_like_factor <- function(x) {
   is.factor(x) || is.character(x) || is.logical(x)
 }
 
+# @param x numeric vector
+log_sum_exp <- function(x) {
+  max_x <- max(x)
+  max_x + log(sum(exp(x - max_x)))
+}

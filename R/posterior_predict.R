@@ -141,8 +141,6 @@
 posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
                                       re.form = NULL, fun = NULL, seed = NULL,
                                       offset = NULL, ...) {
-  if (used.optimizing(object))
-    STOP_not_optimizing("posterior_predict")
   if (!is.null(seed))
     set.seed(seed)
   if (!is.null(fun))

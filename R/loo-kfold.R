@@ -105,8 +105,8 @@ kfold.stanreg <-
            save_fits = FALSE,
            cores = getOption("mc.cores", 1)) {
     
-    if (!used.sampling(x)) {
-      STOP_sampling_only("kfold")
+    if (!used.sampling(x) & !used.optimizing(x)) {
+        STOP_not_VB("kfold")
     }
     if (is.stanmvreg(x)) {
       STOP_if_stanmvreg("kfold")
@@ -145,16 +145,27 @@ kfold.stanreg <-
     omitteds <- list()
     for (k in 1:K) {
       omitted_k <- which(folds == k)
-      fit_k_call <- update.stanreg(
-        object = x,
-        data = d[-omitted_k,, drop=FALSE],
-        subset = rep(TRUE, nrow(d) - length(omitted_k)),
-        weights = NULL,
-        cores = stan_cores,
-        refresh = 0,
-        open_progress = FALSE,
-        evaluate = FALSE # just store unevaluated calls for now
-      )
+      if (used.sampling(x)) {
+        fit_k_call <- update.stanreg(
+            object = x,
+            data = d[-omitted_k,, drop=FALSE],
+            subset = rep(TRUE, nrow(d) - length(omitted_k)),
+            weights = NULL,
+            cores = stan_cores,
+            refresh = 0,
+            open_progress = FALSE,
+            evaluate = FALSE # just store unevaluated calls for now
+        )
+      } else {
+        fit_k_call <- update.stanreg(
+            object = x,
+            data = d[-omitted_k,, drop=FALSE],
+            subset = rep(TRUE, nrow(d) - length(omitted_k)),
+            weights = NULL,
+            refresh = 0,
+            evaluate = FALSE # just store unevaluated calls for now
+        )
+      }
       if (!is.null(getCall(x)$offset)) {
         fit_k_call$offset <- x$offset[-omitted_k]
       }
@@ -269,11 +280,11 @@ kfold.stanreg <-
     if (save_fits) {
       out$fits <- fits
     }
-    
+
     structure(out,
               class = c("kfold", "loo"),
               K = K,
-              dims = c(posterior_sample_size(x), N),
+              dims = dim(lppds[[1]]),
               model_name = deparse(substitute(x)),
               discrete = is_discrete(x),
               yhash = hash_y(x),
