@@ -474,8 +474,8 @@ print.summary.stanreg <-
     } else {
         hat <- "khat"
         str_diag <- "Monte Carlo diagnostics"
-        str1 <- "and khat is the Pareto k diagnostic for importance sampling"
-        str2 <- " (usually good perfomance when khat<0.7).\n"
+        str1 <- "and khat is the Pareto k diagnostic for importance sampling.\n"
+        str2 <- " (perfomance is usually good when khat < 0.7).\n"
     }
     sel <- which(colnames(x) %in% c("mcse", "n_eff", hat))
     has_mc_diagnostic <- length(sel) > 0
