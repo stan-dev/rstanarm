@@ -70,7 +70,8 @@ transformed data {
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
   int<lower=1> V[special_case ? t : 0, len_y] = make_V(len_y, special_case ? t : 0, v);
   int<lower=0> hs_z;                  // for tdata_betareg.stan
-  int can_do_OLS = family == 1 && link == 1 && SSfun == 0 && len_y >= (has_intercept + K);
+  int can_do_OLS = family == 1 && link == 1 && SSfun == 0 && has_offset == 0 && t == 0 &&
+                   K_smooth == 0 && dense_X && N > 2 && len_y >= (has_intercept + K);
   vector[can_do_OLS ? has_intercept + K : 0] OLS;
   matrix[can_do_OLS ? has_intercept + K : 0, can_do_OLS ? has_intercept + K : 0] XtX;
   real SSR = not_a_number();
