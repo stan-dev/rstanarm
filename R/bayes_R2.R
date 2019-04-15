@@ -1,7 +1,7 @@
 #' Compute a Bayesian version of R-squared or LOO-adjusted R-squared for
 #' regression models.
 #'
-#' @aliases bayes_R2 loo_R2
+#' @aliases bayes_R2
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
@@ -23,6 +23,9 @@
 #' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars, QR = TRUE, chains = 2)
 #' rsq <- bayes_R2(fit)
 #' print(median(rsq))
+#' 
+#' loo_rsq <- loo_R2(fit)
+#' print(median(loo_rsq))
 #' 
 #' # multilevel binomial model
 #' if (!exists("example_model")) example(example_model)
@@ -61,7 +64,10 @@ bayes_R2.stanreg <- function(object, ..., re.form = NULL) {
 
 
 #' @rdname bayes_R2.stanreg
+#' @aliases loo_R2
+#' @importFrom rstantools loo_R2
 #' @export
+#' 
 loo_R2.stanreg <- function(object, ...) {
   if (!used.sampling(object))
     STOP_sampling_only("bayes_R2")
@@ -75,7 +81,10 @@ loo_R2.stanreg <- function(object, ...) {
   
   y <- get_y(fit)
   log_ratios <- -log_lik(fit)
-  psis_object <- loo::psis(log_ratios, r_eff = NA)
+  psis_object <- fit[["loo"]][["psis_object"]]
+  if (is.null(psis_object)) {
+    psis_object <- loo::psis(log_ratios, r_eff = NA)
+  }
   
   mu_pred <- posterior_linpred(fit, transform = TRUE)
   if (is.binomial(fam)) {
