@@ -7,6 +7,23 @@ functions {
 #include /functions/continuous_likelihoods.stan
 #include /functions/SSfunctions.stan
 
+  /**
+   * Increments the log-posterior with the logarithm of a multivariate normal 
+   * likelihood with a scalar standard deviation for all errors
+   * Equivalent to normal_lpdf(y | intercept + X * beta + Z * b, sigma) but faster
+   * @param coeff vector of coefficients (including intercept)
+   * @param OLS precomputed vector of OLS coefficients (including intercept)
+   * @param XtX precomputed matrix equal to crossprod(X) (including intercept)
+   * @param SSR positive precomputed value of the sum of squared OLS residuals
+   * @param sigma positive scalar for the standard deviation of the errors
+   * @param N integer equal to the number of observations
+   */
+  real ll_mvn_ols(vector coeff, vector OLS, matrix XtX,
+                  real SSR, real sigma, int N) {
+    return -0.5 * (quad_form(XtX, coeff - OLS) + SSR) / square(sigma)
+            - N * (log(sigma) + log(sqrt(2 * pi())));
+  }
+
   /** 
   * test function for csr_matrix_times_vector
   *
@@ -53,6 +70,11 @@ transformed data {
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
   int<lower=1> V[special_case ? t : 0, len_y] = make_V(len_y, special_case ? t : 0, v);
   int<lower=0> hs_z;                  // for tdata_betareg.stan
+  int can_do_OLS = family == 1 && link == 1 && SSfun == 0 && has_offset == 0 && t == 0 &&
+                   K_smooth == 0 && dense_X && N > 2 && len_y >= (has_intercept + K);
+  vector[can_do_OLS ? has_intercept + K : 0] OLS;
+  matrix[can_do_OLS ? has_intercept + K : 0, can_do_OLS ? has_intercept + K : 0] XtX;
+  real SSR = not_a_number();
   // defines hs, len_z_T, len_var_group, delta, is_continuous, pos
 #include /tdata/tdata_glm.stan
   // defines hs_z
@@ -62,6 +84,12 @@ transformed data {
   if (family == 3) {
     sqrt_y = sqrt(y);
     log_y = log(y);
+  }
+  if (can_do_OLS) {
+    matrix[N, K + has_intercept] X_ = has_intercept ? append_col(rep_vector(1.0, N), X[1]) : X[1];
+    XtX = crossprod(X_);
+    OLS = mdivide_left_spd(XtX, X_' * y);
+    SSR = dot_self(y - X_ * OLS);
   }
 }
 parameters {
@@ -109,7 +137,7 @@ transformed parameters {
   }
 }
 model {
-  vector[N] eta_z; // beta regression linear predictor for phi
+  vector[link_phi > 0 ? N : 0] eta_z; // beta regression linear predictor for phi
 #include /model/make_eta.stan
   if (t > 0) {
 #include /model/eta_add_Zb.stan
@@ -119,7 +147,7 @@ model {
     else if (family == 4 && link == 5) eta += gamma[1] - max(eta);
     else eta += gamma[1] - min(eta);
   }
-  else {
+  else if (!can_do_OLS) {
 #include /model/eta_no_intercept.stan
   }
 
@@ -164,7 +192,11 @@ model {
 #include /model/eta_z_no_intercept.stan
     }
     if (family == 1) {
-      if (link == 1) 
+      if (can_do_OLS) {
+        vector[cols(XtX)] coeff = has_intercept ? append_row(to_vector(gamma), beta) : beta;
+        target += ll_mvn_ols(coeff, OLS, XtX, SSR, aux, N);
+      }
+      else if (link == 1) 
         target += normal_lpdf(y | eta, aux);
       else if (link == 2) 
         target += normal_lpdf(y | exp(eta), aux);

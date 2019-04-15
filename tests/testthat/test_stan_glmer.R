@@ -57,7 +57,7 @@ test_that("stan_glmer returns expected result for binomial cbpp example", {
     
     ans <- glmer(fmla, data = cbpp, family = binomial(links[i]))
     expect_equal(fixef(fit), fixef(ans), tol = FIXEF_tol)
-    expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
+    expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol, check.attributes = FALSE)
     expect_equal(ngrps(fit), ngrps(ans))
   # }
 })
@@ -99,7 +99,7 @@ test_that("stan_lmer returns expected result for Penicillin example", {
   
   ans <- lmer(fmla, data = Penicillin)
   expect_equal(fixef(fit), fixef(ans), tol = FIXEF_tol)
-  expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
+  expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol, check.attributes = FALSE)
   expect_identical(ngrps(fit), ngrps(ans))
 })
 test_that("stan_lmer ok if global intercept forced to 0", {

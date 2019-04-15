@@ -7,7 +7,7 @@ expect_equivalent_loo <- function(fit) {
   expect_s3_class(w, "loo")
   expect_s3_class(w, "waic")
   
-  att_names <- c("names", "dims", "class", "name", "discrete", "yhash", "formula")
+  att_names <- c("names", "dims", "class", "model_name", "discrete", "yhash", "formula")
   expect_named(attributes(l), att_names)
   expect_named(attributes(w), att_names)
   

@@ -31,10 +31,10 @@
 #' @import bayesplot
 #' @import shinystan
 #' @import rstantools
-#' @export log_lik posterior_linpred posterior_predict posterior_interval 
+#' @export log_lik posterior_linpred posterior_predict posterior_interval
 #' @export predictive_interval predictive_error prior_summary bayes_R2
 #' @export loo_linpred loo_predict loo_predictive_interval loo_R2
-#' @export loo waic
+#' @export loo waic kfold loo_compare
 #' @export launch_shinystan
 #'
 #' @description
@@ -49,10 +49,10 @@
 #' distribution, or optimization. The \pkg{rstanarm} package allows these models
 #' to be specified using the customary R modeling syntax (e.g., like that of
 #' \code{\link[stats]{glm}} with a \code{formula} and a \code{data.frame}).
-#' 
+#'
 #' The sections below provide an overview of the modeling functions and
 #' estimation algorithms used by \pkg{rstanarm}.
-#' 
+#'
 #' @details
 #' The set of models supported by \pkg{rstanarm} is large (and will continue to
 #' grow), but also limited enough so that it is possible to integrate them
@@ -101,6 +101,6 @@
 #' @template reference-stan-manual
 #' @template reference-loo
 #' @template reference-bayesvis
-#' @template reference-muth 
+#' @template reference-muth
 #'
 NULL

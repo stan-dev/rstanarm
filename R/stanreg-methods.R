@@ -58,6 +58,9 @@
 #' \code{\link{posterior_interval}} function should be used to compute Bayesian 
 #' uncertainty intervals.
 #' }
+#' \item{\code{nsamples}}{
+#' The number of draws from the posterior distribution obtained
+#' }
 #' }
 #' 
 #' @seealso 
@@ -214,6 +217,14 @@ fixef.stanreg <- function(object, ...) {
 #' 
 ngrps.stanreg <- function(object, ...) {
   vapply(.flist(object), nlevels, 1)  
+}
+
+#' @rdname stanreg-methods
+#' @export
+#' @export nsamples
+#' @importFrom rstantools nsamples
+nsamples.stanreg <- function(object, ...) {
+  posterior_sample_size(object)
 }
 
 #' @rdname stanreg-methods
