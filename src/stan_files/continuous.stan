@@ -137,101 +137,102 @@ transformed parameters {
   }
 }
 model {
-  vector[link_phi > 0 ? N : 0] eta_z; // beta regression linear predictor for phi
+  if (can_do_OLS) {
+    vector[cols(XtX)] coeff = has_intercept ? append_row(to_vector(gamma), beta) : beta;
+    target += ll_mvn_ols(coeff, OLS, XtX, SSR, aux, N);
+  } else {
+    vector[link_phi > 0 ? N : 0] eta_z; // beta regression linear predictor for phi
 #include /model/make_eta.stan
-  if (t > 0) {
+    if (t > 0) {
 #include /model/eta_add_Zb.stan
-  }
-  if (has_intercept == 1) {
-    if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta += gamma[1];
-    else if (family == 4 && link == 5) eta += gamma[1] - max(eta);
-    else eta += gamma[1] - min(eta);
-  }
-  else if (!can_do_OLS) {
-#include /model/eta_no_intercept.stan
-  }
-
-  if (SSfun > 0) { // nlmer
-    matrix[len_y, K] P = reshape_vec(eta, len_y, K);
-    if (SSfun < 5) {
-      if (SSfun <= 2) {
-        if (SSfun == 1) target += normal_lpdf(y | SS_asymp(input, P), aux);
-        else target += normal_lpdf(y | SS_asympOff(input, P), aux);
-      }
-      else if (SSfun == 3) target += normal_lpdf(y | SS_asympOrig(input, P), aux);
-      else {
-        for (i in 1:len_y) P[i,1] += exp(P[i,3]); // ordering constraint
-        target += normal_lpdf(y | SS_biexp(input, P), aux);
-      }
+    }
+    if (has_intercept == 1) {
+      if ((family == 1 || link == 2) || (family == 4 && link != 5)) eta += gamma[1];
+      else if (family == 4 && link == 5) eta += gamma[1] - max(eta);
+      else eta += gamma[1] - min(eta);
     }
     else {
-      if (SSfun <= 7) {
-        if (SSfun == 5) target += normal_lpdf(y | SS_fol(Dose, input, P), aux);
-        else if (SSfun == 6) target += normal_lpdf(y | SS_fpl(input, P), aux);
-        else target += normal_lpdf(y | SS_gompertz(input, P), aux);
+#include /model/eta_no_intercept.stan
+    }
+
+    if (SSfun > 0) { // nlmer
+      matrix[len_y, K] P = reshape_vec(eta, len_y, K);
+      if (SSfun < 5) {
+        if (SSfun <= 2) {
+          if (SSfun == 1) target += normal_lpdf(y | SS_asymp(input, P), aux);
+          else target += normal_lpdf(y | SS_asympOff(input, P), aux);
+        }
+        else if (SSfun == 3) target += normal_lpdf(y | SS_asympOrig(input, P), aux);
+        else {
+          for (i in 1:len_y) P[i,1] += exp(P[i,3]); // ordering constraint
+          target += normal_lpdf(y | SS_biexp(input, P), aux);
+        }
       }
       else {
-        if (SSfun == 8) target += normal_lpdf(y | SS_logis(input, P), aux);
-        else if (SSfun == 9) target += normal_lpdf(y | SS_micmen(input, P), aux);
-        else target += normal_lpdf(y | SS_weibull(input, P), aux);
+        if (SSfun <= 7) {
+          if (SSfun == 5) target += normal_lpdf(y | SS_fol(Dose, input, P), aux);
+          else if (SSfun == 6) target += normal_lpdf(y | SS_fpl(input, P), aux);
+          else target += normal_lpdf(y | SS_gompertz(input, P), aux);
+        }
+        else {
+          if (SSfun == 8) target += normal_lpdf(y | SS_logis(input, P), aux);
+          else if (SSfun == 9) target += normal_lpdf(y | SS_micmen(input, P), aux);
+          else target += normal_lpdf(y | SS_weibull(input, P), aux);
+        }
       }
     }
-  }
-  else if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
+    else if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
 #include /model/make_eta_z.stan
-    // adjust eta_z according to links
-    if (has_intercept_z == 1) {
-      if (link_phi > 1) {
-        eta_z += gamma_z[1] - min(eta_z);
+      // adjust eta_z according to links
+      if (has_intercept_z == 1) {
+        if (link_phi > 1) {
+          eta_z += gamma_z[1] - min(eta_z);
+        }
+        else {
+          eta_z += gamma_z[1];
+        }
       }
-      else {
-        eta_z += gamma_z[1];
-      }
-    }
-    else { // has_intercept_z == 0
+      else { // has_intercept_z == 0
 #include /model/eta_z_no_intercept.stan
-    }
-    if (family == 1) {
-      if (can_do_OLS) {
-        vector[cols(XtX)] coeff = has_intercept ? append_row(to_vector(gamma), beta) : beta;
-        target += ll_mvn_ols(coeff, OLS, XtX, SSR, aux, N);
       }
-      else if (link == 1) 
-        target += normal_lpdf(y | eta, aux);
-      else if (link == 2) 
-        target += normal_lpdf(y | exp(eta), aux);
-      else 
-        target += normal_lpdf(y | inv(eta), aux);
+      if (family == 1) {
+        if (link == 1) 
+          target += normal_lpdf(y | eta, aux);
+        else if (link == 2) 
+          target += normal_lpdf(y | exp(eta), aux);
+        else 
+          target += normal_lpdf(y | inv(eta), aux);
+      }
+      else if (family == 2) {
+        target += GammaReg(y, eta, aux, link, sum_log_y);
+      }
+      else if (family == 3) {
+        target += inv_gaussian(y, linkinv_inv_gaussian(eta, link), 
+                               aux, sum_log_y, sqrt_y);
+      }
+      else if (family == 4 && link_phi == 0) {
+        vector[N] mu;
+        mu = linkinv_beta(eta, link);
+        target += beta_lpdf(y | mu * aux, (1 - mu) * aux);
+      }
+      else if (family == 4 && link_phi > 0) {
+        vector[N] mu;
+        vector[N] mu_z;
+        mu = linkinv_beta(eta, link);
+        mu_z = linkinv_beta_z(eta_z, link_phi);
+        target += beta_lpdf(y | rows_dot_product(mu, mu_z), 
+                            rows_dot_product((1 - mu) , mu_z));
+      }
     }
-    else if (family == 2) {
-      target += GammaReg(y, eta, aux, link, sum_log_y);
+    else if (prior_PD == 0) { // weighted log-likelihoods
+      vector[N] summands;
+      if (family == 1) summands = pw_gauss(y, eta, aux, link);
+      else if (family == 2) summands = pw_gamma(y, eta, aux, link);
+      else if (family == 3) summands = pw_inv_gaussian(y, eta, aux, link, log_y, sqrt_y);
+      else if (family == 4 && link_phi == 0) summands = pw_beta(y, eta, aux, link);
+      else if (family == 4 && link_phi > 0) summands = pw_beta_z(y, eta, eta_z, link, link_phi);
+      target += dot_product(weights, summands);
     }
-    else if (family == 3) {
-      target += inv_gaussian(y, linkinv_inv_gaussian(eta, link), 
-                             aux, sum_log_y, sqrt_y);
-    }
-    else if (family == 4 && link_phi == 0) {
-      vector[N] mu;
-      mu = linkinv_beta(eta, link);
-      target += beta_lpdf(y | mu * aux, (1 - mu) * aux);
-    }
-    else if (family == 4 && link_phi > 0) {
-      vector[N] mu;
-      vector[N] mu_z;
-      mu = linkinv_beta(eta, link);
-      mu_z = linkinv_beta_z(eta_z, link_phi);
-      target += beta_lpdf(y | rows_dot_product(mu, mu_z), 
-                          rows_dot_product((1 - mu) , mu_z));
-    }
-  }
-  else if (prior_PD == 0) { // weighted log-likelihoods
-    vector[N] summands;
-    if (family == 1) summands = pw_gauss(y, eta, aux, link);
-    else if (family == 2) summands = pw_gamma(y, eta, aux, link);
-    else if (family == 3) summands = pw_inv_gaussian(y, eta, aux, link, log_y, sqrt_y);
-    else if (family == 4 && link_phi == 0) summands = pw_beta(y, eta, aux, link);
-    else if (family == 4 && link_phi > 0) summands = pw_beta_z(y, eta, eta_z, link, link_phi);
-    target += dot_product(weights, summands);
   }
 
   // Log-priors
