@@ -159,7 +159,7 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     stanmat <- NULL
   }
   
-  newdata <- validate_newdata(newdata)
+  newdata <- validate_newdata(object, newdata = newdata, m = m)
   pp_data_args <- c(list(object,
                          newdata = newdata,
                          re.form = re.form,

@@ -751,27 +751,35 @@ warn_data_arg_missing <- function() {
 
 # Validate newdata argument for posterior_predict, log_lik, etc.
 #
-# Doesn't check if the correct variables are included (that's done in pp_data),
-# just that newdata is either NULL or a data frame with no missing values. Also
-# drops any unused dimensions in variables (e.g. a one column matrix inside a
-# data frame is converted to a vector).
-# 
-# @param x User's 'newdata' argument
-# @return Either NULL or a data frame
+# Drops unused variables from newdata, checks for NAs in used variables, and
+# also drops any unused dimensions in variables (e.g. a one column matrix inside
+# a data frame is converted to a vector).
 #
-validate_newdata <- function(x) {
-  if (is.null(x)) {
-    return(NULL)
+# @param object stanreg object
+# @param newdata NULL or a data frame
+# @pararm m For stanmvreg objects, the submodel (passed to formula())
+# @return NULL or a data frame
+#
+validate_newdata <- function(object, newdata = NULL, m = NULL) {
+  if (is.null(newdata)) {
+    return(newdata)
   }
-  if (!is.data.frame(x)) {
+  if (!is.data.frame(newdata)) {
     stop("If 'newdata' is specified it must be a data frame.", call. = FALSE)
   }
-  if (any(is.na(x))) {
+  
+  # drop other classes (e.g. 'tbl_df', 'tbl')
+  newdata <- as.data.frame(newdata)
+  
+  # only check for NAs in used variables
+  vars <- all.vars(formula(object, m = m))
+  newdata_check <- newdata[, colnames(newdata) %in% vars, drop=FALSE]
+  if (any(is.na(newdata_check))) {
     stop("NAs are not allowed in 'newdata'.", call. = FALSE)
   }
   
-  x <- as.data.frame(x)
-  drop_redundant_dims(x)
+  newdata <- drop_redundant_dims(newdata)
+  return(newdata)
 }
 
 
