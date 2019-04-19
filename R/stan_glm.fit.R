@@ -538,7 +538,7 @@ stan_glm.fit <-
             if (is_continuous | is_nb) "aux",
             if (ncol(S)) "smooth_sd",
             if (standata$len_theta_L) "theta_L",
-            if (!standata$clogit) "mean_PPD")
+            if (mean_PPD && !standata$clogit) "mean_PPD")
   if (algorithm == "optimizing") {
     optimizing_args <- list(...)
     if (is.null(optimizing_args$draws)) optimizing_args$draws <- 1000L
@@ -699,7 +699,7 @@ stan_glm.fit <-
                    if (is_beta) "(phi)",
                    if (ncol(S)) paste0("smooth_sd[", names(x)[-1], "]"),
                    if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
-                   if (!standata$clogit) "mean_PPD", 
+                   if (mean_PPD && !standata$clogit) "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
     return(structure(stanfit, prior.info = prior_info))
