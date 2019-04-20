@@ -683,12 +683,15 @@ check_reTrms <- function(reTrms) {
 }
 
 #' @importFrom lme4 glmerControl
-make_glmerControl <- function(...) {
+# @param checkLHS throw error if formula LHS is missing? (relevant if prior_PD is TRUE)
+make_glmerControl <- function(..., checkLHS = TRUE) {
   glmerControl(check.nlev.gtreq.5 = "ignore",
                check.nlev.gtr.1 = "stop",
                check.nobs.vs.rankZ = "ignore",
                check.nobs.vs.nlev = "ignore",
-               check.nobs.vs.nRE = "ignore", ...)  
+               check.nobs.vs.nRE = "ignore", 
+               check.formula.LHS = if (checkLHS) "stop" else "ignore",
+               ...)  
 }
 
 # Check if a fitted model (stanreg object) has weights

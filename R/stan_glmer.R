@@ -110,16 +110,21 @@ stan_glmer <-
   data <- validate_data(data) #, if_missing = environment(formula))
   family <- validate_family(family)
   mc[[1]] <- quote(lme4::glFormula)
-  mc$control <- make_glmerControl()
+  mc$control <- make_glmerControl(checkLHS = !prior_PD)
   mc$data <- data
   mc$prior <- mc$prior_intercept <- mc$prior_covariance <- mc$prior_aux <-
     mc$prior_PD <- mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <-
     mc$adapt_delta <- mc$... <- mc$QR <- mc$sparse <- NULL
   glmod <- eval(mc, parent.frame())
   X <- glmod$X
-  y <- glmod$fr[, as.character(glmod$formula[2L])]
-  if (is.matrix(y) && ncol(y) == 1L)
-    y <- as.vector(y)
+  if (prior_PD && !has_outcome_variable(formula)) {
+    y <- NULL
+  } else {
+    y <- glmod$fr[, as.character(glmod$formula[2L])]  
+    if (is.matrix(y) && ncol(y) == 1L) {
+      y <- as.vector(y)
+    }
+  }
 
   offset <- model.offset(glmod$fr) %ORifNULL% double(0)
   weights <- validate_weights(as.vector(model.weights(glmod$fr)))
@@ -144,7 +149,9 @@ stan_glmer <-
                           prior = prior, prior_intercept = prior_intercept,
                           prior_aux = prior_aux, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
-                          group = group, QR = QR, sparse = sparse, ...)
+                          group = group, QR = QR, sparse = sparse, 
+                          mean_PPD = !prior_PD,
+                          ...)
   if (family$family == "Beta regression") family$family <- "beta"
   sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
   X <- X[ , !sel, drop = FALSE]
