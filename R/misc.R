@@ -334,6 +334,19 @@ validate_glm_formula <- function(f) {
 }
 
 
+# Check if model formula has something on the LHS of ~
+# @param f Model formula
+# @return FALSE if there is no outcome on the LHS of the formula
+has_outcome_variable <- function(f) {
+  tt <- terms(as.formula(f))
+  if (attr(tt, "response") == 0) {
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
+
 # Check if any variables in a model frame are constants
 # (the exception is that a constant variable of all 1's is allowed)
 # 

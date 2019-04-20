@@ -260,7 +260,7 @@ stan_glm <-
   
   sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
   X <- X[ , !sel, drop = FALSE]  
-  
+
   fit <- nlist(stanfit, algorithm, family, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
