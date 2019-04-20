@@ -214,7 +214,7 @@ stan_glm.fit <-
            "the model must have an intercept.")
   }
   
-  # allow prior_PD even if y is NULL
+  # allow prior_PD even if no y variable
   if (is.null(y)) {
     if (!prior_PD) {
       stop("Outcome variable must be specified if 'prior_PD' is not TRUE.")
@@ -825,6 +825,8 @@ validate_glm_outcome_support <- function(y, family) {
 }
 
 # Generate fake y variable to use if prior_PD and no y is specified
+# @param N number of observations
+# @param family family object
 fake_y_for_prior_PD <- function(N, family) {
   fam <- family$family
   if (is.gaussian(fam)) {
