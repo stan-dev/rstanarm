@@ -41,11 +41,18 @@
 #'                        # the next line is only to make the example go fast
 #'                        chains = 1, iter = 500, seed = 12345)
 #' cbind(lm = b, stan_lm = rstan::get_posterior_mean(post)[13:15,]) # shrunk
+#' 
 stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, ...,
                            prior = R2(stop("'location' must be specified")), 
                            prior_intercept = NULL, prior_PD = FALSE, 
                            algorithm = c("sampling", "meanfield", "fullrank"),
                            adapt_delta = NULL) {
+  
+  if (prior_PD && is.null(prior_intercept)) {
+    msg <- "The default flat prior on the intercept is not recommended with when 'prior_PD' is TRUE."
+    warning(msg, call. = FALSE, immediate. = TRUE)
+    warning(msg, call. = FALSE, immediate. = FALSE)
+  }
   
   J <- 1L
   N <- array(N, c(J))

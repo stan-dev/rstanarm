@@ -39,6 +39,15 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
     stop("stan_lm with more predictors than data points is not yet enabled.", 
          call. = FALSE)
   
+  # allow prior_PD even if no y variable
+  if (is.null(y)) {
+    if (!prior_PD) {
+      stop("Outcome variable must be specified if 'prior_PD' is not TRUE.")
+    } else {
+      y <- fake_y_for_prior_PD(N = NROW(x), family = gaussian())
+    }
+  }
+  
   xbar <- colMeans(x)
   x <- sweep(x, 2L, xbar, FUN = "-")
   ybar <- mean(y)
