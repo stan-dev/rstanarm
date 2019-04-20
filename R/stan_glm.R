@@ -235,6 +235,11 @@ stan_glm <-
     Y <- cbind(y1, y0 = weights - y1)
     weights <- double(0)
   }
+  
+  if (prior_PD) {
+    # can result in errors (e.g. from poisson) if draws from prior are weird
+    mean_PPD <- FALSE
+  }
 
   stanfit <- stan_glm.fit(
     x = X,
