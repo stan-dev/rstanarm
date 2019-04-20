@@ -56,24 +56,26 @@ transformed parameters {
   }
 }
 model {
+  if (prior_PD == 0) {
 #include /model/make_eta.stan
-  if (t > 0) {
+    if (t > 0) {
 #include /model/eta_add_Zb.stan
-  }
-  if (has_intercept == 1) {
-    if (link != 4) eta += gamma[1];
-    else eta += gamma[1] - max(eta);
-  }
-  else {
+    }
+    if (has_intercept == 1) {
+      if (link != 4) eta += gamma[1];
+      else eta += gamma[1] - max(eta);
+    }
+    else {
 #include /model/eta_no_intercept.stan
-  }
+    }
   
-  // Log-likelihood 
-  if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
-    real dummy = ll_binom_lp(y, trials, eta, link);
+    // Log-likelihood 
+    if (has_weights == 0) {  // unweighted log-likelihoods
+      real dummy = ll_binom_lp(y, trials, eta, link);
+    }
+    else 
+      target += dot_product(weights, pw_binom(y, trials, eta, link));
   }
-  else if (prior_PD == 0) 
-    target += dot_product(weights, pw_binom(y, trials, eta, link));
   
 #include /model/priors_glm.stan
   

@@ -112,29 +112,31 @@ transformed parameters {
   }
 }
 model {
-  // defines eta0, eta1
+  if (prior_PD == 0) {
+    // defines eta0, eta1
 #include /model/make_eta_bern.stan
-  if (has_intercept == 1) {
-    if (link != 4) {
-      eta0 += gamma[1];
-      eta1 += gamma[1];
+    if (has_intercept == 1) {
+      if (link != 4) {
+        eta0 += gamma[1];
+        eta1 += gamma[1];
+      }
+      else {
+        real shift = fmax(max(eta0), max(eta1));
+        eta0 += gamma[1] - shift;
+        eta1 += gamma[1] - shift;
+      }
     }
-    else {
-      real shift = fmax(max(eta0), max(eta1));
-      eta0 += gamma[1] - shift;
-      eta1 += gamma[1] - shift;
+    // Log-likelihood
+    if (clogit) { 
+      real dummy = ll_clogit_lp(eta0, eta1, successes, failures, observations);
     }
-  }
-  // Log-likelihood
-  if (clogit && prior_PD == 0) { 
-    real dummy = ll_clogit_lp(eta0, eta1, successes, failures, observations);
-  }
-  else if (has_weights == 0 && prior_PD == 0) {
-    real dummy = ll_bern_lp(eta0, eta1, link, N);
-  }
-  else if (prior_PD == 0) {  // weighted log-likelihoods
-    target += dot_product(weights0, pw_bern(0, eta0, link));
-    target += dot_product(weights1, pw_bern(1, eta1, link));
+    else if (has_weights == 0) {
+      real dummy = ll_bern_lp(eta0, eta1, link, N);
+    }
+    else {  // weighted log-likelihoods
+      target += dot_product(weights0, pw_bern(0, eta0, link));
+      target += dot_product(weights1, pw_bern(1, eta1, link));
+    }
   }
   
 #include /model/priors_glm.stan

@@ -140,7 +140,7 @@ model {
   if (can_do_OLS) {
     vector[cols(XtX)] coeff = has_intercept ? append_row(to_vector(gamma), beta) : beta;
     target += ll_mvn_ols(coeff, OLS, XtX, SSR, aux, N);
-  } else {
+  } else if (prior_PD == 0) {
     vector[link_phi > 0 ? N : 0] eta_z; // beta regression linear predictor for phi
 #include /model/make_eta.stan
     if (t > 0) {
@@ -181,7 +181,7 @@ model {
         }
       }
     }
-    else if (has_weights == 0 && prior_PD == 0) { // unweighted log-likelihoods
+    else if (has_weights == 0) { // unweighted log-likelihoods
 #include /model/make_eta_z.stan
       // adjust eta_z according to links
       if (has_intercept_z == 1) {
@@ -224,7 +224,7 @@ model {
                             rows_dot_product((1 - mu) , mu_z));
       }
     }
-    else if (prior_PD == 0) { // weighted log-likelihoods
+    else { // weighted log-likelihoods
       vector[N] summands;
       if (family == 1) summands = pw_gauss(y, eta, aux, link);
       else if (family == 2) summands = pw_gamma(y, eta, aux, link);
