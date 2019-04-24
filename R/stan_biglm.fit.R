@@ -49,7 +49,7 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
                            adapt_delta = NULL) {
   
   if (prior_PD && is.null(prior_intercept)) {
-    msg <- "The default flat prior on the intercept is not recommended with when 'prior_PD' is TRUE."
+    msg <- "The default flat prior on the intercept is not recommended when 'prior_PD' is TRUE."
     warning(msg, call. = FALSE, immediate. = TRUE)
     warning(msg, call. = FALSE, immediate. = FALSE)
   }
