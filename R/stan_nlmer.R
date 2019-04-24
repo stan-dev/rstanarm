@@ -105,7 +105,7 @@ stan_nlmer <-
            sparse = FALSE) {
 
   if (!has_outcome_variable(formula[[2]])) {
-    stop("LHS of formula must be specified for 'stan_nlmer.'")
+    stop("LHS of formula must be specified.")
   }
   f <- as.character(formula[-3])
   SSfunctions <- grep("^SS[[:lower:]]+", ls("package:stats"), value = TRUE) 
