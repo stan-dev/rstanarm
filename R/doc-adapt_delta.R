@@ -15,22 +15,31 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Target average acceptance probability
+#' \code{adapt_delta}: Target average acceptance probability
 #' 
 #' Details about the \code{adapt_delta} argument to \pkg{rstanarm}'s modeling
 #' functions.
 #' 
 #' @name adapt_delta
 #' @template reference-stan-manual
+#' @references Brief Guide to Stan's Warnings:
+#'   \url{https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup}
 #'   
-#' @details For the No-U-Turn Sampler (NUTS), the variant of Hamiltonian Monte 
+#'   
+#' @details For the No-U-Turn Sampler (NUTS), the variant of Hamiltonian Monte
 #'   Carlo used used by \pkg{rstanarm}, \code{adapt_delta} is the target average
-#'   proposal acceptance probability for adaptation. \code{adapt_delta} is 
-#'   ignored if \code{algorithm} is not \code{"sampling"}.
+#'   proposal acceptance probability during Stan's adaptation period.
+#'   \code{adapt_delta} is ignored by \pkg{rstanarm} if the \code{algorithm} argument 
+#'   is not set to \code{"sampling"}.
 #'   
 #'   The default value of \code{adapt_delta} is 0.95, except when the prior for 
 #'   the regression coefficients is \code{\link{R2}}, \code{\link{hs}}, or 
 #'   \code{\link{hs_plus}}, in which case the default is 0.99.
+#'   
+#'   These defaults are higher (more conservative) than the default of
+#'   \code{adapt_delta=0.8} used in the \pkg{rstan} package, which may result in
+#'   slower sampling speeds but will be more robust to posterior distributions
+#'   with high curvature.
 #'   
 #'   In general you should not need to change \code{adapt_delta} unless you see
 #'   a warning message about divergent transitions, in which case you can
