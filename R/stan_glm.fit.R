@@ -220,6 +220,10 @@ stan_glm.fit <-
       stop("Outcome variable must be specified if 'prior_PD' is not TRUE.")
     } else {
       y <- fake_y_for_prior_PD(N = NROW(x), family = family)
+      if (is_gaussian && 
+          (prior_autoscale || prior_autoscale_for_intercept || prior_autoscale_for_aux)) {
+        message("'y' not specified, will assume sd(y)=1 when calculating scaled prior(s). ")
+      }
     }
   }
   
