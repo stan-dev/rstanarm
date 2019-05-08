@@ -424,8 +424,8 @@ stan_surv <- function(formula,
   dots      <- list(...)
   algorithm <- match.arg(algorithm)
   
-  formula   <- parse_formula(formula, data)
-  data      <- make_model_data(formula$allvars_form, data) # row subsetting etc.
+  formula <- parse_formula_and_data(formula, data)
+  data    <- formula$data; formula[["data"]] <- NULL
   
   #----------------
   # Construct data
@@ -641,11 +641,8 @@ stan_surv <- function(formula,
 
   if (has_tde) {
     
-    # formula for generating spline basis for tde effects
-    bsf <- formula$bs_form
-    
     # generate a model frame with time transformations for tde effects
-    mf_tde_times <- make_model_frame(bsf, data.frame(times__ = cpts))$mf
+    mf_tde_times <- make_model_frame(formula$tt_frame, data.frame(times__ = cpts))$mf
     
     # NB next line avoids dropping terms attribute from 'mf_cpts'
     mf_cpts[, colnames(mf_tde_times)] <- mf_tde_times
@@ -689,16 +686,30 @@ stan_surv <- function(formula,
   
   if (has_tde) {
     
-    s_cpts <- make_x(formula$tt_form, mf_cpts, xlevs = xlevs)$x
-    smooth_map <- get_smooth_name(s_cpts, type = "smooth_map")
-    smooth_idx <- get_idx_array(table(smooth_map))
-    S <- ncol(s_cpts) # number of tde spline coefficients
+    s_cpts_parts <- xapply(
+      formula$tt_vars,
+      formula$tt_forms,
+      FUN = function(vn, tt) {
+        m1 <- make_x(vn, mf_cpts, xlevs = xlevs)$x
+        m2 <- make_x(tt, mf_cpts, xlevs = xlevs)$x
+        m3 <- matrix(apply(m1, 2L, `*`, m2), nrow = nrow(m2))
+        colnames(m3) <- uapply(colnames(m1), paste, colnames(m2), sep = ":")
+        return(m3)
+      })
+    formula$tt_ncol <- sapply(s_cpts_parts, ncol)
+    formula$tt_map  <- rep(1:length(formula$tt_ncol), formula$tt_ncol)
+    s_cpts          <- do.call("cbind", s_cpts_parts)
+    smooth_map      <- get_smooth_name(s_cpts, type = "smooth_map")
+    smooth_idx      <- get_idx_array(table(smooth_map))
+    S <- ncol(s_cpts) # number of tde coefficients
     
   } else {
     
-    s_cpts <- matrix(0,length(cpts),0)
-    smooth_idx <- matrix(0,0,2)
-    smooth_map <- integer(0)
+    formula$tt_ncol <- integer(0)
+    formula$tt_map  <- integer(0)
+    s_cpts          <- matrix(0,length(cpts),0)
+    smooth_idx      <- matrix(0,0,2)
+    smooth_map      <- integer(0)
     S <- 0L
     
   }
@@ -1366,6 +1377,10 @@ get_iknots <- function(x, df = 5L, degree = 3L, iknots = NULL, intercept = FALSE
     stop2("Number of internal knots cannot be negative.")
   }
   
+  # if no internal knots then return empty vector
+  if (nk == 0)
+    return(numeric(0))
+  
   # obtain default knot locations if necessary
   if (is.null(iknots)) {
     iknots <- qtile(x, nq = nk + 1)  # evenly spaced percentiles
@@ -1403,16 +1418,19 @@ get_smooth_name <- function(x, type = "smooth_coefs") {
   if (is.null(x) || !ncol(x))
     return(NULL)  
 
-  nms <- gsub(":bs\\(times__.*\\)[0-9]*$", "", colnames(x))
-  tally   <- table(nms)
-  indices <- uapply(tally, seq_len)
-  suffix  <- paste0(":tde-spline-coef", indices)
-  
+  nms <- colnames(x)
+  nms <- gsub(":splines::bs\\(times__.*\\)[0-9]*$", ":tde-bs-coef", nms)
+  nms <- gsub(":base::cut\\(times__.*\\]$",      ":tde-pw-coef", nms)
+ 
+  nms_trim <- gsub(":tde-[a-z][a-z]-coef$", "", nms)
+  tally    <- table(nms_trim)
+  indices  <- uapply(tally, seq_len)
+
   switch(type,
-         "smooth_coefs" = paste0(nms, suffix),
-         "smooth_sd"    = paste0("smooth_sd[", unique(nms), "]"),
+         "smooth_coefs" = paste0(nms, indices),
+         "smooth_sd"    = paste0("smooth_sd[", unique(nms_trim), "]"),
          "smooth_map"   = rep(seq_along(tally), tally),
-         "smooth_vars"  = unique(nms),
+         "smooth_vars"  = unique(nms_trim),
          stop2("Bug found: invalid input to 'type' argument."))
 }
 
@@ -1547,11 +1565,13 @@ basis_matrix <- function(times, basis, integrate = FALSE) {
   aa(out)
 }
 
-# Parse the model formula
+# Parse the model formula and data
 #
 # @param formula The user input to the formula argument.
 # @param data The user input to the data argument (i.e. a data frame).
-parse_formula <- function(formula, data) {
+# @param A list with the model data (following removal of NA rows etc) and
+#   a number of elements corresponding to different parts of the formula.
+parse_formula_and_data <- function(formula, data) {
   
   formula <- validate_formula(formula, needs_response = TRUE)
   
@@ -1567,6 +1587,9 @@ parse_formula <- function(formula, data) {
   rhs       <- rhs(formula)         # RHS as expression
   rhs_form  <- reformulate_rhs(rhs) # RHS as formula
 
+  # Evaluate model data (row subsetting etc)
+  data <- make_model_data(allvars_form, data)
+  
   # Evaluated response variables
   surv <- eval(lhs, envir = data) # Surv object
   surv <- validate_surv(surv)
@@ -1578,35 +1601,48 @@ parse_formula <- function(formula, data) {
     dvar     <- as.character(lhs[[3L]])
     min_t    <- 0
     max_t    <- max(surv[, "time"])
+    status   <- as.vector(surv[, "status"])
+    t_end    <- as.vector(surv[, "time"])
   } else if (type == "counting") {
     tvar_beg <- as.character(lhs[[2L]])
     tvar_end <- as.character(lhs[[3L]])
     dvar     <- as.character(lhs[[4L]])
     min_t    <- min(surv[, "start"])
     max_t    <- max(surv[, "stop"])
+    status   <- as.vector(surv[, "status"])
+    t_end    <- as.vector(surv[, "stop"])
   } else if (type == "interval") {
     tvar_beg <- NULL
     tvar_end <- as.character(lhs[[2L]])
     dvar     <- as.character(lhs[[4L]])
     min_t    <- 0
-    max_t    <-  max(surv[, c("time1", "time2")])
+    max_t    <- max(surv[, c("time1", "time2")])
+    status   <- as.vector(surv[, "status"])
+    t_end    <- as.vector(surv[, "time1"])
   } else if (type == "interval2") {
     tvar_beg <- NULL
     tvar_end <- as.character(lhs[[2L]])
     dvar     <- as.character(lhs[[3L]])
     min_t    <- 0
     max_t    <- max(surv[, c("time1", "time2")])
+    status   <- as.vector(surv[, "status"])
+    t_end    <- as.vector(surv[, "time1"])
   }
   
   # Deal with tde(x, ...)
-  tde_stuff <- handle_tde(formula, min_t = min_t, max_t = max_t)
+  tde_stuff <- handle_tde(formula, 
+                          min_t  = min_t, 
+                          max_t  = max_t, 
+                          times  = t_end, 
+                          status = status)
   tf_form  <- tde_stuff$tf_form
   td_form  <- tde_stuff$td_form  # may be NULL
-  bs_form  <- tde_stuff$bs_form  # may be NULL
-  tt_form  <- tde_stuff$tt_form  # may be NULL
-  tt_basis <- tde_stuff$tt_basis # may be NULL
-  tt_calls <- tde_stuff$tt_calls # may be NULL  
-  
+  tt_vars  <- tde_stuff$tt_vars  # may be NULL
+  tt_frame <- tde_stuff$tt_frame # may be NULL
+  tt_types <- tde_stuff$tt_types # may be NULL
+  tt_calls <- tde_stuff$tt_calls # may be NULL
+  tt_forms <- tde_stuff$tt_forms # may be NULL
+
   # Just fixed-effect part of formula
   fe_form   <- lme4::nobars(tf_form)
 
@@ -1618,6 +1654,7 @@ parse_formula <- function(formula, data) {
     stop2("A maximum of 2 grouping factors are allowed.")
 
   nlist(formula,
+        data,
         allvars,
         allvars_form,
         lhs,
@@ -1626,10 +1663,11 @@ parse_formula <- function(formula, data) {
         rhs_form,
         tf_form,
         td_form,
-        bs_form,
-        tt_form,
-        tt_basis,
+        tt_vars,
+        tt_frame,
+        tt_types,
         tt_calls,
+        tt_forms,
         fe_form,
         bars,
         re_parts,
@@ -1645,104 +1683,192 @@ parse_formula <- function(formula, data) {
 # @param Terms terms object for the fixed effect part of the model formula.
 # @return A named list with the following elements:
 # 
-handle_tde <- function(formula, min_t, max_t) {
+handle_tde <- function(formula, min_t, max_t, times, status) {
 
-  Terms <- terms(lme4::nobars(formula), specials = "tde")
+  # extract terms objects for fixed effect part of model formula
+  Terms <- delete.response(terms(lme4::nobars(formula), specials = "tde"))
 
-  # if no time-dependent effects then just return formula
-  if (is.null(attr(Terms, "specials")$tde)) {
+  # check which fixed effect terms have a tde() wrapper
+  sel <- attr(Terms, "specials")$tde
+  
+  # if no tde() terms then just return the fixed effect formula as is
+  if (is.null(sel)) {
     return(list(tf_form  = formula,
                 td_form  = NULL,
-                bs_form  = NULL,
-                tt_form  = NULL,
-                tt_basis = NULL,
-                tt_calls = NULL))
+                tt_vars  = NULL,
+                tt_frame = NULL,
+                tt_calls = NULL,
+                tt_forms = NULL))
   }
    
-  # extract rhs of formula
-  Terms  <- delete.response(Terms)
-  sel    <- attr(Terms, "specials")$tde
-  varnms <- rownames(attr(Terms, "factors"))
+  # otherwise extract rhs of formula
+  all_vars <- rownames(attr(Terms, "factors")) # all variables in fe formula
+  tde_vars <- all_vars[sel]                    # variables with a tde() wrapper
   
   # replace 'tde(x, ...)' in formula with 'x'
-  tde_oldvars <- varnms
-  tde_newvars <- sapply(tde_oldvars, function(oldvar) {
-    if (oldvar %in% varnms[sel]) {
-      tde <- function(newvar, ...) { # define tde function locally
-        safe_deparse(substitute(newvar)) 
-      }
-      eval(parse(text = oldvar))
-    } else oldvar
+  old_vars <- all_vars
+  new_vars <- sapply(old_vars, function(x) {
+    if (x %in% tde_vars) {
+      # strip tde() from variable
+      tde <- function(y, ...) { safe_deparse(substitute(y)) } # define locally
+      return(eval(parse(text = x)))
+    } else {
+      # just return variable
+      return(x)
+    }
   }, USE.NAMES = FALSE)
-  tf_term_labels <- attr(Terms, "term.labels")
-  td_term_labels <- c()
-  k <- 0 # initialise td_term_labels indexing (for creating a new formula)
+  tf_terms <- attr(Terms, "term.labels")
+  td_terms <- c()
+  k <- 0 # initialise td_terms indexing (for creating a new formula)
   for (i in sel) {
     sel_terms <- which(attr(Terms, "factors")[i, ] > 0)
     for (j in sel_terms) {
       k <- k + 1
-      tf_term_labels[j] <- td_term_labels[k] <- gsub(tde_oldvars[i], 
-                                                     tde_newvars[i], 
-                                                     tf_term_labels[j], 
-                                                     fixed = TRUE)
+      tf_terms[j] <- td_terms[k] <- gsub(old_vars[i], 
+                                         new_vars[i], 
+                                         tf_terms[j], 
+                                         fixed = TRUE)
     }
   }
   
-  # extract 'tde(x, ...)' from formula and construct 'bs(times, ...)'
-  tde_terms <- lapply(varnms[sel], function(x) {
-    tde <- function(vn, ...) { # define tde function locally
+  # extract 'tde(x, ...)' from formula and return '~ x' and '~ bs(times, ...)'
+  idx <- 1
+  tt_vars  <- list()
+  tt_types <- list()
+  tt_calls <- list()
+  
+  for (i in seq_along(sel)) {
+    
+    # define tde() function locally; uses objects from the parent environment
+    #
+    # @param x The variable the time-varying effect is going to be applied to.
+    # @param type Character string, the type of time-varying effect to use. Can
+    #   currently be one of: bs, ms, pw.
+    # @param ... Additional arguments passed by the user that control aspects of
+    #   the time-varying effect.
+    # @return The call used to construct a time-dependent basis.
+    tde <- function(x, type = "bs", ...) {
+      
       dots <- list(...)
-      ok_args <- c("df")
-      if (!isTRUE(all(names(dots) %in% ok_args)))
-        stop2("Invalid argument to 'tde' function. ",
-              "Valid arguments are: ", comma(ok_args))
-      df <- if (is.null(dots$df)) 3 else dots$df
-      degree <- 3
-      if (df == 3) {
-        dots[["knots"]] <- numeric(0)
-      } else {
-        dx <- (max_t - min_t) / (df - degree + 1)
-        dots[["knots"]] <- seq(min_t + dx, max_t - dx, dx)
+      
+      df     <- dots[["df"]]
+      knots  <- dots[["knots"]]
+      degree <- dots[["degree"]]
+      
+      ok_args <- switch(type,
+                        "bs"        = c("df", "knots", "degree"),
+                        "ms"        = c("df", "knots", "degree"),
+                        "pw"        = c("df", "knots"),
+                        "piecewise" = c("df", "knots"),
+                        stop2("Invalid 'type' argument for the 'tde' function."))
+      
+      dots <- validate_tde_args(dots, ok_args = ok_args)
+      
+      if (!is.null(df) && !is.null(knots))
+        stop2("Cannot specify both 'df' and 'knots' in the 'tde' function.")
+      
+      if (is.null(df))
+        df <- 3L # assumes no intercept, ignored if the user specified knots
+
+      if (is.null(degree))
+        degree <- 3L
+            
+      # note that times and status are taken from the parent environment
+      tt <- times[status == 1] # uncensored event times
+      if (is.null(knots) && !length(tt)) {
+        warning2("No observed events found in the data. Censoring times will ",
+                 "be used to evaluate default knot locations for tde().")
+        tt <- times
       }
-      dots[["Boundary.knots"]] <- c(min_t, max_t) 
-      sub("^list\\(", "bs\\(times__, ", safe_deparse(dots))
+      
+      # note that min_t and max_t are taken from the parent environment
+      if (!is.null(knots)) {
+        if (any(knots < min_t))
+          stop2("In tde(), 'knots' cannot be placed before the earliest entry time.")
+        if (any(knots > max_t))
+          stop2("In tde(), 'knots' cannot be placed beyond the latest event time.")
+      }
+
+      if (type == "bs") {
+        
+        bknots <- c(min_t, max_t)
+        iknots <- get_iknots(tt, df = df, iknots = knots)
+       
+        new_args <- list(knots          = iknots,
+                         Boundary.knots = bknots,
+                         degree         = degree)
+
+        return(list(
+          type = type,
+          call = sub("^list\\(", "splines::bs\\(times__, ", safe_deparse(new_args))))
+        
+      } else if (type == "ms") {
+        
+        stop("Bug found: not yet implemented.")
+        
+      } else if (type == "pw" || type == "piecewise") {
+        
+        iknots <- get_iknots(tt, df = df, degree = 1, iknots = knots)
+        
+        new_args <- list(breaks = c(min_t, iknots, max_t),
+                         include.lowest = TRUE)
+        
+        return(list(
+          type = type,
+          call = sub("^list\\(", "base::cut\\(times__, ", safe_deparse(new_args))))
+        
+      }
+
+    }  
+    
+    tt_parsed <- eval(parse(text = all_vars[sel[i]]))
+    tt_terms  <- which(attr(Terms, "factors")[i, ] > 0)
+    for (j in tt_terms) {
+      tt_vars [[idx]] <- tf_terms[j]
+      tt_types[[idx]] <- tt_parsed$type
+      tt_calls[[idx]] <- tt_parsed$call
+      idx <- idx + 1
     }
-    tde_calls <- eval(parse(text = x))
-    sel_terms <- which(attr(Terms, "factors")[x, ] > 0)
-    new_calls <- sapply(seq_along(sel_terms), function(j) {
-      paste0(tf_term_labels[sel_terms[j]], ":", tde_calls)
-    })
-    nlist(tde_calls, new_calls)
-  })
+  }
   
   # add on the terms labels from the random effects part of the formula
   bars <- lme4::findbars(formula)
   if (length(bars)) {
-    bars_term_labels <- sapply(bars, bracket_wrap)
-    tf_term_labels <- c(tf_term_labels, bars_term_labels)
+    re_terms <- sapply(bars, bracket_wrap)
+    tf_terms <- c(tf_terms, re_terms)
   }
   
   # formula with all variables but no 'tde(x, ...)' wrappers
-  tf_form <- reformulate(tf_term_labels, response = lhs(formula))
+  tf_form <- reformulate(tf_terms, response = lhs(formula))
   
   # formula with only tde variables but no 'tde(x, ...)' wrappers
-  td_form <- reformulate(td_term_labels, response = lhs(formula))
+  td_form <- reformulate(td_terms, response = lhs(formula))
   
-  # formula with 'bs(times__, ...)' terms based on 'tde(x, ...)' calls
-  tt_basis <- fetch(tde_terms, "tde_calls"); utt <- unique(unlist(tt_basis))
-  bs_form  <- reformulate(utt, response  = NULL, intercept = FALSE)
+  # unique set of '~ bs(times__, ...)' calls based on all 'tde(x, ...)' terms
+  tt_frame <- reformulate(unique(unlist(tt_calls)), intercept = FALSE)
   
-  # formula with 'x:bs(times__, ...)' terms based on 'tde(x, ...)' calls
-  tt_calls <- fetch_(tde_terms, "new_calls")
-  tt_form  <- reformulate(tt_calls, response  = NULL, intercept = FALSE)
+  # formula with '~ x' and '~ bs(times__, ...)' from each 'tde(x, ...)' call
+  tt_vars  <- lapply(tt_vars,  reformulate)
+  tt_forms <- lapply(tt_calls, reformulate)
   
   # return object
   nlist(tf_form,
         td_form,
-        bs_form,
-        tt_form,
-        tt_basis,
-        tt_calls)
+        tt_vars,
+        tt_frame,
+        tt_types,
+        tt_calls,
+        tt_forms)
+}
+
+# Ensure only valid arguments are passed to the tde() call
+validate_tde_args <- function(dots, ok_args) {
+  
+  if (!isTRUE(all(names(dots) %in% ok_args)))
+    stop2("Invalid argument to 'tde' function. ",
+          "Valid arguments are: ", comma(ok_args))  
+  
+  return(dots)
 }
 
 # Deparse an expression and wrap it in brackets

@@ -210,7 +210,7 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
 
     t_min <- min(x$entrytime)
     t_max <- max(x$eventtime)
-    times <- seq(t_min, t_max, by = (t_max - t_min) / 200)
+    times <- seq(t_min, t_max, by = (t_max - t_min) / 1000)
 
     if (plotfun == "basehaz") {
 
@@ -226,6 +226,8 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       basehaz <- do.call(evaluate_basehaz, args)
       basehaz <- median_and_bounds(basehaz, prob, na.rm = TRUE)
       plotdat <- data.frame(times, basehaz)
+      
+      requires_smooth <- !(get_basehaz_name(x) %in% c("piecewise"))
 
       ylab <- "Baseline hazard rate"
       xlab <- "Time"
@@ -253,35 +255,53 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       betas_td <- stanpars$beta_tde[, sel2, drop = FALSE]
       betas    <- cbind(betas_tf, betas_td)
 
-      times__ <- times
-      basis   <- eval(parse(text = x$formula$tt_basis[sel1]))
-      basis   <- add_intercept(basis)
-      coef  <- linear_predictor(betas, basis)
+      tt_varid <- unique(x$formula$tt_map[smooth_map == sel1])
+      tt_type  <- x$formula$tt_types[[tt_varid]]
+      tt_form  <- x$formula$tt_forms[[tt_varid]]
+      tt_data  <- data.frame(times__ = times)
+      tt_x     <- model.matrix(tt_form, tt_data)
       
-      is_aft  <- get_basehaz_name(x$basehaz) %in% c("exp-aft", "weibull-aft")
+      coef     <- linear_predictor(betas, tt_x)
       
-      plotdat <- median_and_bounds(exp(coef), prob, na.rm = TRUE)  
-      plotdat <- data.frame(times, plotdat)
+      is_aft   <- get_basehaz_name(x$basehaz) %in% c("exp-aft", "weibull-aft")
+      
+      plotdat  <- median_and_bounds(exp(coef), prob, na.rm = TRUE)  
+      plotdat  <- data.frame(times, plotdat)
 
+      requires_smooth <- !(tt_type %in% c("pw", "piecewise"))
+      
       xlab <- "Time"
-      ylab <- ifelse(is_aft, "Survival time ratio", "Hazard ratio")
+      ylab <- ifelse(is_aft, 
+                     paste0("Survival time ratio\n(", pars, ")"), 
+                     paste0("Hazard ratio\n(", pars, ")"))
     }
-
+    
     geom_defs <- list(color = "black")  # default plot args
     geom_args <- set_geom_args(geom_defs, ...)
     geom_ylab <- ggplot2::ylab(ylab)
     geom_xlab <- ggplot2::xlab(xlab)
-    geom_maps <- list(aes_string(x = "times", y = "med"), method = "loess", se = FALSE)
     geom_base <- ggplot(plotdat) + geom_ylab + geom_xlab + ggplot2::theme_bw()
-    geom_plot <- geom_base + do.call(ggplot2::geom_smooth, c(geom_maps, geom_args))
+    if (requires_smooth) {
+      geom_maps <- list(aes_string(x = "times", y = "med"), method = "loess", se = FALSE)
+      geom_plot <- geom_base + do.call(ggplot2::geom_smooth, c(geom_maps, geom_args))
+    } else {
+      geom_maps <- list(aes_string(x = "times", y = "med"))
+      geom_plot <- geom_base + do.call(ggplot2::geom_step, c(geom_maps, geom_args))
+    }
     if (limits == "ci") {
       lim_defs <- list(alpha = 0.3) # default plot args for ci
       lim_args <- c(defaults = list(lim_defs), ci_geom_args)
       lim_args <- do.call("set_geom_args", lim_args)
       lim_maps <- list(mapping = aes_string(x = "times", ymin = "lb", ymax = "ub"))
-      lim_tmp  <- geom_base +
-        ggplot2::stat_smooth(aes_string(x = "times", y = "lb"), method = "loess") +
-        ggplot2::stat_smooth(aes_string(x = "times", y = "ub"), method = "loess")
+      if (requires_smooth) {
+        lim_tmp  <- geom_base +
+          ggplot2::stat_smooth(aes_string(x = "times", y = "lb"), method = "loess") +
+          ggplot2::stat_smooth(aes_string(x = "times", y = "ub"), method = "loess")
+      } else {
+        lim_tmp  <- geom_base +
+          ggplot2::geom_step(aes_string(x = "times", y = "lb")) +
+          ggplot2::geom_step(aes_string(x = "times", y = "ub"))
+      }  
       lim_build<- ggplot2::ggplot_build(lim_tmp)
       lim_data <- list(data = data.frame(times = lim_build$data[[1]]$x,
                                          lb    = lim_build$data[[1]]$y,
