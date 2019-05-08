@@ -70,10 +70,9 @@ transformed data {
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
   int<lower=1> V[special_case ? t : 0, len_y] = make_V(len_y, special_case ? t : 0, v);
   int<lower=0> hs_z;                  // for tdata_betareg.stan
-  int can_do_OLS = family == 1 && link == 1 && SSfun == 0 && has_offset == 0 && t == 0 &&
-                   prior_PD == 0 && K_smooth == 0 && dense_X && N > 2 && len_y >= (has_intercept + K);
-  vector[can_do_OLS ? has_intercept + K : 0] OLS;
-  matrix[can_do_OLS ? has_intercept + K : 0, can_do_OLS ? has_intercept + K : 0] XtX;
+  int can_do_OLS = family == 1 && link == 1 && SSfun == 0 && has_offset == 0 && t == 0 && prior_PD == 0 && dense_X && N > 2 && len_y >= (has_intercept + K + K_smooth);
+  vector[can_do_OLS ? has_intercept + K + K_smooth : 0] OLS;
+  matrix[can_do_OLS ? has_intercept + K + K_smooth : 0, can_do_OLS ? has_intercept + K + K_smooth : 0] XtX;
   real SSR = not_a_number();
   // defines hs, len_z_T, len_var_group, delta, is_continuous, pos
 #include /tdata/tdata_glm.stan
@@ -86,7 +85,7 @@ transformed data {
     log_y = log(y);
   }
   if (can_do_OLS) {
-    matrix[N, K + has_intercept] X_ = has_intercept ? append_col(rep_vector(1.0, N), X[1]) : X[1];
+    matrix[N, has_intercept + K + K_smooth ] X_ = has_intercept ? append_col(rep_vector(1.0, N), (K_smooth > 0 ? append_col(X[1], S) : X[1])) : (K_smooth > 0 ? append_col(X[1], S) : X[1]);
     XtX = crossprod(X_);
     OLS = mdivide_left_spd(XtX, X_' * y);
     SSR = dot_self(y - X_ * OLS);
@@ -138,7 +137,7 @@ transformed parameters {
 }
 model {
   if (can_do_OLS) {
-    vector[cols(XtX)] coeff = has_intercept ? append_row(to_vector(gamma), beta) : beta;
+    vector[cols(XtX)] coeff = has_intercept ? append_row(to_vector(gamma), (K_smooth > 0 ? append_row(beta, beta_smooth) : beta)) : (K_smooth > 0 ? append_row(beta, beta_smooth) : beta);
     target += ll_mvn_ols(coeff, OLS, XtX, SSR, aux, N);
   } else if (prior_PD == 0) {
     vector[link_phi > 0 ? N : 0] eta_z; // beta regression linear predictor for phi
