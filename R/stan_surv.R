@@ -1164,7 +1164,7 @@ stan_surv <- function(formula,
 
   # substitute new parameter names into 'stanfit' object
   stanfit <- replace_stanfit_nms(stanfit, nms_all)
-
+  
   # return an object of class 'stansurv'
   fit <- nlist(stanfit, 
                formula,
@@ -1378,12 +1378,13 @@ get_iknots <- function(x, df = 5L, degree = 3L, iknots = NULL, intercept = FALSE
   }
   
   # if no internal knots then return empty vector
-  if (nk == 0)
+  if (nk == 0) {
     return(numeric(0))
+  }
   
   # obtain default knot locations if necessary
   if (is.null(iknots)) {
-    iknots <- qtile(x, nq = nk + 1)  # evenly spaced percentiles
+    iknots <- qtile(x, nq = nk + 1) # evenly spaced percentiles
   }
   
   # return internal knot locations, ensuring they are positive
@@ -1420,16 +1421,16 @@ get_smooth_name <- function(x, type = "smooth_coefs") {
 
   nms <- colnames(x)
   nms <- gsub(":splines::bs\\(times__.*\\)[0-9]*$", ":tde-bs-coef", nms)
-  nms <- gsub(":base::cut\\(times__.*\\]$",      ":tde-pw-coef", nms)
+  nms <- gsub(":base::cut\\(times__.*\\]$",         ":tde-pw-coef", nms)
  
-  nms_trim <- gsub(":tde-[a-z][a-z]-coef$", "", nms)
+  nms_trim <- gsub(":tde-[a-z][a-z]-coef[0-9]*$", "", nms)
   tally    <- table(nms_trim)
   indices  <- uapply(tally, seq_len)
 
   switch(type,
          "smooth_coefs" = paste0(nms, indices),
          "smooth_sd"    = paste0("smooth_sd[", unique(nms_trim), "]"),
-         "smooth_map"   = rep(seq_along(tally), tally),
+         "smooth_map"   = aa(rep(seq_along(tally), tally)),
          "smooth_vars"  = unique(nms_trim),
          stop2("Bug found: invalid input to 'type' argument."))
 }
@@ -1575,7 +1576,7 @@ parse_formula_and_data <- function(formula, data) {
   
   formula <- validate_formula(formula, needs_response = TRUE)
   
-  # All variables of entire formula
+  # all variables of entire formula
   allvars <- all.vars(formula)
   allvars_form <- reformulate(allvars)
   
@@ -1587,10 +1588,10 @@ parse_formula_and_data <- function(formula, data) {
   rhs       <- rhs(formula)         # RHS as expression
   rhs_form  <- reformulate_rhs(rhs) # RHS as formula
 
-  # Evaluate model data (row subsetting etc)
+  # evaluate model data (row subsetting etc)
   data <- make_model_data(allvars_form, data)
   
-  # Evaluated response variables
+  # evaluated response variables
   surv <- eval(lhs, envir = data) # Surv object
   surv <- validate_surv(surv)
   type <- attr(surv, "type")
@@ -1629,7 +1630,7 @@ parse_formula_and_data <- function(formula, data) {
     t_end    <- as.vector(surv[, "time1"])
   }
   
-  # Deal with tde(x, ...)
+  # deal with tde(x, ...)
   tde_stuff <- handle_tde(formula, 
                           min_t  = min_t, 
                           max_t  = max_t, 
@@ -1643,10 +1644,10 @@ parse_formula_and_data <- function(formula, data) {
   tt_calls <- tde_stuff$tt_calls # may be NULL
   tt_forms <- tde_stuff$tt_forms # may be NULL
 
-  # Just fixed-effect part of formula
+  # just fixed-effect part of formula
   fe_form   <- lme4::nobars(tf_form)
 
-  # Just random-effect part of formula
+  # just random-effect part of formula
   bars      <- lme4::findbars(tf_form)
   re_parts  <- lapply(bars, split_at_bars)
   re_forms  <- fetch(re_parts, "re_form")  
@@ -1692,7 +1693,7 @@ handle_tde <- function(formula, min_t, max_t, times, status) {
   sel <- attr(Terms, "specials")$tde
   
   # if no tde() terms then just return the fixed effect formula as is
-  if (is.null(sel)) {
+  if (!length(sel)) {
     return(list(tf_form  = formula,
                 td_form  = NULL,
                 tt_vars  = NULL,
