@@ -140,7 +140,9 @@ transformed parameters {
 }
 model {
   if (can_do_OLS) {
-    vector[cols(XtX)] coeff = has_intercept ? append_row(to_vector(gamma), (K_smooth > 0 ? append_row(beta, beta_smooth) : beta)) : (K_smooth > 0 ? append_row(beta, beta_smooth) : beta);
+    vector[cols(XtX)] coeff = has_intercept ? append_row(to_vector(gamma), 
+                                              (K_smooth > 0 ? append_row(beta, beta_smooth) : beta)) : 
+                                              (K_smooth > 0 ? append_row(beta, beta_smooth) : beta);
     target += ll_mvn_ols(coeff, OLS, XtX, SSR, aux, N);
   } else if (prior_PD == 0) {
     vector[link_phi > 0 ? N : 0] eta_z; // beta regression linear predictor for phi
