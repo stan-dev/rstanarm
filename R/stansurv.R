@@ -83,6 +83,7 @@ stansurv <- function(object) {
     terms         = object$terms,
     data          = object$data,
     model_frame   = object$model_frame,
+    xlevs         = object$xlevels,
     x             = object$x,
     x_cpts        = object$x_cpts,
     s_cpts        = object$s_cpts,

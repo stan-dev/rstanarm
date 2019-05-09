@@ -433,7 +433,7 @@ stan_surv <- function(formula,
  
   #----- model frame stuff
   
-  mf_stuff <- make_model_frame(formula$tf_form, data)
+  mf_stuff <- make_model_frame(formula$tf_form, data, drop.unused.levels = TRUE)
   
   mf <- mf_stuff$mf # model frame
   mt <- mf_stuff$mt # model terms
@@ -2044,29 +2044,42 @@ make_model_data <- function(formula, data) {
 #
 # @param formula The parsed model formula.
 # @param data The model data frame.
-# @param xlev Passed to xlev argument of model.frame.
+# @param xlevs Passed to xlev argument of model.frame.
+# @param drop.unused.levels Passed to drop.unused.levels argument of model.frame.
 # @param check_constant If TRUE then an error is thrown is the returned
 #   model frame contains any constant variables.
 # @return A list with the following elements:
 #   mf: the model frame based on the formula.
 #   mt: the model terms associated with the returned model frame.
-make_model_frame <- function(formula, data, xlevs = NULL, 
+make_model_frame <- function(formula, 
+                             data, 
+                             xlevs = NULL,
+                             drop.unused.levels = FALSE,
                              check_constant = FALSE) {
 
   # construct model frame
   Terms <- terms(lme4::subbars(formula))
-  mf <- stats::model.frame(Terms, data, xlev = xlevs, drop.unused.levels = TRUE)
+  mf <- stats::model.frame(Terms, 
+                           data,
+                           xlev = xlevs, 
+                           drop.unused.levels = drop.unused.levels)
   
   # get predvars for fixed part of formula
   TermsF <- terms(lme4::nobars(formula)) 
-  mfF <- stats::model.frame(TermsF, data, xlev = xlevs, drop.unused.levels = TRUE)
+  mfF <- stats::model.frame(TermsF, 
+                            data, 
+                            xlev = xlevs, 
+                            drop.unused.levels = drop.unused.levels)
   attr(attr(mf, "terms"), "predvars.fixed") <- attr(attr(mfF, "terms"), "predvars")
   
   # get predvars for random part of formula
   has_bars <- length(lme4::findbars(formula)) > 0
   if (has_bars) {
     TermsR <- terms(lme4::subbars(justRE(formula, response = TRUE)))
-    mfR <- stats::model.frame(TermsR, data, xlev = xlevs, drop.unused.levels = TRUE)
+    mfR <- stats::model.frame(TermsR,
+                              data, 
+                              xlev = xlevs, 
+                              drop.unused.levels = drop.unused.levels)
     attr(attr(mf, "terms"), "predvars.random") <- attr(attr(mfR, "terms"), "predvars")
   } else {
     attr(attr(mf, "terms"), "predvars.random") <- NULL
@@ -2090,7 +2103,7 @@ make_model_frame <- function(formula, data, xlevs = NULL,
 #
 # @param formula The parsed model formula.
 # @param model_frame The model frame.
-# @param xlev Passed to xlev argument of model.frame.
+# @param xlevs Passed to xlev argument of model.matrix.
 # @param check_constant If TRUE then an error is thrown is the returned
 #   predictor matrix contains any constant columns.
 # @return A named list with the following elements:
@@ -2099,7 +2112,9 @@ make_model_frame <- function(formula, data, xlevs = NULL,
 #   x_centered: the fe model matrix, centered.
 #   N: number of rows (observations) in the model matrix.
 #   K: number of cols (predictors) in the model matrix.
-make_x <- function(formula, model_frame, xlevs = NULL, 
+make_x <- function(formula, 
+                   model_frame, 
+                   xlevs          = NULL,
                    check_constant = TRUE) {
 
   # uncentred predictor matrix, without intercept
