@@ -471,7 +471,7 @@ o<-SW(f1  <- stan_surv(Surv(futimeYears, death) ~ sex + trt,
                        data    = pbcSurv,
                        basehaz = "ms",
                        chains  = 1,
-                       iter    = 40,
+                       iter    = 60,
                        refresh = REFRESH,
                        seed    = SEED))
 o<-SW(f2  <- update(f1, basehaz = "bs"))
@@ -515,7 +515,7 @@ nd1 <- pbcSurv[pbcSurv$id == 2,]
 nd2 <- pbcSurv[pbcSurv$id %in% c(1,2),]
 
 # test the models
-for (j in c(1:29)) {
+for (j in c(15:21)) {
   
   mod <- try(get(paste0("f", j)), silent = TRUE)
   
