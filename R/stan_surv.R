@@ -462,12 +462,12 @@ stan_surv <- function(formula,
   delayed  <- as.logical(!t_beg == 0)
   
   # time variables for stan
-  t_event <- t_end[status == 1] # exact event time
-  t_lcens <- t_end[status == 2] # left  censoring time
-  t_rcens <- t_end[status == 0] # right censoring time
-  t_icenl <- t_end[status == 3] # lower limit of interval censoring time
-  t_icenu <- t_upp[status == 3] # upper limit of interval censoring time
-  t_delay <- t_beg[delayed]     # delayed entry time
+  t_event <- aa(t_end[status == 1]) # exact event time
+  t_lcens <- aa(t_end[status == 2]) # left  censoring time
+  t_rcens <- aa(t_end[status == 0]) # right censoring time
+  t_icenl <- aa(t_end[status == 3]) # lower limit of interval censoring time
+  t_icenu <- aa(t_upp[status == 3]) # upper limit of interval censoring time
+  t_delay <- aa(t_beg[delayed])     # delayed entry time
 
   # calculate log crude event rate
   t_tmp <- sum(rowMeans(cbind(t_end, t_upp), na.rm = TRUE) - t_beg)
@@ -642,19 +642,19 @@ stan_surv <- function(formula,
   if (has_tde) {
     
     # generate a model frame with time transformations for tde effects
-    mf_tde_times <- make_model_frame(formula$tt_frame, data.frame(times__ = cpts))$mf
+    mf_tde <- make_model_frame(formula$tt_frame, data.frame(times__ = cpts))$mf
     
     # NB next line avoids dropping terms attribute from 'mf_cpts'
-    mf_cpts[, colnames(mf_tde_times)] <- mf_tde_times
+    mf_cpts[, colnames(mf_tde)] <- mf_tde
     
   }  
 
   #----- time-fixed predictor matrices
   
   ff        <- formula$fe_form
-  x_stuff   <- make_x(ff, mf,      xlevs = xlevs) 
-  x_cpts    <- make_x(ff, mf_cpts, xlevs = xlevs)$x
-  x_centred <- sweep(x_cpts, 2, x_stuff$x_bar, FUN = "-")
+  x         <- make_x(ff, mf     )$x
+  x_cpts    <- make_x(ff, mf_cpts)$x
+  x_centred <- sweep(x_cpts, 2, colMeans(x), FUN = "-")
   K         <- ncol(x_cpts)
   
   if (!has_quadrature) {
@@ -686,36 +686,34 @@ stan_surv <- function(formula,
   
   if (has_tde) {
     
-    s_cpts_parts <- xapply(
-      formula$tt_vars,
-      formula$tt_forms,
-      FUN = function(vn, tt) {
-        m1 <- make_x(vn, mf_cpts, xlevs = xlevs)$x
-        m2 <- make_x(tt, mf_cpts, xlevs = xlevs)$x
-        m3 <- matrix(apply(m1, 2L, `*`, m2), nrow = nrow(m2))
-        colnames(m3) <- uapply(colnames(m1), paste, colnames(m2), sep = ":")
-        return(m3)
-      })
-    formula$tt_ncol <- sapply(s_cpts_parts, ncol)
-    formula$tt_map  <- rep(1:length(formula$tt_ncol), formula$tt_ncol)
-    s_cpts          <- do.call("cbind", s_cpts_parts)
+    # time-varying predictor matrix
+    s_cpts          <- make_s(formula, mf_cpts, xlevs = xlevs)
     smooth_map      <- get_smooth_name(s_cpts, type = "smooth_map")
     smooth_idx      <- get_idx_array(table(smooth_map))
     S <- ncol(s_cpts) # number of tde coefficients
     
+    # store some additional information in model formula
+    # stating how many columns in the predictor matrix
+    # each tde() term in the model formula corresponds to
+    formula$tt_ncol <- attr(s_cpts, "tt_ncol")
+    formula$tt_map  <- attr(s_cpts, "tt_map")
+    
   } else {
     
-    formula$tt_ncol <- integer(0)
-    formula$tt_map  <- integer(0)
+    # dud entries if no tde() terms in model formula
     s_cpts          <- matrix(0,length(cpts),0)
     smooth_idx      <- matrix(0,0,2)
     smooth_map      <- integer(0)
-    S <- 0L
+    S               <- 0L
+    
+    formula$tt_ncol <- integer(0)
+    formula$tt_map  <- integer(0)
     
   }
   
   if (has_quadrature) {
     
+    # time-varying predictor matrices, with quadrature
     s_epts_event <- s_cpts[idx_cpts[1,1]:idx_cpts[1,2], , drop = FALSE]
     s_qpts_event <- s_cpts[idx_cpts[2,1]:idx_cpts[2,2], , drop = FALSE]
     s_qpts_lcens <- s_cpts[idx_cpts[3,1]:idx_cpts[3,2], , drop = FALSE]
@@ -789,7 +787,7 @@ stan_surv <- function(formula,
   standata <- nlist(
     K, S, 
     nvars,
-    x_bar = x_stuff$x_bar,
+    x_bar = colMeans(x),
     has_intercept, 
     has_quadrature,
     smooth_map,
@@ -1031,7 +1029,7 @@ stan_surv <- function(formula,
   }
   
   # autoscaling of priors
-  prior_stuff           <- autoscale_prior(prior_stuff, predictors = x_stuff$x)
+  prior_stuff           <- autoscale_prior(prior_stuff, predictors = x)
   prior_intercept_stuff <- autoscale_prior(prior_intercept_stuff)
   prior_aux_stuff       <- autoscale_prior(prior_aux_stuff)
   prior_smooth_stuff    <- autoscale_prior(prior_smooth_stuff)
@@ -1175,7 +1173,7 @@ stan_surv <- function(formula,
                model_frame      = mf,
                terms            = mt,
                xlevels          = .getXlevels(mt, mf),
-               x                = x_stuff$x,
+               x,
                x_cpts,
                s_cpts           = if (has_tde)  s_cpts else NULL,
                z_cpts           = if (has_bars) z_cpts else NULL,
@@ -2114,7 +2112,7 @@ make_model_frame <- function(formula,
 #   K: number of cols (predictors) in the model matrix.
 make_x <- function(formula, 
                    model_frame, 
-                   xlevs          = NULL,
+                   xlevs = NULL,
                    check_constant = TRUE) {
 
   # uncentred predictor matrix, without intercept
@@ -2135,6 +2133,46 @@ make_x <- function(formula,
   }
   
   nlist(x, x_centered, x_bar, N = NROW(x), K = NCOL(x))
+}
+
+# Return the tde predictor matrix
+#
+# @param formula The parsed model formula.
+# @param model_frame The model frame.
+# @param xlevs Passed to xlev argument of model.matrix.
+# @return A named list with the following elements:
+#   s: model matrix for time-varying terms, not centered and without intercept.
+#   tt_ncol: stored attribute, a numeric vector with the number of columns in
+#     the model matrix that correspond to each tde() term in the original 
+#     model formula.
+#   tt_map: stored attribute, a numeric vector with indexing for the columns 
+#     of the model matrix stating which tde() term in the original model 
+#     formula they correspond to.
+make_s <- function(formula,
+                   model_frame, 
+                   xlevs = NULL) {
+  
+  # create the design matrix for each tde() term
+  s_parts <- xapply(
+    formula$tt_vars,  # names of variables with a tde() wrapper
+    formula$tt_forms, # time-transformation functions to interact them with
+    FUN = function(vn, tt) {
+      m1 <- make_x(vn, model_frame, xlevs = xlevs, check_constant = FALSE)$x
+      m2 <- make_x(tt, model_frame, xlevs = xlevs, check_constant = FALSE)$x
+      m3 <- matrix(apply(m1, 2L, `*`, m2), nrow = nrow(m2))
+      colnames(m3) <- uapply(colnames(m1), paste, colnames(m2), sep = ":")
+      return(m3)
+    })
+  
+  # bind columns to form one design matrix for tde() terms
+  s <- do.call("cbind", s_parts)
+  
+  # store indexing of the columns in the design matrix
+  tt_ncol <- sapply(s_parts, ncol)
+  tt_map  <- rep(seq_along(tt_ncol), tt_ncol)
+  
+  # return design matrix with indexing info as an attribute
+  structure(s, tt_ncol = tt_ncol, tt_map  = tt_map)
 }
 
 # Check if the only element of a character vector is 'Intercept'
