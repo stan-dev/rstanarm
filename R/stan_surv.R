@@ -1227,10 +1227,10 @@ stan_surv <- function(formula,
 #' @param type The type of function used to model the time-varying coefficient.
 #'   Can currently be one of the following:
 #'   \itemize{
-#'   \item \code{"bs"}: A B-spline function. Cubic B-splines by default, but
-#'   this can be changed by the user via the \code{degree} argument
-#'   described below.
-#'   \item \code{"pw"}: A piecewise constant function, with the number of 
+#'   \item \code{"bs"}: A B-spline function (the default). Note that cubic 
+#'   B-splines are used by default, but this can be changed by the user via the 
+#'   \code{degree} argument described below.
+#'   \item \code{"pw"}: A piecewise constant function with the number of 
 #'   "pieces" or "time intervals" determined by either the \code{df} or 
 #'   \code{knots} arguments described below.
 #'   }
@@ -1282,14 +1282,15 @@ stan_surv <- function(formula,
 #'
 #' @examples 
 #' # Exported function just returns the input variable
-#' identical(pbcSurv$trt, tde(pbcSurv$trt))
+#' identical(pbcSurv$trt, tde(pbcSurv$trt)) # returns TRUE
 #' 
 #' # Internally the function returns and stores information 
-#' # used to form the time-varying coefficient in the model
+#' # used to form the time-varying coefficients in the model
 #' m1 <- stan_surv(Surv(futimeYears, death) ~ tde(trt) + tde(sex, "pw"),
 #'                 data = pbcSurv, chains = 1, iter = 50)
-#' m1$formula[grep("^tt_", names(m1$formula))]
-#' 
+#' m1$formula[["tt_vars"]]
+#' m1$formula[["tt_forms"]]
+#'  
 tde <- function(x, 
                 type   = c("bs", "pw"), 
                 df     = NULL, 
