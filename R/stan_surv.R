@@ -787,7 +787,7 @@ stan_surv <- function(formula,
   standata <- nlist(
     K, S, 
     nvars,
-    x_bar = colMeans(x),
+    x_bar = aa(colMeans(x)),
     has_intercept, 
     has_quadrature,
     smooth_map,
