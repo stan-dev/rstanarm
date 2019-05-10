@@ -297,25 +297,15 @@ pp_data <-
 
   #----- model frame for generating predictor matrices
   
+  # drop response from model terms
   tt <- delete.response(terms(object, fixed.only = FALSE))
   
+  # make model frame based on time-fixed part of model formula
   mf <- make_model_frame(tt, newdata, xlevs = object$xlevs)$mf
   
+  # if using quadrature then expand rows of time-fixed predictor matrix
   if (has_quadrature && at_quadpoints)
     mf <- rep_rows(mf, times = qnodes)
-  
-  if (has_tde) {
-    
-    # formula for generating spline basis for tde effects
-    bsf <- formula$bs_form
-    
-    # generate a model frame with time transformations for tde effects
-    mf_tde <- make_model_frame(bsf, data.frame(times__ = pts))$mf
-    
-    # NB next line avoids dropping terms attribute from 'mf'
-    mf[, colnames(mf_tde)] <- mf_tde
-    
-  }
   
   # check data classes in the model frame match those used in model fitting
   if (!is.null(cl <- attr(tt, "dataClasses"))) 
@@ -328,9 +318,34 @@ pp_data <-
   #----- time-varying predictor matrix
   
   if (has_tde) {
-    s <- make_x(formula$tt_form, mf, check_constant = FALSE)$x 
+    
+    if (all(is.na(pts))) {
+      # temporary replacement to avoid error in creating spline basis
+      pts_tmp <- rep(0, length(pts))
+    } else {
+      # else use prediction times or quadrature points
+      pts_tmp <- pts
+    }
+    
+    # generate a model frame with time transformations for tde effects
+    mf_tde <- make_model_frame(formula$tt_frame, data.frame(times__ = pts_tmp))$mf
+    
+    # NB next line avoids dropping terms attribute from 'mf'
+    mf[, colnames(mf_tde)] <- mf_tde
+    
+    # construct time-varying predictor matrix
+    s <- make_s(formula, mf, xlevs = xlevs) 
+
+    if (all(is.na(pts))) {
+      # if pts were all NA then replace the time-varying predictor
+      # matrix with all NA, but retain appropriate dimensions
+      s[] <- NaN
+    }    
+      
   } else {
+    
     s <- matrix(0, nrow(mf), 0)
+    
   }
   
   #----- random effects predictor matrices
