@@ -29,11 +29,11 @@
 #' either proportional or non-proportional hazards; and
 #' (iii) standard parametric (exponential, Weibull) accelerated failure time
 #' models, with covariates included under assumptions of either time-fixed or 
-#' time-dependent acceleration factors.
-#' Where relevant, time-dependent effects (i.e. time-dependent hazard ratios
-#' or time-dependent acceleration factors) are modelled using a flexible 
-#' cubic spline-based function for the time-dependent coefficient in the
-#' linear predictor.
+#' time-dependent survival time ratios.
+#' Where relevant, the user can choose between either a smooth B-spline 
+#' function or a piecewise constant function for modelling each time-dependent 
+#' coefficient (i.e. time-dependent log hazard ratio or time-dependent log 
+#' survival time ratio) in the linear predictor.
 #'
 #' @export
 #' @importFrom splines bs
@@ -97,19 +97,18 @@
 #' @param basehaz_ops A named list specifying options related to the baseline
 #'   hazard. Currently this can include: \cr
 #'   \itemize{
-#'     \item \code{df}: a positive integer specifying the degrees of freedom 
+#'     \item \code{df}: A positive integer specifying the degrees of freedom 
 #'     for the M-splines or B-splines. Two boundary knots and \code{df - 3} 
 #'     internal knots are used to generate the cubic spline basis. The default 
 #'     is \code{df = 5}; that is, two boundary knots and two internal knots.
-#'     \item \code{knots}: An optional numeric vector specifying internal 
+#'     The internal knots are placed at equally spaced percentiles of the 
+#'     distribution of uncensored event times.
+#'     \item \code{knots}: A numeric vector explicitly specifying internal 
 #'     knot locations for the M-splines or B-splines. Note that \code{knots} 
-#'     cannot be specified if \code{df} is specified. If \code{knots} are 
-#'     \strong{not} specified, then \code{df - 3} internal knots are placed 
-#'     at equally spaced percentiles of the distribution of uncensored event 
-#'     times.
+#'     cannot be specified if \code{df} is specified.
 #'   }
-#'   Note that for the M-splines and B-splines - in addition to any internal
-#'   \code{knots} - a lower boundary knot is placed at the earliest entry time
+#'   Note that for the M-splines and B-splines -- in addition to any internal
+#'   \code{knots} -- a lower boundary knot is placed at the earliest entry time
 #'   and an upper boundary knot is placed at the latest event or censoring time.
 #'   These boundary knot locations are the default and cannot be changed by the
 #'   user.
@@ -130,18 +129,18 @@
 #'   
 #'   \strong{Note:} The prior distribution for the intercept is set so it
 #'   applies to the value \emph{when all predictors are centered} and with an  
-#'   adjustment (i.e. "constant shift") equal to the \emph{log crude event rate}.
+#'   adjustment ("constant shift") equal to the \emph{log crude event rate}.
 #'   However, the reported \emph{estimates} for the intercept always correspond 
 #'   to a parameterization without centered predictors and without the 
 #'   "constant shift". That is, these adjustments are made internally to help
 #'   with numerical stability and sampling, but the necessary 
 #'   back-transformations are made so that they are not relevant for the 
 #'   estimates returned to the user.
-#' @param prior_aux The prior distribution for "auxiliary" parameters related to 
-#'   the baseline hazard. The relevant parameters differ depending 
+#' @param prior_aux The prior distribution for "auxiliary" parameters related 
+#'   to the baseline hazard. The relevant parameters differ depending 
 #'   on the type of baseline hazard specified in the \code{basehaz} 
-#'   argument. The following applies (however, for further technical details, 
-#'   refer to the \emph{stan_surv: Survival (Time-to-Event) Models vignette)}:
+#'   argument. The following applies (for further technical details, 
+#'   refer to the \emph{stan_surv: Survival (Time-to-Event) Models vignette}):
 #'   \itemize{
 #'     \item \code{basehaz = "ms"}: the auxiliary parameters are the 
 #'     coefficients for the M-spline basis terms on the baseline hazard. 
@@ -185,9 +184,13 @@
 #'   specified in the model (i.e. the \code{tde()} function is used in the 
 #'   model formula. When that is the case, \code{prior_smooth} determines the
 #'   prior distribution given to the hyperparameter (standard deviation) 
-#'   contained in a random-walk prior for the cubic B-spline coefficients used 
-#'   to model the time-dependent coefficient. Lower values for the hyperparameter
-#'   yield a less a flexible smooth function for the time-dependent coefficient. 
+#'   contained in a random-walk prior for the parameters of the function 
+#'   used to generate the time-varying coefficient (i.e. the B-spline
+#'   coefficients when a B-spline function is used to model the time-varying
+#'   coefficient, or the deviations in the log hazard ratio specific to each
+#'   time interval when a piecewise constant function is used to model the 
+#'   time-varying coefficient). Lower values for the hyperparameter
+#'   yield a less a flexible function for the time-dependent coefficient. 
 #'   Specifically, \code{prior_smooth} can be a call to \code{exponential} to 
 #'   use an exponential distribution, or \code{normal}, \code{student_t} or 
 #'   \code{cauchy}, which results in a half-normal, half-t, or half-Cauchy 
@@ -255,7 +258,7 @@
 #'   provides more extensive details on the model formulations, including the
 #'   parameterisations for each of the parametric distributions.
 #' }
-#' \subsection{More details on time dependent effects}{
+#' \subsection{Time-dependent effects}{
 #'   By default, any covariate effects specified in the \code{formula} are
 #'   included in the model under a proportional hazards assumption (for models
 #'   estimated using a hazard scale formulation) or under the assumption of
@@ -279,8 +282,9 @@
 #'   
 #'   A time-dependent effect can be specified in the model \code{formula}
 #'   by wrapping the covariate name in the \code{tde()} function (note that
-#'   this function is not an exported function, rather it is an internal function
-#'   that can only be evaluated within the formula of a \code{stan_surv} call).
+#'   this function is not an exported function, rather it is an internal 
+#'   function that only has meaning when evaluated within the formula of 
+#'   a \code{stan_surv} call).
 #'   
 #'   For example, if we wish to estimate a time-dependent effect for the 
 #'   covariate \code{sex} then we can specify \code{tde(sex)} in the 
@@ -402,7 +406,7 @@ stan_surv <- function(formula,
                       qnodes           = 15, 
                       prior            = normal(), 
                       prior_intercept  = normal(),
-                      prior_aux        = normal(), 
+                      prior_aux, 
                       prior_smooth     = exponential(autoscale = FALSE), 
                       prior_covariance = decov(),
                       prior_PD         = FALSE,
@@ -454,6 +458,9 @@ stan_surv <- function(formula,
 
   # event indicator for each row of data
   status <- make_d(mf)
+  
+  if (any(is.na(status)))
+    stop2("Invalid status indicator in Surv object.")
   
   if (any(status < 0 || status > 3))
     stop2("Invalid status indicator in Surv object.")
@@ -1202,6 +1209,108 @@ stan_surv <- function(formula,
 }
 
 
+#' Time-varying effects in Bayesian survival models
+#' 
+#' This is a special function that can be used in the formula of a Bayesian 
+#' survival model estimated using \code{\link{stan_surv}}. It specifies that a 
+#' time-varying coefficient should be estimated for the covariate \code{x}. 
+#' The \code{tde} function only has meaning when evaluated within the formula 
+#' of a \code{\link{stan_surv}} call and does not have meaning outside of that 
+#' context. The exported function documented here just returns \code{x}. 
+#' However, when called internally the \code{tde} function returns several 
+#' other pieces of useful information used in the model fitting.
+#' 
+#' @export
+#' 
+#' @param x The covariate for which a time-varying coefficient should be 
+#'   estimated.
+#' @param type The type of function used to model the time-varying coefficient.
+#'   Can currently be one of the following:
+#'   \itemize{
+#'   \item \code{"bs"}: A B-spline function. Cubic B-splines by default, but
+#'   this can be changed by the user via the \code{degree} argument
+#'   described below.
+#'   \item \code{"pw"}: A piecewise constant function, with the number of 
+#'   "pieces" or "time intervals" determined by either the \code{df} or 
+#'   \code{knots} arguments described below.
+#'   }
+#' @param df A positive integer specifying the degrees of freedom 
+#'   for the B-splines (when \code{type = "bs"}) or the number of time  
+#'   intervals for the piecewise constant function (when \code{type = "pw"}). 
+#'   When \code{type = "bs"} two boundary knots and \code{df - degree} 
+#'   internal knots are used to generate the B-spline function.
+#'   When \code{type = "pw"} two boundary knots and \code{df - 1} 
+#'   internal knots are used to generate the piecewise constant function.
+#'   The internal knots are placed at equally spaced percentiles of the 
+#'   distribution of the uncensored event times.
+#'   The default is to use \code{df = 3} unless \code{df} or \code{knots} is 
+#'   explicitly specified by the user.
+#' @param knots A numeric vector explicitly specifying internal knot  
+#'   locations for the piecewise constant or B-spline function. Note that 
+#'   \code{knots} cannot be specified if \code{df} is specified. Also note
+#'   that this argument only controls the \emph{internal} knot locations. 
+#'   In addition, boundary knots are placed at the earliest entry time and  
+#'   latest event or censoring time and these cannot be changed by the user.
+#' @param degree A positive integer specifying the degree for the B-spline 
+#'   function. The order of the B-spline is equal to \code{degree + 1}.
+#'   This argument is only relevant for B-splines (i.e. when 
+#'   \code{type = "bs"}) and not for the piecewise constant function (when
+#'   \code{type = "pw"}).
+#'     
+#' @return The exported \code{tde} function documented here just returns 
+#'   \code{x}. However, when called internally the \code{tde} function returns 
+#'   several other pieces of useful information. For the most part, these are 
+#'   added to the formula element of the returned \code{\link{stanreg}} object
+#'   (that is \code{object[["formula"]]} where \code{object} is the fitted
+#'   model). Information added to the formula element of the \code{stanreg} 
+#'   object includes the following:
+#'   \itemize{
+#'   \item \code{tt_vars}: A list with the names of variables in the model
+#'   formula that were wrapped in the \code{tde} function.
+#'   \item \code{tt_types}: A list with the \code{type} (e.g. \code{"bs"},
+#'   \code{"pw"}) of \code{tde} function corresponding to each variable in 
+#'   \code{tt_vars}.
+#'   \item \code{tt_calls}: A list with the call required to construct the
+#'   transformation of time for each variable in \code{tt_vars}.
+#'   \item \code{tt_forms}: Same as \code{tt_calls} but expressed as formulas.
+#'   \item \code{tt_frame}: A single formula that can be used to generate a 
+#'   model frame that contains the unique set of transformations of time (e.g. 
+#'   basis terms or dummy indicators) that are required to build all 
+#'   time-varying coefficients in the model. In other words a single formula
+#'   with the unique element(s) contained in \code{tt_forms}.
+#'   }
+#'
+#' @examples 
+#' # Exported function just returns the input variable
+#' identical(pbcSurv$trt, tde(pbcSurv$trt))
+#' 
+#' # Internally the function returns and stores information 
+#' # used to form the time-varying coefficient in the model
+#' m1 <- stan_surv(Surv(futimeYears, death) ~ tde(trt) + tde(sex, "pw"),
+#'                 data = pbcSurv, chains = 1, iter = 50)
+#' m1$formula[grep("^tt_", names(m1$formula))]
+#' 
+tde <- function(x, 
+                type   = c("bs", "pw"), 
+                df     = NULL, 
+                knots  = NULL,
+                degree = 3L) {
+  
+  type <- match.arg(type)
+  
+  if (!is.null(df) && !is.null(knots))
+    stop("Cannot specify both 'df' and 'knots' in the 'tde' function.")
+  
+  if (degree < 1)
+    stop("In 'tde' function, 'degree' must be positive.")
+  
+  if (is.null(df) && is.null(knots))
+    df <- 3L
+  
+  x
+}
+
+
 #---------- internal
 
 # Construct a list with information about the baseline hazard
@@ -1627,6 +1736,12 @@ parse_formula_and_data <- function(formula, data) {
     status   <- as.vector(surv[, "status"])
     t_end    <- as.vector(surv[, "time1"])
   }
+
+  if (any(is.na(status)))
+    stop2("Invalid status indicator in Surv object.")
+  
+  if (any(status < 0 || status > 3))
+    stop2("Invalid status indicator in Surv object.")
   
   # deal with tde(x, ...)
   tde_stuff <- handle_tde(formula, 
@@ -1746,31 +1861,18 @@ handle_tde <- function(formula, min_t, max_t, times, status) {
     # @param ... Additional arguments passed by the user that control aspects of
     #   the time-varying effect.
     # @return The call used to construct a time-dependent basis.
-    tde <- function(x, type = "bs", ...) {
+    tde <- function(x, type = c("bs", "pw"), df = NULL, knots = NULL, degree = 3L) {
       
-      dots <- list(...)
-      
-      df     <- dots[["df"]]
-      knots  <- dots[["knots"]]
-      degree <- dots[["degree"]]
-      
-      ok_args <- switch(type,
-                        "bs"        = c("df", "knots", "degree"),
-                        "ms"        = c("df", "knots", "degree"),
-                        "pw"        = c("df", "knots"),
-                        "piecewise" = c("df", "knots"),
-                        stop2("Invalid 'type' argument for the 'tde' function."))
-      
-      dots <- validate_tde_args(dots, ok_args = ok_args)
+      type <- match.arg(type)
       
       if (!is.null(df) && !is.null(knots))
-        stop2("Cannot specify both 'df' and 'knots' in the 'tde' function.")
+        stop("Cannot specify both 'df' and 'knots' in the 'tde' function.")
       
-      if (is.null(df))
-        df <- 3L # assumes no intercept, ignored if the user specified knots
-
-      if (is.null(degree))
-        degree <- 3L
+      if (degree < 1)
+        stop("In 'tde' function, 'degree' must be positive.")
+      
+      if (is.null(df) && is.null(knots))
+        df <- 3L
             
       # note that times and status are taken from the parent environment
       tt <- times[status == 1] # uncensored event times
@@ -1801,11 +1903,7 @@ handle_tde <- function(formula, min_t, max_t, times, status) {
           type = type,
           call = sub("^list\\(", "splines::bs\\(times__, ", safe_deparse(new_args))))
         
-      } else if (type == "ms") {
-        
-        stop("Bug found: not yet implemented.")
-        
-      } else if (type == "pw" || type == "piecewise") {
+      } else if (type == "pw") {
         
         iknots <- get_iknots(tt, df = df, degree = 1, iknots = knots)
         
