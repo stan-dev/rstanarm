@@ -148,9 +148,11 @@ test_that("prior arguments work", {
   es(up(testmod, prior_intercept = student_t()))
   es(up(testmod, prior_intercept = cauchy()))
   
-  es(up(testmod, prior_aux = normal()))
-  es(up(testmod, prior_aux = student_t()))
-  es(up(testmod, prior_aux = cauchy()))
+  es(up(testmod, prior_aux = dirichlet()))
+  es(up(testmod, prior_aux = normal(),      basehaz = "weibull"))
+  es(up(testmod, prior_aux = student_t(),   basehaz = "weibull"))
+  es(up(testmod, prior_aux = cauchy(),      basehaz = "weibull"))
+  es(up(testmod, prior_aux = exponential(), basehaz = "weibull"))
   
   es(up(testmod, prior_smooth = exponential()))
   es(up(testmod, prior_smooth = normal()))
