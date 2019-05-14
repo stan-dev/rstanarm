@@ -545,6 +545,7 @@ stan_glm.fit <-
     optimizing_args$object <- stanfit
     optimizing_args$data <- standata
     optimizing_args$constrained <- TRUE
+    optimizing_args$importance_resampling <- importance_resampling
     if (is.null(optimizing_args$tol_rel_grad)) 
       optimizing_args$tol_rel_grad <- 10000L
     out <- do.call(optimizing, args = optimizing_args)
@@ -573,7 +574,7 @@ stan_glm.fit <-
               if (is_beta) "(phi)" else NA
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
-    if (optimizing_args$draws > 0) {
+    if (optimizing_args$draws > 0 && importance_resampling) {
         ## begin: psis diagnostics and importance resampling
         lr <- out$log_p-out$log_g
         lr[lr==-Inf] <- -800
