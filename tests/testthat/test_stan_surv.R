@@ -32,7 +32,7 @@ if (interactive())
 
 TOLSCALES <- list(
   hr_fixef  = 0.5, # how many SEs can stan_surv HRs be from coxph/stpm2 HRs
-  tde_fixef = 0.5  # how many SEs can stan_surv tde HRs be from coxph/stpm2 tde HRs
+  tve_fixef = 0.5  # how many SEs can stan_surv tve HRs be from coxph/stpm2 tve HRs
 )
 
 source(test_path("helpers", "expect_matrix.R"))
@@ -164,39 +164,39 @@ test_that("prior arguments work", {
   ee(up(testmod, prior_smooth    = lasso()), "prior distribution")
 })
 
-test_that("tde function works", {
+test_that("tve function works", {
   
-  # single tde call
+  # single tve call
   es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tde(x1) + x2))
+          Surv(eventtime, status) ~ tve(x1) + x2))
   
-  # multiple tde calls
+  # multiple tve calls
   es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tde(x1) + tde(x2)))
+          Surv(eventtime, status) ~ tve(x1) + tve(x2)))
   
-  # b-spline and piecewise tde in same model
+  # b-spline and piecewise tve in same model
   es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tde(x1, type = "bs") + tde(x2, type = "pw")))
+          Surv(eventtime, status) ~ tve(x1, type = "bs") + tve(x2, type = "pw")))
 
-  # b-spline tde optional arguments
+  # b-spline tve optional arguments
   es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tde(x1, type = "bs", knots = c(1,2)) + x2))
+          Surv(eventtime, status) ~ tve(x1, type = "bs", knots = c(1,2)) + x2))
   es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tde(x1, type = "bs", df = 4) + x2))
+          Surv(eventtime, status) ~ tve(x1, type = "bs", df = 4) + x2))
   es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tde(x1, type = "bs", degree = 2) + x2))
+          Surv(eventtime, status) ~ tve(x1, type = "bs", degree = 2) + x2))
   ee(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tde(x1, type = "bs", junk = 2) + x2), 
-          "Invalid argument to 'tde' function.")
+          Surv(eventtime, status) ~ tve(x1, type = "bs", junk = 2) + x2), 
+          "Invalid argument to 'tve' function.")
   
-  # piecewise tde optional arguments
+  # piecewise tve optional arguments
   es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tde(x1, type = "pw", knots = c(1,2)) + x2))
+          Surv(eventtime, status) ~ tve(x1, type = "pw", knots = c(1,2)) + x2))
   es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tde(x1, type = "pw", df = 4) + x2))
+          Surv(eventtime, status) ~ tve(x1, type = "pw", df = 4) + x2))
   ee(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tde(x1, type = "pw", degree = 2) + x2), 
-          "Invalid argument to 'tde' function.")
+          Surv(eventtime, status) ~ tve(x1, type = "pw", degree = 2) + x2), 
+          "Invalid argument to 'tve' function.")
 })
 
 
@@ -426,7 +426,7 @@ compare_surv(data = dat, basehaz = "weibull-aft")
 #                             coef(v_weib)['sesupper'][[1]],
 #                             tol = 0.1), "not equal") 
 
-#---- Check tde models against coxph
+#---- Check tve models against coxph
 
 #---- piecewise constant
 
@@ -438,15 +438,15 @@ dat <- simsurv(dist    = "exponential",
                lambdas = 0.1,
                betas   = c(X1 = 0.3, X2 = -0.3),
                x       = covs,
-               tde     = c(X1 = -0.6),
-               tdefun  = function(t) as.numeric(t > 10),
+               tve     = c(X1 = -0.6),
+               tvefun  = function(t) as.numeric(t > 10),
                maxt    = 30)
 dat <- merge(dat, covs)
 
 fmsurv <- Surv(eventtime, status) ~ X1 + tt(X1) + X2
 o<-SW(surv1 <- coxph(fmsurv, dat, tt = function(x, t, ...) { x * as.numeric(t > 10) }))
 
-fmstan <- Surv(eventtime, status) ~ tde(X1, type = "pw", knots = c(10)) + X2
+fmstan <- Surv(eventtime, status) ~ tve(X1, type = "pw", knots = c(10)) + X2
 o<-SW(stan1 <- stan_surv(fmstan, dat, chains = 1, refresh = 0L, iter = 1000, basehaz = "exp"))
 
 tols <- get_tols(surv1, tolscales = TOLSCALES)
@@ -456,7 +456,7 @@ for (i in names(tols$fixef))
   expect_equal(pars_surv$fixef[[i]],
                pars_stan$fixef[[i]],
                tol = tols$fixef[[i]],
-               info = "compare_estimates_tde_pw")
+               info = "compare_estimates_tve_pw")
 
 
 
@@ -483,34 +483,34 @@ o<-SW(f5  <- update(f1, basehaz = "gompertz"))
 o<-SW(f6  <- update(f1, basehaz = "exp-aft"))
 o<-SW(f7  <- update(f1, basehaz = "weibull-aft"))
 
-# time-dependent effects
-o<-SW(f8  <- update(f1, Surv(futimeYears, death) ~ sex + tde(trt)))
-o<-SW(f9  <- update(f2, Surv(futimeYears, death) ~ sex + tde(trt)))
-o<-SW(f10 <- update(f3, Surv(futimeYears, death) ~ sex + tde(trt)))
-o<-SW(f11 <- update(f4, Surv(futimeYears, death) ~ sex + tde(trt)))
-o<-SW(f12 <- update(f5, Surv(futimeYears, death) ~ sex + tde(trt)))
-o<-SW(f13 <- update(f6, Surv(futimeYears, death) ~ sex + tde(trt)))
-o<-SW(f14 <- update(f7, Surv(futimeYears, death) ~ sex + tde(trt)))
+# time-varying effects
+o<-SW(f8  <- update(f1, Surv(futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f9  <- update(f2, Surv(futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f10 <- update(f3, Surv(futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f11 <- update(f4, Surv(futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f12 <- update(f5, Surv(futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f13 <- update(f6, Surv(futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f14 <- update(f7, Surv(futimeYears, death) ~ sex + tve(trt)))
 
-o<-SW(f15 <- update(f1, Surv(futimeYears, death) ~ sex + tde(trt, type = "pw")))
-o<-SW(f16 <- update(f2, Surv(futimeYears, death) ~ sex + tde(trt, type = "pw")))
-o<-SW(f17 <- update(f3, Surv(futimeYears, death) ~ sex + tde(trt, type = "pw")))
-o<-SW(f18 <- update(f4, Surv(futimeYears, death) ~ sex + tde(trt, type = "pw")))
-o<-SW(f19 <- update(f5, Surv(futimeYears, death) ~ sex + tde(trt, type = "pw")))
-o<-SW(f20 <- update(f6, Surv(futimeYears, death) ~ sex + tde(trt, type = "pw")))
-o<-SW(f21 <- update(f7, Surv(futimeYears, death) ~ sex + tde(trt, type = "pw")))
+o<-SW(f15 <- update(f1, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+o<-SW(f16 <- update(f2, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+o<-SW(f17 <- update(f3, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+o<-SW(f18 <- update(f4, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+o<-SW(f19 <- update(f5, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+o<-SW(f20 <- update(f6, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+o<-SW(f21 <- update(f7, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
 
 # start-stop notation (incl. delayed entry)
 o<-SW(f22 <- update(f1, Surv(t0, futimeYears, death) ~ sex + trt))
-o<-SW(f23 <- update(f1, Surv(t0, futimeYears, death) ~ sex + tde(trt)))
-o<-SW(f24 <- update(f6, Surv(t0, futimeYears, death) ~ sex + tde(trt)))
-o<-SW(f25 <- update(f6, Surv(t0, futimeYears, death) ~ sex + tde(trt)))
+o<-SW(f23 <- update(f1, Surv(t0, futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f24 <- update(f6, Surv(t0, futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f25 <- update(f6, Surv(t0, futimeYears, death) ~ sex + tve(trt)))
 
 # left and interval censoring
 o<-SW(f26 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + trt))
-o<-SW(f27 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + tde(trt)))
-o<-SW(f28 <- update(f6, Surv(t1, futimeYears, type = "interval2") ~ sex + tde(trt)))
-o<-SW(f29 <- update(f6, Surv(t1, futimeYears, type = "interval2") ~ sex + tde(trt)))
+o<-SW(f27 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + tve(trt)))
+o<-SW(f28 <- update(f6, Surv(t1, futimeYears, type = "interval2") ~ sex + tve(trt)))
+o<-SW(f29 <- update(f6, Surv(t1, futimeYears, type = "interval2") ~ sex + tve(trt)))
 
 # new data for predictions
 nd1 <- pbcSurv[pbcSurv$id == 2,]

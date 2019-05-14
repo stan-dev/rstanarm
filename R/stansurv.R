@@ -43,7 +43,7 @@ stansurv <- function(object) {
     basehaz$nvars
   
   nms_beta   <- colnames(object$x_cpts)
-  nms_tde    <- get_smooth_name(object$s_cpts, type = "smooth_coefs")
+  nms_tve    <- get_smooth_name(object$s_cpts, type = "smooth_coefs")
   nms_smooth <- get_smooth_name(object$s_cpts, type = "smooth_sd")
   nms_int    <- get_int_name_basehaz(object$basehaz)
   nms_aux    <- get_aux_name_basehaz(object$basehaz)
@@ -51,7 +51,7 @@ stansurv <- function(object) {
   nms_vc     <- get_varcov_names(object$group)
   nms_coefs  <- c(nms_int,
                   nms_beta,
-                  nms_tde,
+                  nms_tve,
                   nms_aux,
                   nms_b)  
   
@@ -77,7 +77,7 @@ stansurv <- function(object) {
     ses           = ses,
     covmat        = covmat,
     formula       = object$formula,
-    has_tde       = object$has_tde,
+    has_tve       = object$has_tve,
     has_quadrature= object$has_quadrature,
     has_bars      = object$has_bars,
     terms         = object$terms,

@@ -445,7 +445,7 @@ ll_args.stansurv <- function(object, newdata = NULL, ...) {
   draws$aux            <- pars$aux
   draws$alpha          <- pars$alpha
   draws$beta           <- pars$beta
-  draws$beta_tde       <- pars$beta_tde
+  draws$beta_tve       <- pars$beta_tve
   draws$has_quadrature <- pp$has_quadrature
   draws$qnodes         <- pp$qnodes
   
@@ -612,7 +612,7 @@ ll_args.stansurv <- function(object, newdata = NULL, ...) {
                  intercept = draws$alpha)
     
     eta  <- linear_predictor(draws$beta, .xdata_surv(data_i))
-    eta  <- eta + linear_predictor(draws$beta_tde, .sdata_surv(data_i))
+    eta  <- eta + linear_predictor(draws$beta_tve, .sdata_surv(data_i))
     eta <- switch(get_basehaz_name(draws$basehaz),
                   "exp-aft"     = sweep(eta, 1L, -1, `*`),
                   "weibull-aft" = sweep(eta, 1L, -as.vector(draws$aux), `*`),
@@ -1099,7 +1099,7 @@ evaluate_log_survival.matrix <- function(log_haz, qnodes, qwts) {
 # @param basehaz A list with info about the baseline hazard.
 # @param aux,intercept A vector or matrix of parameter estimates (MCMC draws).
 # @param x Predictor matrix.
-# @param s Predictor matrix for time-dependent effects.
+# @param s Predictor matrix for time-varying effects.
 # @return A vector or matrix, depending on the input type of aux.
 evaluate_log_basehaz <- function(times, basehaz, aux, intercept = NULL) {
   switch(get_basehaz_name(basehaz),
@@ -1139,11 +1139,11 @@ log_basehaz_pw <- function(x, coefs, knots) {
   linear_predictor(coefs, dummy_matrix(x, knots = knots))
 }
 
-evaluate_log_haz <- function(times, basehaz, betas, betas_tde, aux, 
+evaluate_log_haz <- function(times, basehaz, betas, betas_tve, aux, 
                              intercept = NULL, x, s = NULL) {
   eta <- linear_predictor(betas, x)
   if ((!is.null(s)) && ncol(s))
-    eta <- eta + linear_predictor(betas_tde, s)
+    eta <- eta + linear_predictor(betas_tve, s)
   eta <- switch(get_basehaz_name(basehaz),
                 "exp-aft"     = sweep(eta, 1L, -1, `*`),
                 "weibull-aft" = sweep(eta, 1L, -as.vector(aux), `*`),

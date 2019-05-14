@@ -176,9 +176,9 @@ functions {
   }
 
   /**
-  * Log-prior for tde spline coefficients and their smoothing parameters
+  * Log-prior for tve spline coefficients and their smoothing parameters
   *
-  * @param z_beta_tde Vector of unscaled spline coefficients
+  * @param z_beta_tve Vector of unscaled spline coefficients
   * @param smooth_sd_raw Vector (potentially of length 1) of smoothing sds
   * @param dist Integer specifying the type of prior distribution for the
   *   smoothing sds
@@ -186,8 +186,8 @@ functions {
   *   for the smoothing sds
   * @return Nothing
   */
-  real smooth_lp(vector z_beta_tde, vector smooth_sd_raw, int dist, vector df) {
-    target += normal_lpdf(z_beta_tde | 0, 1);
+  real smooth_lp(vector z_beta_tve, vector smooth_sd_raw, int dist, vector df) {
+    target += normal_lpdf(z_beta_tve | 0, 1);
     if (dist > 0) {
       real log_half = -0.693147180559945286;
       if (dist == 1)
@@ -414,7 +414,7 @@ data {
   int<lower=0> qicens;     // num. quadrature points for rows w/ interval censoring
   int<lower=0> qdelay;     // num. quadrature points for rows w/ delayed entry
   int<lower=0> nvars;      // num. aux parameters for baseline hazard
-  int<lower=1> smooth_map[S]; // indexing of smooth sds for tde spline coefs
+  int<lower=1> smooth_map[S]; // indexing of smooth sds for tve spline coefs
   int<lower=0> smooth_idx[S > 0 ? max(smooth_map) : 0, 2];
 
   // dimensions for random efffects structure, see table 3 of
@@ -622,7 +622,7 @@ data {
   vector<lower=0>[nvars] prior_df_for_aux;
   vector<lower=0>[nvars] prior_conc_for_aux; // dirichlet concentration pars
 
-  // hyperparameters (tde smooths), set to 0 if there is no prior
+  // hyperparameters (tve smooths), set to 0 if there is no prior
   vector         [S > 0 ? max(smooth_map) : 0] prior_mean_for_smooth;
   vector<lower=0>[S > 0 ? max(smooth_map) : 0] prior_scale_for_smooth;
   vector<lower=0>[S > 0 ? max(smooth_map) : 0] prior_df_for_smooth;
@@ -694,10 +694,10 @@ parameters {
   vector<lower=coefs_lb(type)>[type == 4 ? 0 : nvars] z_coefs;
   simplex[nvars] ms_coefs[type == 4]; // constrained coefs for M-splines
 
-  // unscaled tde spline coefficients
-  vector[S] z_beta_tde;
+  // unscaled tve spline coefficients
+  vector[S] z_beta_tve;
 
-  // hyperparameter, the prior sd for the tde spline coefs
+  // hyperparameter, the prior sd for the tve spline coefs
   vector<lower=0>[S > 0 ? max(smooth_map) : 0] smooth_sd_raw;
 
   // parameters for random effects
@@ -723,9 +723,9 @@ transformed parameters {
   // declare basehaz parameters
   vector[type == 4 ? 0 : nvars] coefs;
 
-  // declare tde spline coefficients and their hyperparameters
-  vector[S] beta_tde;
-  vector[S > 0 ? max(smooth_map) : 0] smooth_sd; // sd for tde splines
+  // declare tve spline coefficients and their hyperparameters
+  vector[S] beta_tve;
+  vector[S > 0 ? max(smooth_map) : 0] smooth_sd; // sd for tve splines
 
   // declare random effects and var-cov parameters
   vector[q] b;
@@ -744,17 +744,17 @@ transformed parameters {
     coefs = z_coefs .* prior_scale_for_aux;
   }
 
-  // define tde spline coefficients using random walk
+  // define tve spline coefficients using random walk
   if (S > 0) {
     smooth_sd = smooth_sd_raw .* prior_scale_for_smooth + prior_mean_for_smooth;
     for (i in 1:max(smooth_map)) {
       int beg = smooth_idx[i,1];        // index of first spline coef
       int end = smooth_idx[i,2];        // index of last  spline coef
-      beta_tde[beg] = z_beta_tde[beg];  // define first spline coef
+      beta_tve[beg] = z_beta_tve[beg];  // define first spline coef
       if (end > beg) {                  // define subsequent spline coefs
         for (j in (beg+1):end) {
-          real tmp = beta_tde[j-1];
-          beta_tde[j] = tmp + z_beta_tde[j] * smooth_sd[smooth_map[j]];
+          real tmp = beta_tve[j-1];
+          beta_tve[j] = tmp + z_beta_tve[j] * smooth_sd[smooth_map[j]];
         }
       }
     }
@@ -964,13 +964,13 @@ model {
 
       // add on time-varying part to linear predictor
       if (S > 0) {
-        if (Nevent > 0) eta_epts_event += s_epts_event * beta_tde;
-        if (qevent > 0) eta_qpts_event += s_qpts_event * beta_tde;
-        if (qlcens > 0) eta_qpts_lcens += s_qpts_lcens * beta_tde;
-        if (qrcens > 0) eta_qpts_rcens += s_qpts_rcens * beta_tde;
-        if (qicens > 0) eta_qpts_icenl += s_qpts_icenl * beta_tde;
-        if (qicens > 0) eta_qpts_icenu += s_qpts_icenu * beta_tde;
-        if (qdelay > 0) eta_qpts_delay += s_qpts_delay * beta_tde;
+        if (Nevent > 0) eta_epts_event += s_epts_event * beta_tve;
+        if (qevent > 0) eta_qpts_event += s_qpts_event * beta_tve;
+        if (qlcens > 0) eta_qpts_lcens += s_qpts_lcens * beta_tve;
+        if (qrcens > 0) eta_qpts_rcens += s_qpts_rcens * beta_tve;
+        if (qicens > 0) eta_qpts_icenl += s_qpts_icenl * beta_tve;
+        if (qicens > 0) eta_qpts_icenu += s_qpts_icenu * beta_tve;
+        if (qdelay > 0) eta_qpts_delay += s_qpts_delay * beta_tve;
       }
 
       // add on log crude event rate / time (helps to center intercept)
@@ -1168,9 +1168,9 @@ model {
     real dummy = basehaz_lp(z_coefs, prior_dist_for_aux, prior_df_for_aux);
   }
 
-  // log priors for tde spline coefficients and their smoothing parameters
+  // log priors for tve spline coefficients and their smoothing parameters
   if (S > 0) {
-    real dummy = smooth_lp(z_beta_tde, smooth_sd_raw,
+    real dummy = smooth_lp(z_beta_tve, smooth_sd_raw,
                            prior_dist_for_smooth, prior_df_for_smooth);
   }
 

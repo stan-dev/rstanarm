@@ -44,7 +44,7 @@ set.seed(989898)
 
 This vignette provides an introduction to the `stan_surv` modelling function in the __rstanarm__ package. The `stan_surv` function allows the user to fit survival models (sometimes known as models for time-to-event data) under a Bayesian framework. 
 
-Currently, the command fits standard parametric (exponential, Weibull and Gompertz) and flexible parametric (cubic spline-based) survival models on the hazard scale, with covariates included under assumptions of either proportional or non-proportional hazards. Where relevant, non-proportional hazards are modelled using a flexible cubic spline-based function for the time-dependent effect (i.e. the time-dependent hazard ratio).
+Currently, the command fits standard parametric (exponential, Weibull and Gompertz) and flexible parametric (cubic spline-based) survival models on the hazard scale, with covariates included under assumptions of either proportional or non-proportional hazards. Where relevant, non-proportional hazards are modelled using a flexible cubic spline-based function for the time-varying effect (i.e. the time-varying hazard ratio).
 
 
 # Introduction
@@ -126,7 +126,7 @@ h_i(t) = h_0(t) \exp \left[ \eta_i(t) \right]
 \end{split}
 \end{equation}
 \
-where $h_0(t)$ is the baseline hazard (i.e. the hazard for an individual with all covariates set equal to zero) at time $t$, and $\eta_i(t)$ denotes the linear predictor evaluated for individual $i$ at time $t$. For full generality, we allow the linear predictor to be time-dependent; that is, it may be a function of time-varying covariates or time-varying coefficients (i.e. a time-varying hazard ratio). However, if there are no time-varying covariates or time-varying coefficients in the model, then the linear predictor reduces to a time-fixed quantity and the definition of the hazard function reduces to:
+where $h_0(t)$ is the baseline hazard (i.e. the hazard for an individual with all covariates set equal to zero) at time $t$, and $\eta_i(t)$ denotes the linear predictor evaluated for individual $i$ at time $t$. For full generality, we allow the linear predictor to be time-varying; that is, it may be a function of time-varying covariates or time-varying coefficients (i.e. a time-varying hazard ratio). However, if there are no time-varying covariates or time-varying coefficients in the model, then the linear predictor reduces to a time-fixed quantity and the definition of the hazard function reduces to:
 \
 \begin{equation}
 \begin{split}
@@ -156,11 +156,11 @@ where $\beta_0$ denotes the intercept parameter, $x_{ip}(t)$ denotes the observe
   \end{cases}
 \end{align}
 \
-such that $\theta_{p,0}$ is a time-fixed log hazard ratio, and $B(t; \boldsymbol{\theta_p}, \boldsymbol{k_p})$ is a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_p}$ and parameter vector $\boldsymbol{\theta_p}$. Where relevant, the cubic B-spline function is used to model the time-dependent hazard ratio as a smooth function of time.
+such that $\theta_{p,0}$ is a time-fixed log hazard ratio, and $B(t; \boldsymbol{\theta_p}, \boldsymbol{k_p})$ is a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_p}$ and parameter vector $\boldsymbol{\theta_p}$. Where relevant, the cubic B-spline function is used to model the time-varying hazard ratio as a smooth function of time.
 
 **Note:** in these expressions, the quantity $\exp \left( \beta_p(t) \right)$ is referred to as a "hazard ratio". The *hazard ratio (HR)* quantifies the relative increase in the hazard that is associated with a unit-increase in the relevant covariate, $x_{ip}$; e.g. a hazard ratio of 2 means that a unit-increase in the covariate leads to a doubling in the hazard (i.e. the instantaneous rate) of the event.
 
-**Note:** in the `stan_surv` modelling function the user specifies that they wish to estimate a time-dependent hazard ratio for a covariate by wrapping the covariate name in the `tde()` function in the model formula; see the examples in the latter part of this vignette.
+**Note:** in the `stan_surv` modelling function the user specifies that they wish to estimate a time-varying hazard ratio for a covariate by wrapping the covariate name in the `tve()` function in the model formula; see the examples in the latter part of this vignette.
 
 ### Distributions
 
@@ -196,7 +196,7 @@ For identifiability of the intercept $\beta_0$ in the linear predictor $\eta_i$ 
 h_i(t) = \exp ( B(t; \boldsymbol{\gamma}, \boldsymbol{k_0}) + \eta_i(t) )
 \end{equation}
 
-**Note:** when the linear predictor *is not* time-dependent (i.e. under proportional hazards), there is a closed form expression for the survival probability; details shown in the appendix. However, when the linear predictor *is* time-dependent (i.e. under non-proportional hazards) there is no closed form expression for the survival probability; instead, quadrature is used to evaluate the survival probability for inclusion in the likelihood. Extended details on the parameterisations are given in the appendix.
+**Note:** when the linear predictor *is not* time-varying (i.e. under proportional hazards), there is a closed form expression for the survival probability; details shown in the appendix. However, when the linear predictor *is* time-varying (i.e. under non-proportional hazards) there is no closed form expression for the survival probability; instead, quadrature is used to evaluate the survival probability for inclusion in the likelihood. Extended details on the parameterisations are given in the appendix.
 
 ## Accelerated failure time formulations
 
@@ -210,7 +210,7 @@ S_i(t) = S_0 \left( \int_0^t \exp \left[ - \eta_i(u) \right] du \right)
 \end{split}
 \end{equation}
 \
-where $S_0(t)$ is the baseline survival probability at time $t$, and $\eta_i(t)$ denotes the linear predictor evaluated for individual $i$ at time $t$. For full generality, we allow the linear predictor to be time-dependent; that is, it may be a function of time-varying covariates or time-varying coefficients (i.e. a time-varying acceleration factor). However, if there are no time-varying covariates or time-varying coefficients in the model, then the linear predictor reduces to a time-fixed quantity (i.e. $\eta_i(t) = \eta_i$) and the definition of the survival probability reduces to:
+where $S_0(t)$ is the baseline survival probability at time $t$, and $\eta_i(t)$ denotes the linear predictor evaluated for individual $i$ at time $t$. For full generality, we allow the linear predictor to be time-varying; that is, it may be a function of time-varying covariates or time-varying coefficients (i.e. a time-varying acceleration factor). However, if there are no time-varying covariates or time-varying coefficients in the model, then the linear predictor reduces to a time-fixed quantity (i.e. $\eta_i(t) = \eta_i$) and the definition of the survival probability reduces to:
 \
 \begin{equation}
 \begin{split}
@@ -236,15 +236,15 @@ where $\beta_0^*$ denotes the intercept parameter, $x_{ip}(t)$ denotes the obser
     \theta_{p,0}
     & \text{for time-fixed acceleration} \\
     \theta_{p,0} + B(t; \boldsymbol{\theta_p}, \boldsymbol{k_p})
-    & \text{for time-dependent acceleration}
+    & \text{for time-varying acceleration}
   \end{cases}
 \end{align}
 \
-such that $\theta_{p,0}$ is a time-fixed log survival time ratio, and $B(t; \boldsymbol{\theta_p}, \boldsymbol{k_p})$ is a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_p}$ and parameter vector $\boldsymbol{\theta_p}$. Where relevant, the cubic B-spline function is used to model the time-dependent acceleration factor as a smooth function of time.
+such that $\theta_{p,0}$ is a time-fixed log survival time ratio, and $B(t; \boldsymbol{\theta_p}, \boldsymbol{k_p})$ is a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_p}$ and parameter vector $\boldsymbol{\theta_p}$. Where relevant, the cubic B-spline function is used to model the time-varying acceleration factor as a smooth function of time.
 
 **Note:** in these expressions, the quantity $\exp \left( - \beta_p^*(t) \right)$ is referred to as an "acceleration factor" and the quantity $\exp \left( \beta_p^*(t) \right)$ is referred to as a "survival time ratio". The *acceleration factor (AF)* quantifies the acceleration (or deceleration) of the event process that is associated with a unit-increase in the relevant covariate, $x_{ip}$; e.g. an acceleration factor of 0.5 means that a unit-increase in the covariate leads to an individual approaching the event at half the speed. If you find that somewhat confusing, then it may be easier to think about the *survival time ratio (STR)* . The *survival time ratio* is the inverse of the acceleration factor (i.e. $STR = 1/AF$). The *survival time ratio* is interpreted as the increase (or decrease) in the expected survival time that is associated with a unit-increase in the relevant covariate, $x_{ip}$; e.g. a survival time ratio of 2 (which is equivalent to an acceleration factor of 0.5) means that a unit-increase in the covariate leads to an doubling in the expected survival time. 
 
-**Note:** in the `stan_surv` modelling function the user specifies that they wish to estimate a time-dependent acceleration factor for a covariate by wrapping the covariate name in the `tde()` function in the model formula; see the examples in the latter part of this vignette.
+**Note:** in the `stan_surv` modelling function the user specifies that they wish to estimate a time-varying acceleration factor for a covariate by wrapping the covariate name in the `tve()` function in the model formula; see the examples in the latter part of this vignette.
 
 ### Distributions
 
@@ -254,7 +254,7 @@ such that $\theta_{p,0}$ is a time-fixed log survival time ratio, and $B(t; \bol
 S_i(t) = \exp \left( - t \lambda_i \right)
 \end{equation}
 \
-or in the case with time-dependent effects
+or in the case with time-varying effects
 \
 \begin{equation}
 S_i(t) = \exp \left( - \int_0^t \exp ( -\eta_i(u) ) du \right)
@@ -266,13 +266,13 @@ S_i(t) = \exp \left( - \int_0^t \exp ( -\eta_i(u) ) du \right)
 S_i(t) = \exp \left( - t^{\gamma} \lambda_i \right)
 \end{equation}
 \
-or in the case with time-dependent effects
+or in the case with time-varying effects
 \
 \begin{equation}
 S_i(t) = \exp \left( - \left[ \int_0^t \exp ( -\eta_i(u) ) du \right]^{\gamma} \right)
 \end{equation}
 
-**Note:** when the linear predictor *is not* time-dependent (i.e. under time-fixed acceleration), there is a closed form expression for both the hazard function and survival function; details shown in the appendix. However, when the linear predictor *is* time-dependent (i.e. under time-dependent acceleration) there is no closed form expression for the hazard function or survival probability; instead, quadrature is used to evaluate the cumulative acceleration factor, which in turn is used to evaluate the hazard function and survival probability for inclusion in the likelihood. Extended details on the parameterisations are given in the appendix.
+**Note:** when the linear predictor *is not* time-varying (i.e. under time-fixed acceleration), there is a closed form expression for both the hazard function and survival function; details shown in the appendix. However, when the linear predictor *is* time-varying (i.e. under time-varying acceleration) there is no closed form expression for the hazard function or survival probability; instead, quadrature is used to evaluate the cumulative acceleration factor, which in turn is used to evaluate the hazard function and survival probability for inclusion in the likelihood. Extended details on the parameterisations are given in the appendix.
 
 ## Likelihood
 
@@ -304,7 +304,7 @@ The prior distribution for the intercept parameter in the linear predictor is sp
 
 The choice of prior distribution for the time-fixed coefficients $\theta_{p,0}$ ($p = 1,...,P$) is specified via the `prior` argument to `stan_surv`. This can any of the standard prior distributions allowed for regression coefficients in the **rstanarm** package; see the [priors vignette](priors.html) and the `stan_surv` help file for details. 
 
-The B-spline coefficients related to each time-dependent effect, that is $\boldsymbol{\theta_p}$, are given a random walk prior of the form $\theta_{p,1} \sim N(0,1)$ and $\theta_{p,m} \sim N(\theta_{p,m-1},\tau_p)$ for $m = 2,...,M$, where $M$ is the total number of cubic B-spline basis terms. The prior distribution for the hyperparameter $\tau_p$ is specified via the `prior_smooth` argument to `stan_surv`. Lower values of $\tau_p$ lead to a less flexible (i.e. smoother) function. Choices of prior distribution for the hyperparameter $\tau_p$ include an exponential, half-normal, half-t, or half-Cauchy distribution, and these are detailed in the `stan_surv` help file.
+The B-spline coefficients related to each time-varying effect, that is $\boldsymbol{\theta_p}$, are given a random walk prior of the form $\theta_{p,1} \sim N(0,1)$ and $\theta_{p,m} \sim N(\theta_{p,m-1},\tau_p)$ for $m = 2,...,M$, where $M$ is the total number of cubic B-spline basis terms. The prior distribution for the hyperparameter $\tau_p$ is specified via the `prior_smooth` argument to `stan_surv`. Lower values of $\tau_p$ lead to a less flexible (i.e. smoother) function. Choices of prior distribution for the hyperparameter $\tau_p$ include an exponential, half-normal, half-t, or half-Cauchy distribution, and these are detailed in the `stan_surv` help file.
 
 
 # Usage examples
@@ -321,7 +321,7 @@ fm <- Surv(recyrs, status) ~ group
 mod1 <- stan_surv(fm, data = bcancer, seed = 123321)
 ```
 
-The model here is estimated using the default cubic M-splines (with 5 degrees of freedom) for modelling the baseline hazard. Since there are no time-dependent effects in the model (i.e. we did not wrap any covariates in the `tde()` function) there is a closed form expression for the cumulative hazard and survival function and so the model is relatively fast to fit. Specifically, the model takes ~3.5 sec for each MCMC chain based on the default 2000 (1000 warm up, 1000 sampling) MCMC iterations. 
+The model here is estimated using the default cubic M-splines (with 5 degrees of freedom) for modelling the baseline hazard. Since there are no time-varying effects in the model (i.e. we did not wrap any covariates in the `tve()` function) there is a closed form expression for the cumulative hazard and survival function and so the model is relatively fast to fit. Specifically, the model takes ~3.5 sec for each MCMC chain based on the default 2000 (1000 warm up, 1000 sampling) MCMC iterations. 
 
 We can easily obtain the estimated hazard ratios for the 3-catgeory group covariate using the generic `print` method for `stansurv` objects, as follows
 
@@ -427,7 +427,7 @@ We can quite clearly see in the plot the assumption of proportional hazards. We 
 
 ## Example: a model with non-proportional hazards
 
-To demonstrate the implementation of time-dependent effects in `stan_surv` we will use a simulated dataset, generated using the **simsurv** package (Brilleman, 2018).
+To demonstrate the implementation of time-varying effects in `stan_surv` we will use a simulated dataset, generated using the **simsurv** package (Brilleman, 2018).
 
 We will simulate a dataset with $N = 200$ individuals with event times generated under the following Weibull hazard function
 \
@@ -435,7 +435,7 @@ We will simulate a dataset with $N = 200$ individuals with event times generated
 h_i(t) = \gamma t^{\gamma-1} \lambda exp( \beta(t) x_i )
 \end{align}
 \
-with scale parameter $\lambda = 0.1$, shape parameter $\gamma = 1.5$, binary baseline covariate $X_i \sim \text{Bern}(0.5)$, and time-dependent hazard ratio $\beta(t) = -0.5 + 0.2 t$. We will enforce administrative censoring at 5 years if an individual's simulated event time is >5 years.
+with scale parameter $\lambda = 0.1$, shape parameter $\gamma = 1.5$, binary baseline covariate $X_i \sim \text{Bern}(0.5)$, and time-varying hazard ratio $\beta(t) = -0.5 + 0.2 t$. We will enforce administrative censoring at 5 years if an individual's simulated event time is >5 years.
 
 ```{r simsurv-simdata}
 # load package
@@ -452,7 +452,7 @@ covs <- data.frame(id  = 1:100,
 dat  <- simsurv(lambdas = 0.1, 
                 gammas  = 1.5, 
                 betas   = c(trt = -0.5),
-                tde     = c(trt = 0.2),
+                tve     = c(trt = 0.2),
                 x       = covs, 
                 maxt    = 5)
 
@@ -463,30 +463,30 @@ dat  <- merge(dat, covs)
 head(dat)
 ```
 
-Now that we have our simulated dataset, let us fit a model with time-dependent hazard ratio for `trt`
+Now that we have our simulated dataset, let us fit a model with time-varying hazard ratio for `trt`
 
 ```{r, warning = FALSE, message = FALSE, results='hide'}
-fm <- Surv(eventtime, status) ~ tde(trt)
+fm <- Surv(eventtime, status) ~ tve(trt)
 mod2 <- stan_surv(formula = fm, data = dat, seed = 5544, iter = 500)
 ```
 
-By default the cubic B-spline basis used for modelling the time-dependent hazard ratio is evaluated with 3 degrees of freedom (i.e. two boundary knots placed at the limits of the range of event times, but no internal knots). For a more or less flexible spline function we can specify the `df` arugment to `tde()` function. For example, we could specify the model formula as
+By default the cubic B-spline basis used for modelling the time-varying hazard ratio is evaluated with 3 degrees of freedom (i.e. two boundary knots placed at the limits of the range of event times, but no internal knots). For a more or less flexible spline function we can specify the `df` arugment to `tve()` function. For example, we could specify the model formula as
 
 ```{r, warning = FALSE, message = FALSE, results='hide', eval=FALSE}
-fm <- Surv(eventtime, status) ~ tde(trt, df = 5)
+fm <- Surv(eventtime, status) ~ tve(trt, df = 5)
 ```
 
-so that we use 5 degrees of freedom for modelling the time-dependent effect (i.e. two boundary knots placed at the limits of the range of event times, as well as two internal knots placed - by default - at the 33.3rd and 66.6th percentiles of the distribution of uncensored event times).
+so that we use 5 degrees of freedom for modelling the time-varying effect (i.e. two boundary knots placed at the limits of the range of event times, as well as two internal knots placed - by default - at the 33.3rd and 66.6th percentiles of the distribution of uncensored event times).
 
-Let us now plot the estimated time-dependent hazard ratio from the fitted model. We can do this using the generic `plot` method for `stansurv` objects, for which we can specify the `plotfun = "tde"` argument. (Note that in this case, there is only one covariate in the model with a time-dependent effect, but if there were others, we could specify which covariate(s) we want to plot the time-dependent effect for by specifying the `pars` argument to the `plot` call).
+Let us now plot the estimated time-varying hazard ratio from the fitted model. We can do this using the generic `plot` method for `stansurv` objects, for which we can specify the `plotfun = "tve"` argument. (Note that in this case, there is only one covariate in the model with a time-varying effect, but if there were others, we could specify which covariate(s) we want to plot the time-varying effect for by specifying the `pars` argument to the `plot` call).
 
 ```{r, fig.height=5}
-plot(mod2, plotfun = "tde")
+plot(mod2, plotfun = "tve")
 ```
 
 From the plot, we can see how the hazard ratio (i.e. the effect of treatment on the hazard of the event) changes as a function of time. The treatment appears to be protective during the first few years following baseline (i.e. HR < 1), and then the treatment appears to become harmful after about 4 years post-baseline (of course, this is the model we simulated under!). 
 
-The plot shows a large amount of uncertainty around the estimated time-dependent hazard ratio. This is to be expected, since we only simulated a dataset of 100 individuals of which only around 70% experienced the event before being censored at 5 years. So, there is very little data (i.e. very few events) with which to reliably estimate the time-dependent hazard ratio. We can also see this reflected in the differences between our data generating model and the estimates from our fitted model. In our data generating model, the time-dependent hazard ratio equals 1 (i.e. the log hazard ratio equals 0) at 2.5 years, but in our fitted model the median estimate for our time-dependent hazard ratio equals 1 at around ~3 years. This is a reflection of the large amount of sampling error, due to our simulated dataset being so small.
+The plot shows a large amount of uncertainty around the estimated time-varying hazard ratio. This is to be expected, since we only simulated a dataset of 100 individuals of which only around 70% experienced the event before being censored at 5 years. So, there is very little data (i.e. very few events) with which to reliably estimate the time-varying hazard ratio. We can also see this reflected in the differences between our data generating model and the estimates from our fitted model. In our data generating model, the time-varying hazard ratio equals 1 (i.e. the log hazard ratio equals 0) at 2.5 years, but in our fitted model the median estimate for our time-varying hazard ratio equals 1 at around ~3 years. This is a reflection of the large amount of sampling error, due to our simulated dataset being so small.
 
 
 # References
@@ -752,9 +752,9 @@ The cumulative hazard, survival function, and CDF for the B-spline model cannot 
 \end{align}
 
 
-### Extension to time-dependent coefficients (i.e. non-proportional hazards)
+### Extension to time-varying coefficients (i.e. non-proportional hazards)
 
-We can extend the previous model formulations to allow for time-dependent coefficients (i.e. non-proportional hazards). The time-dependent linear predictor is introduced on the hazard scale. That is, $\eta_i$ in our previous model definitions is instead replaced by $\eta_i(t)$. This leads to an analytical form for the hazard and log hazard. However, in general, there is no longer a closed form expression for the cumulative hazard, survival function, or CDF. Therefore, when the linear predictor includes time-dependent coefficients, quadrature is used to evaluate the following:
+We can extend the previous model formulations to allow for time-varying coefficients (i.e. non-proportional hazards). The time-varying linear predictor is introduced on the hazard scale. That is, $\eta_i$ in our previous model definitions is instead replaced by $\eta_i(t)$. This leads to an analytical form for the hazard and log hazard. However, in general, there is no longer a closed form expression for the cumulative hazard, survival function, or CDF. Therefore, when the linear predictor includes time-varying coefficients, quadrature is used to evaluate the following:
 
 \begin{align}
 \begin{split}
@@ -950,13 +950,13 @@ Lastly, the general form for the hazard function and survival function under an 
 \end{align}
 
 
-### Extension to time-dependent coefficients (i.e. time-dependent acceleration factors)
+### Extension to time-varying coefficients (i.e. time-varying acceleration factors)
 
-We can extend the previous model formulations to allow for time-dependent coefficients (i.e. time-dependent acceleration factors). 
+We can extend the previous model formulations to allow for time-varying coefficients (i.e. time-varying acceleration factors). 
 
 The so-called "unmoderated" survival probability for an individual at time $t$ is defined as the baseline survival probability at time $t$, i.e. $S_i(t) = S_0(t)$. With a time-fixed acceleration factor, the survival probability for a so-called "moderated" individual is defined as the baseline survival probability but evaluated at "time $t$ multiplied by the acceleration factor $\exp(-\eta_i)$". That is, the survival probability for the moderated individual is $S_i(t) = S_0(t \exp(-\eta_i))$. 
 
-However, with time-dependent acceleration we cannot simply multiply time by a fixed (acceleration) constant. Instead, we must integrate the function for the time-dependent acceleration factor over the interval $0$ to $t$. In other words, we must evaluate:
+However, with time-varying acceleration we cannot simply multiply time by a fixed (acceleration) constant. Instead, we must integrate the function for the time-varying acceleration factor over the interval $0$ to $t$. In other words, we must evaluate:
 \
 \begin{align}
 \begin{split}
@@ -966,7 +966,7 @@ However, with time-dependent acceleration we cannot simply multiply time by a fi
 \
 as described by Hougaard (1999).
 
-Hougaard also gives a general expression for the hazard function under time-dependent acceleration, as follows:
+Hougaard also gives a general expression for the hazard function under time-varying acceleration, as follows:
 \
 \begin{align}
 \begin{split}
@@ -974,7 +974,7 @@ Hougaard also gives a general expression for the hazard function under time-depe
 \end{split}
 \end{align}
 
-**Note:** It is interesting to note here that the *hazard* at time $t$ is in fact a function of the full history of covariates and parameters (i.e. the linear predictor) from time $0$ up until time $t$. This is different to the hazard scale formulation of time-dependent effects (i.e. non-proportional hazards). Under the hazard scale formulation with time-dependent effects, the *survival* probability is a function of the full history between times $0$ and $t$, but the *hazard* is **not**; instead, the hazard is only a function of covariates and parameters as defined at the current time. This is particularly important to consider when fitting accelerated failure time models with time-dependent effects in the presence of delayed entry (i.e. left truncation).
+**Note:** It is interesting to note here that the *hazard* at time $t$ is in fact a function of the full history of covariates and parameters (i.e. the linear predictor) from time $0$ up until time $t$. This is different to the hazard scale formulation of time-varying effects (i.e. non-proportional hazards). Under the hazard scale formulation with time-varying effects, the *survival* probability is a function of the full history between times $0$ and $t$, but the *hazard* is **not**; instead, the hazard is only a function of covariates and parameters as defined at the current time. This is particularly important to consider when fitting accelerated failure time models with time-varying effects in the presence of delayed entry (i.e. left truncation).
 
 For the exponential distribution, this leads to:
 
@@ -1012,4 +1012,4 @@ and for the Weibull distribution, this leads to:
 \end{split}
 \end{align}
 
-The general expressions for the hazard and survival function under an AFT model with a time-dependent linear predictor are used to evaluate the likelihood for the accelerated failure time model in `stan_surv` when time-dependent effects are specified in the model formula. Specifically, quadrature is used to evaluate the cumulative acceleration factor $\int_0^t \exp(-\eta_i(u)) du$ and this is then substituted into the relevant expressions for the hazard and survival.
+The general expressions for the hazard and survival function under an AFT model with a time-varying linear predictor are used to evaluate the likelihood for the accelerated failure time model in `stan_surv` when time-varying effects are specified in the model formula. Specifically, quadrature is used to evaluate the cumulative acceleration factor $\int_0^t \exp(-\eta_i(u)) du$ and this is then substituted into the relevant expressions for the hazard and survival.

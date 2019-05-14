@@ -147,7 +147,7 @@
   */
   vector quadrature_aft(vector qwts, vector eta, int qnodes, int N) {
     int M = rows(eta);
-    vector[M] af = exp(-eta); // time-dependent acceleration factor
+    vector[M] af = exp(-eta); // time-varying acceleration factor
     matrix[N,qnodes] qwts_mat = to_matrix(qwts, N, qnodes);
     matrix[N,qnodes] af_mat   = to_matrix(af,   N, qnodes);
     vector[N] caf = rows_dot_product(qwts_mat, af_mat);

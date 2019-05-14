@@ -1191,7 +1191,7 @@ STOP_arg_required_for_stanmvreg <- function(arg) {
 # @param arg The argument
 STOP_id_var_required <- function() {
   stop2("'id_var' must be specified for models with a start-stop response ",
-        "or with time dependent effects.")
+        "or with time-varying effects.")
 }
 
 # Error message when a function is not yet implemented for stanmvreg objects
@@ -1334,7 +1334,7 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
       stop("'newdataEvent' cannot contain NAs.", call. = FALSE)
     if (!duplicate_ok && any(duplicated(newdataEvent[[id_var]])))
       stop("'newdataEvent' should only contain one row per individual, since ",
-           "time varying covariates are not allowed in the prediction data.")
+           "time-varying covariates are not allowed in the prediction data.")
     newdatas <- c(newdatas, list(Event = newdataEvent))
   }
   if (length(newdatas)) {
@@ -1493,16 +1493,16 @@ extract_pars.stansurv <- function(object, stanmat = NULL, means = FALSE) {
   if (means) 
     stanmat <- t(colMeans(stanmat)) # return posterior means
   nms_beta <- colnames(object$x)
-  nms_tde  <- get_smooth_name(object$s_cpts, type = "smooth_coefs")
+  nms_tve  <- get_smooth_name(object$s_cpts, type = "smooth_coefs")
   nms_smth <- get_smooth_name(object$s_cpts, type = "smooth_sd")
   nms_int  <- get_int_name_basehaz(object$basehaz)
   nms_aux  <- get_aux_name_basehaz(object$basehaz)
   alpha    <- stanmat[, nms_int,  drop = FALSE]
   beta     <- stanmat[, nms_beta, drop = FALSE]
-  beta_tde <- stanmat[, nms_tde,  drop = FALSE]
+  beta_tve <- stanmat[, nms_tve,  drop = FALSE]
   aux      <- stanmat[, nms_aux,  drop = FALSE]
   smooth   <- stanmat[, nms_smth, drop = FALSE]
-  nlist(alpha, beta, beta_tde, aux, smooth, stanmat)
+  nlist(alpha, beta, beta_tve, aux, smooth, stanmat)
 }
 
 extract_pars.stanmvreg <- function(object, stanmat = NULL, means = FALSE) {

@@ -1039,7 +1039,7 @@ validate_observation_times <-function(data, eventtimes, id_var, time_var) {
 #   model_frame: The model frame for the fitted Cox model, but with the
 #     subject ID variable also included.
 #   tvc: Logical, if TRUE then a counting type Surv() object was used
-#     in the fitted Cox model (ie. time varying covariates). 
+#     in the fitted Cox model (ie. time-varying covariates). 
 handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   if (!requireNamespace("survival"))
     stop("the 'survival' package must be installed to use this function")

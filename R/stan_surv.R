@@ -29,10 +29,10 @@
 #' either proportional or non-proportional hazards; and
 #' (iii) standard parametric (exponential, Weibull) accelerated failure time
 #' models, with covariates included under assumptions of either time-fixed or 
-#' time-dependent survival time ratios.
+#' time-varying survival time ratios.
 #' Where relevant, the user can choose between either a smooth B-spline 
-#' function or a piecewise constant function for modelling each time-dependent 
-#' coefficient (i.e. time-dependent log hazard ratio or time-dependent log 
+#' function or a piecewise constant function for modelling each time-varying 
+#' coefficient (i.e. time-varying log hazard ratio or time-varying log 
 #' survival time ratio) in the linear predictor.
 #'
 #' @export
@@ -50,12 +50,12 @@
 #'   object. Left censored, right censored, and interval censored data 
 #'   are allowed, as well as delayed entry (i.e. left truncation). See 
 #'   \code{\link[survival]{Surv}} for how to specify these outcome types. 
-#'   If you wish to include time-dependent effects (i.e. time-dependent 
+#'   If you wish to include time-varying effects (i.e. time-varying 
 #'   coefficients, e.g. non-proportional hazards) in the model
-#'   then any covariate(s) that you wish to estimate a time-dependent 
-#'   coefficient for should be specified as \code{tde(varname)} where 
+#'   then any covariate(s) that you wish to estimate a time-varying 
+#'   coefficient for should be specified as \code{tve(varname)} where 
 #'   \code{varname} is the name of the covariate. See the \strong{Details} 
-#'   section for more information on how the time-dependent effects are 
+#'   section for more information on how the time-varying effects are 
 #'   formulated, as well as the \strong{Examples} section.
 #' @param data A data frame containing the variables specified in 
 #'   \code{formula}.
@@ -70,7 +70,7 @@
 #'     to time. If the model does \emph{not} include any time-dependendent 
 #'     effects then a closed form solution is available for both the hazard
 #'     and cumulative hazard and so this approach should be relatively fast.
-#'     On the other hand, if the model does include time-dependent effects then
+#'     On the other hand, if the model does include time-varying effects then
 #'     quadrature is used to evaluate the cumulative hazard at each MCMC
 #'     iteration and, therefore, estimation of the model will be slower.
 #'     \item \code{"bs"}: a flexible parametric model using cubic B-splines to 
@@ -78,9 +78,9 @@
 #'     internal knots, as well as the basis terms for the splines, are calculated 
 #'     with respect to time. A closed form solution for the cumulative hazard 
 #'     is \strong{not} available regardless of whether or not the model includes
-#'     time-dependent effects; instead, quadrature is used to evaluate 
+#'     time-varying effects; instead, quadrature is used to evaluate 
 #'     the cumulative hazard at each MCMC iteration. Therefore, if your model
-#'     does not include any time-dependent effects, then estimation using the 
+#'     does not include any time-varying effects, then estimation using the 
 #'     \code{"ms"} baseline hazard will be faster.
 #'     \item \code{"exp"}: an exponential distribution for the event times
 #'     (i.e. a constant baseline hazard).
@@ -114,7 +114,7 @@
 #'   user.
 #' @param qnodes The number of nodes to use for the Gauss-Kronrod quadrature
 #'   that is used to evaluate the cumulative hazard when \code{basehaz = "bs"}
-#'   or when time-dependent effects (i.e. non-proportional hazards) are 
+#'   or when time-varying effects (i.e. non-proportional hazards) are 
 #'   specified. Options are 15 (the default), 11 or 7.
 #' @param prior_intercept The prior distribution for the intercept in the 
 #'   linear predictor. All models include an intercept parameter.
@@ -180,8 +180,8 @@
 #'   all prior distributions are allowed with all types of baseline hazard. 
 #'   To omit a prior ---i.e., to use a flat (improper) uniform prior--- set 
 #'   \code{prior_aux} to \code{NULL}. 
-#' @param prior_smooth This is only relevant when time-dependent effects are 
-#'   specified in the model (i.e. the \code{tde()} function is used in the 
+#' @param prior_smooth This is only relevant when time-varying effects are 
+#'   specified in the model (i.e. the \code{tve()} function is used in the 
 #'   model formula. When that is the case, \code{prior_smooth} determines the
 #'   prior distribution given to the hyperparameter (standard deviation) 
 #'   contained in a random-walk prior for the parameters of the function 
@@ -190,14 +190,14 @@
 #'   coefficient, or the deviations in the log hazard ratio specific to each
 #'   time interval when a piecewise constant function is used to model the 
 #'   time-varying coefficient). Lower values for the hyperparameter
-#'   yield a less a flexible function for the time-dependent coefficient. 
+#'   yield a less a flexible function for the time-varying coefficient. 
 #'   Specifically, \code{prior_smooth} can be a call to \code{exponential} to 
 #'   use an exponential distribution, or \code{normal}, \code{student_t} or 
 #'   \code{cauchy}, which results in a half-normal, half-t, or half-Cauchy 
 #'   prior. See \code{\link{priors}} for details on these functions. To omit a 
 #'   prior ---i.e., to use a flat (improper) uniform prior--- set 
 #'   \code{prior_smooth} to \code{NULL}. The number of hyperparameters depends
-#'   on the model specification (i.e. the number of time-dependent effects
+#'   on the model specification (i.e. the number of time-varying effects
 #'   specified in the model) but a scalar prior will be recylced as necessary
 #'   to the appropriate length.
 #'  
@@ -208,15 +208,15 @@
 #'   a vector of covariates for individual \eqn{i}, \eqn{\beta} a vector of 
 #'   coefficients, \eqn{S_i(t)} the survival probability for individual 
 #'   \eqn{i} at time \eqn{t}, and \eqn{S_0(t)} the baseline survival 
-#'   probability at time \eqn{t}. Without time-dependent effects in the 
+#'   probability at time \eqn{t}. Without time-varying effects in the 
 #'   model formula our linear predictor is \eqn{\eta_i = X_i \beta}, whereas
-#'   with time-dependent effects in the model formula our linear predictor
+#'   with time-varying effects in the model formula our linear predictor
 #'   is \eqn{\eta_i(t) = X_i(t) \beta(t)}. Then the following definitions of 
 #'   the hazard function and survival function apply:
 #'   
 #'   \tabular{llll}{
 #'     \strong{Scale    }                                                \tab 
-#'     \strong{TDE      }                                                \tab
+#'     \strong{tve      }                                                \tab
 #'     \strong{Hazard   }                                                \tab 
 #'     \strong{Survival }                                                \cr
 #'     \emph{Hazard}                                                     \tab 
@@ -238,13 +238,13 @@
 #'   }
 #'   
 #'   where \emph{AFT} stands for an accelerated failure time formulation, 
-#'   and \emph{TDE} stands for time dependent effects in the model formula.
+#'   and \emph{tve} stands for time-varying effects in the model formula.
 #'   
-#'   For models without time-dependent effects, the value of \eqn{S_i(t)} can
+#'   For models without time-varying effects, the value of \eqn{S_i(t)} can
 #'   be calculated analytically (with the one exception being when B-splines 
 #'   are used to model the log baseline hazard, i.e. \code{basehaz = "bs"}).
 #'   
-#'   For models with time-dependent effects \eqn{S_i(t)} cannot be calculated 
+#'   For models with time-varying effects \eqn{S_i(t)} cannot be calculated 
 #'   analytically and so Gauss-Kronrod quadrature is used to approximate the 
 #'   relevant integral. The number of nodes used in the quadrature can be 
 #'   controlled via the \code{nodes} argument.
@@ -258,37 +258,37 @@
 #'   provides more extensive details on the model formulations, including the
 #'   parameterisations for each of the parametric distributions.
 #' }
-#' \subsection{Time-dependent effects}{
+#' \subsection{time-varying effects}{
 #'   By default, any covariate effects specified in the \code{formula} are
 #'   included in the model under a proportional hazards assumption (for models
 #'   estimated using a hazard scale formulation) or under the assumption of
 #'   time-fixed acceleration factors (for models estimated using an accelerated
 #'   failure time formulation). To relax this assumption, it is possible to 
-#'   estimate a time-dependent coefficient for a given covariate. Note the 
+#'   estimate a time-varying coefficient for a given covariate. Note the 
 #'   following:
 #'   
 #'   \itemize{
-#'   \item Estimating a time-dependent coefficient under a hazard scale model 
+#'   \item Estimating a time-varying coefficient under a hazard scale model 
 #'   formulation (i.e. when \code{basehaz} is set equal to \code{"ms"}, 
 #'   \code{"bs"}, \code{"exp"}, \code{"weibull"} or \code{"gompertz"}) leads
-#'   to the estimation of a time-dependent hazard ratio for the relevant 
+#'   to the estimation of a time-varying hazard ratio for the relevant 
 #'   covariate (i.e. non-proportional hazards). 
-#'   \item Estimating a time-dependent coefficient under an accelerated failure 
+#'   \item Estimating a time-varying coefficient under an accelerated failure 
 #'   time model formulation (i.e. when \code{basehaz} is set equal to 
 #'   \code{"exp-aft"}, or \code{"weibull-aft"}) leads to the estimation of a 
-#'   time-dependent acceleration factor -- or equivalently, a
-#'   time-dependent survival time ratio -- for the relevant covariate.
+#'   time-varying acceleration factor -- or equivalently, a
+#'   time-varying survival time ratio -- for the relevant covariate.
 #'   }
 #'   
-#'   A time-dependent effect can be specified in the model \code{formula}
-#'   by wrapping the covariate name in the \code{tde()} function (note that
+#'   A time-varying effect can be specified in the model \code{formula}
+#'   by wrapping the covariate name in the \code{tve()} function (note that
 #'   this function is not an exported function, rather it is an internal 
 #'   function that only has meaning when evaluated within the formula of 
 #'   a \code{stan_surv} call).
 #'   
-#'   For example, if we wish to estimate a time-dependent effect for the 
-#'   covariate \code{sex} then we can specify \code{tde(sex)} in the 
-#'   \code{formula}, e.g. \code{Surv(time, status) ~ tde(sex) + age + trt}. 
+#'   For example, if we wish to estimate a time-varying effect for the 
+#'   covariate \code{sex} then we can specify \code{tve(sex)} in the 
+#'   \code{formula}, e.g. \code{Surv(time, status) ~ tve(sex) + age + trt}. 
 #'   The coefficient for \code{sex} will then be modelled 
 #'   using a flexible smooth function based on a cubic B-spline expansion of 
 #'   time. 
@@ -296,26 +296,26 @@
 #'   The flexibility of the smooth function can be controlled in two ways:
 #'   \itemize{
 #'   \item First, through control of the prior distribution for the cubic B-spline 
-#'   coefficients that are used to model the time-dependent coefficient.
+#'   coefficients that are used to model the time-varying coefficient.
 #'   Specifically, one can control the flexibility of the prior through 
 #'   the hyperparameter (standard deviation) of the random walk prior used
 #'   for the B-spline coefficients; see the \code{prior_smooth} argument. 
 #'   \item Second, one can increase or decrease the number of degrees of 
 #'   freedom used for the cubic B-spline function that is used to model the 
-#'   time-dependent coefficient. By default the cubic B-spline basis is 
+#'   time-varying coefficient. By default the cubic B-spline basis is 
 #'   evaluated using 3 degrees of freedom (that is a cubic spline basis with  
 #'   boundary knots at the limits of the time range, but no internal knots). 
 #'   If you wish to increase the flexibility of the smooth function by using a 
 #'   greater number of degrees of freedom, then you can specify this as part
-#'   of the \code{tde} function call in the model formula. For example, to 
+#'   of the \code{tve} function call in the model formula. For example, to 
 #'   use cubic B-splines with 7 degrees of freedom we could specify 
-#'   \code{tde(sex, df = 7)} in the model formula instead of just
-#'   \code{tde(sex)}. See the \strong{Examples} section below for more 
+#'   \code{tve(sex, df = 7)} in the model formula instead of just
+#'   \code{tve(sex)}. See the \strong{Examples} section below for more 
 #'   details.
 #'   }
-#'   In practice, the default \code{tde()} function should provide sufficient 
-#'   flexibility for model most time-dependent effects. However, it is worth
-#'   noting that the reliable estimation of a time-dependent effect usually 
+#'   In practice, the default \code{tve()} function should provide sufficient 
+#'   flexibility for model most time-varying effects. However, it is worth
+#'   noting that the reliable estimation of a time-varying effect usually 
 #'   requires a relatively large number of events in the data (e.g. >1000).
 #' }
 #'              
@@ -362,14 +362,14 @@
 #' d3 <- simsurv(lambdas = 0.1, 
 #'               gammas  = 1.5, 
 #'               betas   = c(trt = -0.5),
-#'               tde     = c(trt = 0.2),
+#'               tve     = c(trt = 0.2),
 #'               x       = covs, 
 #'               maxt    = 5)
 #' d3 <- merge(d3, covs)
-#' m3 <- stan_surv(Surv(eventtime, status) ~ tde(trt), 
+#' m3 <- stan_surv(Surv(eventtime, status) ~ tve(trt), 
 #'                 data = d3, chains = 1, refresh = 0, iter = 600)
 #' print(m3, 4)
-#' plot(m3, "tde") # time-dependent hazard ratio
+#' plot(m3, "tve") # time-varying hazard ratio
 #' 
 #' #---------- Compare PH and AFT parameterisations
 #' 
@@ -516,14 +516,14 @@ stan_surv <- function(formula,
   
   #----- define dimensions and times for quadrature
 
-  # flag if formula uses time-dependent effects
-  has_tde <- !is.null(formula$td_form)
+  # flag if formula uses time-varying effects
+  has_tve <- !is.null(formula$td_form)
 
   # flag if closed form available for cumulative baseline hazard
   has_closed_form <- check_for_closed_form(basehaz)
 
   # flag for quadrature
-  has_quadrature <- has_tde || !has_closed_form
+  has_quadrature <- has_tve || !has_closed_form
   
   if (has_quadrature) { # model uses quadrature
     
@@ -646,13 +646,13 @@ stan_surv <- function(formula,
 
   }
 
-  if (has_tde) {
+  if (has_tve) {
     
-    # generate a model frame with time transformations for tde effects
-    mf_tde <- make_model_frame(formula$tt_frame, data.frame(times__ = cpts))$mf
+    # generate a model frame with time transformations for tve effects
+    mf_tve <- make_model_frame(formula$tt_frame, data.frame(times__ = cpts))$mf
     
     # NB next line avoids dropping terms attribute from 'mf_cpts'
-    mf_cpts[, colnames(mf_tde)] <- mf_tde
+    mf_cpts[, colnames(mf_tve)] <- mf_tve
     
   }  
 
@@ -691,23 +691,23 @@ stan_surv <- function(formula,
   
   #----- time-varying predictor matrices
   
-  if (has_tde) {
+  if (has_tve) {
     
     # time-varying predictor matrix
     s_cpts          <- make_s(formula, mf_cpts, xlevs = xlevs)
     smooth_map      <- get_smooth_name(s_cpts, type = "smooth_map")
     smooth_idx      <- get_idx_array(table(smooth_map))
-    S <- ncol(s_cpts) # number of tde coefficients
+    S <- ncol(s_cpts) # number of tve coefficients
     
     # store some additional information in model formula
     # stating how many columns in the predictor matrix
-    # each tde() term in the model formula corresponds to
+    # each tve() term in the model formula corresponds to
     formula$tt_ncol <- attr(s_cpts, "tt_ncol")
     formula$tt_map  <- attr(s_cpts, "tt_map")
     
   } else {
     
-    # dud entries if no tde() terms in model formula
+    # dud entries if no tve() terms in model formula
     s_cpts          <- matrix(0,length(cpts),0)
     smooth_idx      <- matrix(0,0,2)
     smooth_map      <- integer(0)
@@ -1117,7 +1117,7 @@ stan_surv <- function(formula,
   # specify parameters for stan to monitor
   stanpars <- c(if (standata$has_intercept) "alpha",
                 if (standata$K)             "beta",
-                if (standata$S)             "beta_tde",
+                if (standata$S)             "beta_tve",
                 if (standata$S)             "smooth_sd",
                 if (standata$nvars)         "aux",
                 if (standata$t)             "b",
@@ -1152,7 +1152,7 @@ stan_surv <- function(formula,
   
   # define new parameter names
   nms_beta   <- colnames(x_cpts) # may be NULL
-  nms_tde    <- get_smooth_name(s_cpts, type = "smooth_coefs") # may be NULL
+  nms_tve    <- get_smooth_name(s_cpts, type = "smooth_coefs") # may be NULL
   nms_smooth <- get_smooth_name(s_cpts, type = "smooth_sd")    # may be NULL
   nms_int    <- get_int_name_basehaz(basehaz)
   nms_aux    <- get_aux_name_basehaz(basehaz)
@@ -1160,7 +1160,7 @@ stan_surv <- function(formula,
   nms_vc     <- get_varcov_names(group)                        # may be NULL
   nms_all    <- c(nms_int,
                   nms_beta,
-                  nms_tde,
+                  nms_tve,
                   nms_smooth,
                   nms_aux,
                   nms_b,
@@ -1173,7 +1173,7 @@ stan_surv <- function(formula,
   # return an object of class 'stansurv'
   fit <- nlist(stanfit, 
                formula,
-               has_tde,
+               has_tve,
                has_quadrature,
                has_bars,
                data,
@@ -1182,7 +1182,7 @@ stan_surv <- function(formula,
                xlevels          = .getXlevels(mt, mf),
                x,
                x_cpts,
-               s_cpts           = if (has_tde)  s_cpts else NULL,
+               s_cpts           = if (has_tve)  s_cpts else NULL,
                z_cpts           = if (has_bars) z_cpts else NULL,
                cnms             = if (has_bars) group_unpadded$cnms  else NULL,
                flist            = if (has_bars) group_unpadded$flist else NULL,
@@ -1214,10 +1214,10 @@ stan_surv <- function(formula,
 #' This is a special function that can be used in the formula of a Bayesian 
 #' survival model estimated using \code{\link{stan_surv}}. It specifies that a 
 #' time-varying coefficient should be estimated for the covariate \code{x}. 
-#' The \code{tde} function only has meaning when evaluated within the formula 
+#' The \code{tve} function only has meaning when evaluated within the formula 
 #' of a \code{\link{stan_surv}} call and does not have meaning outside of that 
 #' context. The exported function documented here just returns \code{x}. 
-#' However, when called internally the \code{tde} function returns several 
+#' However, when called internally the \code{tve} function returns several 
 #' other pieces of useful information used in the model fitting.
 #' 
 #' @export
@@ -1257,8 +1257,8 @@ stan_surv <- function(formula,
 #'   \code{type = "bs"}) and not for the piecewise constant function (when
 #'   \code{type = "pw"}).
 #'     
-#' @return The exported \code{tde} function documented here just returns 
-#'   \code{x}. However, when called internally the \code{tde} function returns 
+#' @return The exported \code{tve} function documented here just returns 
+#'   \code{x}. However, when called internally the \code{tve} function returns 
 #'   several other pieces of useful information. For the most part, these are 
 #'   added to the formula element of the returned \code{\link{stanreg}} object
 #'   (that is \code{object[["formula"]]} where \code{object} is the fitted
@@ -1266,9 +1266,9 @@ stan_surv <- function(formula,
 #'   object includes the following:
 #'   \itemize{
 #'   \item \code{tt_vars}: A list with the names of variables in the model
-#'   formula that were wrapped in the \code{tde} function.
+#'   formula that were wrapped in the \code{tve} function.
 #'   \item \code{tt_types}: A list with the \code{type} (e.g. \code{"bs"},
-#'   \code{"pw"}) of \code{tde} function corresponding to each variable in 
+#'   \code{"pw"}) of \code{tve} function corresponding to each variable in 
 #'   \code{tt_vars}.
 #'   \item \code{tt_calls}: A list with the call required to construct the
 #'   transformation of time for each variable in \code{tt_vars}.
@@ -1282,16 +1282,16 @@ stan_surv <- function(formula,
 #'
 #' @examples 
 #' # Exported function just returns the input variable
-#' identical(pbcSurv$trt, tde(pbcSurv$trt)) # returns TRUE
+#' identical(pbcSurv$trt, tve(pbcSurv$trt)) # returns TRUE
 #' 
 #' # Internally the function returns and stores information 
 #' # used to form the time-varying coefficients in the model
-#' m1 <- stan_surv(Surv(futimeYears, death) ~ tde(trt) + tde(sex, "pw"),
+#' m1 <- stan_surv(Surv(futimeYears, death) ~ tve(trt) + tve(sex, "pw"),
 #'                 data = pbcSurv, chains = 1, iter = 50)
 #' m1$formula[["tt_vars"]]
 #' m1$formula[["tt_forms"]]
 #'  
-tde <- function(x, 
+tve <- function(x, 
                 type   = c("bs", "pw"), 
                 df     = NULL, 
                 knots  = NULL,
@@ -1300,10 +1300,10 @@ tde <- function(x,
   type <- match.arg(type)
   
   if (!is.null(df) && !is.null(knots))
-    stop("Cannot specify both 'df' and 'knots' in the 'tde' function.")
+    stop("Cannot specify both 'df' and 'knots' in the 'tve' function.")
   
   if (degree < 1)
-    stop("In 'tde' function, 'degree' must be positive.")
+    stop("In 'tve' function, 'degree' must be positive.")
   
   if (is.null(df) && is.null(knots))
     df <- 3L
@@ -1517,9 +1517,9 @@ has_intercept <- function(basehaz) {
              "bs"))
 }
 
-# Return the name of the tde spline coefs or smoothing parameters.
+# Return the name of the tve spline coefs or smoothing parameters.
 #
-# @param x The predictor matrix for the time-dependent effects, with column names.
+# @param x The predictor matrix for the time-varying effects, with column names.
 # @param type The type of information about the smoothing parameters to return.
 # @return A character or numeric vector, depending on 'type'.
 get_smooth_name <- function(x, type = "smooth_coefs") {
@@ -1528,10 +1528,10 @@ get_smooth_name <- function(x, type = "smooth_coefs") {
     return(NULL)  
 
   nms <- colnames(x)
-  nms <- gsub(":splines::bs\\(times__.*\\)[0-9]*$", ":tde-bs-coef", nms)
-  nms <- gsub(":base::cut\\(times__.*\\]$",         ":tde-pw-coef", nms)
+  nms <- gsub(":splines::bs\\(times__.*\\)[0-9]*$", ":tve-bs-coef", nms)
+  nms <- gsub(":base::cut\\(times__.*\\]$",         ":tve-pw-coef", nms)
  
-  nms_trim <- gsub(":tde-[a-z][a-z]-coef[0-9]*$", "", nms)
+  nms_trim <- gsub(":tve-[a-z][a-z]-coef[0-9]*$", "", nms)
   tally    <- table(nms_trim)
   indices  <- uapply(tally, seq_len)
 
@@ -1744,19 +1744,19 @@ parse_formula_and_data <- function(formula, data) {
   if (any(status < 0 || status > 3))
     stop2("Invalid status indicator in Surv object.")
   
-  # deal with tde(x, ...)
-  tde_stuff <- handle_tde(formula, 
+  # deal with tve(x, ...)
+  tve_stuff <- handle_tve(formula, 
                           min_t  = min_t, 
                           max_t  = max_t, 
                           times  = t_end, 
                           status = status)
-  tf_form  <- tde_stuff$tf_form
-  td_form  <- tde_stuff$td_form  # may be NULL
-  tt_vars  <- tde_stuff$tt_vars  # may be NULL
-  tt_frame <- tde_stuff$tt_frame # may be NULL
-  tt_types <- tde_stuff$tt_types # may be NULL
-  tt_calls <- tde_stuff$tt_calls # may be NULL
-  tt_forms <- tde_stuff$tt_forms # may be NULL
+  tf_form  <- tve_stuff$tf_form
+  td_form  <- tve_stuff$td_form  # may be NULL
+  tt_vars  <- tve_stuff$tt_vars  # may be NULL
+  tt_frame <- tve_stuff$tt_frame # may be NULL
+  tt_types <- tve_stuff$tt_types # may be NULL
+  tt_calls <- tve_stuff$tt_calls # may be NULL
+  tt_forms <- tve_stuff$tt_forms # may be NULL
 
   # just fixed-effect part of formula
   fe_form   <- lme4::nobars(tf_form)
@@ -1793,20 +1793,20 @@ parse_formula_and_data <- function(formula, data) {
         surv_type = attr(surv, "type"))
 }
 
-# Handle the 'tde(x, ...)' terms in the model formula
+# Handle the 'tve(x, ...)' terms in the model formula
 #
 # @param Terms terms object for the fixed effect part of the model formula.
 # @return A named list with the following elements:
 # 
-handle_tde <- function(formula, min_t, max_t, times, status) {
+handle_tve <- function(formula, min_t, max_t, times, status) {
 
   # extract terms objects for fixed effect part of model formula
-  Terms <- delete.response(terms(lme4::nobars(formula), specials = "tde"))
+  Terms <- delete.response(terms(lme4::nobars(formula), specials = "tve"))
 
-  # check which fixed effect terms have a tde() wrapper
-  sel <- attr(Terms, "specials")$tde
+  # check which fixed effect terms have a tve() wrapper
+  sel <- attr(Terms, "specials")$tve
   
-  # if no tde() terms then just return the fixed effect formula as is
+  # if no tve() terms then just return the fixed effect formula as is
   if (!length(sel)) {
     return(list(tf_form  = formula,
                 td_form  = NULL,
@@ -1818,14 +1818,14 @@ handle_tde <- function(formula, min_t, max_t, times, status) {
    
   # otherwise extract rhs of formula
   all_vars <- rownames(attr(Terms, "factors")) # all variables in fe formula
-  tde_vars <- all_vars[sel]                    # variables with a tde() wrapper
+  tve_vars <- all_vars[sel]                    # variables with a tve() wrapper
   
-  # replace 'tde(x, ...)' in formula with 'x'
+  # replace 'tve(x, ...)' in formula with 'x'
   old_vars <- all_vars
   new_vars <- sapply(old_vars, function(x) {
-    if (x %in% tde_vars) {
-      # strip tde() from variable
-      tde <- function(y, ...) { safe_deparse(substitute(y)) } # define locally
+    if (x %in% tve_vars) {
+      # strip tve() from variable
+      tve <- function(y, ...) { safe_deparse(substitute(y)) } # define locally
       return(eval(parse(text = x)))
     } else {
       # just return variable
@@ -1846,7 +1846,7 @@ handle_tde <- function(formula, min_t, max_t, times, status) {
     }
   }
   
-  # extract 'tde(x, ...)' from formula and return '~ x' and '~ bs(times, ...)'
+  # extract 'tve(x, ...)' from formula and return '~ x' and '~ bs(times, ...)'
   idx <- 1
   tt_vars  <- list()
   tt_types <- list()
@@ -1854,23 +1854,23 @@ handle_tde <- function(formula, min_t, max_t, times, status) {
   
   for (i in seq_along(sel)) {
     
-    # define tde() function locally; uses objects from the parent environment
+    # define tve() function locally; uses objects from the parent environment
     #
     # @param x The variable the time-varying effect is going to be applied to.
     # @param type Character string, the type of time-varying effect to use. Can
     #   currently be one of: bs, ms, pw.
     # @param ... Additional arguments passed by the user that control aspects of
     #   the time-varying effect.
-    # @return The call used to construct a time-dependent basis.
-    tde <- function(x, type = c("bs", "pw"), df = NULL, knots = NULL, degree = 3L) {
+    # @return The call used to construct a time-varying basis.
+    tve <- function(x, type = c("bs", "pw"), df = NULL, knots = NULL, degree = 3L) {
       
       type <- match.arg(type)
       
       if (!is.null(df) && !is.null(knots))
-        stop("Cannot specify both 'df' and 'knots' in the 'tde' function.")
+        stop("Cannot specify both 'df' and 'knots' in the 'tve' function.")
       
       if (degree < 1)
-        stop("In 'tde' function, 'degree' must be positive.")
+        stop("In 'tve' function, 'degree' must be positive.")
       
       if (is.null(df) && is.null(knots))
         df <- 3L
@@ -1879,16 +1879,16 @@ handle_tde <- function(formula, min_t, max_t, times, status) {
       tt <- times[status == 1] # uncensored event times
       if (is.null(knots) && !length(tt)) {
         warning2("No observed events found in the data. Censoring times will ",
-                 "be used to evaluate default knot locations for tde().")
+                 "be used to evaluate default knot locations for tve().")
         tt <- times
       }
       
       # note that min_t and max_t are taken from the parent environment
       if (!is.null(knots)) {
         if (any(knots < min_t))
-          stop2("In tde(), 'knots' cannot be placed before the earliest entry time.")
+          stop2("In tve(), 'knots' cannot be placed before the earliest entry time.")
         if (any(knots > max_t))
-          stop2("In tde(), 'knots' cannot be placed beyond the latest event time.")
+          stop2("In tve(), 'knots' cannot be placed beyond the latest event time.")
       }
 
       if (type == "bs") {
@@ -1936,16 +1936,16 @@ handle_tde <- function(formula, min_t, max_t, times, status) {
     tf_terms <- c(tf_terms, re_terms)
   }
   
-  # formula with all variables but no 'tde(x, ...)' wrappers
+  # formula with all variables but no 'tve(x, ...)' wrappers
   tf_form <- reformulate(tf_terms, response = lhs(formula))
   
-  # formula with only tde variables but no 'tde(x, ...)' wrappers
+  # formula with only tve variables but no 'tve(x, ...)' wrappers
   td_form <- reformulate(td_terms, response = lhs(formula))
   
-  # unique set of '~ bs(times__, ...)' calls based on all 'tde(x, ...)' terms
+  # unique set of '~ bs(times__, ...)' calls based on all 'tve(x, ...)' terms
   tt_frame <- reformulate(unique(unlist(tt_calls)), intercept = FALSE)
   
-  # formula with '~ x' and '~ bs(times__, ...)' from each 'tde(x, ...)' call
+  # formula with '~ x' and '~ bs(times__, ...)' from each 'tve(x, ...)' call
   tt_vars  <- lapply(tt_vars,  reformulate)
   tt_forms <- lapply(tt_calls, reformulate)
   
@@ -1959,11 +1959,11 @@ handle_tde <- function(formula, min_t, max_t, times, status) {
         tt_forms)
 }
 
-# Ensure only valid arguments are passed to the tde() call
-validate_tde_args <- function(dots, ok_args) {
+# Ensure only valid arguments are passed to the tve() call
+validate_tve_args <- function(dots, ok_args) {
   
   if (!isTRUE(all(names(dots) %in% ok_args)))
-    stop2("Invalid argument to 'tde' function. ",
+    stop2("Invalid argument to 'tve' function. ",
           "Valid arguments are: ", comma(ok_args))  
   
   return(dots)
@@ -2234,7 +2234,7 @@ make_x <- function(formula,
   nlist(x, x_centered, x_bar, N = NROW(x), K = NCOL(x))
 }
 
-# Return the tde predictor matrix
+# Return the tve predictor matrix
 #
 # @param formula The parsed model formula.
 # @param model_frame The model frame.
@@ -2242,18 +2242,18 @@ make_x <- function(formula,
 # @return A named list with the following elements:
 #   s: model matrix for time-varying terms, not centered and without intercept.
 #   tt_ncol: stored attribute, a numeric vector with the number of columns in
-#     the model matrix that correspond to each tde() term in the original 
+#     the model matrix that correspond to each tve() term in the original 
 #     model formula.
 #   tt_map: stored attribute, a numeric vector with indexing for the columns 
-#     of the model matrix stating which tde() term in the original model 
+#     of the model matrix stating which tve() term in the original model 
 #     formula they correspond to.
 make_s <- function(formula,
                    model_frame, 
                    xlevs = NULL) {
   
-  # create the design matrix for each tde() term
+  # create the design matrix for each tve() term
   s_parts <- xapply(
-    formula$tt_vars,  # names of variables with a tde() wrapper
+    formula$tt_vars,  # names of variables with a tve() wrapper
     formula$tt_forms, # time-transformation functions to interact them with
     FUN = function(vn, tt) {
       m1 <- make_x(vn, model_frame, xlevs = xlevs, check_constant = FALSE)$x
@@ -2263,7 +2263,7 @@ make_s <- function(formula,
       return(m3)
     })
   
-  # bind columns to form one design matrix for tde() terms
+  # bind columns to form one design matrix for tve() terms
   s <- do.call("cbind", s_parts)
   
   # store indexing of the columns in the design matrix

@@ -363,8 +363,8 @@ model.matrix.stanreg <- function(object, ...) {
 #' @param x A stanreg object.
 #' @param ... Can contain \code{fixed.only} and \code{random.only} arguments 
 #'   that both default to \code{FALSE}. Also, for stan_surv models, can contain
-#'   \code{remove.tde} which defaults to FALSE, but if TRUE then any 
-#'   'tde(varname)' terms in the model formula are returned as 'varname'.
+#'   \code{remove.tve} which defaults to FALSE, but if TRUE then any 
+#'   'tve(varname)' terms in the model formula are returned as 'varname'.
 #' 
 formula.stanreg <- function(x, ..., m = NULL) {
   if (is.mer(x) && !isTRUE(x$stan_function == "stan_gamm4")) 
@@ -392,12 +392,12 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
   
   Terms <- attr(fr, "terms")
   if (fixed.only) {
-    Terms <- terms.formula(formula(x, fixed.only = TRUE, remove.tde = TRUE))
+    Terms <- terms.formula(formula(x, fixed.only = TRUE, remove.tve = TRUE))
     attr(Terms, "predvars") <- attr(terms(fr), "predvars.fixed")
   } 
   if (random.only) {
     Terms <- terms.formula(lme4::subbars(formula.stanreg(x, random.only = TRUE, 
-                                                         remove.tde = TRUE)))
+                                                         remove.tve = TRUE)))
     attr(Terms, "predvars") <- attr(terms(fr), "predvars.random")
   }
   
@@ -487,13 +487,13 @@ formula_mer <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
 formula_surv <- function(x, 
                          fixed.only  = FALSE, 
                          random.only = FALSE, 
-                         remove.tde  = FALSE, 
+                         remove.tve  = FALSE, 
                          ...) {
   if (missing(fixed.only) && random.only) 
     fixed.only <- FALSE
   if (fixed.only && random.only) 
     stop2("'fixed.only' and 'random.only' can't both be TRUE.")
-  if (remove.tde) {
+  if (remove.tve) {
     form <- x$formula$tf_form
   } else {
     form <- x$formula$formula

@@ -15,11 +15,11 @@ recover_pars <- function(mod) {
                        NULL)
   
   if (cl == "stansurv") {
-    sel <- grep(":tde-[a-z][a-z]-coef[0-9]*$", names(fixef_pars))
-    # replace stansurv tde names with coxph tt names
+    sel <- grep(":tve-[a-z][a-z]-coef[0-9]*$", names(fixef_pars))
+    # replace stansurv tve names with coxph tt names
     if (length(sel)) {
       nms <- names(fixef_pars)[sel]
-      nms <- gsub(":tde-[a-z][a-z]-coef[0-9]*$", "", nms)
+      nms <- gsub(":tve-[a-z][a-z]-coef[0-9]*$", "", nms)
       nms <- paste0("tt(", nms, ")")
       names(fixef_pars)[sel] <- nms 
     }

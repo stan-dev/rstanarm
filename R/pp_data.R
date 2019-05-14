@@ -257,7 +257,7 @@ pp_data <-
     newdata <- get_model_data(object)
   
   # flags
-  has_tde        <- object$has_tde
+  has_tve        <- object$has_tve
   has_quadrature <- object$has_quadrature
   has_bars       <- object$has_bars
   
@@ -317,7 +317,7 @@ pp_data <-
   
   #----- time-varying predictor matrix
   
-  if (has_tde) {
+  if (has_tve) {
     
     if (all(is.na(pts))) {
       # temporary replacement to avoid error in creating spline basis
@@ -327,11 +327,11 @@ pp_data <-
       pts_tmp <- pts
     }
     
-    # generate a model frame with time transformations for tde effects
-    mf_tde <- make_model_frame(formula$tt_frame, data.frame(times__ = pts_tmp))$mf
+    # generate a model frame with time transformations for tve effects
+    mf_tve <- make_model_frame(formula$tt_frame, data.frame(times__ = pts_tmp))$mf
     
     # NB next line avoids dropping terms attribute from 'mf'
-    mf[, colnames(mf_tde)] <- mf_tde
+    mf[, colnames(mf_tve)] <- mf_tve
     
     # construct time-varying predictor matrix
     s <- make_s(formula, mf, xlevs = xlevs) 
@@ -365,7 +365,7 @@ pp_data <-
                s,
                z,
                has_quadrature,
-               has_tde,
+               has_tve,
                has_bars,
                at_quadpoints,
                qnodes = object$qnodes))
