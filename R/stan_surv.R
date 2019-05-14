@@ -54,9 +54,10 @@
 #'   coefficients, e.g. non-proportional hazards) in the model
 #'   then any covariate(s) that you wish to estimate a time-varying 
 #'   coefficient for should be specified as \code{tve(varname)} where 
-#'   \code{varname} is the name of the covariate. See the \strong{Details} 
-#'   section for more information on how the time-varying effects are 
-#'   formulated, as well as the \strong{Examples} section.
+#'   \code{varname} is the name of the covariate. For more information on 
+#'   how time-varying effects are formulated see the documentation
+#'   for the \code{\link{tve}} function as well as the \strong{Details} 
+#'   and \strong{Examples} sections below.
 #' @param data A data frame containing the variables specified in 
 #'   \code{formula}.
 #' @param basehaz A character string indicating which baseline hazard or
@@ -86,7 +87,7 @@
 #'     (i.e. a constant baseline hazard).
 #'     \item \code{"weibull"}: a Weibull distribution for the event times.
 #'     \item \code{"gompertz"}: a Gompertz distribution for the event times.
-#'    }
+#'   }
 #'   
 #'   The following are available under an accelerated failure time (AFT)
 #'   formulation: 
@@ -114,8 +115,8 @@
 #'   user.
 #' @param qnodes The number of nodes to use for the Gauss-Kronrod quadrature
 #'   that is used to evaluate the cumulative hazard when \code{basehaz = "bs"}
-#'   or when time-varying effects (i.e. non-proportional hazards) are 
-#'   specified. Options are 15 (the default), 11 or 7.
+#'   or when time-varying effects are specified in the linear predictor. 
+#'   Options are 15 (the default), 11 or 7.
 #' @param prior_intercept The prior distribution for the intercept in the 
 #'   linear predictor. All models include an intercept parameter.
 #'   \code{prior_intercept} can be a call to \code{normal}, 
@@ -190,7 +191,7 @@
 #'   coefficient, or the deviations in the log hazard ratio specific to each
 #'   time interval when a piecewise constant function is used to model the 
 #'   time-varying coefficient). Lower values for the hyperparameter
-#'   yield a less a flexible function for the time-varying coefficient. 
+#'   yield a less flexible function for the time-varying coefficient. 
 #'   Specifically, \code{prior_smooth} can be a call to \code{exponential} to 
 #'   use an exponential distribution, or \code{normal}, \code{student_t} or 
 #'   \code{cauchy}, which results in a half-normal, half-t, or half-Cauchy 
@@ -198,7 +199,7 @@
 #'   prior ---i.e., to use a flat (improper) uniform prior--- set 
 #'   \code{prior_smooth} to \code{NULL}. The number of hyperparameters depends
 #'   on the model specification (i.e. the number of time-varying effects
-#'   specified in the model) but a scalar prior will be recylced as necessary
+#'   specified in the model) but a scalar prior will be recycled as necessary
 #'   to the appropriate length.
 #'  
 #' @details
@@ -216,7 +217,7 @@
 #'   
 #'   \tabular{llll}{
 #'     \strong{Scale    }                                                \tab 
-#'     \strong{tve      }                                                \tab
+#'     \strong{TVE      }                                                \tab
 #'     \strong{Hazard   }                                                \tab 
 #'     \strong{Survival }                                                \cr
 #'     \emph{Hazard}                                                     \tab 
@@ -238,7 +239,7 @@
 #'   }
 #'   
 #'   where \emph{AFT} stands for an accelerated failure time formulation, 
-#'   and \emph{tve} stands for time-varying effects in the model formula.
+#'   and \emph{TVE} stands for time-varying effects in the model formula.
 #'   
 #'   For models without time-varying effects, the value of \eqn{S_i(t)} can
 #'   be calculated analytically (with the one exception being when B-splines 
@@ -258,65 +259,74 @@
 #'   provides more extensive details on the model formulations, including the
 #'   parameterisations for each of the parametric distributions.
 #' }
-#' \subsection{time-varying effects}{
+#' \subsection{Time-varying effects (see \code{\link{tve}})}{
 #'   By default, any covariate effects specified in the \code{formula} are
 #'   included in the model under a proportional hazards assumption (for models
 #'   estimated using a hazard scale formulation) or under the assumption of
 #'   time-fixed acceleration factors (for models estimated using an accelerated
-#'   failure time formulation). To relax this assumption, it is possible to 
-#'   estimate a time-varying coefficient for a given covariate. Note the 
-#'   following:
+#'   failure time formulation).
+#'   
+#'   To relax this assumption, it is possible to 
+#'   estimate a time-varying effect (i.e. a time-varying coefficient) for a 
+#'   given covariate. A time-varying effect is specified in the model 
+#'   \code{formula} by wrapping the covariate name in the \code{\link{tve}} 
+#'   function. 
+#'   
+#'   The following applies:
 #'   
 #'   \itemize{
-#'   \item Estimating a time-varying coefficient under a hazard scale model 
+#'   \item Estimating a time-varying effect within a hazard scale model 
 #'   formulation (i.e. when \code{basehaz} is set equal to \code{"ms"}, 
 #'   \code{"bs"}, \code{"exp"}, \code{"weibull"} or \code{"gompertz"}) leads
 #'   to the estimation of a time-varying hazard ratio for the relevant 
-#'   covariate (i.e. non-proportional hazards). 
-#'   \item Estimating a time-varying coefficient under an accelerated failure 
+#'   covariate (i.e. non-proportional hazards).
+#'   \item Estimating a time-varying effect within an accelerated failure 
 #'   time model formulation (i.e. when \code{basehaz} is set equal to 
 #'   \code{"exp-aft"}, or \code{"weibull-aft"}) leads to the estimation of a 
-#'   time-varying acceleration factor -- or equivalently, a
-#'   time-varying survival time ratio -- for the relevant covariate.
+#'   time-varying survival time ratio -- or equivalently, a time-varying 
+#'   acceleration factor -- for the relevant covariate.
 #'   }
-#'   
-#'   A time-varying effect can be specified in the model \code{formula}
-#'   by wrapping the covariate name in the \code{tve()} function (note that
-#'   this function is not an exported function, rather it is an internal 
-#'   function that only has meaning when evaluated within the formula of 
-#'   a \code{stan_surv} call).
 #'   
 #'   For example, if we wish to estimate a time-varying effect for the 
 #'   covariate \code{sex} then we can specify \code{tve(sex)} in the 
 #'   \code{formula}, e.g. \code{Surv(time, status) ~ tve(sex) + age + trt}. 
-#'   The coefficient for \code{sex} will then be modelled 
-#'   using a flexible smooth function based on a cubic B-spline expansion of 
-#'   time. 
+#'   The coefficient for \code{sex} will then be modelled using a flexible 
+#'   smooth function based on a cubic B-spline expansion of time.
+#'   Alternatively we can use a piecewise constant function to model the 
+#'   time-varying coefficient by specifying \code{tve(sex, type = "pw")}.
 #'   
-#'   The flexibility of the smooth function can be controlled in two ways:
-#'   \itemize{
-#'   \item First, through control of the prior distribution for the cubic B-spline 
-#'   coefficients that are used to model the time-varying coefficient.
-#'   Specifically, one can control the flexibility of the prior through 
-#'   the hyperparameter (standard deviation) of the random walk prior used
-#'   for the B-spline coefficients; see the \code{prior_smooth} argument. 
-#'   \item Second, one can increase or decrease the number of degrees of 
-#'   freedom used for the cubic B-spline function that is used to model the 
-#'   time-varying coefficient. By default the cubic B-spline basis is 
-#'   evaluated using 3 degrees of freedom (that is a cubic spline basis with  
-#'   boundary knots at the limits of the time range, but no internal knots). 
-#'   If you wish to increase the flexibility of the smooth function by using a 
+#'   This argument, as well as additional arguments used to control the 
+#'   modelling of the time-varying effect are explained in the 
+#'   \code{\link{tve}} documentation. The flexibility of the function used 
+#'   to model the time-varying effect is primarily controlled by increasing
+#'   or decreasing the degrees of freedom used to model the time-varying
+#'   coefficient (i.e. the number of B-spline basis terms or the number of
+#'   time intervals in the piecewise constant function). For instance,
+#'   if you wished to increase the flexibility of the function by using a 
 #'   greater number of degrees of freedom, then you can specify this as part
 #'   of the \code{tve} function call in the model formula. For example, to 
 #'   use cubic B-splines with 7 degrees of freedom we could specify 
 #'   \code{tve(sex, df = 7)} in the model formula instead of just
 #'   \code{tve(sex)}. See the \strong{Examples} section below for more 
 #'   details.
-#'   }
+#'   
+#'   It is worth noting however that an additional way to control the
+#'   flexibility of the function used to model the time-varying effect
+#'   is through the priors. A random walk prior is used for the piecewise 
+#'   constant or B-spline coefficients, and the hyperparameter (standard 
+#'   deviation) of the random walk prior can be controlled via the 
+#'   \code{prior_smooth} argument. This is a much more indirect way to 
+#'   control the "smoothness" of the function used to model the time-varying
+#'   effect, but it nonetheless might be useful in some settings. The
+#'   \emph{stan_surv: Survival (Time-to-Event) Models} vignette provides
+#'   more explicity details on the formulation of the time-varying effects
+#'   and the prior distributions used for their coefficients.
+#'   
 #'   In practice, the default \code{tve()} function should provide sufficient 
 #'   flexibility for model most time-varying effects. However, it is worth
-#'   noting that the reliable estimation of a time-varying effect usually 
-#'   requires a relatively large number of events in the data (e.g. >1000).
+#'   noting that reliable estimation of a time-varying effect usually 
+#'   requires a relatively large number of events in the data (e.g. say >1000,
+#'   depending on the setting).
 #' }
 #'              
 #' @examples
