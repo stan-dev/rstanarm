@@ -166,7 +166,7 @@ export(stanjm_list)
 export(stanmvreg_list)
 export(stanreg_list)
 export(student_t)
-export(tde)
+export(tve)
 export(waic)
 if(getRversion()>='3.3.0') importFrom(stats, sigma) else
   importFrom(lme4,sigma)
