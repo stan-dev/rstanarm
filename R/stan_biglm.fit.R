@@ -24,6 +24,15 @@
 #' @param N A integer scalar indicating the number of included observations
 #' @param has_intercept A logical scalar indicating whether to add an intercept 
 #'   to the model when estimating it.
+#' @param importance_resampling Logical scalar indicating whether to use 
+#'   importance resampling when approximating the posterior distribution with
+#'   a multivariate normal around the posterior mode, which only applies
+#'   when \code{algorithm} is \code{"optimizing"} but defaults to \code{TRUE}
+#'   in that case
+#' @param keep_every Positive integer, which defaults to 1, but can be higher
+#'   in order to thin the importance sampling realizations and also only
+#'   apples when \code{algorithm} is \code{"optimizing"} but defaults to
+#'   \code{TRUE} in that case
 #' @examples
 #' # create inputs
 #' ols <- lm(mpg ~ wt + qsec + am, data = mtcars, # all row are complete so ...
@@ -50,7 +59,7 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
                            tol_rel_grad = 1e4, 
                            draws = 1000,
                            importance_resampling = TRUE,
-                           thin = 1) {
+                           keep_every = 1) {
   
   if (prior_PD && is.null(prior_intercept)) {
     msg <- "The default flat prior on the intercept is not recommended when 'prior_PD' is TRUE."
@@ -158,29 +167,36 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
         theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k else NaN))
         ## todo: change fixed threshold to an option
         if (any(theta_pareto_k > 0.7, na.rm = TRUE)) {
-            warning("Some Pareto k diagnostic values are too high. Resampling disabled. Decreasing tol_rel_grad may help if optimization has terminated prematurely. Otherwise consider using sampling instead of optimizing.", call.=FALSE, immediate. = TRUE)
+            warning("Some Pareto k diagnostic values are too high. Resampling disabled.",
+                    "Decreasing tol_rel_grad may help if optimization has terminated prematurely.", 
+                    " Otherwise consider using sampling instead of optimizing.", call. = FALSE, immediate. = TRUE)
             importance_resampling <- FALSE
         } else if (any(theta_pareto_k > 0.5, na.rm = TRUE)) { 
-            warning("Some Pareto k diagnostic values are slightly high. Increasing the number of draws or decreasing tol_rel_grad may help.", call.=FALSE, immediate. = TRUE)
+            warning("Some Pareto k diagnostic values are slightly high.",
+                    " Increasing the number of draws or decreasing tol_rel_grad may help.", 
+                    call. = FALSE, immediate. = TRUE)
         }
-        out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff/thin)
+        out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff / keep_every)
     } else {
-      theta_pareto_k <- rep(NaN,length(new_names))
+      theta_pareto_k <- rep(NaN, length(new_names))
       importance_resampling <- FALSE
     }
     ## importance_resampling
     if (importance_resampling) {  
-      ir_idx <- .sample_indices(exp(p$log_weights), n_draws=ceiling(draws/thin))
+      ir_idx <- .sample_indices(exp(p$log_weights), n_draws=ceiling(draws / keep_every))
       out$theta_tilde <- out$theta_tilde[ir_idx,]
       out$ir_idx <- ir_idx
       ## SIR mcse and n_eff
-      w_sir <- as.numeric(table(ir_idx))/length(ir_idx)
-      mcse <- apply(out$theta_tilde[!duplicated(ir_idx),], 2L, function(col) if (all(is.finite(col))) sqrt(sum(w_sir^2*(col-mean(col))^2)) else NaN)
-      n_eff <- round(apply(out$theta_tilde[!duplicated(ir_idx),], 2L, var)/mcse^2,0)
+      w_sir <- as.numeric(table(ir_idx)) / length(ir_idx)
+      mcse <- apply(out$theta_tilde[!duplicated(ir_idx),], 2L, function(col) {
+        if (all(is.finite(col))) sqrt(sum(w_sir^2 * (col-mean(col))^2)) 
+        else NaN
+      })
+      n_eff <- round(apply(out$theta_tilde[!duplicated(ir_idx),], 2L, var) / (mcse^2), digits = 0)
     } else {
       out$ir_idx <- NULL
-      mcse <- rep(NaN,length(theta_pareto_k))
-      n_eff <- rep(NaN,length(theta_pareto_k))
+      mcse <- rep(NaN, length(theta_pareto_k))
+      n_eff <- rep(NaN, length(theta_pareto_k))
     }
     out$diagnostics <- cbind(mcse, theta_pareto_k, n_eff)
     colnames(out$diagnostics) <- c("mcse", "khat", "n_eff")
