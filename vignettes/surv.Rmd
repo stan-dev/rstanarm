@@ -37,7 +37,6 @@ h1 { /* Header 1 */
 knitr::opts_chunk$set(fig.width=10, fig.height=4)
 library(rstanarm)
 set.seed(989898)
-ITER <- 50
 ```
 
 
@@ -333,8 +332,12 @@ $N = 686$ patients with primary node positive breast cancer recruited between 19
 First, let us load the data and fit the proportional hazards model
 
 ```{r, warning = FALSE, message = FALSE, results='hide'}
-fm <- Surv(recyrs, status) ~ group
-mod1 <- stan_surv(fm, data = bcancer, seed = 123321)
+mod1 <- stan_surv(formula = Surv(recyrs, status) ~ group, 
+                  data    = bcancer, 
+                  chains  = CHAINS, 
+                  cores   = CORES, 
+                  seed    = SEED,
+                  iter    = ITER)
 ```
 
 The model here is estimated using the default cubic M-splines (with 5 degrees of freedom) for modelling the baseline hazard. Since there are no time-varying effects in the model (i.e. we did not wrap any covariates in the `tve()` function) there is a closed form expression for the cumulative hazard and survival function and so the model is relatively fast to fit. Specifically, the model takes ~3.5 sec for each MCMC chain based on the default 2000 (1000 warm up, 1000 sampling) MCMC iterations. 
@@ -350,13 +353,12 @@ We see from this output we see that individuals in the groups with `Poor` or `Me
 It may also be of interest to compare the different types of the baseline hazard we could potentially use. Here, we will fit a series of models, each with a different baseline hazard specification 
 
 ```{r, warning = FALSE, message = FALSE, results='hide'}
-mod1_exp      <- stan_surv(fm, data = bcancer, basehaz = "exp")
-mod1_weibull  <- stan_surv(fm, data = bcancer, basehaz = "weibull")
-mod1_gompertz <- stan_surv(fm, data = bcancer, basehaz = "gompertz")
-mod1_bspline  <- stan_surv(fm, data = bcancer, basehaz = "bs")
-mod1_mspline1 <- stan_surv(fm, data = bcancer, basehaz = "ms")
-mod1_mspline2 <- stan_surv(fm, data = bcancer, basehaz = "ms", 
-                           basehaz_ops = list(df = 10))
+mod1_exp      <- update(mod1, basehaz = "exp")
+mod1_weibull  <- update(mod1, basehaz = "weibull")
+mod1_gompertz <- update(mod1, basehaz = "gompertz")
+mod1_bspline  <- update(mod1, basehaz = "bs")
+mod1_mspline1 <- update(mod1, basehaz = "ms")
+mod1_mspline2 <- update(mod1, basehaz = "ms", basehaz_ops = list(df = 10))
 ```
 
 and then plot the baseline hazards with 95% posterior uncertainty limits using the generic `plot` method for `stansurv` objects (note that the default `plot` for `stansurv` objects is the estimated baseline hazard). We will write a little helper function to adjust the y-axis limits, add a title, and centre the title, on each plot, as follows
@@ -441,14 +443,14 @@ plot(ph) +
 
 We can quite clearly see in the plot the assumption of proportional hazards. We can also see that the hazard is highest in the `Poor` prognosis group (i.e. worst survival) and the hazard is lowest in the `Good` prognosis group (i.e. best survival). This corresponds to what we saw in the plot of the survival functions previously.
 
-## Example: a model with non-proportional hazards
+## Example: non-proportional hazards modelled using B-splines
 
 To demonstrate the implementation of time-varying effects in `stan_surv` we will use a simulated dataset, generated using the **simsurv** package (Brilleman, 2018).
 
 We will simulate a dataset with $N = 200$ individuals with event times generated under the following Weibull hazard function
 \
 \begin{align}
-h_i(t) = \gamma t^{\gamma-1} \lambda exp( \beta(t) x_i )
+h_i(t) = \gamma t^{\gamma-1} \lambda \exp( \beta(t) x_i )
 \end{align}
 \
 with scale parameter $\lambda = 0.1$, shape parameter $\gamma = 1.5$, binary baseline covariate $X_i \sim \text{Bern}(0.5)$, and time-varying hazard ratio $\beta(t) = -0.5 + 0.2 t$. We will enforce administrative censoring at 5 years if an individual's simulated event time is >5 years.
@@ -461,14 +463,14 @@ library(simsurv)
 set.seed(999111)
 
 # simulate covariate data
-covs <- data.frame(id  = 1:100, 
-                   trt = rbinom(100, 1L, 0.5))
+covs <- data.frame(id  = 1:200, 
+                   trt = rbinom(200, 1L, 0.5))
 
 # simulate event times
 dat  <- simsurv(lambdas = 0.1, 
                 gammas  = 1.5, 
                 betas   = c(trt = -0.5),
-                tve     = c(trt = 0.2),
+                tde     = c(trt = 0.2),
                 x       = covs, 
                 maxt    = 5)
 
@@ -481,18 +483,22 @@ head(dat)
 
 Now that we have our simulated dataset, let us fit a model with time-varying hazard ratio for `trt`
 
-```{r, warning = FALSE, message = FALSE, results='hide'}
-fm <- Surv(eventtime, status) ~ tve(trt)
-mod2 <- stan_surv(formula = fm, data = dat, seed = 5544, iter = 500)
+```{r tve_fit1, warning = FALSE, message = FALSE, results='hide'}
+mod2 <- stan_surv(formula = Surv(eventtime, status) ~ tve(trt), 
+                  data    = dat, 
+                  chains  = CHAINS, 
+                  cores   = CORES, 
+                  seed    = SEED,
+                  iter    = ITER)
 ```
 
-By default the cubic B-spline basis used for modelling the time-varying hazard ratio is evaluated with 3 degrees of freedom (i.e. two boundary knots placed at the limits of the range of event times, but no internal knots). For a more or less flexible spline function we can specify the `df` arugment to `tve()` function. For example, we could specify the model formula as
+The `tve` function is used in the model formula to state that we want a time-varying effect (i.e. a time-varying coefficient) to be estimated for the variable `trt`. By default, a cubic B-spline basis with 3 degrees of freedom (i.e. two boundary knots placed at the limits of the range of event times, but no internal knots) is used for modelling the time-varying log hazard ratio. If we wanted to change the degree, knot locations, or degrees of freedom for the B-spline function we can specify additional arguments to the `tve` function. 
+
+For example, to model the time-varying log hazard ratio using quadratic B-splines with 4 degrees of freedom (i.e. two boundary knots placed at the limits of the range of event times, as well as two internal knots placed -- by default -- at the 33.3rd and 66.6th percentiles of the distribution of uncensored event times) we could specify the model formula as
 
 ```{r, warning = FALSE, message = FALSE, results='hide', eval=FALSE}
-fm <- Surv(eventtime, status) ~ tve(trt, df = 5)
+Surv(eventtime, status) ~ tve(trt, df = 4, degree = 2)
 ```
-
-so that we use 5 degrees of freedom for modelling the time-varying effect (i.e. two boundary knots placed at the limits of the range of event times, as well as two internal knots placed - by default - at the 33.3rd and 66.6th percentiles of the distribution of uncensored event times).
 
 Let us now plot the estimated time-varying hazard ratio from the fitted model. We can do this using the generic `plot` method for `stansurv` objects, for which we can specify the `plotfun = "tve"` argument. (Note that in this case, there is only one covariate in the model with a time-varying effect, but if there were others, we could specify which covariate(s) we want to plot the time-varying effect for by specifying the `pars` argument to the `plot` call).
 
@@ -500,10 +506,65 @@ Let us now plot the estimated time-varying hazard ratio from the fitted model. W
 plot(mod2, plotfun = "tve")
 ```
 
-From the plot, we can see how the hazard ratio (i.e. the effect of treatment on the hazard of the event) changes as a function of time. The treatment appears to be protective during the first few years following baseline (i.e. HR < 1), and then the treatment appears to become harmful after about 4 years post-baseline (of course, this is the model we simulated under!). 
+From the plot, we can see how the hazard ratio (i.e. the effect of treatment on the hazard of the event) changes as a function of time. The treatment appears to be protective during the first few years following baseline (i.e. HR < 1), and then the treatment appears to become harmful after about 4 years post-baseline. Thankfully, this is a reflection of the model we simulated under! 
 
-The plot shows a large amount of uncertainty around the estimated time-varying hazard ratio. This is to be expected, since we only simulated a dataset of 100 individuals of which only around 70% experienced the event before being censored at 5 years. So, there is very little data (i.e. very few events) with which to reliably estimate the time-varying hazard ratio. We can also see this reflected in the differences between our data generating model and the estimates from our fitted model. In our data generating model, the time-varying hazard ratio equals 1 (i.e. the log hazard ratio equals 0) at 2.5 years, but in our fitted model the median estimate for our time-varying hazard ratio equals 1 at around ~3 years. This is a reflection of the large amount of sampling error, due to our simulated dataset being so small.
+The plot shows a large amount of uncertainty around the estimated time-varying hazard ratio. This is to be expected, since we only simulated a dataset of 200 individuals of which only around 70% experienced the event before being censored at 5 years. So, there is very little data (i.e. very few events) with which to reliably estimate the time-varying hazard ratio. We can also see this reflected in the differences between our data generating model and the estimates from our fitted model. In our data generating model, the time-varying hazard ratio equals 1 (i.e. the log hazard ratio equals 0) at 2.5 years, but in our fitted model the median estimate for our time-varying hazard ratio equals 1 at around ~3 years. This is a reflection of the large amount of sampling error, due to our simulated dataset being so small.
 
+## Example: non-proportional hazards modelled using a piecewise constant function
+
+In the previous example we showed how non-proportional hazards can be modelled by using a smooth B-spline function for the time-varying log hazard ratio. This is the default approach when the `tve` function is used to estimate a time-varying effect for a covariate in the model formula. However, another approach for modelling a time-varying log hazard ratio is to use a piecewise constant function. If we want to use a piecewise constant for the time-varying log hazard ratio (instead of the smooth B-spline function) then we just have to specify the `type` argument to the `tve` function.
+
+We will again simulate some survival data using the **simsurv** package (Brilleman, 2018) to show how a piecewise constant hazard ratio can be estimated using `stan_surv`.
+Similar to the previous example, we will simulate a dataset with $N = 500$ individuals with event times generated under a Weibull hazard function with scale parameter $\lambda = 0.1$, shape parameter $\gamma = 1.5$, and binary baseline covariate $X_i \sim \text{Bern}(0.5)$. However, in this example our time-varying hazard ratio will be defined as $\beta(t) = -0.5 + 0.7 \times I(t > 2.5)$ where $I(X)$ is the indicator function taking the value 1 if $X$ is true and 0 otherwise. This corresponds to a piecewise constant log hazard ratio with just two "pieces" or time intervals. The first time interval is $[0,2.5]$ during which the true hazard ratio is $\exp(-0.5) = 0.61$. The second time interval is $(2.5,\infty]$ during which the true log hazard ratio is $\exp(-0.5 + 0.7) = 1.22$. Our example uses only two time intervals for simplicity, but in general we could easily have considered more (although it would have required couple of additional lines of code to simulate the data). We will again enforce administrative censoring at 5 years if an individual's simulated event time is >5 years.
+
+```{r simsurv-simdata2}
+# load package
+library(simsurv)
+
+# set seed for reproducibility
+set.seed(888222)
+
+# simulate covariate data
+covs <- data.frame(id  = 1:500, 
+                   trt = rbinom(500, 1L, 0.5))
+
+# simulate event times
+dat  <- simsurv(lambdas = 0.1, 
+                gammas  = 1.5, 
+                betas   = c(trt = -0.5),
+                tde     = c(trt = 0.7),
+                tdefun  = function(t) (t > 2.5),
+                x       = covs, 
+                maxt    = 5)
+
+# merge covariate data and event times
+dat  <- merge(dat, covs)
+
+# examine first few rows of data
+head(dat)
+```
+
+We know estimate a model with a piecewise constant time-varying effect for the covariate `trt` as
+
+```{r tve_fit2, warning = FALSE, message = FALSE, results='hide'}
+mod3 <- stan_surv(formula = Surv(eventtime, status) ~ 
+                    tve(trt, type = "pw", knots = 2.5),
+                  data    = dat, 
+                  chains  = CHAINS, 
+                  cores   = CORES, 
+                  seed    = SEED,
+                  iter    = ITER)
+```
+
+This time we specify some additional arguments to the `tve` function, so that our time-varying effect corresponds to the true data generating model used to simulate our event times. Specifically, we specify `type = "pw"` to say that we want the time-varying effect (i.e. the time-varying log hazard ratio) to be estimated using a piecewise constant function and `knots = 2.5` says that we only want one internal knot placed at the time $t = 2.5$.
+
+We can again use the generic `plot` function with argument `plotfun = "tve"` to examine our estimated hazard ratio for treatment
+
+```{r, fig.height=5}
+plot(mod3, plotfun = "tve")
+```
+
+Here we see that the estimated hazard ratio reasonably reflects our true data generating model (i.e. a hazard ratio of $\approx 0.6$ during the first time interval and a hazard ratio of $\approx 1.2$ during the second time interval) although there is a slight discrepancy due to the sampling variation in the simulated event times.
 
 # References
 
