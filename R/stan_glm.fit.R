@@ -214,6 +214,20 @@ stan_glm.fit <-
            "the model must have an intercept.")
   }
   
+  # allow prior_PD even if no y variable
+  if (is.null(y)) {
+    if (!prior_PD) {
+      stop("Outcome variable must be specified if 'prior_PD' is not TRUE.")
+    } else {
+      y <- fake_y_for_prior_PD(N = NROW(x), family = family)
+      if (is_gaussian && 
+          (prior_autoscale || prior_autoscale_for_intercept || prior_autoscale_for_aux)) {
+        message("'y' not specified, will assume sd(y)=1 when calculating scaled prior(s). ")
+      }
+    }
+  }
+  
+  
   if (is_gaussian) {
     ss <- sd(y)
     if (prior_dist > 0L && prior_autoscale) 
@@ -754,6 +768,10 @@ stan_family_number <- function(famname) {
 # @return y (possibly slightly modified) unless an error is thrown
 #
 validate_glm_outcome_support <- function(y, family) {
+  if (is.null(y)) {
+    return(y)
+  }
+  
   .is_count <- function(x) {
     all(x >= 0) && all(abs(x - round(x)) < .Machine$double.eps^0.5)
   }
@@ -809,6 +827,25 @@ validate_glm_outcome_support <- function(y, family) {
   }
   
   return(y)
+}
+
+# Generate fake y variable to use if prior_PD and no y is specified
+# @param N number of observations
+# @param family family object
+fake_y_for_prior_PD <- function(N, family) {
+  fam <- family$family
+  if (is.gaussian(fam)) {
+    # if prior autoscaling is on then the value of sd(y) matters
+    # generate a fake y so that sd(y) is 1
+    fake_y <- as.vector(scale(rnorm(N)))
+  } else if (is.binomial(fam) || is.poisson(fam) || is.nb(fam)) {
+    # valid for all discrete cases
+    fake_y <- rep_len(c(0, 1), N)
+  } else {
+    # valid for gamma, inverse gaussian, beta 
+    fake_y <- runif(N)
+  }
+  return(fake_y)
 }
 
 
