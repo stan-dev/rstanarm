@@ -446,14 +446,18 @@ loo_compare.stanreg_list <-
 #' @export
 #' @method print compare_rstanarm_loos
 print.compare_rstanarm_loos <- function(x, ...) {
-  criterion <- switch(
-    attr(x, "criterion"),
-    "loo" = "LOO-CV",
-    "kfold" = "K-fold-CV",
-    "waic" = "WAIC"
-  )
+  if (is.null(attr(x, "criterion"))) {
+    criterion <- NA
+  } else {
+    criterion <- switch(
+      attr(x, "criterion"),
+      "loo" = "LOO-CV",
+      "kfold" = "K-fold-CV",
+      "waic" = "WAIC"
+    )
+  }
   formulas <- attr(x, "formulas")
-  if (is.null(formulas)) {
+  if (is.null(formulas) && !is.na(criterion)) {
     cat("Model comparison based on", paste0(criterion, ":"), "\n")
   } else {
     cat("Model formulas: ")
@@ -462,7 +466,9 @@ print.compare_rstanarm_loos <- function(x, ...) {
       cat("\n", paste0(nms[j], ": "),
           formula_string(formulas[[j]]))
     }
-    cat("\n\nModel comparison based on", paste0(criterion, ":"), "\n")
+    if (!is.na(criterion)) {
+      cat("\n\nModel comparison based on", paste0(criterion, ":"), "\n")
+    }
   }
   
   xcopy <- x

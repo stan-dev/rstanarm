@@ -334,6 +334,19 @@ validate_glm_formula <- function(f) {
 }
 
 
+# Check if model formula has something on the LHS of ~
+# @param f Model formula
+# @return FALSE if there is no outcome on the LHS of the formula
+has_outcome_variable <- function(f) {
+  tt <- terms(as.formula(f))
+  if (attr(tt, "response") == 0) {
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
+
 # Check if any variables in a model frame are constants
 # (the exception is that a constant variable of all 1's is allowed)
 # 
@@ -670,12 +683,15 @@ check_reTrms <- function(reTrms) {
 }
 
 #' @importFrom lme4 glmerControl
-make_glmerControl <- function(...) {
+# @param checkLHS throw error if formula LHS is missing? (relevant if prior_PD is TRUE)
+make_glmerControl <- function(..., checkLHS = TRUE) {
   glmerControl(check.nlev.gtreq.5 = "ignore",
                check.nlev.gtr.1 = "stop",
                check.nobs.vs.rankZ = "ignore",
                check.nobs.vs.nlev = "ignore",
-               check.nobs.vs.nRE = "ignore", ...)  
+               check.nobs.vs.nRE = "ignore", 
+               check.formula.LHS = if (checkLHS) "stop" else "ignore",
+               ...)  
 }
 
 # Check if a fitted model (stanreg object) has weights
@@ -751,27 +767,35 @@ warn_data_arg_missing <- function() {
 
 # Validate newdata argument for posterior_predict, log_lik, etc.
 #
-# Doesn't check if the correct variables are included (that's done in pp_data),
-# just that newdata is either NULL or a data frame with no missing values. Also
-# drops any unused dimensions in variables (e.g. a one column matrix inside a
-# data frame is converted to a vector).
-# 
-# @param x User's 'newdata' argument
-# @return Either NULL or a data frame
+# Drops unused variables from newdata, checks for NAs in used variables, and
+# also drops any unused dimensions in variables (e.g. a one column matrix inside
+# a data frame is converted to a vector).
 #
-validate_newdata <- function(x) {
-  if (is.null(x)) {
-    return(NULL)
+# @param object stanreg object
+# @param newdata NULL or a data frame
+# @pararm m For stanmvreg objects, the submodel (passed to formula())
+# @return NULL or a data frame
+#
+validate_newdata <- function(object, newdata = NULL, m = NULL) {
+  if (is.null(newdata)) {
+    return(newdata)
   }
-  if (!is.data.frame(x)) {
+  if (!is.data.frame(newdata)) {
     stop("If 'newdata' is specified it must be a data frame.", call. = FALSE)
   }
-  if (any(is.na(x))) {
+  
+  # drop other classes (e.g. 'tbl_df', 'tbl')
+  newdata <- as.data.frame(newdata)
+  
+  # only check for NAs in used variables
+  vars <- all.vars(formula(object, m = m))
+  newdata_check <- newdata[, colnames(newdata) %in% vars, drop=FALSE]
+  if (any(is.na(newdata_check))) {
     stop("NAs are not allowed in 'newdata'.", call. = FALSE)
   }
   
-  x <- as.data.frame(x)
-  drop_redundant_dims(x)
+  newdata <- drop_redundant_dims(newdata)
+  return(newdata)
 }
 
 

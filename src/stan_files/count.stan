@@ -71,42 +71,44 @@ transformed parameters {
   }
 }
 model {
+  if (prior_PD == 0) {
 #include /model/make_eta.stan
-  if (t > 0) {
+    if (t > 0) {
 #include /model/eta_add_Zb.stan
-  }
-  if (has_intercept == 1) {
-    if (link == 1) eta += gamma[1];
-    else eta += gamma[1] - min(eta);
-  }
-  else {
-#include /model/eta_no_intercept.stan
-  }
-  
-  if (family == 8) {
-    if      (link == 1) eta += log(aux) + log(noise[1]);
-    else if (link == 2) {
-      eta *= aux;
-      eta .*= noise[1];
     }
-    else                eta += sqrt(aux) + sqrt(noise[1]);
-  }
-  
-  // Log-likelihood 
-  if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
-    if (family != 7) {
-      if (link == 1) target += poisson_log_lpmf(y | eta);
-      else target += poisson_lpmf(y | linkinv_count(eta, link));
+    if (has_intercept == 1) {
+      if (link == 1) eta += gamma[1];
+      else eta += gamma[1] - min(eta);
     }
     else {
-      if (link == 1) target += neg_binomial_2_log_lpmf(y | eta, aux);
-      else target += neg_binomial_2_lpmf(y | linkinv_count(eta, link), aux);
+#include /model/eta_no_intercept.stan
     }
+  
+    if (family == 8) {
+      if      (link == 1) eta += log(aux) + log(noise[1]);
+      else if (link == 2) {
+        eta *= aux;
+        eta .*= noise[1];
+      }
+      else                eta += sqrt(aux) + sqrt(noise[1]);
+    }
+  
+    // Log-likelihood
+    if (has_weights == 0) {  // unweighted log-likelihoods
+      if (family != 7) {
+        if (link == 1) target += poisson_log_lpmf(y | eta);
+        else target += poisson_lpmf(y | linkinv_count(eta, link));
+      }
+      else {
+        if (link == 1) target += neg_binomial_2_log_lpmf(y | eta, aux);
+        else target += neg_binomial_2_lpmf(y | linkinv_count(eta, link), aux);
+      }
+    }
+    else if (family != 7)
+      target += dot_product(weights, pw_pois(y, eta, link));
+    else
+      target += dot_product(weights, pw_nb(y, eta, aux, link));
   }
-  else if (family != 7 && prior_PD == 0)
-    target += dot_product(weights, pw_pois(y, eta, link));
-  else if (prior_PD == 0)
-    target += dot_product(weights, pw_nb(y, eta, aux, link));
   
   // Log-prior for aux
   if (family > 6 && 

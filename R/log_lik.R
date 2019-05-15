@@ -68,7 +68,7 @@
 #' }
 #'
 log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
-  newdata <- validate_newdata(newdata)
+  newdata <- validate_newdata(object, newdata, m = NULL)
   calling_fun <- as.character(sys.call(-1))[1]
   dots <- list(...)
   if (is.stanmvreg(object)) {
@@ -81,6 +81,7 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
     m <- NULL
   }
   
+  newdata <- validate_newdata(object, newdata = newdata, m = m)
   args <- ll_args.stanreg(object, newdata = newdata, offset = offset, 
                           reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
                           ...)

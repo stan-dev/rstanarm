@@ -1,8 +1,8 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.18.2
-Date: 2018-11-08
+Version: 2.18.9
+Date: 2019-04-14
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
              person("Sam", "Brilleman", role = "ctb"),
@@ -64,6 +64,6 @@ SystemRequirements: GNU make, pandoc (>= 1.12.3), pandoc-citeproc
 VignetteBuilder: knitr
 LazyData: true
 NeedsCompilation: yes
-URL: http://discourse.mc-stan.org, http://mc-stan.org/, http://mc-stan.org/rstanarm/ 
+URL: https://mc-stan.org/rstanarm/, https://discourse.mc-stan.org
 BugReports: https://github.com/stan-dev/rstanarm/issues
 RoxygenNote: 6.1.1

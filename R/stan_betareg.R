@@ -127,8 +127,12 @@ stan_betareg <-
            adapt_delta = NULL,
            QR = FALSE) {
     
-    if (!requireNamespace("betareg", quietly = TRUE))
+    if (!requireNamespace("betareg", quietly = TRUE)) {
       stop("Please install the betareg package before using 'stan_betareg'.")
+    }
+    if (!has_outcome_variable(formula)) {
+      stop("LHS of formula must be specified.")
+    }
     
     mc <- match.call(expand.dots = FALSE)
     data <- validate_data(data, if_missing = environment(formula))

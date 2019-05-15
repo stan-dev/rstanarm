@@ -1,32 +1,31 @@
-#' Compute a Bayesian version of R-squared for regression models
+#' Compute a Bayesian version of R-squared or LOO-adjusted R-squared for
+#' regression models.
 #'
 #' @aliases bayes_R2
 #' @export
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
-#' @param newdata Similar to the \code{newdata} argument to 
-#'   \code{\link{posterior_linpred}} and \code{\link{posterior_predict}} except,
-#'   in addition to new observations of the predictors, new observations of the
-#'   \emph{outcome} must be also included. See the \strong{Examples} section below.
-#' @param re.form,offset For models with group-level terms, these arguments are 
-#'   passed to \code{\link{posterior_linpred}} if the \code{newdata} argument is
-#'   specified.
+#' @param re.form For models with group-level terms, \code{re.form} is
+#'   passed to \code{\link{posterior_linpred}} if specified.
 #' @param ... Currently ignored.
 #' 
-#' @return A vector of Bayesian R-squared values with length equal to the 
-#'   posterior sample size.
+#' @return A vector of R-squared values with length equal to the posterior
+#'   sample size.
 #'   
-#' @seealso \url{https://github.com/jgabry/bayes_R2}
+#' @references
+#' Andrew Gelman, Ben Goodrich, Jonah Gabry, and Aki Vehtari (2018). R-squared
+#' for Bayesian regression models. \emph{The American Statistician}, to appear.
+#' DOI: 10.1080/00031305.2018.1549100.
+#' (\href{http://www.stat.columbia.edu/~gelman/research/published/bayes_R2_v3.pdf}{Preprint},
+#' \href{https://avehtari.github.io/bayes_R2/bayes_R2.html}{Notebook})
 #' 
 #' @examples
 #' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars, QR = TRUE, chains = 2)
 #' rsq <- bayes_R2(fit)
 #' print(median(rsq))
 #' 
-#' # specifying newdata (including outcome variable 'mpg')
-#' nd <- data.frame(mpg = c(10, 20, 30), wt = c(4, 3, 2), cyl = c(8, 6, 4))
-#' rsq_new <- bayes_R2(fit, newdata = nd)
-#' print(median(rsq_new))
+#' loo_rsq <- loo_R2(fit)
+#' print(median(loo_rsq))
 #' 
 #' # multilevel binomial model
 #' if (!exists("example_model")) example(example_model)
@@ -34,42 +33,90 @@
 #' median(bayes_R2(example_model))
 #' median(bayes_R2(example_model, re.form = NA)) # exclude group-level
 #' 
-bayes_R2.stanreg <-
-  function(object,
-           newdata = NULL,
-           re.form = NULL,
-           offset = NULL,
-           ...) {
+bayes_R2.stanreg <- function(object, ..., re.form = NULL) {
     
     if (!used.sampling(object))
       STOP_sampling_only("bayes_R2")
     if (is_polr(object))
-      stop("Not available for stan_polr models.")
+      stop("bayes_R2 is not available for stan_polr models.")
     
-    y <- get_y_new(object, newdata = newdata)
-    yhat <- posterior_linpred(
-      object,
-      transform = TRUE,
-      newdata = newdata,
-      re.form = re.form,
-      offset = offset
-    )
-    
-    if (is.binomial(family(object)$family)) {
-      if (is.factor(y)) {
-        y <- fac2bin(y)
-      } else if (NCOL(y) == 2) {
-        trials <- rowSums(y)
-        y <- y[, 1]
-        yhat <- yhat %*% diag(trials)
-      }
+    fam <- family(object)$family
+    if (!fam %in% c("gaussian", "binomial")) {
+      stop("bayes_R2 is only available for Gaussian and binomial models.")
     }
     
-    e <- -1 * sweep(yhat, 2, y)
-    var_yhat <- apply(yhat, 1, var)
-    var_e <- apply(e, 1, var)
-    var_yhat / (var_yhat + var_e)
+    mu_pred <- posterior_linpred(object, transform = TRUE, re.form = re.form)
+    if (is.binomial(fam)) {
+      y <- get_y(object)
+      if (NCOL(y) == 2) {
+        trials <- rowSums(y)
+        mu_pred <- mu_pred %*% diag(trials)
+      }
+      sigma2 <- rowMeans(mu_pred * (1 - mu_pred))
+    } else {
+      sigma2 <- drop(as.matrix(fit, pars = "sigma"))^2
+    }
+    
+    var_mu_pred <- apply(mu_pred, 1, var)
+    r_squared <- var_mu_pred / (var_mu_pred + sigma2)
+    return(r_squared)
   }
+
+
+#' @rdname bayes_R2.stanreg
+#' @aliases loo_R2
+#' @importFrom rstantools loo_R2
+#' @export
+#' 
+loo_R2.stanreg <- function(object, ...) {
+  if (!used.sampling(object))
+    STOP_sampling_only("bayes_R2")
+  if (is_polr(object))
+    stop("loo_R2 is not available for stan_polr models.")
+  
+  fam <- family(object)$family
+  if (!fam %in% c("gaussian", "binomial")) {
+    stop("loo_R2 is only available for Gaussian and binomial models.")
+  }
+  
+  y <- get_y(fit)
+  log_ratios <- -log_lik(fit)
+  psis_object <- fit[["loo"]][["psis_object"]]
+  if (is.null(psis_object)) {
+    psis_object <- loo::psis(log_ratios, r_eff = NA)
+  }
+  
+  mu_pred <- posterior_linpred(fit, transform = TRUE)
+  if (is.binomial(fam)) {
+    if (is.factor(y)) {
+      y <- fac2bin(y)
+    } else if (NCOL(y) == 2) {
+      trials <- rowSums(y)
+      y <- y[, 1]
+      mu_pred <- mu_pred %*% diag(trials)
+    }
+  }
+  mu_pred_loo <- loo::E_loo(mu_pred, psis_object, log_ratios = log_ratios)$value
+  err_loo <- mu_pred_loo - y
+  
+  S <- nrow(mu_pred)
+  N <- ncol(mu_pred)
+  
+  # dirichlet weights 
+  exp_draws <- matrix(rexp(S * N, rate = 1), nrow = S, ncol = N)
+  wts <- exp_draws / rowSums(exp_draws)
+  
+  var_y <- (rowSums(sweep(wts, 2, y^2, FUN = "*")) -
+            rowSums(sweep(wts, 2, y, FUN = "*"))^2) * (N/(N-1))
+  
+  var_err_loo <- (rowSums(sweep(wts, 2, err_loo^2, FUN = "*")) -
+                  rowSums(sweep(wts, 2, err_loo, FUN = "*")^2)) * (N/(N-1))
+  
+  loo_r_squared <- 1 - var_err_loo / var_y
+  loo_r_squared[loo_r_squared < -1] <- -1
+  loo_r_squared[loo_r_squared > 1] <- 1
+  return(loo_r_squared)
+}
 
 
 # internal ----------------------------------------------------------------
