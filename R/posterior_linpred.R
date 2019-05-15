@@ -84,7 +84,7 @@ posterior_linpred.stanreg <-
       STOP_if_stanmvreg("'posterior_linpred'")
     }
     
-    newdata <- validate_newdata(newdata)
+    newdata <- validate_newdata(object, newdata = newdata, m = NULL)
     dat <- pp_data(object,
                    newdata = newdata,
                    re.form = re.form,
