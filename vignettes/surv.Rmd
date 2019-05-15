@@ -162,7 +162,7 @@ h_i(t) = \lambda_i(t)
 h_i(t) = \gamma t^{\gamma-1} \lambda_i(t)
 \end{equation}
 
-- **Gompertz model** (`basehaz = "gompertz"`): for shape parameter $\lambda = \exp ( \eta_i(t) )$ and scale parameter $\gamma > 0$ we have:
+- **Gompertz model** (`basehaz = "gompertz"`): for shape parameter $\lambda_i(t) = \exp ( \eta_i(t) )$ and scale parameter $\gamma > 0$ we have:
 \
 \begin{equation}
 h_i(t) = \exp(\gamma t) \lambda_i(t)
@@ -218,29 +218,33 @@ The quantity $\exp \left( - \beta_p^*(t) \right)$ is referred to as an "accelera
 
 ### Distributions
 
-- **Exponential model** (`basehaz = "exp-aft"`): for scale parameter $\lambda_i(t) = \exp ( -\eta_i(t) )$ we have:
+- **Exponential model** (`basehaz = "exp-aft"`): When the linear predictor is time-varying we have:
+\
+\begin{equation}
+S_i(t) = \exp \left( - \int_0^t \exp ( -\eta_i(u) ) du \right)
+\end{equation}
+\
+and when the linear predictor is time-fixed we have:
 \
 \begin{equation}
 S_i(t) = \exp \left( - t \lambda_i \right)
 \end{equation}
 \
-or in the case with a time-varying linear predictor:
+for scale parameter $\lambda_i = \exp ( -\eta_i )$.
+
+- **Weibull model** (`basehaz = "weibull-aft"`): When the linear predictor is time-varying we have:
 \
 \begin{equation}
-S_i(t) = \exp \left( - \int_0^t \exp ( -\eta_i(u) ) du \right)
+S_i(t) = \exp \left( - \left[ \int_0^t \exp ( -\eta_i(u) ) du \right]^{\gamma} \right)
 \end{equation}
-
-- **Weibull model** (`basehaz = "weibull-aft"`): for scale parameter $\lambda_i(t) = \exp ( -\gamma \eta_i(t) )$ and shape parameter $\gamma > 0$ we have:
+\
+for shape parameter $\gamma > 0$ and when the linear predictor is time-fixed we have:
 \
 \begin{equation}
 S_i(t) = \exp \left( - t^{\gamma} \lambda_i \right)
 \end{equation}
 \
-or in the case with a time-varying linear predictor:
-\
-\begin{equation}
-S_i(t) = \exp \left( - \left[ \int_0^t \exp ( -\eta_i(u) ) du \right]^{\gamma} \right)
-\end{equation}
+for scale parameter $\lambda_i = \exp ( -\gamma \eta_i )$ and shape parameter $\gamma > 0$.
 
 **Note:** When the linear predictor *is not* time-varying (i.e. under time-fixed acceleration), there is a closed form expression for both the hazard function and survival function; details shown in the appendix. However, when the linear predictor *is* time-varying (i.e. under time-varying acceleration) there is no closed form expression for the hazard function or survival probability; instead, quadrature is used to evaluate the cumulative acceleration factor, which in turn is used to evaluate the hazard function and survival probability for inclusion in the likelihood. Extended details on the parameterisations are given in the appendix.
 
