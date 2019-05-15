@@ -259,7 +259,7 @@
 #'   provides more extensive details on the model formulations, including the
 #'   parameterisations for each of the parametric distributions.
 #' }
-#' \subsection{Time-varying effects (see \code{\link{tve}})}{
+#' \subsection{Time-varying effects}{
 #'   By default, any covariate effects specified in the \code{formula} are
 #'   included in the model under a proportional hazards assumption (for models
 #'   estimated using a hazard scale formulation) or under the assumption of
@@ -295,35 +295,30 @@
 #'   Alternatively we can use a piecewise constant function to model the 
 #'   time-varying coefficient by specifying \code{tve(sex, type = "pw")}.
 #'   
-#'   This argument, as well as additional arguments used to control the 
-#'   modelling of the time-varying effect are explained in the 
-#'   \code{\link{tve}} documentation. The flexibility of the function used 
-#'   to model the time-varying effect is primarily controlled by increasing
-#'   or decreasing the degrees of freedom used to model the time-varying
-#'   coefficient (i.e. the number of B-spline basis terms or the number of
-#'   time intervals in the piecewise constant function). For instance,
-#'   if you wished to increase the flexibility of the function by using a 
-#'   greater number of degrees of freedom, then you can specify this as part
-#'   of the \code{tve} function call in the model formula. For example, to 
+#'   Additional arguments used to control the modelling of the time-varying 
+#'   effect are explained in the \code{\link{tve}} documentation. 
+#'   In particular, the flexibility of the function can primarily be 
+#'   controlled by increasing or decreasing the degrees of freedom
+#'   (i.e. the number of B-spline basis terms or the number of
+#'   time intervals in the piecewise constant function). For example, to 
 #'   use cubic B-splines with 7 degrees of freedom we could specify 
 #'   \code{tve(sex, df = 7)} in the model formula instead of just
-#'   \code{tve(sex)}. See the \strong{Examples} section below for more 
-#'   details.
+#'   \code{tve(sex)}.
 #'   
 #'   It is worth noting however that an additional way to control the
 #'   flexibility of the function used to model the time-varying effect
 #'   is through the priors. A random walk prior is used for the piecewise 
 #'   constant or B-spline coefficients, and the hyperparameter (standard 
 #'   deviation) of the random walk prior can be controlled via the 
-#'   \code{prior_smooth} argument. This is a much more indirect way to 
+#'   \code{prior_smooth} argument. This is a more indirect way to 
 #'   control the "smoothness" of the function used to model the time-varying
 #'   effect, but it nonetheless might be useful in some settings. The
 #'   \emph{stan_surv: Survival (Time-to-Event) Models} vignette provides
-#'   more explicity details on the formulation of the time-varying effects
+#'   more explicit details on the formulation of the time-varying effects
 #'   and the prior distributions used for their coefficients.
 #'   
 #'   In practice, the default \code{tve()} function should provide sufficient 
-#'   flexibility for model most time-varying effects. However, it is worth
+#'   flexibility for modelling most time-varying effects. However, it is worth
 #'   noting that reliable estimation of a time-varying effect usually 
 #'   requires a relatively large number of events in the data (e.g. say >1000,
 #'   depending on the setting).
@@ -331,7 +326,7 @@
 #'              
 #' @examples
 #' \donttest{
-#' #---------- Proportional hazards
+#' #----- Proportional hazards
 #' 
 #' # Simulated data
 #' library(simsurv)
@@ -356,14 +351,14 @@
 #'                           plot(m1d), 
 #'                           ylim = c(0, 0.8))
 #'     
-#' #---------- Left and right censored data
+#' #----- Left and right censored data
 #' 
 #' # Mice tumor data
 #' m2 <- stan_surv(Surv(l, u, type = "interval2") ~ grp, 
 #'                 data = mice, chains = 1, refresh = 0, iter = 600)
 #' print(m2, 4)
 #' 
-#' #---------- Non-proportional hazards
+#' #----- Non-proportional hazards - B-spline tve()
 #' 
 #' # Simulated data
 #' library(simsurv)
@@ -380,6 +375,26 @@
 #'                 data = d3, chains = 1, refresh = 0, iter = 600)
 #' print(m3, 4)
 #' plot(m3, "tve") # time-varying hazard ratio
+#' 
+#' #----- Non-proportional hazards - piecewise constant tve()
+#' 
+#' # Simulated data
+#' library(simsurv)
+#' covs <- data.frame(id  = 1:250, 
+#'                    trt = stats::rbinom(250, 1L, 0.5))
+#' d4 <- simsurv(lambdas = 0.1, 
+#'               gammas  = 1.5, 
+#'               betas   = c(trt = -0.5),
+#'               tde     = c(trt = 0.4),
+#'               tdefun  = function(t) { (t > 2.5) }
+#'               x       = covs, 
+#'               maxt    = 5)
+#' d4 <- merge(d4, covs)
+#' m4 <- stan_surv(Surv(eventtime, status) ~ 
+#'                   tve(trt, type = "pw", knots = c(2.5)), 
+#'                 data = d4, chains = 1, refresh = 0, iter = 600)
+#' print(m4, 4)
+#' plot(m4, "tve") # time-varying hazard ratio
 #' 
 #' #---------- Compare PH and AFT parameterisations
 #' 
@@ -1245,11 +1260,10 @@ stan_surv <- function(formula,
 #'   \code{knots} arguments described below.
 #'   }
 #' @param df A positive integer specifying the degrees of freedom 
-#'   for the B-splines (when \code{type = "bs"}) or the number of time  
-#'   intervals for the piecewise constant function (when \code{type = "pw"}). 
+#'   for the piecewise constant or B-spline function. 
 #'   When \code{type = "bs"} two boundary knots and \code{df - degree} 
 #'   internal knots are used to generate the B-spline function.
-#'   When \code{type = "pw"} two boundary knots and \code{df - 1} 
+#'   When \code{type = "pw"} two boundary knots and \code{df} 
 #'   internal knots are used to generate the piecewise constant function.
 #'   The internal knots are placed at equally spaced percentiles of the 
 #'   distribution of the uncensored event times.
@@ -1916,7 +1930,7 @@ handle_tve <- function(formula, min_t, max_t, times, status) {
         
       } else if (type == "pw") {
         
-        iknots <- get_iknots(tt, df = df, degree = 1, iknots = knots)
+        iknots <- get_iknots(tt, df = df, degree = 0, iknots = knots)
         
         new_args <- list(breaks = c(min_t, iknots, max_t),
                          include.lowest = TRUE)
