@@ -459,7 +459,6 @@ for (i in names(tols$fixef))
                info = "compare_estimates_tve_pw")
 
 
-
 #--------  Check post-estimation functions work
 
 pbcSurv$t0 <- 0
@@ -468,12 +467,14 @@ pbcSurv$t0[pbcSurv$futimeYears > 2] <- 1 # delayed entry
 pbcSurv$t1 <- pbcSurv$futimeYears - 1 # lower limit for interval censoring
 pbcSurv$t1[pbcSurv$t1 <= 0] <- -Inf   # left censoring
 
+pbcSurv$clinic <- cut(pbcSurv$id, breaks = c(0,10,20,30,40), labels = FALSE)
+
 # different baseline hazards
 o<-SW(f1  <- stan_surv(Surv(futimeYears, death) ~ sex + trt,
                        data    = pbcSurv,
                        basehaz = "ms",
                        chains  = 1,
-                       iter    = 60,
+                       iter    = 100,
                        refresh = REFRESH,
                        seed    = SEED))
 o<-SW(f2  <- update(f1, basehaz = "bs"))
@@ -509,15 +510,21 @@ o<-SW(f25 <- update(f6, Surv(t0, futimeYears, death) ~ sex + tve(trt)))
 # left and interval censoring
 o<-SW(f26 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + trt))
 o<-SW(f27 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + tve(trt)))
-o<-SW(f28 <- update(f6, Surv(t1, futimeYears, type = "interval2") ~ sex + tve(trt)))
+o<-SW(f28 <- update(f6, Surv(t1, futimeYears, type = "interval2") ~ sex + trt))
 o<-SW(f29 <- update(f6, Surv(t1, futimeYears, type = "interval2") ~ sex + tve(trt)))
+
+# frailty models
+o<-SW(f30 <- update(f1, Surv(futimeYears, death) ~ trt + (trt | clinic)))
+o<-SW(f31 <- update(f1, Surv(futimeYears, death) ~ tve(trt) + (1 | clinic)))
+o<-SW(f32 <- update(f1, Surv(t0, futimeYears, death) ~ trt + (trt | clinic)))
+o<-SW(f33 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ trt + (trt | clinic)))
 
 # new data for predictions
 nd1 <- pbcSurv[pbcSurv$id == 2,]
 nd2 <- pbcSurv[pbcSurv$id %in% c(1,2),]
 
 # test the models
-for (j in c(15:21)) {
+for (j in c(30:33)) {
   
   mod <- try(get(paste0("f", j)), silent = TRUE)
   

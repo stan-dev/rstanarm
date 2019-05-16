@@ -2174,23 +2174,26 @@ make_model_data <- function(formula, data) {
 #   mt: the model terms associated with the returned model frame.
 make_model_frame <- function(formula, 
                              data, 
-                             xlevs = NULL,
+                             xlevs              = NULL,
                              drop.unused.levels = FALSE,
-                             check_constant = FALSE) {
+                             check_constant     = FALSE,
+                             na.action          = na.fail) {
 
   # construct model frame
   Terms <- terms(lme4::subbars(formula))
   mf <- stats::model.frame(Terms, 
                            data,
                            xlev = xlevs, 
-                           drop.unused.levels = drop.unused.levels)
+                           drop.unused.levels = drop.unused.levels,
+                           na.action = na.action)
   
   # get predvars for fixed part of formula
   TermsF <- terms(lme4::nobars(formula)) 
   mfF <- stats::model.frame(TermsF, 
                             data, 
                             xlev = xlevs, 
-                            drop.unused.levels = drop.unused.levels)
+                            drop.unused.levels = drop.unused.levels,
+                            na.action = na.action)
   attr(attr(mf, "terms"), "predvars.fixed") <- attr(attr(mfF, "terms"), "predvars")
   
   # get predvars for random part of formula
@@ -2200,7 +2203,8 @@ make_model_frame <- function(formula,
     mfR <- stats::model.frame(TermsR,
                               data, 
                               xlev = xlevs, 
-                              drop.unused.levels = drop.unused.levels)
+                              drop.unused.levels = drop.unused.levels,
+                              na.action = na.action)
     attr(attr(mf, "terms"), "predvars.random") <- attr(attr(mfR, "terms"), "predvars")
   } else {
     attr(attr(mf, "terms"), "predvars.random") <- NULL

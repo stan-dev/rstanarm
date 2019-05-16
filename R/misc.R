@@ -1497,12 +1497,14 @@ extract_pars.stansurv <- function(object, stanmat = NULL, means = FALSE) {
   nms_smth <- get_smooth_name(object$s_cpts, type = "smooth_sd")
   nms_int  <- get_int_name_basehaz(object$basehaz)
   nms_aux  <- get_aux_name_basehaz(object$basehaz)
+  nms_b    <- b_names(colnames(stanmat))
   alpha    <- stanmat[, nms_int,  drop = FALSE]
   beta     <- stanmat[, nms_beta, drop = FALSE]
   beta_tve <- stanmat[, nms_tve,  drop = FALSE]
   aux      <- stanmat[, nms_aux,  drop = FALSE]
   smooth   <- stanmat[, nms_smth, drop = FALSE]
-  nlist(alpha, beta, beta_tve, aux, smooth, stanmat)
+  b        <- stanmat[, nms_b,    drop = FALSE]
+  nlist(alpha, beta, beta_tve, aux, smooth, b, stanmat)
 }
 
 extract_pars.stanmvreg <- function(object, stanmat = NULL, means = FALSE) {

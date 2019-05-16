@@ -295,10 +295,16 @@ pp_data <-
 
   }
 
-  #----- model frame for generating predictor matrices
+  #----- time-fixed predictor matrix
   
-  # drop response from model terms
-  tt <- delete.response(terms(object, fixed.only = FALSE))
+  # check all vars are in newdata
+  vars <- all.vars(delete.response(terms(object, fixed.only = FALSE)))
+  miss <- which(!vars %in% colnames(newdata))
+  if (length(miss))
+    stop2("The following variables are missing from the data: ", comma(vars[miss]))
+  
+  # drop response from fixed effect formula
+  tt <- delete.response(terms(object, fixed.only = TRUE))
   
   # make model frame based on time-fixed part of model formula
   mf <- make_model_frame(tt, newdata, xlevs = object$xlevs)$mf
@@ -310,9 +316,12 @@ pp_data <-
   # check data classes in the model frame match those used in model fitting
   if (!is.null(cl <- attr(tt, "dataClasses"))) 
     .checkMFClasses(cl, mf)
+
+  # check model frame dimensions are correct (may be errors due to NAs?)
+  if (!length(pts) == nrow(mf))
+    stop("Bug found: length of 'pts' should equal number rows in model frame.")
   
-  #----- time-fixed predictor matrix
-  
+  # construct time-fixed predictor matrix
   x  <- make_x(tt, mf, check_constant = FALSE)$x
   
   #----- time-varying predictor matrix
@@ -328,11 +337,15 @@ pp_data <-
     }
     
     # generate a model frame with time transformations for tve effects
-    mf_tve <- make_model_frame(formula$tt_frame, data.frame(times__ = pts_tmp))$mf
+    mf_s <- make_model_frame(formula$tt_frame, data.frame(times__ = pts_tmp))$mf
+    
+    # check model frame dimensions are correct
+    if (!length(pts) == nrow(mf_s))
+      stop("Bug found: length of 'pts' should equal number rows in model frame.")
     
     # NB next line avoids dropping terms attribute from 'mf'
-    mf[, colnames(mf_tve)] <- mf_tve
-    
+    mf[, colnames(mf_s)] <- mf_s
+        
     # construct time-varying predictor matrix
     s <- make_s(formula, mf, xlevs = xlevs) 
 
@@ -348,13 +361,35 @@ pp_data <-
     
   }
   
-  #----- random effects predictor matrices
+  #----- random effects predictor matrix
   
   if (has_bars) {
-    ReTrms <- lme4::mkReTrms(formula$bars, mf)
+
+    # drop response from random effects part of model formula
+    tt_z <- delete.response(terms(object, random.only = TRUE))
+    
+    # make model frame based on random effects part of model formula
+    mf_z <- make_model_frame(formula   = tt_z, 
+                             data      = newdata, 
+                             xlevs     = object$xlevs, 
+                             na.action = na.pass)$mf
+    
+    # if using quadrature then expand rows
+    if (has_quadrature && at_quadpoints)
+      mf_z <- rep_rows(mf_z, times = qnodes)
+    
+    # check model frame dimensions are correct
+    if (!length(pts) == nrow(mf_z))
+      stop("Bug found: length of 'pts' should equal number rows in model frame.")
+    
+    # construct random effects predictor matrix
+    ReTrms <- lme4::mkReTrms(formula$bars, mf_z)
     z <- nlist(Zt = ReTrms$Zt, Z_names = make_b_nms(ReTrms))
+    
   } else {
+    
     z <- list()
+  
   }
 
   # return object
