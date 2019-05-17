@@ -1729,33 +1729,21 @@ parse_formula_and_data <- function(formula, data) {
   type <- attr(surv, "type")
   
   if (type == "right") {
-    tvar_beg <- NULL
-    tvar_end <- as.character(lhs[[2L]])
-    dvar     <- as.character(lhs[[3L]])
     min_t    <- 0
     max_t    <- max(surv[, "time"])
     status   <- as.vector(surv[, "status"])
     t_end    <- as.vector(surv[, "time"])
   } else if (type == "counting") {
-    tvar_beg <- as.character(lhs[[2L]])
-    tvar_end <- as.character(lhs[[3L]])
-    dvar     <- as.character(lhs[[4L]])
     min_t    <- min(surv[, "start"])
     max_t    <- max(surv[, "stop"])
     status   <- as.vector(surv[, "status"])
     t_end    <- as.vector(surv[, "stop"])
   } else if (type == "interval") {
-    tvar_beg <- NULL
-    tvar_end <- as.character(lhs[[2L]])
-    dvar     <- as.character(lhs[[4L]])
     min_t    <- 0
     max_t    <- max(surv[, c("time1", "time2")])
     status   <- as.vector(surv[, "status"])
     t_end    <- as.vector(surv[, "time1"])
   } else if (type == "interval2") {
-    tvar_beg <- NULL
-    tvar_end <- as.character(lhs[[2L]])
-    dvar     <- as.character(lhs[[3L]])
     min_t    <- 0
     max_t    <- max(surv[, c("time1", "time2")])
     status   <- as.vector(surv[, "status"])
@@ -1811,9 +1799,6 @@ parse_formula_and_data <- function(formula, data) {
         bars,
         re_parts,
         re_forms,
-        tvar_beg,
-        tvar_end,
-        dvar,
         surv_type = attr(surv, "type"))
 }
 
