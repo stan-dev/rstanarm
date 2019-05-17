@@ -1172,11 +1172,16 @@ log_basehaz_pw <- function(x, coefs, knots) {
   linear_predictor(coefs, dummy_matrix(x, knots = knots))
 }
 
-evaluate_log_haz <- function(times, basehaz, betas, betas_tve, aux, 
-                             intercept = NULL, x, s = NULL) {
+evaluate_log_haz <- function(times, basehaz, betas, betas_tve, b = NULL, aux, 
+                             intercept = NULL, x, s = NULL, z = NULL) {
   eta <- linear_predictor(betas, x)
   if ((!is.null(s)) && ncol(s))
     eta <- eta + linear_predictor(betas_tve, s)
+  if (!is.null(z$Zt) && ncol(z$Zt)) {
+    b <- pp_b_ord(b, z$Z_names)
+    z <- as.matrix(t(z$Zt))
+    eta <- eta + linear_predictor(b, z)
+  }
   eta <- switch(get_basehaz_name(basehaz),
                 "exp-aft"     = sweep(eta, 1L, -1, `*`),
                 "weibull-aft" = sweep(eta, 1L, -as.vector(aux), `*`),
@@ -1230,8 +1235,14 @@ log_basesurv_ms <- function(x, coefs, basis, intercept) {
       linear_predictor(coefs, basis_matrix(x, basis = basis, integrate = TRUE))
 }
 
-evaluate_log_surv <- function(times, basehaz, betas, aux, intercept = NULL, x, ...) {
+evaluate_log_surv <- function(times, basehaz, betas, b = NULL, aux, 
+                              intercept = NULL, x, z = NULL, ...) {
   eta  <- linear_predictor(betas, x)
+  if (!is.null(z$Zt) && ncol(z$Zt)) {
+    b <- pp_b_ord(b, z$Z_names)
+    z <- as.matrix(t(z$Zt))
+    eta <- eta + linear_predictor(b, z)
+  }
   eta  <- switch(get_basehaz_name(basehaz),
                  "exp-aft"     = sweep(eta, 1L, -1, `*`),
                  "weibull-aft" = sweep(eta, 1L, -as.vector(aux), `*`),
