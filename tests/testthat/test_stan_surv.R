@@ -24,15 +24,14 @@ library(survival)
 library(simsurv)
 ITER    <- 1000
 CHAINS  <- 1
-SEED    <- 12345
 REFRESH <- 0L
-set.seed(SEED)
+SEED    <- 12345; set.seed(SEED)
 if (interactive())
-  options(mc.cores = parallel::detectCores())
+  options(mc.cores  = parallel::detectCores(),
+          loo.cores = parallel::detectCores())
 
 TOLSCALES <- list(
-  hr_fixef  = 0.5, # how many SEs can stan_surv HRs be from coxph/stpm2 HRs
-  tve_fixef = 0.5  # how many SEs can stan_surv tve HRs be from coxph/stpm2 tve HRs
+  hr_fixef  = 0.5 # how many SEs can stan_surv HRs be from coxph/stpm2 HRs
 )
 
 source(test_path("helpers", "expect_matrix.R"))
@@ -41,9 +40,9 @@ source(test_path("helpers", "expect_stanmvreg.R"))
 source(test_path("helpers", "expect_survfit_surv.R"))
 source(test_path("helpers", "expect_ppd.R"))
 source(test_path("helpers", "expect_equivalent_loo.R"))
-source(test_path("helpers", "SW.R"))
 source(test_path("helpers", "get_tols_surv.R"))
 source(test_path("helpers", "recover_pars_surv.R"))
+source(test_path("helpers", "SW.R"))
 
 eo <- function(...) { expect_output (...) }
 ee <- function(...) { expect_error  (...) }
@@ -53,30 +52,28 @@ up <- function(...) { update(...) }
 
 run_sims <- FALSE # if TRUE then long running simulations are run
 
-#-----------------------------  Models -----------------------------------
 
-#--- Time fixed covariates, time fixed coefficients
+#-----------------  Check model fitting arguments work  -----------------------
 
 cov1 <- data.frame(id = 1:50,
                    x1 = stats::rbinom(50, 1, 0.5),
                    x2 = stats::rnorm (50, -1, 0.5))
+
 dat1 <- simsurv(lambdas = 0.1,
                 gammas  = 1.5,
                 betas   = c(x1 = -0.5, x2 = -0.3),
                 x       = cov1,
                 maxt    = 5)
-dat1 <- merge(dat1, cov1)
-fm1  <- Surv(eventtime, status) ~ x1 + x2
-o<-SW(testmod <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 50, basehaz = "ms"))
 
-# mod1a <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "ms")
-# mod1b <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "bs")
-# mod1c <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "exp")
-# mod1d <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "weibull")
-# mod1e <- stan_surv(fm1, dat1, chains = 1, refresh = 0L, iter = 1000, basehaz = "gompertz")
+dat1$s <- Surv(dat1$eventtime, dat1$status) # abbreviated Surv object
 
-
-#--------------------------  Arguments -----------------------------------
+o<-SW(testmod <- stan_surv(formula = s ~ x1 + x2,
+                           data    = merge(dat1, cov1),
+                           basehaz = "ms",
+                           iter    = 20,
+                           chains  = CHAINS,
+                           refresh = REFRESH,
+                           seed    = SEED))
 
 test_that("prior_PD argument works", {
   es(up(testmod, prior_PD = TRUE))
@@ -111,7 +108,6 @@ test_that("qnodes argument works", {
 })
 
 test_that("basehaz argument works", {
-  
   es(up(testmod, basehaz = "exp"))
   es(up(testmod, basehaz = "weibull"))
   es(up(testmod, basehaz = "gompertz"))
@@ -132,7 +128,6 @@ test_that("basehaz argument works", {
   ee(up(testmod, basehaz_ops = list(df = 1)),            "cannot be negative")
   ee(up(testmod, basehaz_ops = list(knots = -1)),        "earliest entry time")
   ee(up(testmod, basehaz_ops = list(knots = c(1,2,50))), "latest event time")
-  
 })
 
 test_that("prior arguments work", {
@@ -165,42 +160,245 @@ test_that("prior arguments work", {
 })
 
 test_that("tve function works", {
-  
-  # single tve call
-  es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tve(x1) + x2))
-  
-  # multiple tve calls
-  es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tve(x1) + tve(x2)))
-  
-  # b-spline and piecewise tve in same model
-  es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tve(x1, type = "bs") + tve(x2, type = "pw")))
+  es(up(testmod, formula. = s ~ tve(x1) + x2))
+  es(up(testmod, formula. = s ~ tve(x1) + tve(x2)))
+  es(up(testmod, formula. = s ~ tve(x1, type = "bs") + tve(x2, type = "pw")))
+})  
 
-  # b-spline tve optional arguments
-  es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tve(x1, type = "bs", knots = c(1,2)) + x2))
-  es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tve(x1, type = "bs", df = 4) + x2))
-  es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tve(x1, type = "bs", degree = 2) + x2))
-  ee(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tve(x1, type = "bs", junk = 2) + x2), 
-          "Invalid argument to 'tve' function.")
-  
-  # piecewise tve optional arguments
-  es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tve(x1, type = "pw", knots = c(1,2)) + x2))
-  es(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tve(x1, type = "pw", df = 4) + x2))
-  ee(up(testmod, formula. = 
-          Surv(eventtime, status) ~ tve(x1, type = "pw", degree = 2) + x2), 
-          "Invalid argument to 'tve' function.")
+test_that("tve function works: b-spline optional arguments", {
+  es(up(testmod, formula. = s ~ tve(x1, type = "bs", knots = c(1,2)) + x2))
+  es(up(testmod, formula. = s ~ tve(x1, type = "bs", df = 4)         + x2))
+  es(up(testmod, formula. = s ~ tve(x1, type = "bs", degree = 2)     + x2))
+  ee(up(testmod, formula. = s ~ tve(x1, type = "bs", junk = 2)       + x2), "unused")
+})
+
+test_that("tve function works: piecewise optional arguments", {
+  es(up(testmod, formula. = s ~ tve(x1, type = "pw", knots = c(1,2)) + x2))
+  es(up(testmod, formula. = s ~ tve(x1, type = "pw", df = 4)         + x2))
+  ee(up(testmod, formula. = s ~ tve(x1, type = "pw", junk = 2)       + x2), "unused")
 })
 
 
-#----  Compare parameter estimates: stan_surv vs coxph
+#----------------  Check post-estimation functions work  ----------------------
+
+# use PBC data
+pbcSurv$t0 <- 0
+pbcSurv$t0[pbcSurv$futimeYears > 2] <- 1 # fake delayed entry
+pbcSurv$t1 <- pbcSurv$futimeYears - 1    # fake lower limit for interval censoring
+pbcSurv$t1[pbcSurv$t1 <= 0] <- -Inf      # fake left censoring
+pbcSurv$site <- cut(pbcSurv$id,          # fake group for frailty models
+                    breaks = c(0,10,20,30,40), 
+                    labels = FALSE)
+
+# different baseline hazards
+o<-SW(f1  <- stan_surv(Surv(futimeYears, death) ~ sex + trt,
+                       data    = pbcSurv,
+                       basehaz = "ms",
+                       chains  = 1,
+                       iter    = 20,
+                       refresh = REFRESH,
+                       seed    = SEED))
+o<-SW(f2  <- up(f1, basehaz = "bs"))
+o<-SW(f3  <- up(f1, basehaz = "exp"))
+o<-SW(f4  <- up(f1, basehaz = "weibull"))
+o<-SW(f5  <- up(f1, basehaz = "gompertz"))
+o<-SW(f6  <- up(f1, basehaz = "exp-aft"))
+o<-SW(f7  <- up(f1, basehaz = "weibull-aft"))
+
+# time-varying effects
+o<-SW(f8  <- up(f1, Surv(futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f9  <- up(f2, Surv(futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f10 <- up(f3, Surv(futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f11 <- up(f4, Surv(futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f12 <- up(f5, Surv(futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f13 <- up(f6, Surv(futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f14 <- up(f7, Surv(futimeYears, death) ~ sex + tve(trt)))
+
+o<-SW(f15 <- up(f1, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+o<-SW(f16 <- up(f2, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+o<-SW(f17 <- up(f3, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+o<-SW(f18 <- up(f4, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+o<-SW(f19 <- up(f5, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+o<-SW(f20 <- up(f6, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+o<-SW(f21 <- up(f7, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+
+# start-stop notation (incl. delayed entry)
+o<-SW(f22 <- up(f1, Surv(t0, futimeYears, death) ~ sex + trt))
+o<-SW(f23 <- up(f1, Surv(t0, futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f24 <- up(f6, Surv(t0, futimeYears, death) ~ sex + tve(trt)))
+o<-SW(f25 <- up(f6, Surv(t0, futimeYears, death) ~ sex + tve(trt)))
+
+# left and interval censoring
+o<-SW(f26 <- up(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + trt))
+o<-SW(f27 <- up(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + tve(trt)))
+o<-SW(f28 <- up(f6, Surv(t1, futimeYears, type = "interval2") ~ sex + trt))
+o<-SW(f29 <- up(f6, Surv(t1, futimeYears, type = "interval2") ~ sex + tve(trt)))
+
+# frailty models
+o<-SW(f30 <- up(f1, Surv(futimeYears, death) ~ trt + (trt | site)))
+o<-SW(f31 <- up(f1, Surv(futimeYears, death) ~ tve(trt) + (1 | site)))
+o<-SW(f32 <- up(f1, Surv(t0, futimeYears, death) ~ trt + (trt | site)))
+o<-SW(f33 <- up(f1, Surv(t1, futimeYears, type = "interval2") ~ trt + (trt | site)))
+
+# new data for predictions
+nd1 <- pbcSurv[pbcSurv$id == 2,]
+nd2 <- pbcSurv[pbcSurv$id %in% c(1,2),]
+
+# test the models
+for (j in c(1:33)) {
+  
+  mod <- try(get(paste0("f", j)), silent = TRUE)
+  
+  if (class(mod)[1L] == "try-error") {
+    
+    cat("Model not found:", paste0("f", j), "\n")
+    
+  } else {
+    
+    cat("Checking model:", paste0("f", j), "\n")
+    
+    test_that("log_lik works with estimation data", {
+      ll <- log_lik(mod)
+      expect_matrix(ll)
+    })
+    
+    test_that("log_lik works with new data (one individual)", {
+      ll <- log_lik(mod, newdata = nd1)
+      expect_matrix(ll)
+    })
+    
+    test_that("log_lik works with new data (multiple individuals)", {
+      ll <- log_lik(mod, newdata = nd2)
+      expect_matrix(ll)
+    })
+    
+    if (mod$ndelayed == 0) # only test if no delayed entry
+      test_that("posterior_survfit works with estimation data", {
+        SW(ps <- posterior_survfit(mod))
+        expect_survfit(ps)
+      })
+    
+    test_that("posterior_survfit works with new data (one individual)", {
+      SW(ps <- posterior_survfit(mod, newdata = nd1))
+      expect_survfit(ps)
+    })
+    
+    test_that("posterior_survfit works with new data (multiple individuals)", {
+      SW(ps <- posterior_survfit(mod, newdata = nd2))
+      expect_survfit(ps)
+    })
+    
+  }
+}
+
+# test loo for a few models only (too slow to test them all)
+for (j in c(1,2,8,26,30)) {
+  
+  mod <- try(get(paste0("f", j)), silent = TRUE)
+  
+  if (class(mod)[1L] == "try-error") {
+    
+    cat("Model not found:", paste0("f", j), "\n")
+    
+  } else {
+    
+    cat("Checking loo for model:", paste0("f", j), "\n")
+    
+    test_that("loo and waic work", {
+      loo_try <- try(expect_equivalent_loo(mod), silent = TRUE)
+      if (class(loo_try)[1L] == "try-error") {
+        # sometimes loo fails with a small number of draws so refit with more
+        expect_equivalent_loo(up(mod, iter = 80))
+      }
+    })
+    
+  }
+}
+
+
+#----  Check accuracy of log_lik and posterior_survfit: for frailty models  ---
+
+fake_data <-
+  data.frame(id        = c(1,2,3,4),
+             trt       = c(1,0,1,0),
+             age       = c(5,8,2,4),
+             site      = c(1,1,2,2),
+             eventtime = c(2,4,6,8),
+             status    = c(1,1,1,1))
+
+o<-SW(stan1 <- stan_surv(formula = Surv(eventtime, status) ~ trt + age + (1 | site), 
+                         data    = fake_data, 
+                         basehaz = "weibull",
+                         chains  = 1, 
+                         refresh = 0L, 
+                         iter    = 100,
+                         warmup  = 95))
+
+stanmat <- as.matrix(stan1)
+
+stanpars <- list(int   = stanmat[, "(Intercept)"],
+                 trt   = stanmat[, "trt"],
+                 age   = stanmat[, "age"],
+                 shape = stanmat[, "weibull-shape"],
+                 site  = list(stanmat[, "b[(Intercept) site:1]"],
+                              stanmat[, "b[(Intercept) site:2]"]))
+
+N  <- nrow(fake_data)
+S  <- nrow(stanmat)
+
+# define function to calculate log likelihood manually
+llfun <- function(i, j, data, pars) { 
+  exp_eta_ij <- exp(pars$int[j] + 
+                      pars$trt[j] * data$trt[i] + 
+                      pars$age[j] * data$age[i] +
+                      pars$site[[data$site[i]]][[j]])
+  h_ij <- pars$shape[j] * data$eventtime[i] ^ (pars$shape[j] - 1) * exp_eta_ij
+  H_ij <- data$eventtime[i] ^ (pars$shape[j]) * exp_eta_ij
+  return(data$status[i] * log(h_ij) - H_ij)
+}
+
+# define function to calculate survival probability manually
+survfun <- function(i, j, t, data, pars) {
+  exp_eta_ij <- exp(pars$int[j] + 
+                      pars$trt[j] * data$trt[i] + 
+                      pars$age[j] * data$age[i] +
+                      pars$site[[data$site[i]]][[j]])
+  H_ij <- t ^ (pars$shape[j]) * exp_eta_ij
+  return(exp(- H_ij))
+}
+
+# check log likelihood
+L1 <- log_lik(stan1)
+L2 <- log_lik(stan1, newdata = fake_data)
+L3 <- matrix(NA, S, N) # manually evaluated log likelihood
+for (i in 1:N) {
+  for (j in 1:S) {
+    L3[j,i] <- llfun(i, j, data = fake_data, pars = stanpars)
+  }
+}
+for (i in 1:N) {
+  for (j in 1:S) {
+    expect_equal(as.vector(L3[j,i]), as.vector(L1[j,i]))
+    expect_equal(as.vector(L3[j,i]), as.vector(L2[j,i]))
+  }
+}
+
+# check survival probability
+P1 <- posterior_survfit(stan1, times = 5, extrapolate = FALSE)
+P2 <- posterior_survfit(stan1, newdata = fake_data, times = 5, extrapolate = FALSE)
+P3 <- matrix(NA, S, N) # manually evaluated survival probability
+for (i in 1:N) {
+  for (j in 1:S) {
+    P3[j,i] <- survfun(i, j, t = 5, data = fake_data, pars = stanpars)
+  }
+}
+for (i in 1:N) {
+  expect_equal(median(P3[,i]), P1[i, "median"])
+  expect_equal(median(P3[,i]), P2[i, "median"])
+}
+
+
+#----------------  Check parameter estimates: stan vs coxph  -----------------
 
 compare_surv <- function(data, basehaz = "weibull", ...) {
   require(survival)
@@ -271,7 +469,7 @@ dat <- merge(dat, covs)
 compare_surv(data = dat, basehaz = "gompertz")
 
 
-#----  Compare parameter estimates: stan_surv vs survreg
+#-----------  Check parameter estimates: stan (AFT) vs survreg  ---------------
 
 compare_surv <- function(data, basehaz = "weibull-aft", ...) {
   require(survival)
@@ -284,7 +482,8 @@ compare_surv <- function(data, basehaz = "weibull-aft", ...) {
                      iter    = ITER,
                      refresh = REFRESH,
                      chains  = CHAINS,
-                     seed    = SEED, ...)
+                     seed    = SEED, 
+                     ...)
   tols <- get_tols(surv1, tolscales = TOLSCALES)
   pars_surv <- recover_pars(surv1)
   pars_stan <- recover_pars(stan1)
@@ -326,9 +525,55 @@ dat <- merge(dat, covs)
 compare_surv(data = dat, basehaz = "weibull-aft")
 
 
+#--------  Check parameter estimates: stan (tve) vs coxph (tt)  ---------------
+
+# NB: this only checks piecewise constant hazard ratio (not B-spline)
+
+set.seed(SEED)
+
+N <- 1000 # number of individuals to simulate
+
+covs <- data.frame(id = 1:N,
+                   X1 = rbinom(N, 1, 0.3),
+                   X2 = rnorm (N, 2, 2.0))
+
+dat <- simsurv(dist    = "exponential",
+               x       = covs,
+               lambdas = c(0.1),
+               betas   = c(X1 = 0.3, X2 = -0.3),
+               tve     = c(X1 = -0.6),
+               tvefun  = function(t) as.numeric(t > 10),
+               maxt    = 30)
+
+o<-SW(surv1 <- coxph(
+  formula = Surv(eventtime, status) ~ X1 + tt(X1) + X2, 
+  data    = merge(dat, covs), 
+  tt      = function(x, t, ...) { x * as.numeric(t > 10) }))
+
+o<-SW(stan1 <- stan_surv(
+  formula = Surv(eventtime, status) ~ tve(X1, type = "pw", knots = c(10)) + X2, 
+  data    = merge(dat, covs),
+  basehaz = "exp",
+  chains  = CHAINS, 
+  cores   = CORES,
+  refresh = REFRESH, 
+  iter    = ITER))
+
+tols <- get_tols(surv1, tolscales = TOLSCALES)
+
+pars_surv <- recover_pars(surv1)
+pars_stan <- recover_pars(stan1)
+
+for (i in names(tols$fixef))
+  expect_equal(pars_surv$fixef[[i]],
+               pars_stan$fixef[[i]],
+               tol = tols$fixef[[i]],
+               info = "compare_estimates_tve_pw")
+
+
 # COMMENTED OUT TO AVOID ADDING PACKAGES TO SUGGESTS
 #  
-# #----  Compare parameter estimates: stan_surv vs icenReg (interval censored)
+# #-------  Compare parameter estimates: stan (icens) vs icenReg  -------------
 #   
 #   #---- simulated interval censored weibull data
 #   
@@ -383,7 +628,7 @@ compare_surv(data = dat, basehaz = "weibull-aft")
 #                info = "compare log lik with icenReg")
 # 
 #     
-# #----  Compare parameter estimates: stan_surv vs phreg (tvc & delayed entry)
+# #----  Compare parameter estimates: stan (tvc & delayed entry) vs phreg  ----
 #   
 #   #---- mortality data: contains a time-varying covariate
 #   
@@ -426,158 +671,8 @@ compare_surv(data = dat, basehaz = "weibull-aft")
 #                             coef(v_weib)['sesupper'][[1]],
 #                             tol = 0.1), "not equal") 
 
-#---- Check tve models against coxph
 
-#---- piecewise constant
-
-set.seed(1919002)
-covs <- data.frame(id = 1:1000,
-                   X1 = rbinom(1000, 1, 0.3),
-                   X2 = rnorm (1000, 2, 2.0))
-dat <- simsurv(dist    = "exponential",
-               lambdas = 0.1,
-               betas   = c(X1 = 0.3, X2 = -0.3),
-               x       = covs,
-               tve     = c(X1 = -0.6),
-               tvefun  = function(t) as.numeric(t > 10),
-               maxt    = 30)
-dat <- merge(dat, covs)
-
-fmsurv <- Surv(eventtime, status) ~ X1 + tt(X1) + X2
-o<-SW(surv1 <- coxph(fmsurv, dat, tt = function(x, t, ...) { x * as.numeric(t > 10) }))
-
-fmstan <- Surv(eventtime, status) ~ tve(X1, type = "pw", knots = c(10)) + X2
-o<-SW(stan1 <- stan_surv(fmstan, dat, chains = 1, refresh = 0L, iter = 1000, basehaz = "exp"))
-
-tols <- get_tols(surv1, tolscales = TOLSCALES)
-pars_surv <- recover_pars(surv1)
-pars_stan <- recover_pars(stan1)
-for (i in names(tols$fixef))
-  expect_equal(pars_surv$fixef[[i]],
-               pars_stan$fixef[[i]],
-               tol = tols$fixef[[i]],
-               info = "compare_estimates_tve_pw")
-
-
-#--------  Check post-estimation functions work
-
-pbcSurv$t0 <- 0
-pbcSurv$t0[pbcSurv$futimeYears > 2] <- 1 # delayed entry
-
-pbcSurv$t1 <- pbcSurv$futimeYears - 1 # lower limit for interval censoring
-pbcSurv$t1[pbcSurv$t1 <= 0] <- -Inf   # left censoring
-
-pbcSurv$clinic <- cut(pbcSurv$id, breaks = c(0,10,20,30,40), labels = FALSE)
-
-# different baseline hazards
-o<-SW(f1  <- stan_surv(Surv(futimeYears, death) ~ sex + trt,
-                       data    = pbcSurv,
-                       basehaz = "ms",
-                       chains  = 1,
-                       iter    = 100,
-                       refresh = REFRESH,
-                       seed    = SEED))
-o<-SW(f2  <- update(f1, basehaz = "bs"))
-o<-SW(f3  <- update(f1, basehaz = "exp"))
-o<-SW(f4  <- update(f1, basehaz = "weibull"))
-o<-SW(f5  <- update(f1, basehaz = "gompertz"))
-o<-SW(f6  <- update(f1, basehaz = "exp-aft"))
-o<-SW(f7  <- update(f1, basehaz = "weibull-aft"))
-
-# time-varying effects
-o<-SW(f8  <- update(f1, Surv(futimeYears, death) ~ sex + tve(trt)))
-o<-SW(f9  <- update(f2, Surv(futimeYears, death) ~ sex + tve(trt)))
-o<-SW(f10 <- update(f3, Surv(futimeYears, death) ~ sex + tve(trt)))
-o<-SW(f11 <- update(f4, Surv(futimeYears, death) ~ sex + tve(trt)))
-o<-SW(f12 <- update(f5, Surv(futimeYears, death) ~ sex + tve(trt)))
-o<-SW(f13 <- update(f6, Surv(futimeYears, death) ~ sex + tve(trt)))
-o<-SW(f14 <- update(f7, Surv(futimeYears, death) ~ sex + tve(trt)))
-
-o<-SW(f15 <- update(f1, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
-o<-SW(f16 <- update(f2, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
-o<-SW(f17 <- update(f3, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
-o<-SW(f18 <- update(f4, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
-o<-SW(f19 <- update(f5, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
-o<-SW(f20 <- update(f6, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
-o<-SW(f21 <- update(f7, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
-
-# start-stop notation (incl. delayed entry)
-o<-SW(f22 <- update(f1, Surv(t0, futimeYears, death) ~ sex + trt))
-o<-SW(f23 <- update(f1, Surv(t0, futimeYears, death) ~ sex + tve(trt)))
-o<-SW(f24 <- update(f6, Surv(t0, futimeYears, death) ~ sex + tve(trt)))
-o<-SW(f25 <- update(f6, Surv(t0, futimeYears, death) ~ sex + tve(trt)))
-
-# left and interval censoring
-o<-SW(f26 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + trt))
-o<-SW(f27 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ sex + tve(trt)))
-o<-SW(f28 <- update(f6, Surv(t1, futimeYears, type = "interval2") ~ sex + trt))
-o<-SW(f29 <- update(f6, Surv(t1, futimeYears, type = "interval2") ~ sex + tve(trt)))
-
-# frailty models
-o<-SW(f30 <- update(f1, Surv(futimeYears, death) ~ trt + (trt | clinic)))
-o<-SW(f31 <- update(f1, Surv(futimeYears, death) ~ tve(trt) + (1 | clinic)))
-o<-SW(f32 <- update(f1, Surv(t0, futimeYears, death) ~ trt + (trt | clinic)))
-o<-SW(f33 <- update(f1, Surv(t1, futimeYears, type = "interval2") ~ trt + (trt | clinic)))
-
-# new data for predictions
-nd1 <- pbcSurv[pbcSurv$id == 2,]
-nd2 <- pbcSurv[pbcSurv$id %in% c(1,2),]
-
-# test the models
-for (j in c(30:33)) {
-  
-  mod <- try(get(paste0("f", j)), silent = TRUE)
-  
-  if (class(mod)[1L] == "try-error") {
-    
-    cat("Model not found:", paste0("f", j), "\n")
-    
-  } else {
-    
-    cat("Checking model:", paste0("f", j), "\n")
-    
-    test_that("log_lik works with estimation data", {
-      ll <- log_lik(mod)
-      expect_matrix(ll)
-    })
-    
-    test_that("log_lik works with new data (one individual)", {
-      ll <- log_lik(mod, newdata = nd1)
-      expect_matrix(ll)
-    })
-    
-    test_that("log_lik works with new data (multiple individuals)", {
-      ll <- log_lik(mod, newdata = nd2)
-      expect_matrix(ll)
-    })
-    
-    test_that("loo and waic work", {
-      expect_equivalent_loo(mod)
-    })
-    
-    if (mod$ndelayed == 0) # only test if no delayed entry
-      test_that("posterior_survfit works with estimation data", {
-        SW(ps <- posterior_survfit(mod))
-        expect_survfit(ps)
-      })
-    
-    test_that("posterior_survfit works with new data (one individual)", {
-      SW(ps <- posterior_survfit(mod, newdata = nd1))
-      expect_survfit(ps)
-    })
-    
-    test_that("posterior_survfit works with new data (multiple individuals)", {
-      SW(ps <- posterior_survfit(mod, newdata = nd2))
-      expect_survfit(ps)
-    })
-    
-  }
-}
-
-
-#--------  Check hazard models with group-specific terms
-
-#--- test estimates for each model type using one simulated dataset
+#--------  Check parameter estimates: stan (frailty) vs simulated  -----------
 
 # define a function to simulate a survival dataset
 make_data <- function(n = 10,                  # number of patients per site
@@ -658,55 +753,47 @@ get_ests <- function(mod) {
 }
 
 # fit right censored models
-set.seed(5434)
-dat <- make_data(n = 20, K = 50)
-ff  <- Surv(eventtime, status) ~ trt + (1 | site)
-m1  <- stan_surv(ff, data = dat, chains = 1, basehaz = "exp")
-m2  <- stan_surv(ff, data = dat, chains = 1, basehaz = "weibull")
-m3  <- stan_surv(ff, data = dat, chains = 1, basehaz = "gompertz")
-m4  <- stan_surv(ff, data = dat, chains = 1, basehaz = "ms")
-for (i in 1:3)
-  expect_equal(get_ests(m1)[[i]], true[[i]], tol = tols[[i]])
-for (i in 1:3)
-  expect_equal(get_ests(m2)[[i]], true[[i]], tol = tols[[i]])
-for (i in 1:3)
-  expect_equal(get_ests(m3)[[i]], true[[i]], tol = tols[[i]])
-for (i in 2:3)
-  expect_equal(get_ests(m4)[[i]], true[[i]], tol = tols[[i]])
 
-# fit delayed entry models
-set.seed(8765)
+# simulate datasets
+set.seed(SEED)
+dat       <- make_data(n = 20, K = 50)
 dat_delay <- make_data(n = 20, K = 50, delay = TRUE)
-ffd <- Surv(start, stop, status) ~ trt + (1 | site)
-m5  <- stan_surv(ffd, data = dat_delay, chains = 1, refresh = 0, basehaz = "exp")
-m6  <- stan_surv(ffd, data = dat_delay, chains = 1, refresh = 0, basehaz = "weibull")
-m7  <- stan_surv(ffd, data = dat_delay, chains = 1, refresh = 0, basehaz = "gompertz")
-m8  <- stan_surv(ffd, data = dat_delay, chains = 1, refresh = 0, basehaz = "ms")  
-for (i in 1:3)
-  expect_equal(get_ests(m5)[[i]], true[[i]], tol = tols[[i]])
-for (i in 1:3)
-  expect_equal(get_ests(m6)[[i]], true[[i]], tol = tols[[i]])
-for (i in 1:3)
-  expect_equal(get_ests(m7)[[i]], true[[i]], tol = tols[[i]])
-for (i in 2:3)
-  expect_equal(get_ests(m8)[[i]], true[[i]], tol = tols[[i]])
-
-# fit interval censored models
-set.seed(3254)
 dat_icens <- make_data(n = 20, K = 50, icens = TRUE)
-ffi <- Surv(lower, upper, type = "interval2") ~ trt + (1 | site)
-m9  <- stan_surv(ffi, data = dat_icens, chains = 1, refresh = 0, iter = 1000, basehaz = "exp")
-m10 <- stan_surv(ffi, data = dat_icens, chains = 1, refresh = 0, iter = 1000, basehaz = "weibull")
-m11 <- stan_surv(ffi, data = dat_icens, chains = 1, refresh = 0, iter = 1000, basehaz = "gompertz")
-m12 <- stan_surv(ffi, data = dat_icens, chains = 1, refresh = 0, iter = 1000, basehaz = "ms")  
-for (i in 1:3)
-  expect_equal(get_ests(m9)[[i]], true[[i]], tol = tols[[i]])
-for (i in 1:3)
-  expect_equal(get_ests(m10)[[i]], true[[i]], tol = tols[[i]])
-for (i in 1:3)
-  expect_equal(get_ests(m11)[[i]], true[[i]], tol = tols[[i]])
-for (i in 2:3)
-  expect_equal(get_ests(m12)[[i]], true[[i]], tol = tols[[i]])
+
+# formulas
+ff  <- Surv(eventtime, status)                ~ trt + (1 | site) # right cens
+ffd <- Surv(start, stop, status)              ~ trt + (1 | site) # delayed entry
+ffi <- Surv(lower, upper, type = "interval2") ~ trt + (1 | site) # interval cens
+
+# fit the starting model
+o<-SW(m1  <- stan_surv(formula = ff, 
+                       data    = dat, 
+                       basehaz = "exp", 
+                       iter    = ITER,
+                       refresh = REFRESH,
+                       chains  = CHAINS,
+                       seed    = SEED))
+
+# fit the additional models
+o<-SW(m2  <- up(m1, formula. = ff, data = dat, basehaz = "weibull"))
+o<-SW(m3  <- up(m1, formula. = ff,  data = dat,       basehaz = "gompertz"))
+o<-SW(m4  <- up(m1, formula. = ff,  data = dat,       basehaz = "ms"))
+o<-SW(m5  <- up(m1, formula. = ffd, data = dat_delay, basehaz = "exp"))
+o<-SW(m6  <- up(m1, formula. = ffd, data = dat_delay, basehaz = "weibull"))
+o<-SW(m7  <- up(m1, formula. = ffd, data = dat_delay, basehaz = "gompertz"))
+o<-SW(m8  <- up(m1, formula. = ffd, data = dat_delay, basehaz = "ms"))
+o<-SW(m9  <- up(m1, formula. = ffi, data = dat_icens, basehaz = "exp"))
+o<-SW(m10 <- up(m1, formula. = ffi, data = dat_icens, basehaz = "weibull"))
+o<-SW(m11 <- up(m1, formula. = ffi, data = dat_icens, basehaz = "gompertz"))
+o<-SW(m12 <- up(m1, formula. = ffi, data = dat_icens, basehaz = "ms"))
+
+# check the estimates against the true parameters
+for (j in c(1:12)) {
+  modfrail <- get(paste0("f", j))
+  for (i in 1:3)
+    expect_equal(get_ests(modfrail)[[i]], true[[i]], tol = tols[[i]])
+}
+
 
 #--- previous tests use really weak tolerances to check the 
 #    parameter estimates; therefore the next part conducts a full 
@@ -716,7 +803,7 @@ for (i in 2:3)
 if (run_sims) {
   
   # number of simulations (for each model specification)
-  n_sims <- 2 
+  n_sims <- 200
   
   # define a function to fit the model to one simulated dataset
   sim_run <- function(n = 10,                  # number of patients per site
