@@ -124,6 +124,7 @@ test_that("stan_lmer returns an error when 'family' specified", {
 context("stan_gamm4")
 source(test_path("helpers", "expect_gg.R"))
 test_that("stan_gamm4 returns stanreg object", {
+  skip_if_not_installed("mgcv")
   sleepstudy$y <- sleepstudy$Reaction / 10
   SW(fit <- stan_gamm4(y ~ s(Days), data = sleepstudy, sparse = TRUE,
                        random = ~(1|Subject), chains = CHAINS, iter = ITER, 
@@ -141,6 +142,34 @@ test_that("stan_gamm4 returns stanreg object", {
   expect_gg(p2)
 })
 
+test_that("stan_gamm4 doesn't error when bs='cc", {
+  # https://github.com/stan-dev/rstanarm/issues/362
+  skip_if_not_installed("mgcv")
+  N <- 100
+  y <- rnorm(N, 0, 1)
+  x <- rep(1:(N/2),2)
+  x2 <- rnorm(N)
+  data <- data.frame(x, x2, y)
+  
+  # only run a few iter to make sure it doesn't error
+  fit1 <- suppressWarnings(stan_gamm4(y ~ x2 + s(x, bs = "cc"), data=data, 
+                                     iter = 5, chains = 1, init = 0, refresh = 0))
+  expect_stanreg(fit1)
+  
+  # with another smooth term
+  fit2 <- suppressWarnings(stan_gamm4(y ~ s(x2) + s(x, bs = "cc"), data=data, 
+                                     iter = 5, chains = 1, init = 0, refresh = 0))
+  expect_stanreg(fit2)
+  
+  # with another 'cc' smooth term
+  fit3 <- suppressWarnings(stan_gamm4(y ~ s(x2, bs = "cc") + s(x, bs = "cc"), data=data, 
+                                     iter = 5, chains = 1, init = 0, refresh = 0))
+  expect_stanreg(fit3)
+})
+
+
+
+
 test_that("loo/waic for stan_glmer works", {
   ll_fun <- rstanarm:::ll_fun
   source(test_path("helpers", "expect_equivalent_loo.R"))
@@ -153,9 +182,11 @@ test_that("loo/waic for stan_glmer works", {
   expect_equivalent_loo(example_model)
   expect_identical(ll_fun(example_model), rstanarm:::.ll_binomial_i)
 })
+
 SW <- suppressWarnings
 context("posterior_predict (stan_gamm4)")
 test_that("stan_gamm4 returns expected result for sleepstudy example", {
+  skip_if_not_installed("mgcv")
   sleepstudy$y <- sleepstudy$Reaction / 10
   fit <- SW(stan_gamm4(y ~ s(Days), data = sleepstudy,
                        random = ~(1|Subject), chains = CHAINS, iter = ITER, 
