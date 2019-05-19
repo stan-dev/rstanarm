@@ -767,9 +767,9 @@ warn_data_arg_missing <- function() {
 
 # Validate newdata argument for posterior_predict, log_lik, etc.
 #
-# Drops unused variables from newdata, checks for NAs in used variables, and
-# also drops any unused dimensions in variables (e.g. a one column matrix inside
-# a data frame is converted to a vector).
+# Checks for NAs in used variables only (but returns all variables), 
+# and also drops any unused dimensions in variables (e.g. a one column 
+# matrix inside a data frame is converted to a vector).
 #
 # @param object stanreg object
 # @param newdata NULL or a data frame
