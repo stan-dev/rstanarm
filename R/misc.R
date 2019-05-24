@@ -683,14 +683,15 @@ check_reTrms <- function(reTrms) {
 }
 
 #' @importFrom lme4 glmerControl
-# @param checkLHS throw error if formula LHS is missing? (relevant if prior_PD is TRUE)
-make_glmerControl <- function(..., checkLHS = TRUE) {
+# @param ignore_lhs ignore or throw error if LHS of formula is missing? (relevant if prior_PD is TRUE)
+make_glmerControl <- function(..., ignore_lhs = FALSE, ignore_x_scale = FALSE) {
   glmerControl(check.nlev.gtreq.5 = "ignore",
                check.nlev.gtr.1 = "stop",
                check.nobs.vs.rankZ = "ignore",
                check.nobs.vs.nlev = "ignore",
                check.nobs.vs.nRE = "ignore", 
-               check.formula.LHS = if (checkLHS) "stop" else "ignore",
+               check.formula.LHS = if (ignore_lhs) "ignore" else "stop",
+               check.scaleX = if (ignore_x_scale) "ignore" else "warning",
                ...)  
 }
 

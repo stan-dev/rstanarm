@@ -147,7 +147,10 @@ stan_gamm4 <-
                   "+", random[2], collapse = " ")
     glmod <- lme4::glFormula(as.formula(form), data, family = gaussian,
                              subset, weights, na.action,
-                             control = make_glmerControl())
+                             control = make_glmerControl(
+                               ignore_x_scale = prior$autoscale %ORifNULL% FALSE
+                               )
+                             )
     data <- glmod$fr
     weights <- validate_weights(glmod$fr$weights)
   }

@@ -110,7 +110,10 @@ stan_glmer <-
   data <- validate_data(data) #, if_missing = environment(formula))
   family <- validate_family(family)
   mc[[1]] <- quote(lme4::glFormula)
-  mc$control <- make_glmerControl(checkLHS = !prior_PD)
+  mc$control <- make_glmerControl(
+    ignore_lhs = prior_PD,  
+    ignore_x_scale = prior$autoscale %ORifNULL% FALSE
+  )
   mc$data <- data
   mc$prior <- mc$prior_intercept <- mc$prior_covariance <- mc$prior_aux <-
     mc$prior_PD <- mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <-
