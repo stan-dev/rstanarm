@@ -77,7 +77,7 @@ bayes_R2.stanreg <- function(object, ..., re.form = NULL) {
 #' 
 loo_R2.stanreg <- function(object, ...) {
   if (!used.sampling(object))
-    STOP_sampling_only("bayes_R2")
+    STOP_sampling_only("loo_R2")
   if (is_polr(object))
     stop("loo_R2 is not available for stan_polr models.")
   
