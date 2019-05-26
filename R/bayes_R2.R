@@ -10,7 +10,7 @@
 #' @param ... Currently ignored.
 #' 
 #' @return A vector of R-squared values with length equal to the posterior
-#'   sample size.
+#'   sample size (the posterior distribution of R-squared).
 #'   
 #' @references
 #' Andrew Gelman, Ben Goodrich, Jonah Gabry, and Aki Vehtari (2018). R-squared
@@ -24,6 +24,7 @@
 #' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars, QR = TRUE, chains = 2)
 #' rsq <- bayes_R2(fit)
 #' print(median(rsq))
+#' hist(rsq)
 #' 
 #' loo_rsq <- loo_R2(fit)
 #' print(median(loo_rsq))
