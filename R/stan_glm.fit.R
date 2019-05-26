@@ -31,9 +31,8 @@
 #'   when \code{algorithm} is \code{"optimizing"} but defaults to \code{TRUE}
 #'   in that case
 #' @param keep_every Positive integer, which defaults to 1, but can be higher
-#'   in order to thin the importance sampling realizations and also only
-#'   apples when \code{algorithm} is \code{"optimizing"} but defaults to
-#'   \code{TRUE} in that case
+#'   in order to ``thin'' the importance sampling realizations. Applies only
+#'   when \code{importance_resampling} is \code{TRUE}.
 #' @importFrom lme4 mkVarCorr
 #' @importFrom loo psis
 stan_glm.fit <- 
