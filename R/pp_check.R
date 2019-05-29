@@ -354,6 +354,7 @@ is_binomial_ppc <- function(object, ...) {
     "stat" = .ignore_nreps(nreps),
     "stat_2d" = .ignore_nreps(nreps),
     "stat_grouped" = .ignore_nreps(nreps),
+    "stat_freqpoly" = .ignore_nreps(nreps),
     "stat_freqpoly_grouped" = .ignore_nreps(nreps),
     
     # INTERVALS
@@ -362,10 +363,8 @@ is_binomial_ppc <- function(object, ...) {
     "ribbon" = .ignore_nreps(nreps),
     "ribbon_grouped" = .ignore_nreps(nreps), 
     
-    # ROOTOGRAMS
+    # DISCRETE ONLY
     "rootogram" = nreps, # NULL ok
-    
-    # BAR PLOTS
     "bars" = nreps, # NULL ok
     "bars_grouped" = nreps, # NULL ok
     
