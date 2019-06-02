@@ -25,8 +25,16 @@ data {
 transformed data{
   real poisson_max = pow(2.0, 30.0);
   int<lower=1> V[special_case ? t : 0, N] = make_V(N, special_case ? t : 0, v);
+  
+  int can_do_countlogglm = link == 1 && prior_PD == 0 && dense_X == 1 && has_weights == 0 && t == 0;
+  matrix[can_do_countlogglm ? N : 0, can_do_countlogglm ? K + K_smooth : 0] XS;
+  
   // defines hs, len_z_T, len_var_group, delta, pos
 #include /tdata/tdata_glm.stan
+
+  if (can_do_countlogglm) {
+    XS = K_smooth > 0 ? append_col(X[1], S) : X[1];
+  }
 }
 parameters {
   real<lower=(link == 1 ? negative_infinity() : 0.0)> gamma[has_intercept];
@@ -71,7 +79,22 @@ transformed parameters {
   }
 }
 model {
-  if (prior_PD == 0) {
+  if (can_do_countlogglm) {
+    vector[K + K_smooth] coeff = K_smooth > 0 ? append_row(beta, beta_smooth) : beta;
+    if (family != 7) {
+      if (has_offset) {
+        target += poisson_log_glm_lpmf(y | XS, has_intercept ? offset + gamma[1] : offset, coeff);
+      } else {
+        target += poisson_log_glm_lpmf(y | XS, has_intercept ? gamma[1] : 0.0, coeff);
+      }
+    } else {
+      if (has_offset) {
+        target += neg_binomial_2_log_glm_lpmf(y | XS, has_intercept ? offset + gamma[1] : offset, coeff, aux);
+      } else {
+        target += neg_binomial_2_log_glm_lpmf(y | XS, has_intercept ? gamma[1] : 0.0, coeff, aux);
+      }
+    }
+  } else if (prior_PD == 0) {
 #include /model/make_eta.stan
     if (t > 0) {
 #include /model/eta_add_Zb.stan
