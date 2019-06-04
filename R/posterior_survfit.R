@@ -984,7 +984,7 @@ print.survfit.stansurv <- function(x, digits = 4, ...) {
   cat("stan_surv predictions\n")
   cat(" num. individuals:", length(attr(x, "ids")), "\n")
   cat(" prediction type: ", tolower(get_survpred_name(attr(x, "type"))), "\n")
-  cat(" standardised?:   ", yes_no_string(attr(x, "standardise")), "\n\n")
+  cat(" standardised?:   ", yes_no_string(attr(x, "standardise")), "\n")
   cat(" conditional?:    ", yes_no_string(attr(x, "condition")), "\n\n")
   print(x, quote = FALSE)
   invisible(x)
