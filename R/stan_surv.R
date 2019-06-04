@@ -1341,7 +1341,7 @@ tve <- function(x,
 # Construct a list with information about the baseline hazard
 #
 # @param basehaz A string specifying the type of baseline hazard
-# @param basehaz_ops A named list with elements df, knots 
+# @param basehaz_ops A named list with elements: df, knots, degree
 # @param ok_basehaz A list of admissible baseline hazards
 # @param times A numeric vector with eventtimes for each individual
 # @param status A numeric vector with event indicators for each individual
@@ -1376,14 +1376,18 @@ handle_basehaz_surv <- function(basehaz,
 
   if (basehaz %in% c("ms", "bs", "piecewise")) {
     
-    df    <- basehaz_ops$df
-    knots <- basehaz_ops$knots
+    df     <- basehaz_ops$df
+    knots  <- basehaz_ops$knots
+    degree <- basehaz_ops$degree
     
     if (!is.null(df) && !is.null(knots))
       stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
     
     if (is.null(df))
       df <- 5L # assumes no intercept, ignored if the user specified knots
+    
+    if (is.null(degree))
+      degree <- 3L # cubic splines
     
     tt <- times[status == 1] # uncensored event times
     if (is.null(knots) && !length(tt)) {
@@ -1425,15 +1429,15 @@ handle_basehaz_surv <- function(basehaz,
   } else if (basehaz == "bs") {
  
     bknots <- c(min_t, max_t)
-    iknots <- get_iknots(tt, df = df, iknots = knots)
-    basis  <- get_basis(tt, iknots = iknots, bknots = bknots, type = "bs")      
+    iknots <- get_iknots(tt, df = df, iknots = knots, degree = degree)
+    basis  <- get_basis(tt, iknots = iknots, bknots = bknots, degree = degree, type = "bs")      
     nvars  <- ncol(basis)  # number of aux parameters, basis terms
     
   } else if (basehaz == "ms") {
     
     bknots <- c(min_t, max_t)
-    iknots <- get_iknots(tt, df = df, iknots = knots)
-    basis  <- get_basis(tt, iknots = iknots, bknots = bknots, type = "ms")      
+    iknots <- get_iknots(tt, df = df, iknots = knots, degree = degree)
+    basis  <- get_basis(tt, iknots = iknots, bknots = bknots, degree = degree, type = "ms")      
     nvars  <- ncol(basis)  # number of aux parameters, basis terms
     
   } else if (basehaz == "piecewise") {
@@ -1449,7 +1453,8 @@ handle_basehaz_surv <- function(basehaz,
         type = basehaz_for_stan(basehaz),
         nvars, 
         iknots, 
-        bknots, 
+        bknots,
+        degree,
         basis,
         df = nvars,
         user_df = nvars,
@@ -1464,8 +1469,8 @@ handle_basehaz_surv <- function(basehaz,
 # @return A character vector, or NA if unmatched.
 get_ok_basehaz_ops <- function(basehaz_name) {
   switch(basehaz_name,
-         "bs"        = c("df", "knots"),
-         "ms"        = c("df", "knots"),
+         "bs"        = c("df", "knots", "degree"),
+         "ms"        = c("df", "knots", "degree"),
          "piecewise" = c("df", "knots"),
          NA)
 }
