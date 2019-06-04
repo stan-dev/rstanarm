@@ -477,13 +477,7 @@ posterior_survfit.stansurv <- function(object,
                                     pars    = pars,
                                     type    = type)
     surv <- lapply(surv, function(x) truncate(x / cond_surv, upper = 1))
-  } 
-  
-  # Store the conditioning time (if relevant)
-  if (condition) {
     attr(surv, "last_time") <- last_time
-  } else {
-    attr(surv, "last_time") <- rep(NA, length(time_seq[[1]]))
   }
   
   # Summarise posterior draws to get median and CI
@@ -710,17 +704,11 @@ posterior_survfit.stanjm <- function(object,
                                     type         = type,
                                     id_list      = id_list)
     surv <- lapply(surv_t, function(x) truncate(x / cond_surv, upper = 1))
+    attr(surv, "last_time") <- last_time
   } else {
     surv <- surv_t
   }
  
-  # Store the conditioning time (if relevant)
-  if (condition) {
-    attr(surv, "last_time") <- last_time
-  } else {
-    attr(surv, "last_time") <- rep(NA, length(time_seq[[1]]))
-  }
-  
   # Summarise posterior draws to get median and CI
   out <- .pp_summarise_surv(surv        = surv,
                             prob        = prob,
@@ -923,6 +911,9 @@ posterior_survfit.stanjm <- function(object,
   
   # Extract conditioning time that was used for predictions
   last_time <- attr(surv, "last_time")
+  if (is.null(last_time)) { # if not using conditional survival
+    last_time <- rep(NA, length(ids)) 
+  }
 
   # Determine the quantiles corresponding to the median and CI limits
   if (is.null(prob)) {
