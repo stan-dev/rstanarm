@@ -229,7 +229,7 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       basehaz <- median_and_bounds(basehaz, prob, na.rm = TRUE)
       plotdat <- data.frame(times, basehaz)
       
-      requires_smooth <- !(get_basehaz_name(x) %in% c("piecewise"))
+      uses_step_stair <- (get_basehaz_name(x) %in% c("piecewise"))
 
       ylab <- "Baseline hazard rate"
       xlab <- "Time"
@@ -270,7 +270,7 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       plotdat  <- median_and_bounds(exp(coef), prob, na.rm = TRUE)  
       plotdat  <- data.frame(times, plotdat)
 
-      requires_smooth <- !(tt_type %in% c("pw", "piecewise"))
+      uses_step_stair <- (tt_type %in% c("pw", "piecewise"))
       
       xlab <- "Time"
       ylab <- ifelse(is_aft, 
@@ -278,32 +278,23 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
                      paste0("Hazard ratio\n(", pars, ")"))
     }
     
-    geom_defs <- list(color = "black")  # default plot args
+    geom_defs <- list(color = "black") # default plot args
     geom_args <- set_geom_args(geom_defs, ...)
+    geom_maps <- list(aes_string(x = "times", y = "med"))
     geom_ylab <- ggplot2::ylab(ylab)
     geom_xlab <- ggplot2::xlab(xlab)
     geom_base <- ggplot(plotdat) + geom_ylab + geom_xlab + ggplot2::theme_bw()
-    if (requires_smooth) {
-      geom_maps <- list(aes_string(x = "times", y = "med"), method = "loess", se = FALSE)
-      geom_plot <- geom_base + do.call(ggplot2::geom_smooth, c(geom_maps, geom_args))
-    } else {
-      geom_maps <- list(aes_string(x = "times", y = "med"))
-      geom_plot <- geom_base + do.call(ggplot2::geom_step, c(geom_maps, geom_args))
-    }
+    geom_fun  <- if (uses_step_stair) ggplot2::geom_step else ggplot2::geom_line
+    geom_plot <- geom_base + do.call(geom_fun, c(geom_maps, geom_args))
+
     if (limits == "ci") {
       lim_defs <- list(alpha = 0.3) # default plot args for ci
       lim_args <- c(defaults = list(lim_defs), ci_geom_args)
       lim_args <- do.call("set_geom_args", lim_args)
       lim_maps <- list(mapping = aes_string(x = "times", ymin = "lb", ymax = "ub"))
-      if (requires_smooth) {
-        lim_tmp  <- geom_base +
-          ggplot2::stat_smooth(aes_string(x = "times", y = "lb"), method = "loess") +
-          ggplot2::stat_smooth(aes_string(x = "times", y = "ub"), method = "loess")
-      } else {
-        lim_tmp  <- geom_base +
-          ggplot2::geom_step(aes_string(x = "times", y = "lb")) +
-          ggplot2::geom_step(aes_string(x = "times", y = "ub"))
-      }  
+      lim_tmp  <- geom_base +
+        geom_fun(aes_string(x = "times", y = "lb")) +
+        geom_fun(aes_string(x = "times", y = "ub"))
       lim_build<- ggplot2::ggplot_build(lim_tmp)
       lim_data <- list(data = data.frame(times = lim_build$data[[1]]$x,
                                          lb    = lim_build$data[[1]]$y,
