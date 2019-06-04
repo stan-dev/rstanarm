@@ -1754,10 +1754,10 @@ get_basis <- function(x, iknots, bknots = range(x),
                        degree = degree, intercept = intercept)
   } else if (type == "is") {
     out <- splines2::iSpline(x, knots = iknots, Boundary.knots = bknots,
-                              degree = degree, intercept = intercept)
+                              degree = degree, intercept = TRUE)
   } else if (type == "ms") {
     out <- splines2::mSpline(x, knots = iknots, Boundary.knots = bknots,
-                              degree = degree, intercept = intercept)
+                              degree = degree, intercept = TRUE)
   } else {
     stop2("'type' is not yet accommodated.")
   }
