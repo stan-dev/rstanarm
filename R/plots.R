@@ -193,8 +193,9 @@ plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
 #'   include in the plot. Can be \code{"ci"} for the Bayesian posterior
 #'   uncertainty interval, or \code{"none"}. This argument is only relevant
 #'   when \code{plotfun = "basehaz"} or \code{plotfun = "tve"}
-#' @param n Integer, the number of time points at which to interpolate the 
-#'   function when plotting the baseline hazard or time-varying hazard ratio.
+#' @param n Integer specifying the number of points to interpolate along 
+#'   when plotting the baseline hazard or time-varying hazard ratio. Each of 
+#'   the points are joined using a line.
 #'
 plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
                           regex_pars = NULL, ..., prob = 0.95,
