@@ -167,19 +167,21 @@ h_i(t) = \gamma t^{\gamma-1} \lambda_i(t)
 h_i(t) = \exp(\gamma t) \lambda_i(t)
 \end{equation}
 
-- **M-splines model** (`basehaz = "ms"`, the default): letting $M(t; \boldsymbol{\gamma}, \boldsymbol{k_0})$ denote a cubic M-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma} > 0$ we have:
+- **M-splines model** (`basehaz = "ms"`, the default): letting $M(t; \boldsymbol{\gamma}, \boldsymbol{k_0}, \delta)$ denote a degree $\delta$ M-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0} = $ and parameter vector $\boldsymbol{\gamma} > 0$ we have:
 \
 \begin{equation}
-h_i(t) = M(t; \boldsymbol{\gamma}, \boldsymbol{k_0}) \exp ( \eta_i(t) )
+h_i(t) = M(t; \boldsymbol{\gamma}, \boldsymbol{k_0}, \delta) \exp ( \eta_i(t) )
 \end{equation}
 \
-For identifiability of the intercept $\beta_0$ in the linear predictor $\eta_i$ we constrain the M-spline coefficients to a simplex, that is, $\sum_{j=1}^J{\gamma_j} = 1$.
+The M-spline function is calculated using the method described in Ramsay (1988) and implemented in the **splines2** R package (Wang and Yan (2018)). To ensure that the hazard function $h_i(t)$ is not constrained to zero at the origin (i.e. when $t$ approaches 0) the M-spline basis incorporates an intercept. To ensure identifiability of both the intercept parameter in the M-spline function and the intercept parameter in the linear predictor (i.e. $\beta_0$) we constrain the M-spline coefficients to a simplex, that is, $\sum_{j=1}^J{\gamma_j} = 1$. The default degree in **rstanarm** is $\delta = 3$; that is, cubic M-splines. However this can be controlled by the user via the `basehaz_ops` argument. It is worthwhile noting that $\delta = 0$ would correspond to a piecewise constant baseline hazard.
 
-- **B-splines model** (for the *log* baseline hazard): letting $B(t; \boldsymbol{\gamma}, \boldsymbol{k_0})$ denote a cubic B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma}$ we have:
+- **B-splines model** (for the *log* baseline hazard): letting $B(t; \boldsymbol{\gamma}, \boldsymbol{k_0}, \delta)$ denote a degree $\delta$ B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma}$ we have:
 \
 \begin{equation}
-h_i(t) = \exp ( B(t; \boldsymbol{\gamma}, \boldsymbol{k_0}) + \eta_i(t) )
+h_i(t) = \exp ( B(t; \boldsymbol{\gamma}, \boldsymbol{k_0}, \delta) + \eta_i(t) )
 \end{equation}
+\
+The B-spline function is calculated using the method implemented in the **splines2** R package (Wang and Yan (2018)). The B-spline basis does not require an intercept and therefore does not include one; any constant shift in the log hazard is fully captured via the intercept in the linear predictor (i.e. $\beta_0$).
 
 **Note:** When the linear predictor *is not* time-varying (i.e. under proportional hazards) there is a closed form expression for the survival probability (except for the B-splines model); details shown in the appendix. However, when the linear predictor *is* time-varying (i.e. under non-proportional hazards) there is no closed form expression for the survival probability; instead, quadrature is used to evaluate the survival probability for inclusion in the likelihood. Extended details on the parameterisations are given in the appendix.
 
@@ -324,7 +326,7 @@ The additional coefficients required for estimating time-varying effects (i.e. t
 
 # Usage examples
 
-## Example: a flexible parametric proportional hazards model
+## Example: A flexible parametric proportional hazards model
 
 We will use the German Breast Cancer Study Group dataset (see `?rstanarm-datasets` for details and references). In brief, the data consist of
 $N = 686$ patients with primary node positive breast cancer recruited between 1984-1989. The primary response is time to recurrence or death. Median follow-up time was 1084 days. Overall, there were 299 (44%) events and the remaining 387 (56%) individuals were right censored. We concern our analysis here with a 3-category baseline covariate for cancer prognosis (good/medium/poor).
@@ -443,7 +445,7 @@ plot(ph) +
 
 We can quite clearly see in the plot the assumption of proportional hazards. We can also see that the hazard is highest in the `Poor` prognosis group (i.e. worst survival) and the hazard is lowest in the `Good` prognosis group (i.e. best survival). This corresponds to what we saw in the plot of the survival functions previously.
 
-## Example: non-proportional hazards modelled using B-splines
+## Example: Non-proportional hazards modelled using B-splines
 
 To demonstrate the implementation of time-varying effects in `stan_surv` we will use a simulated dataset, generated using the **simsurv** package (Brilleman, 2018).
 
@@ -510,11 +512,12 @@ From the plot, we can see how the hazard ratio (i.e. the effect of treatment on 
 
 The plot shows a large amount of uncertainty around the estimated time-varying hazard ratio. This is to be expected, since we only simulated a dataset of 200 individuals of which only around 70% experienced the event before being censored at 5 years. So, there is very little data (i.e. very few events) with which to reliably estimate the time-varying hazard ratio. We can also see this reflected in the differences between our data generating model and the estimates from our fitted model. In our data generating model, the time-varying hazard ratio equals 1 (i.e. the log hazard ratio equals 0) at 2.5 years, but in our fitted model the median estimate for our time-varying hazard ratio equals 1 at around ~3 years. This is a reflection of the large amount of sampling error, due to our simulated dataset being so small.
 
-## Example: non-proportional hazards modelled using a piecewise constant function
+## Example: Non-proportional hazards modelled using a piecewise constant function
 
 In the previous example we showed how non-proportional hazards can be modelled by using a smooth B-spline function for the time-varying log hazard ratio. This is the default approach when the `tve` function is used to estimate a time-varying effect for a covariate in the model formula. However, another approach for modelling a time-varying log hazard ratio is to use a piecewise constant function. If we want to use a piecewise constant for the time-varying log hazard ratio (instead of the smooth B-spline function) then we just have to specify the `type` argument to the `tve` function.
 
-We will again simulate some survival data using the **simsurv** package (Brilleman, 2018) to show how a piecewise constant hazard ratio can be estimated using `stan_surv`.
+We will again simulate some survival data using the **simsurv** package to show how a piecewise constant hazard ratio can be estimated using `stan_surv`.
+
 Similar to the previous example, we will simulate a dataset with $N = 500$ individuals with event times generated under a Weibull hazard function with scale parameter $\lambda = 0.1$, shape parameter $\gamma = 1.5$, and binary baseline covariate $X_i \sim \text{Bern}(0.5)$. However, in this example our time-varying hazard ratio will be defined as $\beta(t) = -0.5 + 0.7 \times I(t > 2.5)$ where $I(X)$ is the indicator function taking the value 1 if $X$ is true and 0 otherwise. This corresponds to a piecewise constant log hazard ratio with just two "pieces" or time intervals. The first time interval is $[0,2.5]$ during which the true hazard ratio is $\exp(-0.5) = 0.61$. The second time interval is $(2.5,\infty]$ during which the true log hazard ratio is $\exp(-0.5 + 0.7) = 1.22$. Our example uses only two time intervals for simplicity, but in general we could easily have considered more (although it would have required couple of additional lines of code to simulate the data). We will again enforce administrative censoring at 5 years if an individual's simulated event time is >5 years.
 
 ```{r simsurv-simdata2}
@@ -544,9 +547,9 @@ dat  <- merge(dat, covs)
 head(dat)
 ```
 
-We know estimate a model with a piecewise constant time-varying effect for the covariate `trt` as
+We now estimate a model with a piecewise constant time-varying effect for the covariate `trt` as
 
-```{r tve_fit2, warning = FALSE, message = FALSE, results='hide'}
+```{r tve-fit2, warning = FALSE, message = FALSE, results='hide'}
 mod3 <- stan_surv(formula = Surv(eventtime, status) ~ 
                     tve(trt, type = "pw", knots = 2.5),
                   data    = dat, 
@@ -566,11 +569,84 @@ plot(mod3, plotfun = "tve")
 
 Here we see that the estimated hazard ratio reasonably reflects our true data generating model (i.e. a hazard ratio of $\approx 0.6$ during the first time interval and a hazard ratio of $\approx 1.2$ during the second time interval) although there is a slight discrepancy due to the sampling variation in the simulated event times.
 
+## Example: Hierarchical survival models
+
+To demonstrate the estimation of a hierarchical model for survival data in `stan_surv` we will use the `frail` dataset (see `help("rstanarm-datasets")` for a description). The `frail` datasets contains simulated event times for 200 patients clustered within 20 hospital sites (10 patients per hospital site). The event times are simulated from a parametric proportional hazards model under the following assumptions: (i) a constant (i.e. exponential) baseline hazard rate of 0.1; (ii) a fixed treatment effect with log hazard ratio of 0.3; and (iii) a site-specific random intercept (specified on the log hazard scale) drawn from a N(0,1) distribution.
+
+Let's look at the first few rows of the data:
+
+```{r frail-data-head}
+head(frail)
+```
+
+To fit a hierarchical model for clustered survival data we use a formula syntax similar to what is used in the **lme4** R package (Bates et al. (2015)). Let's consider the following model (which aligns with the model used to generate the simulated data):
+
+```{r frail-fit-model, warning = FALSE, message = FALSE}
+mod_randint <- stan_surv(
+  formula = Surv(eventtime, status) ~ trt + (1 | site),
+  data    = frail,
+  basehaz = "exp",
+  chains  = CHAINS, 
+  cores   = CORES, 
+  seed    = SEED,
+  iter    = ITER)
+```
+
+The model contains a baseline covariate for treatment (0 or 1) as well as a site-specific intercept to allow for correlation in the event times for patients from the same site. We've call the model object `mod_randint` to denote the fact that it includes a site-specific (random) intercept. Let's examine the parameter estimates from the model:
+
+```{r frail-estimates}
+print(mod_randint, digits = 2)
+```
+
+We see that the estimated log hazard ratio for treatment ($\hat{\beta}_{\text{(trt)}} = 0.46$) is a bit larger than the "true" log hazard ratio used in the data generating model ($\beta_{\text{(trt)}} = 0.3$). The estimated baseline hazard rate is $\exp(-2.3716) = 0.093$, which is pretty close to the baseline hazard rate used in the data generating model ($0.1$). Of course, the differences between the estimated parameters and the true parameters from the data generating model are attributable to sampling noise.
+
+If this were a real analysis, we might wonder whether the site-specific estimates are necessary! Well, we can assess that by fitting an alternative model that does **not** include the site-specific intercepts and compare it to the model we just estimated. We will compare it using the `loo` function. We first need to fit the model without the site-specific intercept. To do this, we will just use the generic `update` method for `stansurv` objects, since all we are changing is the model formula:
+
+```{r frail-fixed-model, warning = FALSE, message = FALSE}
+mod_fixed <- update(mod_randint, formula. = Surv(eventtime, status) ~ trt) 
+```
+
+Let's calculate the `loo` for both these models and compare them:
+
+```{r frail-compare-1, warning = FALSE, message = FALSE}
+loo_fixed   <- loo(mod_fixed)
+loo_randint <- loo(mod_randint)
+compare_models(loo_fixed, loo_randint)
+```
+
+We see strong evidence in favour of the model with the site-specific intercepts!
+
+But let's not quite finish there. What about if we want to generalise the random effects structure further. For instance, is the site-specific intercept enough? Perhaps we should consider estimating both a site-specific intercept and a site-specific treatment effect. We have minimal data to estimate such a model (recall that there is only 20 sites and 10 patients per site) but for the sake of demonstration we will forge on nonetheless. Let's fit a model with both a site-specific intercept and a site-specific coefficient for the covariate `trt` (i.e. treatment):
+
+```{r frail-random-trt, warning = FALSE, message = FALSE}
+mod_randtrt <- update(mod_randint, formula. = 
+                        Surv(eventtime, status) ~ trt + (trt | site)) 
+print(mod_randtrt, digits = 2)
+```
+
+We see that we have an estimated standard deviation for the site-specific intercepts and the site-specific coefficients for `trt`, as well as the estimated correlation between those site-specific parameters.
+
+Let's now compare all three of these models based on `loo`:
+
+```{r frail-compare-2, warning = FALSE, message = FALSE}
+loo_randtrt <- loo(mod_randtrt)
+compare_models(loo_fixed, loo_randint, loo_randtrt)
+```
+
+It appears that the model with just a site-specific intercept is the best fitting model. It is much better than the model without a site-specific intercept, and slightly better than the model with both a site-specific intercept and a site-specific treatment effect. In other words, including a site-specific intercept appears important, but including a site-specific treatment effect is not. This conclusion is reassuring, because it aligns with the data generating model we used to simulate the data!
+
+
 # References
 
-Brilleman, S. (2018) *simsurv: Simulate Survival Data.* R package version 0.2.2. \url{https://CRAN.R-project.org/package=simsurv}
+Bates D, Maechler M, Bolker B, Walker S. Fitting Linear Mixed-Effects Models Using lme4. *Journal of Statistical Software* 2015;67(1):1--48. \url{https://doi.org/10.18637/jss.v067.i01}
+
+Brilleman S. (2018) *simsurv: Simulate Survival Data.* R package version 0.2.2. \url{https://CRAN.R-project.org/package=simsurv}
 
 Hougaard P. Fundamentals of Survival Data. *Biometrics* 1999;55:13--22.
+
+Ramsay JO. Monotone Regression Splines in Action. *Statistical Science* 1988;3(4):425--461. \url{https://doi.org/10.1214/ss/1177012761}
+
+Wang W, Yan J. (2018) *splines2: Regression Spline Functions and Classes.* R package version 0.2.8. \url{https://CRAN.R-project.org/package=splines2}
 
 
 # Appendix A: Parameterisations on the hazard scale
