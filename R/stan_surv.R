@@ -1407,6 +1407,7 @@ handle_basehaz_surv <- function(basehaz,
   
   if (basehaz %in% c("exp", "exp-aft")) {
     
+    degree <- NULL # degree for splines
     bknots <- NULL # boundary knot locations
     iknots <- NULL # internal knot locations
     basis  <- NULL # spline basis
@@ -1414,6 +1415,7 @@ handle_basehaz_surv <- function(basehaz,
     
   } else if (basehaz %in% c("weibull", "weibull-aft")) {
     
+    degree <- NULL # degree for splines
     bknots <- NULL # boundary knot locations
     iknots <- NULL # internal knot locations
     basis  <- NULL # spline basis
@@ -1421,6 +1423,7 @@ handle_basehaz_surv <- function(basehaz,
     
   } else if (basehaz == "gompertz") {
     
+    degree <- NULL # degree for splines
     bknots <- NULL # boundary knot locations
     iknots <- NULL # internal knot locations
     basis  <- NULL # spline basis
@@ -1442,6 +1445,7 @@ handle_basehaz_surv <- function(basehaz,
     
   } else if (basehaz == "piecewise") {
     
+    degree <- NULL               # degree for splines
     bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- NULL               # spline basis
