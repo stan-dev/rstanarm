@@ -29,11 +29,14 @@
 #' either proportional or non-proportional hazards; and
 #' (iii) standard parametric (exponential, Weibull) accelerated failure time
 #' models, with covariates included under assumptions of either time-fixed or 
-#' time-varying survival time ratios.
-#' Where relevant, the user can choose between either a smooth B-spline 
-#' function or a piecewise constant function for modelling each time-varying 
-#' coefficient (i.e. time-varying log hazard ratio or time-varying log 
-#' survival time ratio) in the linear predictor.
+#' time-varying survival time ratios. Left, right, and interval censored 
+#' survival data are allowed. Delayed entry is allows. Both fixed and random
+#' effects can be estimated for covariates (i.e. group-specific parameters
+#' are allowed). Time-varying covariates and time-varying coefficients are 
+#' both allowed. For modelling time-varying coefficients (i.e. time-varying 
+#' log hazard ratio or time-varying log survival time ratio) the user can 
+#' choose between either a smooth B-spline function or a piecewise constant  
+#' function.
 #'
 #' @export
 #' @importFrom splines bs
@@ -50,7 +53,10 @@
 #'   object. Left censored, right censored, and interval censored data 
 #'   are allowed, as well as delayed entry (i.e. left truncation). See 
 #'   \code{\link[survival]{Surv}} for how to specify these outcome types. 
-#'   If you wish to include time-varying effects (i.e. time-varying 
+#'   The right hand side of the formula can include fixed and/or random
+#'   effects of covariates, with random effects specified in the same 
+#'   way as for the \code{\link[lme4]{lmer}} function in the \pkg{lme4}
+#'   package. If you wish to include time-varying effects (i.e. time-varying 
 #'   coefficients, e.g. non-proportional hazards) in the model
 #'   then any covariate(s) that you wish to estimate a time-varying 
 #'   coefficient for should be specified as \code{tve(varname)} where 
@@ -421,7 +427,21 @@
 #' 
 #' # same model (...slight differences due to sampling)
 #' summary(m_ph,  par = "log-posterior")[, 'mean'] 
-#' summary(m_aft, par = "log-posterior")[, 'mean'] 
+#' summary(m_aft, par = "log-posterior")[, 'mean']
+#' 
+#' #----- Frailty model, i.e. site-specific intercepts
+#' 
+#' m_frail <- stan_surv(
+#'   formula = Surv(eventtime, status) ~ trt + (1 | site), 
+#'   data    = frail[1:40,], 
+#'   basehaz = "exp", 
+#'   chains  = 1,
+#'   refresh = 0,
+#'   iter    = 600,
+#'   seed    = 123)
+#' print(m_frail)   # shows SD for frailty
+#' VarCorr(m_frail) # extract SD explicitly
+#'
 #' }
 #' 
 stan_surv <- function(formula, 
