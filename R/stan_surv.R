@@ -30,10 +30,10 @@
 #' (iii) standard parametric (exponential, Weibull) accelerated failure time
 #' models, with covariates included under assumptions of either time-fixed or 
 #' time-varying survival time ratios. Left, right, and interval censored 
-#' survival data are allowed. Delayed entry is allows. Both fixed and random
+#' survival data are allowed. Delayed entry is allowed. Both fixed and random
 #' effects can be estimated for covariates (i.e. group-specific parameters
 #' are allowed). Time-varying covariates and time-varying coefficients are 
-#' both allowed. For modelling time-varying coefficients (i.e. time-varying 
+#' both allowed. For modelling each time-varying coefficient (i.e. time-varying 
 #' log hazard ratio or time-varying log survival time ratio) the user can 
 #' choose between either a smooth B-spline function or a piecewise constant  
 #' function.
