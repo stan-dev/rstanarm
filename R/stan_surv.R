@@ -402,8 +402,8 @@
 #' d4 <- simsurv(lambdas = 0.1, 
 #'               gammas  = 1.5, 
 #'               betas   = c(trt = -0.5),
-#'               tde     = c(trt = 0.4),
-#'               tdefun  = function(t) { (t > 2.5) }
+#'               tve     = c(trt = 0.4),
+#'               tvefun  = function(t) { (t > 2.5) },
 #'               x       = covs, 
 #'               maxt    = 5)
 #' d4 <- merge(d4, covs)
