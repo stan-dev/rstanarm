@@ -29,11 +29,14 @@
 #' either proportional or non-proportional hazards; and
 #' (iii) standard parametric (exponential, Weibull) accelerated failure time
 #' models, with covariates included under assumptions of either time-fixed or 
-#' time-varying survival time ratios.
-#' Where relevant, the user can choose between either a smooth B-spline 
-#' function or a piecewise constant function for modelling each time-varying 
-#' coefficient (i.e. time-varying log hazard ratio or time-varying log 
-#' survival time ratio) in the linear predictor.
+#' time-varying survival time ratios. Left, right, and interval censored 
+#' survival data are allowed. Delayed entry is allowed. Both fixed and random
+#' effects can be estimated for covariates (i.e. group-specific parameters
+#' are allowed). Time-varying covariates and time-varying coefficients are 
+#' both allowed. For modelling each time-varying coefficient (i.e. time-varying 
+#' log hazard ratio or time-varying log survival time ratio) the user can 
+#' choose between either a smooth B-spline function or a piecewise constant  
+#' function.
 #'
 #' @export
 #' @importFrom splines bs
@@ -50,7 +53,10 @@
 #'   object. Left censored, right censored, and interval censored data 
 #'   are allowed, as well as delayed entry (i.e. left truncation). See 
 #'   \code{\link[survival]{Surv}} for how to specify these outcome types. 
-#'   If you wish to include time-varying effects (i.e. time-varying 
+#'   The right hand side of the formula can include fixed and/or random
+#'   effects of covariates, with random effects specified in the same 
+#'   way as for the \code{\link[lme4]{lmer}} function in the \pkg{lme4}
+#'   package. If you wish to include time-varying effects (i.e. time-varying 
 #'   coefficients, e.g. non-proportional hazards) in the model
 #'   then any covariate(s) that you wish to estimate a time-varying 
 #'   coefficient for should be specified as \code{tve(varname)} where 
@@ -65,7 +71,7 @@
 #'   
 #'   The following are available under a hazard scale formulation: 
 #'   \itemize{
-#'     \item \code{"ms"}: a flexible parametric model using cubic M-splines to 
+#'     \item \code{"ms"}: A flexible parametric model using cubic M-splines to 
 #'     model the baseline hazard. The default locations for the internal knots, 
 #'     as well as the basis terms for the splines, are calculated with respect
 #'     to time. If the model does \emph{not} include any time-dependendent 
@@ -74,7 +80,7 @@
 #'     On the other hand, if the model does include time-varying effects then
 #'     quadrature is used to evaluate the cumulative hazard at each MCMC
 #'     iteration and, therefore, estimation of the model will be slower.
-#'     \item \code{"bs"}: a flexible parametric model using cubic B-splines to 
+#'     \item \code{"bs"}: A flexible parametric model using cubic B-splines to 
 #'     model the \emph{log} baseline hazard. The default locations for the  
 #'     internal knots, as well as the basis terms for the splines, are calculated 
 #'     with respect to time. A closed form solution for the cumulative hazard 
@@ -83,10 +89,10 @@
 #'     the cumulative hazard at each MCMC iteration. Therefore, if your model
 #'     does not include any time-varying effects, then estimation using the 
 #'     \code{"ms"} baseline hazard will be faster.
-#'     \item \code{"exp"}: an exponential distribution for the event times
+#'     \item \code{"exp"}: An exponential distribution for the event times
 #'     (i.e. a constant baseline hazard).
-#'     \item \code{"weibull"}: a Weibull distribution for the event times.
-#'     \item \code{"gompertz"}: a Gompertz distribution for the event times.
+#'     \item \code{"weibull"}: A Weibull distribution for the event times.
+#'     \item \code{"gompertz"}: A Gompertz distribution for the event times.
 #'   }
 #'   
 #'   The following are available under an accelerated failure time (AFT)
@@ -98,12 +104,23 @@
 #' @param basehaz_ops A named list specifying options related to the baseline
 #'   hazard. Currently this can include: \cr
 #'   \itemize{
+#'     \item \code{degree}: A positive integer specifying the degree for the 
+#'     M-splines or B-splines. The default is \code{degree = 3}, which
+#'     corresponds to cubic splines. Note that specifying \code{degree = 0}
+#'     is also allowed and corresponds to piecewise constant.
 #'     \item \code{df}: A positive integer specifying the degrees of freedom 
-#'     for the M-splines or B-splines. Two boundary knots and \code{df - 3} 
-#'     internal knots are used to generate the cubic spline basis. The default 
-#'     is \code{df = 5}; that is, two boundary knots and two internal knots.
-#'     The internal knots are placed at equally spaced percentiles of the 
-#'     distribution of uncensored event times.
+#'     for the M-splines or B-splines. For M-splines (i.e. when 
+#'     \code{basehaz = "ms"}), two boundary knots and \code{df - degree - 1} 
+#'     internal knots are used to generate the spline basis. For B-splines 
+#'     (i.e. when \code{basehaz = "bs"}), two boundary knots and 
+#'     \code{df - degree} internal knots are used to generate the spline 
+#'     basis. The difference is due to the fact that the M-spline basis
+#'     includes an intercept, whereas the B-spline basis does not. The 
+#'     default is \code{df = 6} for M-splines and \code{df = 5} for
+#'     B-splines (i.e. two boundary knots and two internal knots when the
+#'     default cubic splines are being used). The internal knots are placed 
+#'     at equally spaced percentiles of the distribution of uncensored event 
+#'     times.
 #'     \item \code{knots}: A numeric vector explicitly specifying internal 
 #'     knot locations for the M-splines or B-splines. Note that \code{knots} 
 #'     cannot be specified if \code{df} is specified.
@@ -421,7 +438,21 @@
 #' 
 #' # same model (...slight differences due to sampling)
 #' summary(m_ph,  par = "log-posterior")[, 'mean'] 
-#' summary(m_aft, par = "log-posterior")[, 'mean'] 
+#' summary(m_aft, par = "log-posterior")[, 'mean']
+#' 
+#' #----- Frailty model, i.e. site-specific intercepts
+#' 
+#' m_frail <- stan_surv(
+#'   formula = Surv(eventtime, status) ~ trt + (1 | site), 
+#'   data    = frail[1:40,], 
+#'   basehaz = "exp", 
+#'   chains  = 1,
+#'   refresh = 0,
+#'   iter    = 600,
+#'   seed    = 123)
+#' print(m_frail)   # shows SD for frailty
+#' VarCorr(m_frail) # extract SD explicitly
+#'
 #' }
 #' 
 stan_surv <- function(formula, 
@@ -1384,7 +1415,11 @@ handle_basehaz_surv <- function(basehaz,
       stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
     
     if (is.null(df))
-      df <- 5L # assumes no intercept, ignored if the user specified knots
+      df <- switch(basehaz,
+                   "ms"        = 6L, # assumes intercept
+                   "bs"        = 5L, # assumes no intercept
+                   "piecewise" = 5L, # assumes no intercept
+                   df) # NB this is ignored if the user specified knots
     
     if (is.null(degree))
       degree <- 3L # cubic splines
@@ -1407,6 +1442,7 @@ handle_basehaz_surv <- function(basehaz,
   
   if (basehaz %in% c("exp", "exp-aft")) {
     
+    degree <- NULL # degree for splines
     bknots <- NULL # boundary knot locations
     iknots <- NULL # internal knot locations
     basis  <- NULL # spline basis
@@ -1414,6 +1450,7 @@ handle_basehaz_surv <- function(basehaz,
     
   } else if (basehaz %in% c("weibull", "weibull-aft")) {
     
+    degree <- NULL # degree for splines
     bknots <- NULL # boundary knot locations
     iknots <- NULL # internal knot locations
     basis  <- NULL # spline basis
@@ -1421,6 +1458,7 @@ handle_basehaz_surv <- function(basehaz,
     
   } else if (basehaz == "gompertz") {
     
+    degree <- NULL # degree for splines
     bknots <- NULL # boundary knot locations
     iknots <- NULL # internal knot locations
     basis  <- NULL # spline basis
@@ -1442,6 +1480,7 @@ handle_basehaz_surv <- function(basehaz,
     
   } else if (basehaz == "piecewise") {
     
+    degree <- NULL               # degree for splines
     bknots <- c(min_t, max_t)
     iknots <- get_iknots(tt, df = df, iknots = knots)
     basis  <- NULL               # spline basis
