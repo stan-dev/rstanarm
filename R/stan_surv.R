@@ -71,7 +71,7 @@
 #'   
 #'   The following are available under a hazard scale formulation: 
 #'   \itemize{
-#'     \item \code{"ms"}: a flexible parametric model using cubic M-splines to 
+#'     \item \code{"ms"}: A flexible parametric model using cubic M-splines to 
 #'     model the baseline hazard. The default locations for the internal knots, 
 #'     as well as the basis terms for the splines, are calculated with respect
 #'     to time. If the model does \emph{not} include any time-dependendent 
@@ -80,7 +80,7 @@
 #'     On the other hand, if the model does include time-varying effects then
 #'     quadrature is used to evaluate the cumulative hazard at each MCMC
 #'     iteration and, therefore, estimation of the model will be slower.
-#'     \item \code{"bs"}: a flexible parametric model using cubic B-splines to 
+#'     \item \code{"bs"}: A flexible parametric model using cubic B-splines to 
 #'     model the \emph{log} baseline hazard. The default locations for the  
 #'     internal knots, as well as the basis terms for the splines, are calculated 
 #'     with respect to time. A closed form solution for the cumulative hazard 
@@ -89,10 +89,10 @@
 #'     the cumulative hazard at each MCMC iteration. Therefore, if your model
 #'     does not include any time-varying effects, then estimation using the 
 #'     \code{"ms"} baseline hazard will be faster.
-#'     \item \code{"exp"}: an exponential distribution for the event times
+#'     \item \code{"exp"}: An exponential distribution for the event times
 #'     (i.e. a constant baseline hazard).
-#'     \item \code{"weibull"}: a Weibull distribution for the event times.
-#'     \item \code{"gompertz"}: a Gompertz distribution for the event times.
+#'     \item \code{"weibull"}: A Weibull distribution for the event times.
+#'     \item \code{"gompertz"}: A Gompertz distribution for the event times.
 #'   }
 #'   
 #'   The following are available under an accelerated failure time (AFT)
@@ -104,12 +104,23 @@
 #' @param basehaz_ops A named list specifying options related to the baseline
 #'   hazard. Currently this can include: \cr
 #'   \itemize{
+#'     \item \code{degree}: A positive integer specifying the degree for the 
+#'     M-splines or B-splines. The default is \code{degree = 3}, which
+#'     corresponds to cubic splines. Note that specifying \code{degree = 0}
+#'     is also allowed and corresponds to piecewise constant.
 #'     \item \code{df}: A positive integer specifying the degrees of freedom 
-#'     for the M-splines or B-splines. Two boundary knots and \code{df - 3} 
-#'     internal knots are used to generate the cubic spline basis. The default 
-#'     is \code{df = 5}; that is, two boundary knots and two internal knots.
-#'     The internal knots are placed at equally spaced percentiles of the 
-#'     distribution of uncensored event times.
+#'     for the M-splines or B-splines. For M-splines (i.e. when 
+#'     \code{basehaz = "ms"}), two boundary knots and \code{df - degree - 1} 
+#'     internal knots are used to generate the spline basis. For B-splines 
+#'     (i.e. when \code{basehaz = "bs"}), two boundary knots and 
+#'     \code{df - degree} internal knots are used to generate the spline 
+#'     basis. The difference is due to the fact that the M-spline basis
+#'     includes an intercept, whereas the B-spline basis does not. The 
+#'     default is \code{df = 6} for M-splines and \code{df = 5} for
+#'     B-splines (i.e. two boundary knots and two internal knots when the
+#'     default cubic splines are being used). The internal knots are placed 
+#'     at equally spaced percentiles of the distribution of uncensored event 
+#'     times.
 #'     \item \code{knots}: A numeric vector explicitly specifying internal 
 #'     knot locations for the M-splines or B-splines. Note that \code{knots} 
 #'     cannot be specified if \code{df} is specified.
@@ -1404,7 +1415,11 @@ handle_basehaz_surv <- function(basehaz,
       stop2("Cannot specify both 'df' and 'knots' for the baseline hazard.")
     
     if (is.null(df))
-      df <- 5L # assumes no intercept, ignored if the user specified knots
+      df <- switch(basehaz,
+                   "ms"        = 6L, # assumes intercept
+                   "bs"        = 5L, # assumes no intercept
+                   "piecewise" = 5L, # assumes no intercept
+                   df) # NB this is ignored if the user specified knots
     
     if (is.null(degree))
       degree <- 3L # cubic splines
