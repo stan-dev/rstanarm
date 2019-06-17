@@ -1,6 +1,6 @@
 ---
 title: "MRP in RStanarm"
-author: "Lauren Kennedy"
+author: "Lauren Kennedy & Jonah Gabry"
 date: "`r Sys.Date()`"
 output: 
   html_vignette:
@@ -19,6 +19,8 @@ cachemodel = FALSE
 ```{r, child="children/SETTINGS-gg.txt"}
 ```
 ```{r, child="children/SETTINGS-rstan.txt"}
+```
+```{r, child="children/SETTINGS-knitr.txt"}
 ```
 
 Inference about the population is one the main aims of statistical methodology. Multi-level regression with post-stratification [@little1993post; @lax2009should; @park2004bayesian] has been shown to be an effective method of adjusting the sample so that it is representative of the population for a set of key variables. Recent work has demonstrated the effectiveness of MRP when there are a number of suspected interactions between these variables [@ghitza2013deep], replicated by @lei20172008. While @ghitza2013deep use approximate marginal maximum likelihood estimates; @lei20172008 implement a fully Bayesian approach through Stan. 
@@ -517,7 +519,17 @@ state_df[c(1,3:6)]
 state_df$State<-factor(state_df$State,levels = levels(sample$state))
 ```
 
-Here we similar findings to when we considered the population as whole. While estimates for cat preference using the sample are out by up to `r round(max(abs(state_df$sample.state.pref-state_df$true.state.pref))*100)`% (mean about `r round(mean(abs(state_df$sample.state.pref-state_df$true.state.pref))*100)`%), the MRP based estimates are much closer to the actual preference (no more than `r round(max(abs(state_df$model.state.pref-state_df$true.state.pref))*100)`% off, mean of about `r round(mean(abs(state_df$model.state.pref-state_df$true.state.pref))*100)`%), especially when the sample size for that population is relatively small. This is easier to see graphically, so we will continue to add additional layers to the previous figure. Here we add Model estimates,represented by triangles, and the true population cat preference, represented as transparent circles. 
+Here we similar findings to when we considered the population as whole. While estimates for cat preference using the sample are out by up to 
+```{r} 
+round(max(abs(state_df$sample.state.pref-state_df$true.state.pref))*100) #max
+round(mean(abs(state_df$sample.state.pref-state_df$true.state.pref))*100) #mean
+```
+the MRP based estimates are much closer to the actual preference
+```{r}
+round(max(abs(state_df$model.state.pref-state_df$true.state.pref))*100) #max
+round(mean(abs(state_df$model.state.pref-state_df$true.state.pref))*100) #mean
+```
+especially when the sample size for that population is relatively small. This is easier to see graphically, so we will continue to add additional layers to the previous figure. Here we add model estimates,represented by triangles, and the true population cat preference, represented as transparent circles. 
 
 ```{r, fig.height = 4, fig.width = 8, fig.align = "center",warning=FALSE, fig.align = "center", message=FALSE,data.loading.chunk19, cache = cachedata,echo=FALSE}
 #Summarise by state
