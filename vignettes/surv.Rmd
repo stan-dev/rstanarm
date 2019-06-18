@@ -251,7 +251,7 @@ for scale parameter $\lambda_i = \exp ( -\gamma \eta_i )$ and shape parameter $\
 
 ## Time-fixed and time-varying effects of covariates
 
-The coefficient $\beta_p(t)$ (i.e. the log hazard ratio) or $\beta_p^*(t)$ (i.e. log survival time ratio) can be treated as a time-fixed quantity (e.g. $\beta_p(t) = \beta_p$) or as a time-varying quantity. We refer to the latter as *time-varying effects* because the effect of the covariate is allowed to change as a function of time. In `stan_surv` time-varying effects are specified by using the `tde` function in the model formula. Note that in the following definitions we only refer to $\beta_p(t)$ (i.e. the log hazard ratio) but the same methodology applies to $\beta_p^*(t)$ (i.e. the log survival time ratio).
+The coefficient $\beta_p(t)$ (i.e. the log hazard ratio) or $\beta_p^*(t)$ (i.e. log survival time ratio) can be treated as a time-fixed quantity (e.g. $\beta_p(t) = \beta_p$) or as a time-varying quantity. We refer to the latter as *time-varying effects* because the effect of the covariate is allowed to change as a function of time. In `stan_surv` time-varying effects are specified by using the `tve` function in the model formula. Note that in the following definitions we only refer to $\beta_p(t)$ (i.e. the log hazard ratio) but the same methodology applies to $\beta_p^*(t)$ (i.e. the log survival time ratio).
 
 Without time-varying effects we have:
 \
