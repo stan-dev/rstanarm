@@ -348,14 +348,18 @@ has_outcome_variable <- function(f) {
 
 
 # Check if any variables in a model frame are constants
-# (the exception is that a constant variable of all 1's is allowed)
+#
+# exceptions: constant variable of all 1's is allowed and outcomes with all 0s
+# or 1s are allowed (e.g., for binomial models)
 # 
 # @param mf A model frame or model matrix
 # @return If no constant variables are found mf is returned, otherwise an error
 #   is thrown.
 check_constant_vars <- function(mf) {
-  # don't check if columns are constant for binomial
-  mf1 <- if (NCOL(mf[, 1]) == 2) mf[, -1, drop=FALSE] else mf
+  mf1 <- mf
+  if (NCOL(mf[, 1]) == 2 || all(mf[, 1] %in% c(0, 1))) {
+    mf1 <- mf[, -1, drop=FALSE] 
+  }
   
   lu1 <- function(x) !all(x == 1) && length(unique(x)) == 1
   nocheck <- c("(weights)", "(offset)", "(Intercept)")
