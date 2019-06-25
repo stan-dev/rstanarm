@@ -45,6 +45,15 @@
     return target();
   }
   
+  real ll_beta_binom_lp(int[] y, int[] trials, vector eta, real phi, int link) {
+    if (link <= 5) {
+      vector[rows(eta)] alphas = linkinv_binom(eta, link) * phi;
+      target += beta_binomial_lpmf(y | trials, alphas, phi - alphas);
+    }
+    else reject("Invalid link");
+    return target();
+  }
+  
   /** 
   * Pointwise (pw) log-likelihood vector
   *
@@ -62,6 +71,17 @@
     else if (link <= 5) {  // link = probit, cauchit, log, or cloglog
       vector[N] pi = linkinv_binom(eta, link); // may be unstable
       for (n in 1:N) ll[n] = binomial_lpmf(y[n] | trials[n], pi[n]) ;
+    }
+    else reject("Invalid link");
+    return ll;
+  }
+  
+  vector pw_beta_binom(int[] y, int[] trials, vector eta, real phi, int link) {
+    int N = rows(eta);
+    vector[N] ll;
+    if (link <= 5) {  // link = logit, probit, cauchit, log, or cloglog
+      vector[N] alphas = linkinv_binom(eta, link) * phi; // may be unstable
+      for (n in 1:N) ll[n] = beta_binomial_lpmf(y[n] | trials[n], alphas[n], phi - alphas[n]);
     }
     else reject("Invalid link");
     return ll;

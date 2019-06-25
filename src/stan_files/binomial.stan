@@ -30,6 +30,7 @@ transformed data {
 #include /tdata/tdata_glm.stan
 }
 parameters {
+  real<lower=0> phi[family != 5]; // for beta-binomial FIXME: determine family number for beta-binomial
   real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];
   // declares z_beta, global, local, z_b, z_T, rho, zeta, tau
 #include /parameters/parameters_glm.stan
@@ -71,13 +72,20 @@ model {
   
     // Log-likelihood 
     if (has_weights == 0) {  // unweighted log-likelihoods
-      real dummy = ll_binom_lp(y, trials, eta, link);
+      real dummy;
+      if (family == 5) dummy = ll_binom_lp(y, trials, eta, link);
+      else dummy = ll_beta_binom_lp(y, trials, eta, phi[1], link);
     }
-    else 
-      target += dot_product(weights, pw_binom(y, trials, eta, link));
+    else {
+      if (family == 5) target += dot_product(weights, pw_binom(y, trials, eta, link));
+      else target += dot_product(weights, pw_beta_binom(y, trials, eta, phi[1], link));
+    }
   }
   
 #include /model/priors_glm.stan
+  
+  // FIXME
+  // prior for phi in beta-binomial case
   
   if (t > 0) {
     real dummy = decov_lp(z_b, z_T, rho, zeta, tau, 
@@ -112,7 +120,13 @@ generated quantities {
     }
     
     pi = linkinv_binom(eta, link);
-    for (n in 1:N) mean_PPD += binomial_rng(trials[n], pi[n]);
+    if (family == 5) {
+      for (n in 1:N) mean_PPD += binomial_rng(trials[n], pi[n]);
+    }
+    else { // beta-binomial
+      for (n in 1:N)
+        mean_PPD += beta_binomial_rng(trials[n], pi[n] * phi[1], (1 - pi[n]) * phi[1]);
+    }
     mean_PPD /= N;
   }
 }
