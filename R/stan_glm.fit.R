@@ -760,6 +760,8 @@ stan_family_number <- function(famname) {
     "binomial" = 5L,
     "poisson" = 6L,
     "neg_binomial_2" = 7L,
+    # in count.stan it looks family=8 is being saved for poisson with gamme noise
+    "beta_binomial" = 9L,
     stop("Family not valid.")
   )
 }
