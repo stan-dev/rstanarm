@@ -48,7 +48,9 @@
 #' @template reference-muth
 #' 
 #' @param family Same as \code{\link[stats]{glm}}, except negative binomial GLMs
-#'   are also possible using the \code{\link{neg_binomial_2}} family object.
+#'   are also possible using the \code{\link{neg_binomial_2}} family object and
+#'   beta-binomial is possible using the \code{\link{beta_binomial}} family
+#'   object.
 #' @param y In \code{stan_glm}, logical scalar indicating whether to
 #'   return the response vector. In \code{stan_glm.fit}, a response vector.
 #' @param x In \code{stan_glm}, logical scalar indicating whether to

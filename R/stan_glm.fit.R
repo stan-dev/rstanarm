@@ -70,7 +70,8 @@ stan_glm.fit <-
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
-                          "poisson", "neg_binomial_2", "Beta regression")
+                          "poisson", "neg_binomial_2", "Beta regression", 
+                          "beta_binomial")
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
   if (!length(fam)) {
     supported_families_err <- supported_families
@@ -201,7 +202,8 @@ stan_glm.fit <-
   
   famname <- supported_families[fam]
   is_bernoulli <- is.binomial(famname) && all(y %in% 0:1) && is.null(trials)
-  is_nb <- is.nb(famname)
+  is_betabinom <- is.bb(famname)
+  is_nb <- is.nb(famname) # neg binomial
   is_gaussian <- is.gaussian(famname)
   is_gamma <- is.gamma(famname)
   is_ig <- is.ig(famname)
@@ -456,12 +458,20 @@ stan_glm.fit <-
     standata$prior_mean_for_aux <- c(prior_mean_for_aux)
     standata$len_y <- length(y)
     stanfit <- stanmodels$continuous
-  } else if (is.binomial(famname)) {
-    standata$prior_scale_for_aux <- 
-      if (!length(group) || prior_scale_for_aux == Inf) 
-        0 else prior_scale_for_aux
-    standata$prior_mean_for_aux <- 0
-    standata$prior_df_for_aux <- 0
+  } else if (is.binomial(famname)) { # binomial and beta-binomial
+    if (is_betabinom) {
+      # only beta-binomial has an aux parameter
+      standata$prior_scale_for_aux <- prior_scale_for_aux %ORifINF% 0
+      standata$prior_df_for_aux <- c(prior_df_for_aux)
+      standata$prior_mean_for_aux <- c(prior_mean_for_aux)
+    } else {
+      standata$prior_scale_for_aux <- 
+        if (!length(group) || prior_scale_for_aux == Inf) 
+          0 else prior_scale_for_aux
+      standata$prior_mean_for_aux <- 0
+      standata$prior_df_for_aux <- 0
+    }
+    
     if (is_bernoulli) {
       y0 <- y == 0
       y1 <- y == 1
@@ -554,7 +564,7 @@ stan_glm.fit <-
             "beta",
             if (ncol(S)) "beta_smooth",
             if (length(group)) "b",
-            if (is_continuous | is_nb) "aux",
+            if (is_continuous | is_nb | is_betabinom) "aux",
             if (ncol(S)) "smooth_sd",
             if (standata$len_theta_L) "theta_L",
             if (mean_PPD && !standata$clogit) "mean_PPD")
@@ -590,6 +600,7 @@ stan_glm.fit <-
         if (is_gamma) "shape" else
           if (is_ig) "lambda" else 
             if (is_nb) "reciprocal_dispersion" else
+              if (is_betabinom) "phi" else
               if (is_beta) "(phi)" else NA
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
@@ -716,6 +727,7 @@ stan_glm.fit <-
                    if (is_gamma) "shape", 
                    if (is_ig) "lambda",
                    if (is_nb) "reciprocal_dispersion",
+                   if (is_betabinom) "phi",
                    if (is_beta) "(phi)",
                    if (ncol(S)) paste0("smooth_sd[", names(x)[-1], "]"),
                    if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
@@ -736,6 +748,7 @@ supported_glm_links <- function(famname) {
   switch(
     famname,
     binomial = c("logit", "probit", "cauchit", "log", "cloglog"),
+    beta_binomial = c("logit", "probit", "cauchit", "log", "cloglog"),
     gaussian = c("identity", "log", "inverse"),
     Gamma = c("identity", "log", "inverse"),
     inverse.gaussian = c("identity", "log", "inverse", "1/mu^2"),
@@ -1044,7 +1057,10 @@ summarize_glm_prior <-
   if (is.gaussian(fam)) "sigma" else
     if (is.gamma(fam)) "shape" else
       if (is.ig(fam)) "lambda" else 
-        if (is.nb(fam)) "reciprocal_dispersion" else NA
+        if (is.nb(fam)) "reciprocal_dispersion" else 
+          if (is.beta(fam)) "(phi)" else 
+            if (is.bb(fam)) "phi"
+              else NA
 }
 
 .sample_indices <- function(wts, n_draws) {

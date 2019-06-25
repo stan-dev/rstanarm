@@ -46,8 +46,10 @@
 #'   functions (including \code{update}, \code{loo}, \code{kfold}) are not 
 #'   guaranteed to work properly.
 #' @param family Same as for \code{\link[lme4]{glmer}} except it is also
-#'   possible to use \code{family=mgcv::betar} to estimate a Beta regression
-#'   with \code{stan_glmer}.
+#'   possible to use the \code{mgcv::betar} family to estimate a beta
+#'   regression, the \code{\link{neg_binomial_2}} family to fit a negative
+#'   binomial regression, and the \code{\link{beta_binomial}} family to fit a
+#'   beta-binomial regression.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
 #'   specified.

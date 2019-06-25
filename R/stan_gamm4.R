@@ -38,11 +38,12 @@
 #' @template args-QR
 #' @template args-sparse
 #' 
-#' @param formula,random,family,data,knots,drop.unused.levels Same as for 
+#' @param formula,random,data,knots,drop.unused.levels Same as for 
 #'   \code{\link[gamm4]{gamm4}}. \emph{We strongly advise against
 #'   omitting the \code{data} argument}. Unless \code{data} is specified (and is
 #'   a data frame) many post-estimation functions (including \code{update},
 #'   \code{loo}, \code{kfold}) are not guaranteed to work properly.
+#' @param family Same as for \code{\link{stan_glmer}}.
 #' @param subset,weights,na.action Same as \code{\link[stats]{glm}}, 
 #'   but rarely specified.
 #' @param ... Further arguments passed to \code{\link[rstan]{sampling}} (e.g. 
