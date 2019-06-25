@@ -3,17 +3,23 @@
 ### Bug fixes
 
 * src/Makevars{.win} now uses a more robust way to find StanHeaders
-* `compare_models` is deprecated in favor of `loo_compare`
-* The `kfold` method now has a `cores` argument and parallelizes by fold rather
+* `compare_models()` is deprecated in favor of `loo_compare()`
+* The `kfold()` method now has a `cores` argument and parallelizes by fold rather
 than by Markov chain (unless otherwise specified), which should be much more
 efficient when many cores are available.
+
+### New features and improvements
+
+* Beta-binomial regression is now possible via `stan_glm()` using
+  `family=beta_binomial(link)`.
+  
 
 # rstanarm 2.18.1
 
 ### Bug fixes
 
 * `stan_clogit()` now works even when there are no common predictors
-* `prior.info()` works better with models produced by `stan_jm()` and
+* `prior_summary()` works better with models produced by `stan_jm()` and
   `stan_mvmer()`
 
 ### New features and improvements
