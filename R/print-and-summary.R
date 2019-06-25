@@ -404,6 +404,8 @@ summary.stanreg <- function(object,
         mark <- c(mark, "sigma")
       if (is.nb(famname)) 
         mark <- c(mark, "reciprocal_dispersion")
+      if (is.bb(famname)) 
+        mark <- c(mark, "phi")
     } else {
       mark <- NA
       if ("alpha" %in% pars) 
