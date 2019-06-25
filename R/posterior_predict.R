@@ -269,6 +269,14 @@ pp_fun <- function(object, m = NULL) {
     rbinom(ncol(mu), size = trials, prob = mu[s, ])
   }))
 }
+.pp_beta_binomial <- function(mu, trials, phi) {
+  t(sapply(1:nrow(mu), function(s) {
+    probs <- rbeta(ncol(mu), 
+                   shape1 = mu[s, ] * phi[s], 
+                   shape2 = (1 - mu[s, ]) * phi[s])
+    rbinom(ncol(mu), size = trials, prob = probs)
+  }))
+}
 .pp_clogit <- function(mu, strata) {
   t(sapply(1:nrow(mu), function(s) {
     unlist(by(mu[s,], INDICES = list(strata), FUN = rmultinom, n = 1, size = 1))
@@ -366,6 +374,8 @@ pp_args <- function(object, data, m = NULL) {
     args$lambda <- stanmat[, paste0(m_stub, "lambda")]
   } else if (is.nb(famname)) {
     args$size <- stanmat[, paste0(m_stub, "reciprocal_dispersion")]
+  } else if (is.bb(famname)) {
+    args$phi <- stanmat[, paste0(m_stub, "phi")]
   } else if (is.beta(famname)) {
     args$phi <- data$phi
     if (is.null(args$phi)) {

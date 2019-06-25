@@ -290,6 +290,8 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
       draws$lambda <- stanmat[, paste0(m_stub, "lambda")]
     if (is.nb(fname)) 
       draws$size <- stanmat[, paste0(m_stub, "reciprocal_dispersion")]
+    if (is.bb(fname)) 
+      draws$phi <- stanmat[, paste0(m_stub, "phi")]
     if (is.beta(fname)) {
       draws$f_phi <- object$family_phi
       z_vars <- colnames(stanmat)[grepl("(phi)", colnames(stanmat))]
@@ -425,6 +427,18 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 .ll_binomial_i <- function(data_i, draws) {
   val <- dbinom(data_i$y, size = data_i$trials, prob = .mu(data_i, draws), log = TRUE)
   .weighted(val, data_i$weights)
+}
+.ll_beta_binomial_i <- function(data_i, draws) {
+  size_i <- data_i$trials
+  y_i <- data_i$y
+  prob_i <- .mu(data_i, draws)
+  phi <- draws$phi
+  val <- lfactorial(size_i) - 
+      lfactorial(y_i) - 
+      lfactorial(size_i - y_i) - 
+      lbeta(phi * (1 - prob_i), phi * prob_i) + 
+      lbeta(size_i - y_i + phi * (1 - prob_i), y_i + phi * prob_i)
+  .weighted(val, data_i$weights) 
 }
 .ll_clogit_i <- function(data_i, draws) {
   eta <- linear_predictor(draws$beta, .xdata(data_i), data_i$offset)
