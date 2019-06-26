@@ -263,10 +263,9 @@ ranef_template <- function(object) {
     "stan_nlmer" = "nlmer",
     "glmer" # for both stan_glmer and stan_glmer.nb
   )
-  cntrl_fun <- paste0(lme4_fun, "Control")
   cntrl_args <- list(
     optimizer = "Nelder_Mead",
-    optCtrl = list(maxfun = 0),
+    optCtrl = list(maxfun = 1),
     check.conv.grad = "ignore",
     check.conv.singular = "ignore",
     check.conv.hess = "ignore",
@@ -278,7 +277,7 @@ ranef_template <- function(object) {
   if (lme4_fun == "glmer") {
     cntrl_args$check.response.not.const <- "ignore"
   }
-  cntrl <- do.call(cntrl_fun, cntrl_args)
+  cntrl <- do.call(paste0(lme4_fun, "Control"), cntrl_args)
   
   fit_args <- list(
     formula = formula(object),
@@ -287,11 +286,11 @@ ranef_template <- function(object) {
   )
   
   family <- family(object)
-  fam_name <- family$family
-  if (!(fam_name %in% c("gaussian", "beta"))) {
-    if (fam_name == "neg_binomial_2") {
+  fam <- family$family
+  if (!(fam %in% c("gaussian", "beta"))) {
+    if (fam == "neg_binomial_2") {
       family <- stats::poisson()
-    } else if (fam_name == "beta_binomial") {
+    } else if (fam == "beta_binomial") {
       family <- stats::binomial()
     }
     fit_args$family <- family
