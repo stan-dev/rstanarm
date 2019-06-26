@@ -263,20 +263,20 @@ ranef_template <- function(object) {
     "stan_nlmer" = "nlmer",
     "glmer" # for both stan_glmer and stan_glmer.nb
   )
-  cntrl_args <- list(
-    optimizer = "Nelder_Mead",
-    optCtrl = list(maxfun = 1),
-    check.conv.grad = "ignore",
-    check.conv.singular = "ignore",
-    check.conv.hess = "ignore",
-    check.nlev.gtreq.5 = "ignore",
-    check.nobs.vs.rankZ = "ignore",
-    check.nobs.vs.nlev = "ignore",
-    check.nobs.vs.nRE = "ignore"
-  )
-  if (lme4_fun == "glmer") {
-    cntrl_args$check.response.not.const <- "ignore"
+  cntrl_args <- list(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 1))
+  if (lme4_fun != "nlmer") {
+    cntrl_args$check.conv.grad <- "ignore"
+    cntrl_args$check.conv.singular <- "ignore"
+    cntrl_args$check.conv.hess <- "ignore"
+    cntrl_args$check.nlev.gtreq.5 <- "ignore"
+    cntrl_args$check.nobs.vs.rankZ <- "ignore"
+    cntrl_args$check.nobs.vs.nlev <- "ignore"
+    cntrl_args$check.nobs.vs.nRE <- "ignore"
+    if (lme4_fun == "glmer") {
+      cntrl_args$check.response.not.const <- "ignore"
+    }
   }
+  
   cntrl <- do.call(paste0(lme4_fun, "Control"), cntrl_args)
   
   fit_args <- list(
@@ -284,6 +284,14 @@ ranef_template <- function(object) {
     data = object$data,
     control = cntrl
   )
+  
+  if (lme4_fun == "nlmer") {
+    fit_args$start <- unlist(getInitial(
+      object = as.formula(as.character(formula(object))[2]),
+      data = object$data,
+      control = list(maxiter = 0, warnOnly = TRUE)
+    ))
+  }
   
   family <- family(object)
   fam <- family$family
