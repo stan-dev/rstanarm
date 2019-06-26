@@ -235,32 +235,70 @@ nsamples.stanreg <- function(object, ...) {
 ranef.stanreg <- function(object, ...) {
   all_names <- if (used.optimizing(object))
     rownames(object$stan_summary) else object$stanfit@sim$fnames_oi
-  sel <- b_names(all_names)
-  ans <- object$stan_summary[sel, select_median(object$algorithm)]
-  # avoid returning the extra levels that were included
-  ans <- ans[!grepl("_NEW_", names(ans), fixed = TRUE)]
-  fl <- .flist(object)
-  levs <- lapply(fl, levels)
-  asgn <- attr(fl, "assign")
-  cnms <- .cnms(object)
-  fl <- fl
-  asgn <- asgn
-  levs <- levs
-  cnms <- cnms
-  nc <- vapply(cnms, length, 1L)
-  nb <- nc * vapply(levs, length, 1L)
-  nbseq <- rep.int(seq_along(nb), nb)
-  ml <- split(ans, nbseq)
-  for (i in seq_along(ml)) {
-    ml[[i]] <- matrix(ml[[i]], ncol = nc[i], byrow = TRUE, 
-                      dimnames = list(NULL, cnms[[i]]))
+  ans <- object$stan_summary[b_names(all_names), select_median(object$algorithm)]
+  ans <- ans[!grepl("_NEW_", names(ans), fixed = TRUE)] 
+  
+  out <- ranef_template(object)
+  group_vars <- names(out)
+  for (j in seq_along(out)) {
+    tmp <- out[[j]]
+    pars <- colnames(tmp) 
+    levs <- rownames(tmp)
+    for (p in seq_along(pars)) {
+      stan_pars <- paste0("b[", pars[p], " ", group_vars[j],  ":", levs, "]")
+      tmp[[pars[p]]] <- unname(ans[stan_pars])
+    }
+    out[[j]] <- tmp
   }
-  ans <- lapply(seq_along(fl), function(i) {
-    data.frame(do.call(cbind, ml[i]), row.names = levs[[i]], 
-               check.names = FALSE)
-  })
-  names(ans) <- names(fl)
-  structure(ans, class = "ranef.mer")
+  out
+}
+
+# Call lme4 to get the right structure for ranef objects
+#' @importFrom lme4 lmerControl glmerControl nlmerControl lmer glmer nlmer
+ranef_template <- function(object) {
+  stan_fun <- object$stan_function %ORifNULL% "stan_glmer"
+  lme4_fun <- switch(
+    stan_fun,
+    "stan_lmer" = "lmer",
+    "stan_nlmer" = "nlmer",
+    "glmer" # for both stan_glmer and stan_glmer.nb
+  )
+  cntrl_fun <- paste0(lme4_fun, "Control")
+  cntrl_args <- list(
+    optimizer = "Nelder_Mead",
+    optCtrl = list(maxfun = 0),
+    check.conv.grad = "ignore",
+    check.conv.singular = "ignore",
+    check.conv.hess = "ignore",
+    check.nlev.gtreq.5 = "ignore",
+    check.nobs.vs.rankZ = "ignore",
+    check.nobs.vs.nlev = "ignore",
+    check.nobs.vs.nRE = "ignore"
+  )
+  if (lme4_fun == "glmer") {
+    cntrl_args$check.response.not.const <- "ignore"
+  }
+  cntrl <- do.call(cntrl_fun, cntrl_args)
+  
+  fit_args <- list(
+    formula = formula(object),
+    data = object$data,
+    control = cntrl
+  )
+  
+  family <- family(object)
+  fam_name <- family$family
+  if (!(fam_name %in% c("gaussian", "beta"))) {
+    if (fam_name == "neg_binomial_2") {
+      family <- stats::poisson()
+    } else if (fam_name == "beta_binomial") {
+      family <- stats::binomial()
+    }
+    fit_args$family <- family
+  }
+  
+  lme4_fit <- suppressWarnings(do.call(lme4_fun, args = fit_args))
+  ranef(lme4_fit)
 }
 
 
