@@ -86,7 +86,6 @@ simulate_mrp_data<-function(n){
   for (j in 1:prod(J)){
     n_cell[j] <- sum(people==j)
   }
-  print(cbind(poststrat, n_cell/n, poststrat$N/sum(poststrat$N)))
   
   coef_male <- c(0, -0.3)
   coef_eth <- c(0, 0.6, 0.9)
