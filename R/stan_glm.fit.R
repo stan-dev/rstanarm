@@ -192,6 +192,8 @@ stan_glm.fit <-
     }
     for (i in names(prior_smooth_stuff))
       assign(i, prior_smooth_stuff[[i]])
+    
+    prior_scale_for_smooth <- array(prior_scale_for_smooth)
   } else {
     prior_dist_for_smooth <- 0L
     prior_mean_for_smooth <- array(NA_real_, dim = 0)
