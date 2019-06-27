@@ -233,11 +233,8 @@ nsamples.stanreg <- function(object, ...) {
 #' @importFrom lme4 ranef
 #' 
 ranef.stanreg <- function(object, ...) {
-  all_names <- if (used.optimizing(object))
-    rownames(object$stan_summary) else object$stanfit@sim$fnames_oi
-  ans <- object$stan_summary[b_names(all_names), select_median(object$algorithm)]
-  ans <- ans[!grepl("_NEW_", names(ans), fixed = TRUE)] 
-  
+  .glmer_check(object)
+  point_estimates <- object$stan_summary[, select_median(object$algorithm)]
   out <- ranef_template(object)
   group_vars <- names(out)
   for (j in seq_along(out)) {
@@ -246,7 +243,7 @@ ranef.stanreg <- function(object, ...) {
     levs <- rownames(tmp)
     for (p in seq_along(pars)) {
       stan_pars <- paste0("b[", pars[p], " ", group_vars[j],  ":", levs, "]")
-      tmp[[pars[p]]] <- unname(ans[stan_pars])
+      tmp[[pars[p]]] <- unname(point_estimates[stan_pars])
     }
     out[[j]] <- tmp
   }
@@ -264,7 +261,7 @@ ranef_template <- function(object) {
     "glmer" # for both stan_glmer and stan_glmer.nb
   )
   cntrl_args <- list(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 1))
-  if (lme4_fun != "nlmer") {
+  if (lme4_fun != "nlmer") { # nlmerControl doesn't allow these
     cntrl_args$check.conv.grad <- "ignore"
     cntrl_args$check.conv.singular <- "ignore"
     cntrl_args$check.conv.hess <- "ignore"
@@ -285,7 +282,7 @@ ranef_template <- function(object) {
     control = cntrl
   )
   
-  if (lme4_fun == "nlmer") {
+  if (lme4_fun == "nlmer") { # create starting values to avoid error
     fit_args$start <- unlist(getInitial(
       object = as.formula(as.character(formula(object))[2]),
       data = object$data,
