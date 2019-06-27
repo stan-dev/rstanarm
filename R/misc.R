@@ -144,7 +144,7 @@ used.variational <- function(x) {
   x$algorithm %in% c("meanfield", "fullrank")
 }
 
-# Test if stanreg object used stan_(g)lmer
+# Test if stanreg object used stan_[gn]lmer
 #
 # @param x A stanreg object.
 is.mer <- function(x) {
