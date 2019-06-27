@@ -9,7 +9,7 @@ functions {
 data {
   // dimensions
   int<lower=0> K;        // number of predictors
-  int<lower=1> N[2];     // number of observations where y = 0 and y = 1 respectively
+  int<lower=0> N[2];     // number of observations where y = 0 and y = 1 respectively
   vector[K] xbar;        // vector of column-means of rbind(X0, X1)
   int<lower=0,upper=1> dense_X; // flag for dense vs. sparse
   matrix[N[1],K] X0[dense_X];   // centered (by xbar) predictor matrix | y = 0
