@@ -120,6 +120,11 @@ stan_glmer <-
     mc$adapt_delta <- mc$... <- mc$QR <- mc$sparse <- NULL
   glmod <- eval(mc, parent.frame())
   X <- glmod$X
+  if ("b" %in% colnames(X)) {
+    stop("stan_glmer does not allow the name 'b' for predictor variables.", 
+         call. = FALSE)
+  }
+  
   if (prior_PD && !has_outcome_variable(formula)) {
     y <- NULL
   } else {
