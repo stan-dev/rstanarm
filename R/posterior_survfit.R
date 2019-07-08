@@ -238,8 +238,9 @@
 #'   were transformed before passing the data to one of the modeling functions 
 #'   and \emph{not} if transformations were specified inside the model formula.
 #'    
-#' @return A data frame of class \code{survfit.stanjm}. The data frame includes 
-#'   columns for each of the following: 
+#' @return When \code{return_matrix = FALSE} (the default), a data frame of 
+#'   class \code{survfit.stansurv} or \code{survfit.stanjm}. The data frame
+#'   includes columns for each of the following: 
 #'   (i) the median of the posterior predictions (\code{median});
 #'   (ii) each of the lower and upper limits of the corresponding uncertainty 
 #'   interval for the posterior predictions (\code{ci_lb} and \code{ci_ub});
@@ -250,7 +251,17 @@
 #'   (v) the last known survival time on which the prediction is conditional 
 #'   (\code{cond_time}); this will be set to NA if not relevant.
 #'   The returned object also includes a number of additional attributes.
-#' 
+#'   
+#'   When \code{return_matrix = TRUE} a list of matrices is returned. Each 
+#'   matrix contains the predictions evaluated at one step of the 
+#'   extrapolation time sequence (note that if \code{extrapolate = FALSE} 
+#'   then the list will be of length one, i.e. the predictions are only 
+#'   evaluated at one time point for each individual). Each matrix has 
+#'   \code{draws} rows by \code{nrow(newdata)} columns, such that each 
+#'   row contains a vector of predictions generated using a single draw of 
+#'   the model parameters from the posterior distribution. The returned 
+#'   list also includes a number of additional attributes.
+#'    
 #' @seealso 
 #'   \code{\link{plot.survfit.stanjm}} for plotting the estimated survival  
 #'   probabilities \cr
@@ -331,17 +342,18 @@ posterior_survfit <- function(object, ...) UseMethod("posterior_survfit")
 #' @export
 #'
 posterior_survfit.stansurv <- function(object, 
-                                       newdata     = NULL, 
-                                       type        = "surv", 
-                                       extrapolate = TRUE, 
-                                       control     = list(), 
-                                       condition   = FALSE, 
-                                       last_time   = NULL, 
-                                       prob        = 0.95,
-                                       times       = NULL,
-                                       standardise = FALSE, 
-                                       draws       = NULL, 
-                                       seed        = NULL, 
+                                       newdata       = NULL, 
+                                       type          = "surv", 
+                                       extrapolate   = TRUE, 
+                                       control       = list(), 
+                                       condition     = FALSE, 
+                                       last_time     = NULL, 
+                                       prob          = 0.95,
+                                       times         = NULL,
+                                       standardise   = FALSE, 
+                                       draws         = NULL, 
+                                       seed          = NULL,
+                                       return_matrix = FALSE,
                                        ...) {
   
   validate_stansurv_object(object)
@@ -480,6 +492,20 @@ posterior_survfit.stansurv <- function(object,
     attr(surv, "last_time") <- last_time
   }
   
+  # Optionally return draws rather than summarising into median and CI
+  if (return_matrix) {
+    return(structure(surv,
+                     type        = type,
+                     extrapolate = extrapolate, 
+                     control     = control,
+                     condition   = condition,
+                     standardise = standardise, 
+                     last_time   = if (condition) last_time else NULL,
+                     ids         = id_list,
+                     draws       = NROW(stanmat),
+                     seed        = seed))
+  }
+  
   # Summarise posterior draws to get median and CI
   out <- .pp_summarise_surv(surv        = surv,
                             prob        = prob,
@@ -521,6 +547,7 @@ posterior_survfit.stanjm <- function(object,
                                      scale        = 1.5,
                                      draws        = NULL, 
                                      seed         = NULL, 
+                                     return_matrix = FALSE, 
                                      ...) {
   
   validate_stanjm_object(object)
@@ -709,6 +736,20 @@ posterior_survfit.stanjm <- function(object,
     surv <- surv_t
   }
  
+  # Optionally return draws rather than summarising into median and CI
+  if (return_matrix) {
+    return(structure(surv,
+                     type        = type,
+                     extrapolate = extrapolate, 
+                     control     = control,
+                     condition   = condition,
+                     standardise = standardise, 
+                     last_time   = if (condition) last_time else NULL,
+                     ids         = id_list,
+                     draws       = NROW(stanmat),
+                     seed        = seed))
+  }  
+  
   # Summarise posterior draws to get median and CI
   out <- .pp_summarise_surv(surv        = surv,
                             prob        = prob,
