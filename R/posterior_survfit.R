@@ -188,6 +188,12 @@
 #'   default number of draws for \code{stan_jm} models is because dynamic
 #'   predictions (when \code{dynamic = TRUE}) can be slow.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to use.
+#' @param return_matrix A logical. If \code{TRUE} then a list of \code{draws} by 
+#'   \code{nrow(newdata)} matrices is returned. Each matrix contains the actual
+#'   simulations or draws from the posterior predictive distribution. Otherwise
+#'   if \code{return_matrix} is set to \code{FALSE} (the default) then a 
+#'   data frame is returned. See the \strong{Value} section below for more 
+#'   detail.
 #' @param ... Currently unused.
 #' 
 #' @details
