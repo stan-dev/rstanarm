@@ -1298,9 +1298,11 @@ check_pp_ids <- function(object, ids, m = 1) {
 #   variable must be included in the new data frame
 # @return A list of validated data frames
 validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
-                              duplicate_ok = FALSE, response = TRUE) {
+                              duplicate_ok = FALSE, response = TRUE,
+                              needs_time_var = TRUE) {
   validate_stanmvreg_object(object)
   id_var <- object$id_var
+  time_var <- object$time_var
   newdatas <- list()
   if (!is.null(newdataLong)) {
     if (!is(newdataLong, "list"))
@@ -1308,6 +1310,14 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
     dfcheck <- sapply(newdataLong, is.data.frame)
     if (!all(dfcheck))
       stop("'newdataLong' must be a data frame or list of data frames.", call. = FALSE)
+    if (!needs_time_var) {
+      newdataLong <- lapply(newdataLong, function(m) {
+        if (!time_var %in% colnames(m)) {
+          m[[time_var]] <- 0 # hack to pass nacheck below
+        }
+        m
+      })
+    }
     nacheck <- sapply(seq_along(newdataLong), function(m) {
       if (response) { # newdataLong needs the reponse variable
         fmL <- formula(object, m = m)

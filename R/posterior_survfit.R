@@ -26,8 +26,9 @@
 #' \code{condition} argument discussed below). Predictions are obtained 
 #' using unique draws from the posterior distribution of each of the model 
 #' parameters and then summarised into a median and posterior uncertainty 
-#' interval. For \code{stan_jm} models "dynamic" predictions are also allowed
-#' (see the \code{dynamic} argument discussed below).
+#' interval. For \code{stan_jm} models "dynamic" predictions are allowed and
+#' are in fact the default when new data is provided (see the \code{dynamic}
+#' argument discussed below).
 #' 
 #' 
 #' @export
@@ -55,7 +56,8 @@
 #'   for variables with which to predict. If omitted, the model matrices are 
 #'   used. If new data is provided, then it should also contain the longitudinal 
 #'   outcome data on which to condition when drawing the new group-specific 
-#'   coefficients for individuals in the new data. Note that there is only
+#'   coefficients for individuals in the new data unless the \code{dynamic}
+#'   argument is set to \code{FALSE}. Note that there is only
 #'   allowed to be one row of data for each individual in \code{newdataEvent}, 
 #'   that is, time-varying covariates are not allowed in the prediction data for
 #'   the event submodel. Also, \code{newdataEvent} can optionally include a 
@@ -168,10 +170,13 @@
 #'   in the joint modelling context, because the predictions can be updated
 #'   each time additional longitudinal biomarker data is collected on the individual.
 #'   On the other hand, if \code{dynamic = FALSE} then the survival probabilities
-#'   will just be marginalised over the distribution of the group-specific
-#'   coefficients; this will mean that the predictions will incorporate all
-#'   uncertainty due to between-individual variation so there will likely be
-#'   very wide credible intervals on the predicted survival probabilities.
+#'   will be obtained by marginalising over the distribution of the group-specific
+#'   coefficients; this has the benefit that the user does not need to provide
+#'   longitudinal outcome data for the new individuals, but it will also 
+#'   mean that the survival predictions will incorporate all uncertainty due 
+#'   to between-individual variation in the longitudinal trajectories and so 
+#'   there is likely to be very wide credible intervals on the predicted 
+#'   survival probabilities.
 #' @param scale Only relevant for \code{stan_jm} models when new data
 #'   is supplied and \code{dynamic = TRUE}, in which case new random effects 
 #'   are simulated for the individuals in the new data using a 
@@ -213,12 +218,15 @@
 #'   \code{standardise} argument.
 #'   
 #'   For \code{stansurv} objects, the predicted quantities are calculated for  
-#'   each row of the prediction data, at the specified \code{times} as well as 
-#'   any times generated through extrapolation (when \code{extrapolate = TRUE}).
-#'   For \code{stanjm} objects, these quantities are calculated for each 
-#'   individual, at the specified \code{times} as well as any times generated
-#'   through extrapolation (when \code{extrapolate = TRUE}).
+#'   \emph{each row of the prediction data}, at the specified \code{times} as
+#'   well as any times generated through extrapolation (when 
+#'   \code{extrapolate = TRUE}).
 #'   
+#'   For \code{stanjm} objects, the predicted quantities are calculated for 
+#'   \emph{each individual}, at the specified \code{times} as well as any times 
+#'   generated through extrapolation (when \code{extrapolate = TRUE}).
+#'   
+#'   \subsection{Dynamic versus marginalised predictions}{
 #'   The following also applies for \code{stanjm} objects.
 #'   By default the survival probabilities are conditional on an individual's 
 #'   group-specific coefficients (i.e. their individual-level random
@@ -234,8 +242,11 @@
 #'   group-specific coefficients. This has the benefit that the user does
 #'   not need to provide longitudinal outcome measurements for the new 
 #'   individuals, however, it does mean that the predictions will incorporate
-#'   all the uncertainty associated with between-individual variation, since
-#'   the predictions aren't conditional on any observed data for the individual.
+#'   all the uncertainty associated with between-individual variation in the
+#'   biomarker (longitudinal outcome) values since the predictions aren't 
+#'   conditional on any observed biomarker (longitudinal outcome) data for 
+#'   the individual.
+#'   }
 #'   
 #' @note 
 #'   Note that if any variables were transformed (e.g. rescaled) in the data 
@@ -262,10 +273,11 @@
 #'   matrix contains the predictions evaluated at one step of the 
 #'   extrapolation time sequence (note that if \code{extrapolate = FALSE} 
 #'   then the list will be of length one, i.e. the predictions are only 
-#'   evaluated at one time point for each individual). Each matrix has 
-#'   \code{draws} rows by \code{nrow(newdata)} columns, such that each 
-#'   row contains a vector of predictions generated using a single draw of 
-#'   the model parameters from the posterior distribution. The returned 
+#'   evaluated at \code{times} which corresponds to just one time point 
+#'   for each individual). Each matrix will have \code{draws} rows and 
+#'   \code{nrow(newdata)} columns, such that each row contains a 
+#'   vector of predictions generated using a single draw of the model 
+#'   parameters from the posterior distribution. The returned 
 #'   list also includes a number of additional attributes.
 #'    
 #' @seealso 
@@ -593,10 +605,8 @@ posterior_survfit.stanjm <- function(object,
     ndL <- dats[1:M]
     ndE <- dats[["Event"]]
   } else { # user specified newdata
-    if (!dynamic)
-      stop2("Marginalised predictions for the event outcome are ",
-            "not currently implemented.")
-    newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
+    newdatas <- validate_newdatas(object, newdataLong, newdataEvent, 
+                                  response = dynamic, needs_time_var = dynamic)
     ndL <- newdatas[1:M]
     ndE <- newdatas[["Event"]]   
   }
@@ -722,7 +732,8 @@ posterior_survfit.stanjm <- function(object,
                    pars         = pars,
                    type         = type,
                    id_list      = id_list,
-                   standardise  = standardise)
+                   standardise  = standardise,
+                   dynamic      = dynamic)
   
   # Calculate survival probability at last known survival time and then
   # use that to calculate conditional survival probabilities   
@@ -735,7 +746,8 @@ posterior_survfit.stanjm <- function(object,
                                     newdataEvent = ndE, 
                                     pars         = pars,
                                     type         = type,
-                                    id_list      = id_list)
+                                    id_list      = id_list,
+                                    dynamic      = dynamic)
     surv <- lapply(surv_t, function(x) truncate(x / cond_surv, upper = 1))
     attr(surv, "last_time") <- last_time
   } else {
@@ -776,9 +788,11 @@ posterior_survfit.stanjm <- function(object,
                                      newdataEvent = ndE, 
                                      pars         = pars,
                                      type         = type,
-                                     id_list      = id_list)
+                                     id_list      = id_list,
+                                     dynamic      = dynamic)
     surv2 <- lapply(surv_t, function(x) truncate(x / cond_surv2, upper = 1))       
     out2 <- .pp_summarise_surv(surv        = surv2,
+                               prob        = prob,
                                id_var      = id_var,
                                time_var    = time_var,
                                standardise = standardise,
@@ -822,7 +836,8 @@ posterior_survfit.stanjm <- function(object,
                                pars, 
                                type         = "surv", 
                                id_list      = NULL,
-                               standardise  = FALSE) {
+                               standardise  = FALSE,
+                               dynamic      = TRUE) {
   
   if (is.stanjm(object) && !identical(length(times), length(id_list)))
     stop("Bug found: vector of ids should be same length as vector of times.")
@@ -851,7 +866,9 @@ posterior_survfit.stanjm <- function(object,
                          newdataEvent = newdataEvent, 
                          ids          = id_list, 
                          etimes       = times, 
-                         long_parts   = FALSE)
+                         long_parts   = FALSE,
+                         response     = dynamic,
+                         needs_time_var = dynamic)
     out  <- .ll_survival(object, # refactoring for stanjm not yet finished
                          data     = ppdat, 
                          pars     = pars, 

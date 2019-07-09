@@ -425,17 +425,31 @@ pp_data <-
 #   the fitted object (if newdataEvent is NULL) or in newdataEvent.
 # @param long_parts,event_parts A logical specifying whether to return the
 #   design matrices for the longitudinal and/or event submodels.
+# @param response Logical specifying whether the newdataLong requires the
+#   response variable.
 # @return A named list (with components M, Npat, ndL, ndE, yX, tZt, 
 #   yZnames, eXq, assoc_parts) 
-.pp_data_jm <- function(object, newdataLong = NULL, newdataEvent = NULL, 
-                        ids = NULL, etimes = NULL, long_parts = TRUE, 
-                        event_parts = TRUE) {
+.pp_data_jm <- function(object, 
+                        newdataLong  = NULL, 
+                        newdataEvent = NULL, 
+                        ids          = NULL, 
+                        etimes       = NULL, 
+                        long_parts   = TRUE, 
+                        event_parts  = TRUE, 
+                        response     = TRUE,
+                        needs_time_var = TRUE) {
+  
   M <- get_M(object)
+  
   id_var   <- object$id_var
   time_var <- object$time_var
   
   if (!is.null(newdataLong) || !is.null(newdataEvent))
-    newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
+    newdatas <- validate_newdatas(object, 
+                                  newdataLong, 
+                                  newdataEvent, 
+                                  response = response,
+                                  needs_time_var = needs_time_var)
   
   # prediction data for longitudinal submodels
   ndL <- if (is.null(newdataLong)) 
@@ -477,7 +491,7 @@ pp_data <-
   
   if (long_parts && event_parts)
     lapply(ndL, function(x) {
-      if (!time_var %in% colnames(x)) 
+      if (!time_var %in% colnames(x))
         STOP_no_var(time_var)
       if (!id_var %in% colnames(x)) 
         STOP_no_var(id_var)
@@ -507,6 +521,8 @@ pp_data <-
     qtimes <- uapply(qq$points,  unstandardise_qpts, 0, etimes)
     qwts   <- uapply(qq$weights, unstandardise_qwts, 0, etimes)
     starttime <- deparse(formula(object, m = "Event")[[2L]][[2L]])
+    if ((!response) && (!starttime %in% colnames(ndE)))
+      ndE[[starttime]] <- 0
     edat <- prepare_data_table(ndE, id_var, time_var = starttime)
     id_rep <- rep(id_list, qnodes + 1)
     times <- c(etimes, qtimes) # times used to design event submodel matrices
