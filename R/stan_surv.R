@@ -1636,8 +1636,8 @@ get_ok_priors_for_aux <- function(basehaz) {
 get_default_prior_for_aux <- function(basehaz) {
   nm <- get_basehaz_name(basehaz)
   switch(nm,
-         "exp"         = NULL,
-         "exp-aft"     = NULL,
+         "exp"         = list(), # equivalent to NULL
+         "exp-aft"     = list(), # equivalent to NULL
          "weibull"     = normal(),
          "weibull-aft" = normal(),
          "gompertz"    = normal(),
