@@ -190,7 +190,7 @@
 #'     scale parameter, while the log shape parameter for the Gompertz 
 #'     distribution is incorporated as an intercept in the linear predictor.
 #'     The auxiliary parameter has a lower bound at zero. The default prior is  
-#'     a half-normal distribution with mean 0 and scale 2.
+#'     a half-normal distribution with mean 0 and scale 0.5.
 #'   }
 #'   Currently, \code{prior_aux} can be a call to \code{dirichlet}, 
 #'   \code{normal}, \code{student_t}, \code{cauchy} or \code{exponential}. 
@@ -1672,8 +1672,11 @@ get_varcov_names <- function(group) {
 # @param basehaz A list with info about the baseline hazard; see 'handle_basehaz'.
 # @return A scalar.
 get_default_aux_scale <- function(basehaz) {
-  nm <- get_basehaz_name(basehaz)
-  if (nm %in% c("weibull", "weibull-aft", "gompertz")) 2 else 20
+  switch(get_basehaz_name(basehaz),
+         "weibull"     = 2,
+         "weibull-aft" = 2,
+         "gompertz"    = 0.5,
+         20)
 }
 
 # Check if the type of baseline hazard has a closed form
