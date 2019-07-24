@@ -1357,8 +1357,8 @@ tve <- function(x,
   if (!is.null(df) && !is.null(knots))
     stop("Cannot specify both 'df' and 'knots' in the 'tve' function.")
   
-  if (degree < 1)
-    stop("In 'tve' function, 'degree' must be positive.")
+  if (degree < 0)
+    stop("In 'tve' function, 'degree' must be non-negative.")
   
   if (is.null(df) && is.null(knots))
     df <- 3L
@@ -1474,7 +1474,7 @@ handle_basehaz_surv <- function(basehaz,
   } else if (basehaz == "ms") {
     
     bknots <- c(min_t, max_t)
-    iknots <- get_iknots(tt, df = df, iknots = knots, degree = degree)
+    iknots <- get_iknots(tt, df = df, iknots = knots, degree = degree, intercept = TRUE)
     basis  <- get_basis(tt, iknots = iknots, bknots = bknots, degree = degree, type = "ms")      
     nvars  <- ncol(basis)  # number of aux parameters, basis terms
     
@@ -1537,6 +1537,8 @@ basehaz_for_stan <- function(basehaz_name) {
 # @param df The degrees of freedom. If specified, then 'df - degree - intercept'.
 #   knots are placed at evenly spaced percentiles of 'x'. If 'iknots' is 
 #   specified then 'df' is ignored.
+# @param degree Non-negative integer. The degree for the spline basis.
+# @param iknots Optional vector of internal knots.
 # @return A numeric vector of internal knot locations, or NULL if there are
 #   no internal knots.
 get_iknots <- function(x, df = 5L, degree = 3L, iknots = NULL, intercept = FALSE) {
@@ -1925,8 +1927,8 @@ handle_tve <- function(formula, min_t, max_t, times, status) {
       if (!is.null(df) && !is.null(knots))
         stop("Cannot specify both 'df' and 'knots' in the 'tve' function.")
       
-      if (degree < 1)
-        stop("In 'tve' function, 'degree' must be positive.")
+      if (degree < 0)
+        stop("In 'tve' function, 'degree' must be non-negative.")
       
       if (is.null(df) && is.null(knots))
         df <- 3L
@@ -1958,7 +1960,7 @@ handle_tve <- function(formula, min_t, max_t, times, status) {
 
         return(list(
           type = type,
-          call = sub("^list\\(", "splines::bs\\(times__, ", safe_deparse(new_args))))
+          call = sub("^list\\(", "splines2::bSpline\\(times__, ", safe_deparse(new_args))))
         
       } else if (type == "pw") {
         
