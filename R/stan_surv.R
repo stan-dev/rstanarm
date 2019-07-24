@@ -1598,8 +1598,8 @@ get_smooth_name <- function(x, type = "smooth_coefs") {
     return(NULL)  
 
   nms <- colnames(x)
-  nms <- gsub(":splines::bs\\(times__.*\\)[0-9]*$", ":tve-bs-coef", nms)
-  nms <- gsub(":base::cut\\(times__.*\\]$",         ":tve-pw-coef", nms)
+  nms <- gsub(":splines2::bSpline\\(times__.*\\)[0-9]*$", ":tve-bs-coef", nms)
+  nms <- gsub(":base::cut\\(times__.*\\]$",               ":tve-pw-coef", nms)
  
   nms_trim <- gsub(":tve-[a-z][a-z]-coef[0-9]*$", "", nms)
   tally    <- table(nms_trim)
