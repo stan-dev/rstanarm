@@ -923,3 +923,85 @@ if (run_sims) {
   validate_relbias(sims_ms_i)
   
 }
+
+# run simulations to check piecewise constant time-varying effects
+if (run_sims) {
+  
+  # number of simulations (for each model specification)
+  n_sims <- 250
+  
+  # define a function to fit the model to one simulated dataset
+  sim_run <- function(N = 600,                 # number of individuals
+                      type = "bs",             # model to use for tve
+                      return_relb = FALSE) {         
+    
+    # simulate data
+    covs <- data.frame(id  = 1:N,
+                       trt = rbinom(N, 1, 0.5))
+    
+    dat <- simsurv(dist    = "exponential",
+                   x       = covs,
+                   lambdas = c(0.15),
+                   betas   = c(trt = -0.4),
+                   tde     = c(trt = 0.8),
+                   tdefun  = function(t) as.numeric(t > 4),
+                   maxt    = 15)
+    
+    dat <- merge(covs, dat)
+    
+    # define appropriate model formula
+    if (type == "bs") {
+      ff <- Surv(eventtime, status) ~ tve(trt, degree = 0, knots = 4)
+    } else {
+      ff <- Surv(eventtime, status) ~ tve(trt, type = "pw", knots = 4)
+    }
+    
+    # fit model
+    mod <- stan_surv(formula = ff,
+                     data    = dat, 
+                     basehaz = "exp", 
+                     chains  = 1,
+                     refresh = 0,
+                     iter    = 1000)
+    
+    # true parameters (hard coded here)
+    true <- c(intercept = log(0.15),
+              trt       = -0.4,
+              trt_tve   = 0.8)
+    
+    # extract parameter estimates
+    ests <- c(intercept = fixef(mod)[1L],
+              trt       = fixef(mod)[2L],
+              trt_tve   = fixef(mod)[3L])
+    
+    if (return_relb)
+      return(as.vector((ests - true) / true))
+    
+    list(true = true,
+         ests = ests,
+         bias = ests - true,
+         relb = (ests - true) / true)
+  }
+  
+  # functions to summarise the simulations and check relative bias
+  summarise_sims <- function(x) {
+    rbind(true = colMeans(do.call(rbind, x["true",])),
+          ests = colMeans(do.call(rbind, x["ests",])),
+          bias = colMeans(do.call(rbind, x["bias",])),
+          relb = colMeans(do.call(rbind, x["relb",])))
+  }
+  validate_relbias <- function(x, tol = 0.05) {
+    relb <- as.vector(summarise_sims(x)["relb",])
+    expect_equal(relb, rep(0, length(relb)), tol = tol)
+  }
+  
+  # tve models
+  set.seed(5050)
+  sims_bs <- replicate(n_sims, sim_run(type = "bs"))
+  validate_relbias(sims_bs)
+  
+  set.seed(6060)
+  sims_pw <- replicate(n_sims, sim_run(type = "pw"))
+  validate_relbias(sims_pw)
+
+}
