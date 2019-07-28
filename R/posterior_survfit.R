@@ -89,7 +89,7 @@
 #'   \itemize{
 #'     \item \code{epoints}: a positive integer specifying the number of 
 #'     discrete time points at which to calculate the forecasted survival 
-#'     probabilities. The default is 10.
+#'     probabilities. The default is 100.
 #'     \item \code{edist}: a positive scalar specifying the amount of time 
 #'     across which to forecast the estimated survival function, represented 
 #'     in the same units of time as were used for the event times in the fitted 

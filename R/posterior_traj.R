@@ -73,13 +73,13 @@
 #'     event or censoring time if no new data is provided; the time specified
 #'     in the "last_time" column if provided in the new data (see \strong{Details}
 #'     section below); or the time of the last longitudinal measurement if new
-#'     data is provided but no "last_time" column is included. The default is 15.}
+#'     data is provided but no "last_time" column is included. The default is 100.}
 #'     \item{\code{epoints}}{a positive integer specifying the number of discrete 
 #'     time points at which to calculate the estimated longitudinal response for
 #'     \code{extrapolate = TRUE}. These time points are evenly spaced between the 
 #'     last known observation time for each individual and the extrapolation 
 #'     distance specifed using either \code{edist} or \code{eprop}.
-#'     The default is 15.}
+#'     The default is 100.}
 #'     \item{\code{eprop}}{a positive scalar between 0 and 1 specifying the 
 #'     amount of time across which to extrapolate the longitudinal trajectory,
 #'     represented as a proportion of the total observed follow up time for each
@@ -802,7 +802,7 @@ handle_obs_data <- function(data, y_var, i_var, t_var, g_var) {
 # @return A named list
 extrapolation_control <- 
   function(control = list(), ok_args = c("epoints", "edist", "eprop")) {
-  defaults <- list(ipoints = 15, epoints = 15, edist = NULL, eprop = 0.2, last_time = NULL)
+  defaults <- list(ipoints = 100, epoints = 100, edist = NULL, eprop = 0.2, last_time = NULL)
   if (!is.list(control)) {
     stop("'control' should be a named list.")
   } else if (!length(control)) {
