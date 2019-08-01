@@ -110,7 +110,13 @@ loo_R2.stanreg <- function(object, ...) {
   
   S <- nrow(mu_pred)
   N <- ncol(mu_pred)
-  
+
+  # set the random seed as the seed used in the first chain and ensure
+  # the old RNG state is restored on exit
+  rng_state_old <- .Random.seed
+  on.exit(assign(".Random.seed", rng_state_old, envir = .GlobalEnv))
+  set.seed(object$stanfit@stan_args[[1]]$seed)
+
   # dirichlet weights 
   exp_draws <- matrix(rexp(S * N, rate = 1), nrow = S, ncol = N)
   wts <- exp_draws / rowSums(exp_draws)
