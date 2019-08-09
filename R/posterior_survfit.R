@@ -187,11 +187,12 @@
 #'   Student-t proposal distribution in the Metropolis-Hastings algorithm.
 #' @param draws An integer specifying the number of MCMC draws to use when
 #'   evaluating the predicted quantities. For \code{stan_surv} models, the
-#'   default number of draws is the size of the posterior sample.
-#'   For \code{stan_jm} models, the default number of draws is 200 (or the 
-#'   size of the posterior sample if that is less than 200). The smaller
-#'   default number of draws for \code{stan_jm} models is because dynamic
-#'   predictions (when \code{dynamic = TRUE}) can be slow.
+#'   default number of draws is 400 (or the size of the posterior sample if 
+#'   that is less than 400). For \code{stan_jm} models, the default number 
+#'   of draws is 200 (or the size of the posterior sample if that is less 
+#'   than 200). The smaller default number of draws for \code{stan_jm} 
+#'   models is because dynamic predictions (when \code{dynamic = TRUE}) 
+#'   can be slow.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to use.
 #' @param return_matrix A logical. If \code{TRUE} then a list of \code{draws} by 
 #'   \code{nrow(newdata)} matrices is returned. Each matrix contains the actual
@@ -487,7 +488,7 @@ posterior_survfit.stansurv <- function(object,
   }
   
   # Get stanmat parameter matrix for specified number of draws
-  stanmat <- sample_stanmat(object, draws = draws, default_draws = NA)
+  stanmat <- sample_stanmat(object, draws = draws, default_draws = 400)
   pars    <- extract_pars(object, stanmat)
   
   # Calculate survival probability at each increment of extrapolation sequence
