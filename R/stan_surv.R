@@ -1951,31 +1951,23 @@ handle_tve <- function(formula, min_t, max_t, times, status) {
 
       if (type == "bs") {
         
-        bknots <- c(min_t, max_t)
         iknots <- get_iknots(tt, df = df, iknots = knots)
-       
+ 
+        bknots <- c(min_t, max_t)
+        
         new_args <- list(knots          = iknots,
                          Boundary.knots = bknots,
                          degree         = degree)
 
         return(list(
           type = type,
-          call = sub("^list\\(", "splines2::bSpline\\(times__, ", safe_deparse(new_args))))
-        
-      } else if (type == "pw") {
-        
-        iknots <- get_iknots(tt, df = df, degree = 0, iknots = knots)
-        
-        new_args <- list(breaks = c(min_t, iknots, max_t),
-                         include.lowest = TRUE)
-        
-        return(list(
-          type = type,
-          call = sub("^list\\(", "base::cut\\(times__, ", safe_deparse(new_args))))
+          call = sub("^list\\(", "splines2::bSpline\\(times__, ", 
+                     deparse(new_args, 500L, control = c("all", "hexNumeric")))))
+                      # NB use of hexNumeric to ensure numeric accuracy is maintained
         
       }
 
-    }  
+    }
     
     tt_parsed <- eval(parse(text = all_vars[sel[i]]))
     tt_terms  <- which(attr(Terms, "factors")[i, ] > 0)
