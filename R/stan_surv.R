@@ -309,22 +309,19 @@
 #'   \code{formula}, e.g. \code{Surv(time, status) ~ tve(sex) + age + trt}. 
 #'   The coefficient for \code{sex} will then be modelled using a flexible 
 #'   smooth function based on a cubic B-spline expansion of time.
-#'   Alternatively we can use a piecewise constant function to model the 
-#'   time-varying coefficient by specifying \code{tve(sex, type = "pw")}.
 #'   
 #'   Additional arguments used to control the modelling of the time-varying 
-#'   effect are explained in the \code{\link{tve}} documentation. 
-#'   In particular, the flexibility of the function can primarily be 
-#'   controlled by increasing or decreasing the degrees of freedom
-#'   (i.e. the number of B-spline basis terms or the number of
-#'   time intervals in the piecewise constant function). For example, to 
-#'   use cubic B-splines with 7 degrees of freedom we could specify 
-#'   \code{tve(sex, df = 7)} in the model formula instead of just
-#'   \code{tve(sex)}.
+#'   effect are explained in the \code{\link{tve}} documentation.
+#'   Of particular note is the fact that a piecewise constant basis is 
+#'   allowed as a special case of the B-splines. For example, specifying
+#'   \code{tve(sex, degree = 0)} in the model formula instead of just
+#'   \code{tve(sex)} would request a piecewise constant time-varying effect.
+#'   The user can also control the degrees of freedom or knot locations for
+#'   the B-spline (or piecewise constant) function.
 #'   
-#'   It is worth noting however that an additional way to control the
+#'   It is worth noting that an additional way to control the
 #'   flexibility of the function used to model the time-varying effect
-#'   is through the priors. A random walk prior is used for the piecewise 
+#'   is through priors. A random walk prior is used for the piecewise 
 #'   constant or B-spline coefficients, and the hyperparameter (standard 
 #'   deviation) of the random walk prior can be controlled via the 
 #'   \code{prior_smooth} argument. This is a more indirect way to 
@@ -334,11 +331,9 @@
 #'   more explicit details on the formulation of the time-varying effects
 #'   and the prior distributions used for their coefficients.
 #'   
-#'   In practice, the default \code{tve()} function should provide sufficient 
-#'   flexibility for modelling most time-varying effects. However, it is worth
-#'   noting that reliable estimation of a time-varying effect usually 
-#'   requires a relatively large number of events in the data (e.g. say >1000,
-#'   depending on the setting).
+#'   It is worth noting that reliable estimation of a time-varying effect  
+#'   usually requires a relatively large number of events in the data (e.g. 
+#'   say >1000 depending on the setting).
 #' }
 #'              
 #' @examples
@@ -408,7 +403,7 @@
 #'               maxt    = 5)
 #' d4 <- merge(d4, covs)
 #' m4 <- stan_surv(Surv(eventtime, status) ~ 
-#'                   tve(trt, type = "pw", knots = c(2.5)), 
+#'                   tve(trt, degree = 0, knots = c(2.5)), 
 #'                 data = d4, chains = 1, refresh = 0, iter = 600)
 #' print(m4, 4)
 #' plot(m4, "tve") # time-varying hazard ratio
@@ -1270,10 +1265,12 @@ stan_surv <- function(formula,
 #' This is a special function that can be used in the formula of a Bayesian 
 #' survival model estimated using \code{\link{stan_surv}}. It specifies that a 
 #' time-varying coefficient should be estimated for the covariate \code{x}. 
-#' The \code{tve} function only has meaning when evaluated within the formula 
-#' of a \code{\link{stan_surv}} call and does not have meaning outside of that 
+#' The time-varying coefficient is currently modelled using B-splines (with
+#' piecewise constant included as a special case). Note that the \code{tve} 
+#' function only has meaning when evaluated within the formula of a 
+#' \code{\link{stan_surv}} call and does not have meaning outside of that 
 #' context. The exported function documented here just returns \code{x}. 
-#' However, when called internally the \code{tve} function returns several 
+#' However when called internally the \code{tve} function returns several 
 #' other pieces of useful information used in the model fitting.
 #' 
 #' @export
@@ -1281,36 +1278,28 @@ stan_surv <- function(formula,
 #' @param x The covariate for which a time-varying coefficient should be 
 #'   estimated.
 #' @param type The type of function used to model the time-varying coefficient.
-#'   Can currently be one of the following:
-#'   \itemize{
-#'   \item \code{"bs"}: A B-spline function (the default). Note that cubic 
-#'   B-splines are used by default, but this can be changed by the user via the 
-#'   \code{degree} argument described below.
-#'   \item \code{"pw"}: A piecewise constant function with the number of 
-#'   "pieces" or "time intervals" determined by either the \code{df} or 
-#'   \code{knots} arguments described below.
-#'   }
+#'   Currently only \code{type = "bs"} is allowed. This corresponds to a
+#'   B-spline function. Note that \emph{cubic} B-splines are used by default
+#'   but this can be changed by the user via the \code{degree} argument 
+#'   described below. Of particular note is that \code{degree = 0} is 
+#'   is treated as a special case corresponding to a piecewise constant basis.
 #' @param df A positive integer specifying the degrees of freedom 
-#'   for the piecewise constant or B-spline function. 
-#'   When \code{type = "bs"} two boundary knots and \code{df - degree} 
+#'   for the B-spline function. Two boundary knots and \code{df - degree} 
 #'   internal knots are used to generate the B-spline function.
-#'   When \code{type = "pw"} two boundary knots and \code{df} 
-#'   internal knots are used to generate the piecewise constant function.
 #'   The internal knots are placed at equally spaced percentiles of the 
-#'   distribution of the uncensored event times.
-#'   The default is to use \code{df = 3} unless \code{df} or \code{knots} is 
-#'   explicitly specified by the user.
+#'   distribution of the uncensored event times. The default is to use 
+#'   \code{df = 3} unless \code{df} or \code{knots} is explicitly 
+#'   specified by the user.
 #' @param knots A numeric vector explicitly specifying internal knot  
-#'   locations for the piecewise constant or B-spline function. Note that 
-#'   \code{knots} cannot be specified if \code{df} is specified. Also note
-#'   that this argument only controls the \emph{internal} knot locations. 
-#'   In addition, boundary knots are placed at the earliest entry time and  
-#'   latest event or censoring time and these cannot be changed by the user.
+#'   locations for the B-spline function. Note that \code{knots} cannot be 
+#'   specified if \code{df} is specified. Also note that this argument only 
+#'   controls the \emph{internal} knot locations. In addition, boundary 
+#'   knots are placed at the earliest entry time and latest event or 
+#'   censoring time and these cannot be changed by the user.
 #' @param degree A positive integer specifying the degree for the B-spline 
 #'   function. The order of the B-spline is equal to \code{degree + 1}.
-#'   This argument is only relevant for B-splines (i.e. when 
-#'   \code{type = "bs"}) and not for the piecewise constant function (when
-#'   \code{type = "pw"}).
+#'   Note that \code{degree = 0} is allowed and is treated as a special
+#'   case corresponding to a piecewise constant basis.
 #'     
 #' @return The exported \code{tve} function documented here just returns 
 #'   \code{x}. However, when called internally the \code{tve} function returns 
@@ -1322,17 +1311,18 @@ stan_surv <- function(formula,
 #'   \itemize{
 #'   \item \code{tt_vars}: A list with the names of variables in the model
 #'   formula that were wrapped in the \code{tve} function.
-#'   \item \code{tt_types}: A list with the \code{type} (e.g. \code{"bs"},
-#'   \code{"pw"}) of \code{tve} function corresponding to each variable in 
-#'   \code{tt_vars}.
+#'   \item \code{tt_types}: A list with the \code{type} (e.g. \code{"bs"}) 
+#'   of \code{tve} function corresponding to each variable in \code{tt_vars}.
+#'   \item \code{tt_degrees}: A list with the \code{degree} for the
+#'   B-spline function corresponding to each variable in \code{tt_vars}.
 #'   \item \code{tt_calls}: A list with the call required to construct the
 #'   transformation of time for each variable in \code{tt_vars}.
 #'   \item \code{tt_forms}: Same as \code{tt_calls} but expressed as formulas.
 #'   \item \code{tt_frame}: A single formula that can be used to generate a 
-#'   model frame that contains the unique set of transformations of time (e.g. 
-#'   basis terms or dummy indicators) that are required to build all 
-#'   time-varying coefficients in the model. In other words a single formula
-#'   with the unique element(s) contained in \code{tt_forms}.
+#'   model frame that contains the unique set of transformations of time 
+#'   (i.e. the basis terms) that are required to build all time-varying 
+#'   coefficients in the model. In other words a single formula with the 
+#'   unique element(s) contained in \code{tt_forms}.
 #'   }
 #'
 #' @examples 
@@ -1341,13 +1331,13 @@ stan_surv <- function(formula,
 #' 
 #' # Internally the function returns and stores information 
 #' # used to form the time-varying coefficients in the model
-#' m1 <- stan_surv(Surv(futimeYears, death) ~ tve(trt) + tve(sex, "pw"),
+#' m1 <- stan_surv(Surv(futimeYears, death) ~ tve(trt) + tve(sex, degree = 0),
 #'                 data = pbcSurv, chains = 1, iter = 50)
 #' m1$formula[["tt_vars"]]
 #' m1$formula[["tt_forms"]]
 #'  
 tve <- function(x, 
-                type   = c("bs", "pw"), 
+                type   = "bs", 
                 df     = NULL, 
                 knots  = NULL,
                 degree = 3L) {
@@ -1599,8 +1589,7 @@ get_smooth_name <- function(x, type = "smooth_coefs") {
 
   nms <- colnames(x)
   nms <- gsub(":splines2::bSpline\\(times__.*\\)[0-9]*$", ":tve-bs-coef", nms)
-  nms <- gsub(":base::cut\\(times__.*\\]$",               ":tve-pw-coef", nms)
- 
+
   nms_trim <- gsub(":tve-[a-z][a-z]-coef[0-9]*$", "", nms)
   tally    <- table(nms_trim)
   indices  <- uapply(tally, seq_len)
@@ -1811,13 +1800,14 @@ parse_formula_and_data <- function(formula, data) {
                           max_t  = max_t, 
                           times  = t_end, 
                           status = status)
-  tf_form  <- tve_stuff$tf_form
-  td_form  <- tve_stuff$td_form  # may be NULL
-  tt_vars  <- tve_stuff$tt_vars  # may be NULL
-  tt_frame <- tve_stuff$tt_frame # may be NULL
-  tt_types <- tve_stuff$tt_types # may be NULL
-  tt_calls <- tve_stuff$tt_calls # may be NULL
-  tt_forms <- tve_stuff$tt_forms # may be NULL
+  tf_form    <- tve_stuff$tf_form
+  td_form    <- tve_stuff$td_form    # may be NULL
+  tt_vars    <- tve_stuff$tt_vars    # may be NULL
+  tt_frame   <- tve_stuff$tt_frame   # may be NULL
+  tt_types   <- tve_stuff$tt_types   # may be NULL
+  tt_degrees <- tve_stuff$tt_degrees # may be NULL
+  tt_calls   <- tve_stuff$tt_calls   # may be NULL
+  tt_forms   <- tve_stuff$tt_forms   # may be NULL
 
   # just fixed-effect part of formula
   fe_form   <- lme4::nobars(tf_form)
@@ -1842,6 +1832,7 @@ parse_formula_and_data <- function(formula, data) {
         tt_vars,
         tt_frame,
         tt_types,
+        tt_degrees,
         tt_calls,
         tt_forms,
         fe_form,
@@ -1906,9 +1897,10 @@ handle_tve <- function(formula, min_t, max_t, times, status) {
   
   # extract 'tve(x, ...)' from formula and return '~ x' and '~ bs(times, ...)'
   idx <- 1
-  tt_vars  <- list()
-  tt_types <- list()
-  tt_calls <- list()
+  tt_vars    <- list()
+  tt_types   <- list()
+  tt_degrees <- list()
+  tt_calls   <- list()
   
   for (i in seq_along(sel)) {
     
@@ -1916,11 +1908,10 @@ handle_tve <- function(formula, min_t, max_t, times, status) {
     #
     # @param x The variable the time-varying effect is going to be applied to.
     # @param type Character string, the type of time-varying effect to use. Can
-    #   currently be one of: bs, ms, pw.
-    # @param ... Additional arguments passed by the user that control aspects of
-    #   the time-varying effect.
+    #   currently only be "bs".
+    # @param df,knots,degree Additional arguments passed to splines2::bSpline.
     # @return The call used to construct a time-varying basis.
-    tve <- function(x, type = c("bs", "pw"), df = NULL, knots = NULL, degree = 3L) {
+    tve <- function(x, type = "bs", df = NULL, knots = NULL, degree = 3L) {
       
       type <- match.arg(type)
       
@@ -1960,10 +1951,11 @@ handle_tve <- function(formula, min_t, max_t, times, status) {
                          degree         = degree)
 
         return(list(
-          type = type,
-          call = sub("^list\\(", "splines2::bSpline\\(times__, ", 
-                     deparse(new_args, 500L, control = c("all", "hexNumeric")))))
-                      # NB use of hexNumeric to ensure numeric accuracy is maintained
+          type   = type,
+          degree = degree,
+          call   = sub("^list\\(", "splines2::bSpline\\(times__, ", 
+                       deparse(new_args, 500L, control = c("all", "hexNumeric")))))
+                       # NB use of hexNumeric to ensure numeric accuracy is maintained
         
       }
 
@@ -1972,9 +1964,10 @@ handle_tve <- function(formula, min_t, max_t, times, status) {
     tt_parsed <- eval(parse(text = all_vars[sel[i]]))
     tt_terms  <- which(attr(Terms, "factors")[i, ] > 0)
     for (j in tt_terms) {
-      tt_vars [[idx]] <- tf_terms[j]
-      tt_types[[idx]] <- tt_parsed$type
-      tt_calls[[idx]] <- tt_parsed$call
+      tt_vars   [[idx]] <- tf_terms[j]
+      tt_types  [[idx]] <- tt_parsed$type
+      tt_degrees[[idx]] <- tt_parsed$degree
+      tt_calls  [[idx]] <- tt_parsed$call
       idx <- idx + 1
     }
   }
@@ -2005,6 +1998,7 @@ handle_tve <- function(formula, min_t, max_t, times, status) {
         tt_vars,
         tt_frame,
         tt_types,
+        tt_degrees,
         tt_calls,
         tt_forms)
 }

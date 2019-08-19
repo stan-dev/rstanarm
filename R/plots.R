@@ -258,20 +258,21 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       betas_td <- stanpars$beta_tve[, sel2, drop = FALSE]
       betas    <- cbind(betas_tf, betas_td)
 
-      tt_varid <- unique(x$formula$tt_map[smooth_map == sel1])
-      tt_type  <- x$formula$tt_types[[tt_varid]]
-      tt_form  <- x$formula$tt_forms[[tt_varid]]
-      tt_data  <- data.frame(times__ = times)
-      tt_x     <- model.matrix(tt_form, tt_data)
+      tt_varid  <- unique(x$formula$tt_map[smooth_map == sel1])
+      tt_type   <- x$formula$tt_types  [[tt_varid]]
+      tt_degree <- x$formula$tt_degrees[[tt_varid]]
+      tt_form   <- x$formula$tt_forms  [[tt_varid]]
+      tt_data   <- data.frame(times__ = times)
+      tt_x      <- model.matrix(tt_form, tt_data)
       
-      coef     <- linear_predictor(betas, tt_x)
+      coef      <- linear_predictor(betas, tt_x)
       
-      is_aft   <- get_basehaz_name(x$basehaz) %in% c("exp-aft", "weibull-aft")
+      is_aft    <- get_basehaz_name(x$basehaz) %in% c("exp-aft", "weibull-aft")
       
-      plotdat  <- median_and_bounds(exp(coef), prob, na.rm = TRUE)  
-      plotdat  <- data.frame(times, plotdat)
+      plotdat   <- median_and_bounds(exp(coef), prob, na.rm = TRUE)  
+      plotdat   <- data.frame(times, plotdat)
 
-      uses_step_stair <- (tt_type %in% c("pw", "piecewise"))
+      uses_step_stair <- (tt_degree == 0)
       
       xlab <- "Time"
       ylab <- ifelse(is_aft, 

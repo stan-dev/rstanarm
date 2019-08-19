@@ -162,20 +162,14 @@ test_that("prior arguments work", {
 test_that("tve function works", {
   es(up(testmod, formula. = s ~ tve(x1) + x2))
   es(up(testmod, formula. = s ~ tve(x1) + tve(x2)))
-  es(up(testmod, formula. = s ~ tve(x1, type = "bs") + tve(x2, type = "pw")))
+  es(up(testmod, formula. = s ~ tve(x1, knots = 1) + tve(x2, knots = 2)))
 })  
 
 test_that("tve function works: b-spline optional arguments", {
-  es(up(testmod, formula. = s ~ tve(x1, type = "bs", knots = c(1,2)) + x2))
-  es(up(testmod, formula. = s ~ tve(x1, type = "bs", df = 4)         + x2))
-  es(up(testmod, formula. = s ~ tve(x1, type = "bs", degree = 2)     + x2))
-  ee(up(testmod, formula. = s ~ tve(x1, type = "bs", junk = 2)       + x2), "unused")
-})
-
-test_that("tve function works: piecewise optional arguments", {
-  es(up(testmod, formula. = s ~ tve(x1, type = "pw", knots = c(1,2)) + x2))
-  es(up(testmod, formula. = s ~ tve(x1, type = "pw", df = 4)         + x2))
-  ee(up(testmod, formula. = s ~ tve(x1, type = "pw", junk = 2)       + x2), "unused")
+  es(up(testmod, formula. = s ~ tve(x1, knots = c(1,2)) + x2))
+  es(up(testmod, formula. = s ~ tve(x1, df = 4)         + x2))
+  es(up(testmod, formula. = s ~ tve(x1, degree = 0)     + x2))
+  ee(up(testmod, formula. = s ~ tve(x1, junk = 2)       + x2), "unused")
 })
 
 
@@ -214,13 +208,13 @@ o<-SW(f12 <- up(f5, Surv(futimeYears, death) ~ sex + tve(trt)))
 o<-SW(f13 <- up(f6, Surv(futimeYears, death) ~ sex + tve(trt)))
 o<-SW(f14 <- up(f7, Surv(futimeYears, death) ~ sex + tve(trt)))
 
-o<-SW(f15 <- up(f1, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
-o<-SW(f16 <- up(f2, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
-o<-SW(f17 <- up(f3, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
-o<-SW(f18 <- up(f4, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
-o<-SW(f19 <- up(f5, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
-o<-SW(f20 <- up(f6, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
-o<-SW(f21 <- up(f7, Surv(futimeYears, death) ~ sex + tve(trt, type = "pw")))
+o<-SW(f15 <- up(f1, Surv(futimeYears, death) ~ sex + tve(trt, degree = 0)))
+o<-SW(f16 <- up(f2, Surv(futimeYears, death) ~ sex + tve(trt, degree = 0)))
+o<-SW(f17 <- up(f3, Surv(futimeYears, death) ~ sex + tve(trt, degree = 0)))
+o<-SW(f18 <- up(f4, Surv(futimeYears, death) ~ sex + tve(trt, degree = 0)))
+o<-SW(f19 <- up(f5, Surv(futimeYears, death) ~ sex + tve(trt, degree = 0)))
+o<-SW(f20 <- up(f6, Surv(futimeYears, death) ~ sex + tve(trt, degree = 0)))
+o<-SW(f21 <- up(f7, Surv(futimeYears, death) ~ sex + tve(trt, degree = 0)))
 
 # start-stop notation (incl. delayed entry)
 o<-SW(f22 <- up(f1, Surv(t0, futimeYears, death) ~ sex + trt))
@@ -527,7 +521,7 @@ compare_surv(data = dat, basehaz = "weibull-aft")
 
 #--------  Check parameter estimates: stan (tve) vs coxph (tt)  ---------------
 
-# NB: this only checks piecewise constant hazard ratio (not B-spline)
+# NB: this only checks piecewise constant hazard ratio
 
 set.seed(SEED)
 
@@ -551,7 +545,7 @@ o<-SW(surv1 <- coxph(
   tt      = function(x, t, ...) { x * as.numeric(t > 10) }))
 
 o<-SW(stan1 <- stan_surv(
-  formula = Surv(eventtime, status) ~ tve(X1, type = "pw", knots = c(10)) + X2, 
+  formula = Surv(eventtime, status) ~ tve(X1, degree = 0, knots = c(10)) + X2, 
   data    = merge(dat, covs),
   basehaz = "exp",
   chains  = CHAINS, 
@@ -931,9 +925,7 @@ if (run_sims) {
   n_sims <- 250
   
   # define a function to fit the model to one simulated dataset
-  sim_run <- function(N = 600,                 # number of individuals
-                      type = "bs",             # model to use for tve
-                      return_relb = FALSE) {         
+  sim_run <- function(N = 600, return_relb = FALSE) {         
     
     # simulate data
     covs <- data.frame(id  = 1:N,
@@ -950,11 +942,7 @@ if (run_sims) {
     dat <- merge(covs, dat)
     
     # define appropriate model formula
-    if (type == "bs") {
-      ff <- Surv(eventtime, status) ~ tve(trt, degree = 0, knots = 4)
-    } else {
-      ff <- Surv(eventtime, status) ~ tve(trt, type = "pw", knots = 4)
-    }
+    ff <- Surv(eventtime, status) ~ tve(trt, degree = 0, knots = 4)
     
     # fit model
     mod <- stan_surv(formula = ff,
@@ -997,11 +985,7 @@ if (run_sims) {
   
   # tve models
   set.seed(5050)
-  sims_bs <- replicate(n_sims, sim_run(type = "bs"))
-  validate_relbias(sims_bs)
-  
-  set.seed(6060)
-  sims_pw <- replicate(n_sims, sim_run(type = "pw"))
+  sims_pw <- replicate(n_sims, sim_run())
   validate_relbias(sims_pw)
 
 }
