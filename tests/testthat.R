@@ -22,5 +22,5 @@ Sys.unsetenv("R_TESTS")
 example(example_model)
 if (!grepl("^sparc",  R.version$platform)) 
   test_check("rstanarm", invert = FALSE,
-             filter = if (Sys.getenv("NOT_CRAN") != "true") "functions")
+             filter = if (Sys.getenv("NOT_CRAN") != "true") "stan")
 

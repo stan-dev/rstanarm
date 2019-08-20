@@ -25,7 +25,16 @@
 #'   have elements for the \code{regularization}, \code{concentration} 
 #'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
+#' @param importance_resampling Logical scalar indicating whether to use 
+#'   importance resampling when approximating the posterior distribution with
+#'   a multivariate normal around the posterior mode, which only applies
+#'   when \code{algorithm} is \code{"optimizing"} but defaults to \code{TRUE}
+#'   in that case
+#' @param keep_every Positive integer, which defaults to 1, but can be higher
+#'   in order to "thin" the importance sampling realizations. Applies only
+#'   when \code{importance_resampling=TRUE}.
 #' @importFrom lme4 mkVarCorr
+#' @importFrom loo psis
 stan_glm.fit <- 
   function(x, y, 
            weights = rep(1, NROW(y)), 
@@ -43,7 +52,9 @@ stan_glm.fit <-
            mean_PPD = algorithm != "optimizing",
            adapt_delta = NULL, 
            QR = FALSE, 
-           sparse = FALSE) {
+           sparse = FALSE,
+           importance_resampling = algorithm == "optimizing",
+           keep_every = algorithm == "optimizing") {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
@@ -72,15 +83,21 @@ stan_glm.fit <-
   if (!length(link)) 
     stop("'link' must be one of ", paste(supported_links, collapse = ", "))
   
-  if (binom_y_prop(y, family, weights))
+  if (binom_y_prop(y, family, weights)) {
     stop("To specify 'y' as proportion of successes and 'weights' as ",
          "number of trials please use stan_glm rather than calling ",
-         "stan_glm.fit directly.")
+         "stan_glm.fit directly.", call. = FALSE)
+  }
   
   y <- validate_glm_outcome_support(y, family)
+  trials <- NULL
   if (is.binomial(family$family) && NCOL(y) == 2L) {
     trials <- as.integer(y[, 1L] + y[, 2L])
     y <- as.integer(y[, 1L])
+    if (length(y == 1)) {
+      y <- array(y)
+      trials <- array(trials)
+    }
   }
 
   # useless assignments to pass R CMD check
@@ -175,6 +192,8 @@ stan_glm.fit <-
     }
     for (i in names(prior_smooth_stuff))
       assign(i, prior_smooth_stuff[[i]])
+    
+    prior_scale_for_smooth <- array(prior_scale_for_smooth)
   } else {
     prior_dist_for_smooth <- 0L
     prior_mean_for_smooth <- array(NA_real_, dim = 0)
@@ -183,7 +202,7 @@ stan_glm.fit <-
   }
   
   famname <- supported_families[fam]
-  is_bernoulli <- is.binomial(famname) && all(y %in% 0:1)
+  is_bernoulli <- is.binomial(famname) && all(y %in% 0:1) && is.null(trials)
   is_nb <- is.nb(famname)
   is_gaussian <- is.gaussian(famname)
   is_gamma <- is.gamma(famname)
@@ -201,6 +220,20 @@ stan_glm.fit <-
       stop("To use this combination of family and link ", 
            "the model must have an intercept.")
   }
+  
+  # allow prior_PD even if no y variable
+  if (is.null(y)) {
+    if (!prior_PD) {
+      stop("Outcome variable must be specified if 'prior_PD' is not TRUE.")
+    } else {
+      y <- fake_y_for_prior_PD(N = NROW(x), family = family)
+      if (is_gaussian && 
+          (prior_autoscale || prior_autoscale_for_intercept || prior_autoscale_for_aux)) {
+        message("'y' not specified, will assume sd(y)=1 when calculating scaled prior(s). ")
+      }
+    }
+  }
+  
   
   if (is_gaussian) {
     ss <- sd(y)
@@ -336,12 +369,12 @@ stan_glm.fit <-
       parts0 <- extract_sparse_parts(Z[y == 0, , drop = FALSE])
       parts1 <- extract_sparse_parts(Z[y == 1, , drop = FALSE])
       standata$num_non_zero <- c(length(parts0$w), length(parts1$w))
-      standata$w0 <- parts0$w
-      standata$w1 <- parts1$w
-      standata$v0 <- parts0$v - 1L
-      standata$v1 <- parts1$v - 1L
-      standata$u0 <- parts0$u - 1L
-      standata$u1 <- parts1$u - 1L
+      standata$w0 <- as.array(parts0$w)
+      standata$w1 <- as.array(parts1$w)
+      standata$v0 <- as.array(parts0$v - 1L)
+      standata$v1 <- as.array(parts1$v - 1L)
+      standata$u0 <- as.array(parts0$u - 1L)
+      standata$u1 <- as.array(parts1$u - 1L)
     } else {
       parts <- extract_sparse_parts(Z)
       standata$num_non_zero <- length(parts$w)
@@ -526,11 +559,22 @@ stan_glm.fit <-
             if (is_continuous | is_nb) "aux",
             if (ncol(S)) "smooth_sd",
             if (standata$len_theta_L) "theta_L",
-            if (!standata$clogit) "mean_PPD")
+            if (mean_PPD && !standata$clogit) "mean_PPD")
   if (algorithm == "optimizing") {
-    out <- optimizing(stanfit, data = standata, 
-                      draws = 1000, constrained = TRUE, ...)
+    optimizing_args <- list(...)
+    if (is.null(optimizing_args$draws)) optimizing_args$draws <- 1000L
+    optimizing_args$object <- stanfit
+    optimizing_args$data <- standata
+    optimizing_args$constrained <- TRUE
+    optimizing_args$importance_resampling <- importance_resampling
+    if (is.null(optimizing_args$tol_rel_grad)) 
+      optimizing_args$tol_rel_grad <- 10000L
+    out <- do.call(optimizing, args = optimizing_args)
     check_stanfit(out)
+    if (optimizing_args$draws == 0) {
+      out$theta_tilde <- out$par
+      dim(out$theta_tilde) <- c(1,length(out$par))
+    }
     new_names <- names(out$par)
     mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
     if (QR) {
@@ -551,6 +595,58 @@ stan_glm.fit <-
               if (is_beta) "(phi)" else NA
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
+    if (optimizing_args$draws > 0 && importance_resampling) {
+        ## begin: psis diagnostics and importance resampling
+        lr <- out$log_p-out$log_g
+        lr[lr==-Inf] <- -800
+        p <- suppressWarnings(psis(lr, r_eff = 1))
+        p$log_weights <- p$log_weights-log_sum_exp(p$log_weights)
+        theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) {
+          if (all(is.finite(col))) 
+            psis(log1p(col ^ 2) / 2 + lr, r_eff = 1)$diagnostics$pareto_k 
+          else NaN
+          }))
+        ## todo: change fixed threshold to an option
+        if (p$diagnostics$pareto_k > 1) {
+          warning("Pareto k diagnostic value is ", 
+                  round(p$diagnostics$pareto_k, digits = 2),
+                  ". Resampling is disabled. ", 
+                  "Decreasing tol_rel_grad may help if optimization has terminated prematurely. ", 
+                  "Otherwise consider using sampling.", call. = FALSE, immediate. = TRUE)
+          importance_resampling <- FALSE
+        } else if (p$diagnostics$pareto_k > 0.7) { 
+          warning("Pareto k diagnostic value is ", 
+                  round(p$diagnostics$pareto_k, digits = 2), 
+                  ". Resampling is unreliable. ",
+                  "Increasing the number of draws or decreasing tol_rel_grad may help.", 
+                  call. = FALSE, immediate. = TRUE)
+        }
+        out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, 
+                          n_eff = p$diagnostics$n_eff / keep_every)
+    } else {
+      theta_pareto_k <- rep(NaN,length(new_names))
+      importance_resampling <- FALSE
+    }
+    ## importance_resampling
+    if (importance_resampling) {  
+      ir_idx <- .sample_indices(exp(p$log_weights), 
+                                n_draws = ceiling(optimizing_args$draws / keep_every))
+      out$theta_tilde <- out$theta_tilde[ir_idx,]
+      out$ir_idx <- ir_idx
+      ## SIR mcse and n_eff
+      w_sir <- as.numeric(table(ir_idx)) / length(ir_idx)
+      mcse <- apply(out$theta_tilde[!duplicated(ir_idx),], 2L, function(col) {
+        if (all(is.finite(col))) sqrt(sum(w_sir^2*(col-mean(col))^2)) else NaN
+      })
+      n_eff <- round(apply(out$theta_tilde[!duplicated(ir_idx),], 2L, var)/ (mcse ^ 2), digits = 0)
+    } else {
+      out$ir_idx <- NULL
+      mcse <- rep(NaN, length(theta_pareto_k))
+      n_eff <- rep(NaN, length(theta_pareto_k))
+    }
+    out$diagnostics <- cbind(mcse, theta_pareto_k, n_eff)
+    colnames(out$diagnostics) <- c("mcse", "khat", "n_eff")
+    ## end: psis diagnostics and SIR
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
                                              chains = 0))
     return(structure(out, prior.info = prior_info))
@@ -625,7 +721,7 @@ stan_glm.fit <-
                    if (is_beta) "(phi)",
                    if (ncol(S)) paste0("smooth_sd[", names(x)[-1], "]"),
                    if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
-                   if (!standata$clogit) "mean_PPD", 
+                   if (mean_PPD && !standata$clogit) "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
     return(structure(stanfit, prior.info = prior_info))
@@ -679,6 +775,10 @@ stan_family_number <- function(famname) {
 # @return y (possibly slightly modified) unless an error is thrown
 #
 validate_glm_outcome_support <- function(y, family) {
+  if (is.null(y)) {
+    return(y)
+  }
+  
   .is_count <- function(x) {
     all(x >= 0) && all(abs(x - round(x)) < .Machine$double.eps^0.5)
   }
@@ -734,6 +834,25 @@ validate_glm_outcome_support <- function(y, family) {
   }
   
   return(y)
+}
+
+# Generate fake y variable to use if prior_PD and no y is specified
+# @param N number of observations
+# @param family family object
+fake_y_for_prior_PD <- function(N, family) {
+  fam <- family$family
+  if (is.gaussian(fam)) {
+    # if prior autoscaling is on then the value of sd(y) matters
+    # generate a fake y so that sd(y) is 1
+    fake_y <- as.vector(scale(rnorm(N)))
+  } else if (is.binomial(fam) || is.poisson(fam) || is.nb(fam)) {
+    # valid for all discrete cases
+    fake_y <- rep_len(c(0, 1), N)
+  } else {
+    # valid for gamma, inverse gaussian, beta 
+    fake_y <- runif(N)
+  }
+  return(fake_y)
 }
 
 
@@ -928,3 +1047,31 @@ summarize_glm_prior <-
         if (is.nb(fam)) "reciprocal_dispersion" else NA
 }
 
+.sample_indices <- function(wts, n_draws) {
+  ## Stratified resampling
+  ##   Kitagawa, G., Monte Carlo Filter and Smoother for Non-Gaussian
+  ##   Nonlinear State Space Models, Journal of Computational and
+  ##   Graphical Statistics, 5(1):1-25, 1996.
+  K <- length(wts)
+  w <- n_draws * wts # expected number of draws from each model
+  idx <- rep(NA, n_draws)
+
+  c <- 0
+  j <- 0
+
+  for (k in 1:K) {
+    c <- c + w[k]
+    if (c >= 1) {
+      a <- floor(c)
+      c <- c - a
+      idx[j + 1:a] <- k
+      j <- j + a
+    }
+    if (j < n_draws && c >= runif(1)) {
+      c <- c - 1
+      j <- j + 1
+      idx[j] <- k
+    }
+  }
+  return(idx)
+}

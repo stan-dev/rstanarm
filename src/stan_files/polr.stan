@@ -185,16 +185,18 @@ transformed parameters {
   }
 }
 model {
+  if (prior_PD == 0) {
 #include /model/make_eta.stan
-  if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
-    if (is_skewed == 0)
-      target += pw_polr(y, eta, cutpoints, link, 1.0);
-    else target += pw_polr(y, eta, cutpoints, link, alpha[1]);
-  }
-  else if (prior_PD == 0) {  // weighted log-likelihoods
-    if (is_skewed == 0)
-      target += dot_product(weights, pw_polr(y, eta, cutpoints, link, 1.0));
-    else target += dot_product(weights, pw_polr(y, eta, cutpoints, link, alpha[1]));
+    if (has_weights == 0) {  // unweighted log-likelihoods
+      if (is_skewed == 0)
+        target += pw_polr(y, eta, cutpoints, link, 1.0);
+      else target += pw_polr(y, eta, cutpoints, link, alpha[1]);
+    }
+    else {  // weighted log-likelihoods
+      if (is_skewed == 0)
+        target += dot_product(weights, pw_polr(y, eta, cutpoints, link, 1.0));
+      else target += dot_product(weights, pw_polr(y, eta, cutpoints, link, alpha[1]));
+    }
   }
 
   if (is_constant == 0) target += dirichlet_lpdf(pi | prior_counts);
