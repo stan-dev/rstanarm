@@ -99,7 +99,7 @@ print.stanreg <- function(x, digits = 1, ...) {
   
   cat("\n------\n")
 
-  mer <- is.mer(x)
+  mer <- is.mer(x) || (surv && x$has_bars)
   gamm <- isTRUE(x$stan_function == "stan_gamm4")
   ord <- is_polr(x) && !("(Intercept)" %in% rownames(x$stan_summary))
 

@@ -20,7 +20,7 @@
 #' Small datasets for use in \pkg{rstanarm} examples and vignettes.
 #'
 #' @name rstanarm-datasets
-#' @aliases bball1970 bball2006 bcancer kidiq mice mortality pbcLong pbcSurv tumors radon roaches wells
+#' @aliases bball1970 bball2006 bcancer frail kidiq mice mortality pbcLong pbcSurv tumors radon roaches wells
 #' @format 
 #' \describe{
 #' \item{\code{bball1970}}{
@@ -64,6 +64,26 @@
 #' \item \code{status} Event indicator (0 = right censored, 1 = event)
 #' \item \code{group} Prognostic group, based on a regression model developed
 #' by Sauerbrei and Royston (1999) (\code{Good}, \code{Medium}, \code{Poor})
+#' }
+#' }
+#' \item{\code{frail}}{
+#' A simulated dataset of event times (i.e. survival data) for 200 patients
+#' clustered within 20 hospital sites (10 patients per hospital site). 
+#' The event times are simulated from a parametric proportional hazards model 
+#' under the following assumptions: (i) a constant (i.e. exponential) baseline 
+#' hazard rate of 0.1; (ii) a fixed treatment effect with log hazard ratio of 
+#' 0.3; and (iii) a site-specific random intercept (specified on the log 
+#' hazard scale) drawn from a \eqn{N(0,1)} distribution.
+#' 
+#' 200 obs. of 6 variables
+#' \itemize{
+#' \item \code{id} ID unique to each patient
+#' \item \code{site} ID unique to each hospital site (i.e. cluster)
+#' \item \code{trt} Treatment indicator (0 = untreated, 1 = treated)
+#' \item \code{b} Cluster-specific random intercept used to simulate the 
+#' event times
+#' \item \code{eventtime} Event or censoring time
+#' \item \code{status} Event indicator (0 = right censored, 1 = event)
 #' }
 #' }
 #' \item{\code{kidiq}}{
@@ -120,21 +140,20 @@
 #' 
 #' 304 obs. of 8 variables (\code{pbcLong}) and 40 obs. of 7 variables (\code{pbcSurv})
 #' \itemize{
-#' \item \code{age} {in years}
-#' \item \code{albumin} {serum albumin (g/dl)}
-#' \item \code{logBili} {logarithm of serum bilirubin}
-#' \item \code{death} {indicator of death at endpoint} 
-#' \item \code{futimeYears} {time (in years) between baseline and  
-#'     the earliest of death, transplantion or censoring}
-#' \item \code{id} {numeric ID unique to each individual}
-#' \item \code{platelet} {platelet count}
-#' \item \code{sex} {gender (m = male, f = female)}
-#' \item \code{status} {status at endpoint (0 = censored, 
-#'     1 = transplant, 2 = dead)}
-#' \item \code{trt} {binary treatment code (0 = placebo, 1 = 
-#'     D-penicillamine)}
-#' \item \code{year} {time (in years) of the longitudinal measurements,
-#'     taken as time since baseline)}
+#' \item \code{age} Age (in years)
+#' \item \code{albumin} Serum albumin (g/dl)
+#' \item \code{logBili} Logarithm of serum bilirubin
+#' \item \code{death} Indicator of death at endpoint
+#' \item \code{futimeYears} Time (in years) between baseline and  
+#'     the earliest of death, transplantion or censoring
+#' \item \code{id} Numeric ID unique to each individual
+#' \item \code{platelet} Platelet count
+#' \item \code{sex} Gender (m = male, f = female)
+#' \item \code{status} Status at endpoint (0 = censored, 1 = transplant, 
+#' 2 = dead)
+#' \item \code{trt} Binary treatment code (0 = placebo, 1 = D-penicillamine)
+#' \item \code{year} Time (in years) of the longitudinal measurements,
+#'     taken as time since baseline
 #' }
 #' }
 #' 

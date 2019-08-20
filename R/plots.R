@@ -40,8 +40,8 @@
 #'   available MCMC functions see \code{\link[bayesplot]{available_mcmc}}.
 #'   For the \code{stansurv} method, one can also specify
 #'   \code{plotfun = "basehaz"} for a plot of the estimated baseline hazard
-#'   function, or \code{plot = "tde"} for a plot of the time-dependent
-#'   hazard ratio (if time-dependent effects were specified in the model).
+#'   function, or \code{plot = "tve"} for a plot of the time-varying
+#'   hazard ratio (if time-varying effects were specified in the model).
 #'
 #' @param ... Additional arguments to pass to \code{plotfun} for customizing the
 #'   plot. These are described on the help pages for the individual plotting
@@ -192,25 +192,28 @@ plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
 #' @param limits A quoted character string specifying the type of limits to
 #'   include in the plot. Can be \code{"ci"} for the Bayesian posterior
 #'   uncertainty interval, or \code{"none"}. This argument is only relevant
-#'   when \code{plotfun = "basehaz"} or \code{plotfun = "tde"}
+#'   when \code{plotfun = "basehaz"} or \code{plotfun = "tve"}
+#' @param n Integer specifying the number of points to interpolate along 
+#'   when plotting the baseline hazard or time-varying hazard ratio. Each of 
+#'   the points are joined using a line.
 #'
 plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
                           regex_pars = NULL, ..., prob = 0.95,
                           limits = c("ci", "none"),
-                          ci_geom_args = NULL) {
+                          ci_geom_args = NULL, n = 1000) {
 
   validate_stansurv_object(x)
 
   limits <- match.arg(limits)
   
-  if (plotfun %in% c("basehaz", "tde")) {
+  if (plotfun %in% c("basehaz", "tve")) {
 
     stanpars <- extract_pars(x)
     has_intercept <- check_for_intercept(x$basehaz)
 
     t_min <- min(x$entrytime)
     t_max <- max(x$eventtime)
-    times <- seq(t_min, t_max, by = (t_max - t_min) / 200)
+    times <- seq(t_min, t_max, by = (t_max - t_min) / n)
 
     if (plotfun == "basehaz") {
 
@@ -226,14 +229,16 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       basehaz <- do.call(evaluate_basehaz, args)
       basehaz <- median_and_bounds(basehaz, prob, na.rm = TRUE)
       plotdat <- data.frame(times, basehaz)
+      
+      uses_step_stair <- (get_basehaz_name(x) %in% c("piecewise"))
 
       ylab <- "Baseline hazard rate"
       xlab <- "Time"
 
-    } else if (plotfun == "tde") {
+    } else if (plotfun == "tve") {
 
-      if (!x$has_tde)
-        stop2("Model does not have time-dependent effects.")
+      if (!x$has_tve)
+        stop2("Model does not have time-varying effects.")
 
       smooth_map   <- get_smooth_name(x$s_cpts, type = "smooth_map")
       smooth_vars  <- get_smooth_name(x$s_cpts, type = "smooth_vars")
@@ -244,44 +249,54 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       if (length(pars) > 1L)
         stop2("Only one variable can be specified in 'pars' .")
       if (!pars %in% smooth_vars)
-        stop2("Cannot find variable '", pars, "' amongst the tde terms.")
+        stop2("Cannot find variable '", pars, "' amongst the tve terms.")
 
       sel1 <- which(smooth_vars == pars)
       sel2 <- smooth_coefs[smooth_map == sel1]
 
       betas_tf <- stanpars$beta    [, pars, drop = FALSE]
-      betas_td <- stanpars$beta_tde[, sel2, drop = FALSE]
+      betas_td <- stanpars$beta_tve[, sel2, drop = FALSE]
       betas    <- cbind(betas_tf, betas_td)
 
-      times__ <- times
-      basis   <- eval(parse(text = x$formula$td_basis[sel1]))
-      basis   <- add_intercept(basis)
-      coef  <- linear_predictor(betas, basis)
+      tt_varid  <- unique(x$formula$tt_map[smooth_map == sel1])
+      tt_type   <- x$formula$tt_types  [[tt_varid]]
+      tt_degree <- x$formula$tt_degrees[[tt_varid]]
+      tt_form   <- x$formula$tt_forms  [[tt_varid]]
+      tt_data   <- data.frame(times__ = times)
+      tt_x      <- model.matrix(tt_form, tt_data)
       
-      is_aft  <- get_basehaz_name(x$basehaz) %in% c("exp-aft", "weibull-aft")
+      coef      <- linear_predictor(betas, tt_x)
       
-      plotdat <- median_and_bounds(exp(coef), prob, na.rm = TRUE)  
-      plotdat <- data.frame(times, plotdat)
+      is_aft    <- get_basehaz_name(x$basehaz) %in% c("exp-aft", "weibull-aft")
+      
+      plotdat   <- median_and_bounds(exp(coef), prob, na.rm = TRUE)  
+      plotdat   <- data.frame(times, plotdat)
 
+      uses_step_stair <- (tt_degree == 0)
+      
       xlab <- "Time"
-      ylab <- ifelse(is_aft, "Survival time ratio", "Hazard ratio")
+      ylab <- ifelse(is_aft, 
+                     paste0("Survival time ratio\n(", pars, ")"), 
+                     paste0("Hazard ratio\n(", pars, ")"))
     }
-
-    geom_defs <- list(color = "black")  # default plot args
+    
+    geom_defs <- list(color = "black") # default plot args
     geom_args <- set_geom_args(geom_defs, ...)
+    geom_maps <- list(aes_string(x = "times", y = "med"))
     geom_ylab <- ggplot2::ylab(ylab)
     geom_xlab <- ggplot2::xlab(xlab)
-    geom_maps <- list(aes_string(x = "times", y = "med"), method = "loess", se = FALSE)
     geom_base <- ggplot(plotdat) + geom_ylab + geom_xlab + ggplot2::theme_bw()
-    geom_plot <- geom_base + do.call(ggplot2::geom_smooth, c(geom_maps, geom_args))
+    geom_fun  <- if (uses_step_stair) ggplot2::geom_step else ggplot2::geom_line
+    geom_plot <- geom_base + do.call(geom_fun, c(geom_maps, geom_args))
+
     if (limits == "ci") {
       lim_defs <- list(alpha = 0.3) # default plot args for ci
       lim_args <- c(defaults = list(lim_defs), ci_geom_args)
       lim_args <- do.call("set_geom_args", lim_args)
       lim_maps <- list(mapping = aes_string(x = "times", ymin = "lb", ymax = "ub"))
       lim_tmp  <- geom_base +
-        ggplot2::stat_smooth(aes_string(x = "times", y = "lb"), method = "loess") +
-        ggplot2::stat_smooth(aes_string(x = "times", y = "ub"), method = "loess")
+        geom_fun(aes_string(x = "times", y = "lb")) +
+        geom_fun(aes_string(x = "times", y = "ub"))
       lim_build<- ggplot2::ggplot_build(lim_tmp)
       lim_data <- list(data = data.frame(times = lim_build$data[[1]]$x,
                                          lb    = lim_build$data[[1]]$y,

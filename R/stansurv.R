@@ -36,16 +36,32 @@ stansurv <- function(object) {
   stan_summary <- make_stan_summary(stanfit)
   
   # number of parameters
-  nvars  <- ncol(object$x) + has_intercept(basehaz) + basehaz$nvars
+  nvars <- 
+    has_intercept(basehaz) + 
+    ncol(object$x) + 
+    ncol(object$s_cpts) + 
+    basehaz$nvars
+  
+  nms_beta   <- colnames(object$x_cpts)
+  nms_tve    <- get_smooth_name(object$s_cpts, type = "smooth_coefs")
+  nms_smooth <- get_smooth_name(object$s_cpts, type = "smooth_sd")
+  nms_int    <- get_int_name_basehaz(object$basehaz)
+  nms_aux    <- get_aux_name_basehaz(object$basehaz)
+  nms_b      <- get_b_names(object$group)
+  nms_vc     <- get_varcov_names(object$group)
+  nms_coefs  <- c(nms_int,
+                  nms_beta,
+                  nms_tve,
+                  nms_aux,
+                  nms_b)  
   
   # obtain medians
-  coefs     <- stan_summary[seq(nvars), select_median(alg)] 
-  coefs_nms <- rownames(stan_summary)[seq(nvars)]
-  names(coefs) <- coefs_nms # ensure parameter names are retained
+  coefs <- stan_summary[nms_coefs, select_median(alg)] 
+  names(coefs) <- nms_coefs # ensure parameter names are retained
   
   # obtain standard errors and covariance matrix
-  stanmat <- as.matrix(stanfit)[, seq(nvars), drop = FALSE]
-  colnames(stanmat) <- coefs_nms   
+  stanmat <- as.matrix(stanfit)[, nms_coefs, drop = FALSE]
+  colnames(stanmat) <- nms_coefs   
   ses <- apply(stanmat, 2L, mad)
   covmat <- cov(stanmat)
   
@@ -61,13 +77,19 @@ stansurv <- function(object) {
     ses           = ses,
     covmat        = covmat,
     formula       = object$formula,
-    has_tde       = object$has_tde,
+    has_tve       = object$has_tve,
     has_quadrature= object$has_quadrature,
+    has_bars      = object$has_bars,
     terms         = object$terms,
     data          = object$data,
     model_frame   = object$model_frame,
+    xlevs         = object$xlevels,
     x             = object$x,
+    x_cpts        = object$x_cpts,
     s_cpts        = object$s_cpts,
+    z_cpts        = object$z_cpts,
+    cnms          = object$cnms,
+    flist         = object$flist,
     entrytime     = object$t_beg, 
     eventtime     = object$t_end, 
     event         = object$event,      
@@ -99,12 +121,12 @@ stansurv <- function(object) {
 
 #---------- internal
 
-# Return the model fitting time in minutes.
+# Return the model fitting time in seconds
 #
 # @param stanfit An object of class 'stanfit'.
 # @return A matrix of runtimes, stratified by warmup/sampling and chain/overall.
 get_runtime <- function(stanfit) {
   tt <- rstan::get_elapsed_time(stanfit)
-  tt <- round(tt / 60, digits = 1L)    # time per chain
-  tt <- cbind(tt, total = rowSums(tt)) # time per chain & overall  
+  tt <- round(tt, digits = 0L)         # time per chain
+  tt <- cbind(tt, total = rowSums(tt)) # time per chain & overall
 }

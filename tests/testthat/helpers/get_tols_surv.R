@@ -8,7 +8,7 @@
 #
 # @param mod The "gold standard" longitudinal model. Likely to be
 #   a model estimated using coxph.
-# @param toscales A named list with elements 'hr_fixef' and 'tde_fixef'.
+# @param toscales A named list with elements 'hr_fixef' and 'tve_fixef'.
 #
 get_tols <- function(mod, tolscales) {
   

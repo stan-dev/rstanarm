@@ -438,6 +438,19 @@ ll_args.stansurv <- function(object, newdata = NULL, ...) {
     data <- cbind(data, x)
   }
   
+  # also evaluate random effects structure if relevant
+  if (object$has_bars) {
+    z <- t(pp$z$Zt)
+    if (object$has_quadrature) {
+      z <- rbind(z,
+                 t(pp_qpts_beg$z$Zt),
+                 t(pp_qpts_end$z$Zt),
+                 t(pp_qpts_upp$z$Zt))
+    }
+    z <- append_prefix_to_colnames(as.matrix(z), "z__")
+    data <- cbind(data, z)
+  }
+
   # parameter draws
   draws                <- list()
   pars                 <- extract_pars(object)
@@ -445,8 +458,11 @@ ll_args.stansurv <- function(object, newdata = NULL, ...) {
   draws$aux            <- pars$aux
   draws$alpha          <- pars$alpha
   draws$beta           <- pars$beta
-  draws$beta_tde       <- pars$beta_tde
+  draws$beta_tve       <- pars$beta_tve
+  draws$b              <- if (object$has_bars) pp_b_ord(pars$b, pp$z$Z_names) else NULL
   draws$has_quadrature <- pp$has_quadrature
+  draws$has_tve        <- pp$has_tve
+  draws$has_bars       <- pp$has_bars
   draws$qnodes         <- pp$qnodes
   
   out <- nlist(data, draws, S = NROW(draws$beta), N = n_distinct(cids))
@@ -513,6 +529,11 @@ ll_args.stansurv <- function(object, newdata = NULL, ...) {
 .sdata_surv <- function(data) { 
   nms <- colnames(data)
   sel <- grep("^s__", nms)
+  data[, sel]
+}
+.zdata_surv <- function(data) { 
+  nms <- colnames(data)
+  sel <- grep("^z__", nms)
   data[, sel]
 }
 
@@ -594,6 +615,25 @@ ll_args.stansurv <- function(object, newdata = NULL, ...) {
 
 .ll_surv_i <- function(data_i, draws) {
   
+  # fixed effects (time-fixed) part of linear predictor
+  eta  <- linear_predictor(draws$beta, .xdata_surv(data_i))
+  
+  # fixed effects (time-varying) part of linear predictor
+  if (draws$has_tve) {
+    eta <- eta + linear_predictor(draws$beta_tve, .sdata_surv(data_i))
+  }
+  
+  # random effects part of linear predictor
+  if (draws$has_bars) {
+    eta <- eta + linear_predictor(draws$b, .zdata_surv(data_i))
+  }   
+  
+  # convert linear predictor to log acceleration factor for AFT
+  eta <- switch(get_basehaz_name(draws$basehaz),
+                "exp-aft"     = sweep(eta, 1L, -1, `*`),
+                "weibull-aft" = sweep(eta, 1L, -as.vector(draws$aux), `*`),
+                eta) 
+  
   if (draws$has_quadrature) {
     
     qnodes  <- draws$qnodes
@@ -606,19 +646,16 @@ ll_args.stansurv <- function(object, newdata = NULL, ...) {
     idx_qpts_end <- 1 + (qnodes * 1) + (1:qnodes)
     idx_qpts_upp <- 1 + (qnodes * 2) + (1:qnodes)
     
+    # arguments to be used later in evaluating log baseline hazard
     args <- list(times     = data_i$cpts,
                  basehaz   = draws$basehaz,
                  aux       = draws$aux,
                  intercept = draws$alpha)
-    
-    eta  <- linear_predictor(draws$beta, .xdata_surv(data_i))
-    eta  <- eta + linear_predictor(draws$beta_tde, .sdata_surv(data_i))
-    eta <- switch(get_basehaz_name(draws$basehaz),
-                  "exp-aft"     = sweep(eta, 1L, -1, `*`),
-                  "weibull-aft" = sweep(eta, 1L, -as.vector(draws$aux), `*`),
-                  eta) 
+
+    # evaluate log hazard
     lhaz <- eta + do.call(evaluate_log_basehaz, args)
     
+    # evaluate log likelihood
     if (status == 1) {
       # uncensored
       lhaz_epts     <- lhaz[, idx_epts,     drop = FALSE]
@@ -667,16 +704,12 @@ ll_args.stansurv <- function(object, newdata = NULL, ...) {
     status  <- data_i$status
     delayed <- data_i$delayed
 
+    # arguments to be used later in evaluating log baseline hazard
     args <- list(basehaz   = draws$basehaz,
                  aux       = draws$aux,
                  intercept = draws$alpha)
     
-    eta  <- linear_predictor(draws$beta, .xdata_surv(data_i))    
-    eta <- switch(get_basehaz_name(draws$basehaz),
-                  "exp-aft"     = sweep(eta, 1L, -1, `*`),
-                  "weibull-aft" = sweep(eta, 1L, -as.vector(draws$aux), `*`),
-                  eta) 
-    
+    # evaluate log likelihood
     if (status == 1) { 
       # uncensored
       args$times <- data_i$t_end
@@ -1099,7 +1132,7 @@ evaluate_log_survival.matrix <- function(log_haz, qnodes, qwts) {
 # @param basehaz A list with info about the baseline hazard.
 # @param aux,intercept A vector or matrix of parameter estimates (MCMC draws).
 # @param x Predictor matrix.
-# @param s Predictor matrix for time-dependent effects.
+# @param s Predictor matrix for time-varying effects.
 # @return A vector or matrix, depending on the input type of aux.
 evaluate_log_basehaz <- function(times, basehaz, aux, intercept = NULL) {
   switch(get_basehaz_name(basehaz),
@@ -1108,8 +1141,8 @@ evaluate_log_basehaz <- function(times, basehaz, aux, intercept = NULL) {
          "weibull"     = log_basehaz_weibull   (times, shape = aux, log_scale = intercept),
          "weibull-aft" = log_basehaz_weibullAFT(times, shape = aux, log_scale = intercept),
          "gompertz"    = log_basehaz_gompertz(times, scale = aux, log_shape = intercept),
-         "ms"          = log_basehaz_ms(times, coefs = aux, basis = basehaz$basis),
-         "bs"          = log_basehaz_bs(times, coefs = aux, basis = basehaz$basis),
+         "ms"          = log_basehaz_ms(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
+         "bs"          = log_basehaz_bs(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
          "piecewise"   = log_basehaz_pw(times, coefs = aux, knots = basehaz$knots),
          stop2("Bug found: unknown type of baseline hazard."))
 }
@@ -1129,21 +1162,26 @@ log_basehaz_weibullAFT  <- function(x, shape, log_scale) {
 log_basehaz_gompertz <- function(x, scale, log_shape) {
   as.vector(log_shape) + linear_predictor(scale, x)
 }
-log_basehaz_ms <- function(x, coefs, basis) {
-  log(linear_predictor(coefs, basis_matrix(x, basis = basis)))
+log_basehaz_ms <- function(x, coefs, basis, intercept) {
+  as.vector(intercept) + log(linear_predictor(coefs, basis_matrix(x, basis = basis)))
 }
-log_basehaz_bs <- function(x, coefs, basis) {
-  linear_predictor(coefs, basis_matrix(x, basis = basis))
+log_basehaz_bs <- function(x, coefs, basis, intercept) {
+  as.vector(intercept) + linear_predictor(coefs, basis_matrix(x, basis = basis))
 }
 log_basehaz_pw <- function(x, coefs, knots) {
   linear_predictor(coefs, dummy_matrix(x, knots = knots))
 }
 
-evaluate_log_haz <- function(times, basehaz, betas, betas_tde, aux, 
-                             intercept = NULL, x, s = NULL) {
+evaluate_log_haz <- function(times, basehaz, betas, betas_tve, b = NULL, aux, 
+                             intercept = NULL, x, s = NULL, z = NULL) {
   eta <- linear_predictor(betas, x)
   if ((!is.null(s)) && ncol(s))
-    eta <- eta + linear_predictor(betas_tde, s)
+    eta <- eta + linear_predictor(betas_tve, s)
+  if (!is.null(z$Zt) && ncol(z$Zt)) {
+    b <- pp_b_ord(b, z$Z_names)
+    z <- as.matrix(t(z$Zt))
+    eta <- eta + linear_predictor(b, z)
+  }
   eta <- switch(get_basehaz_name(basehaz),
                 "exp-aft"     = sweep(eta, 1L, -1, `*`),
                 "weibull-aft" = sweep(eta, 1L, -as.vector(aux), `*`),
@@ -1173,7 +1211,7 @@ evaluate_log_basesurv <- function(times, basehaz, aux, intercept = NULL) {
          "weibull"     = log_basesurv_weibull   (times, shape = aux, log_scale = intercept),
          "weibull-aft" = log_basesurv_weibullAFT(times, shape = aux, log_scale = intercept),
          "gompertz"    = log_basesurv_gompertz(times, scale = aux, log_shape = intercept),
-         "ms"          = log_basesurv_ms(times, coefs = aux, basis = basehaz$basis),
+         "ms"          = log_basesurv_ms(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
          stop2("Bug found: unknown type of baseline hazard."))
 }
 
@@ -1192,12 +1230,19 @@ log_basesurv_weibullAFT <- function(x, shape, log_scale) {
 log_basesurv_gompertz <- function(x, scale, log_shape) {
   -(as.vector(exp(log_shape) / scale)) * (exp(linear_predictor(scale, x)) - 1)
 }
-log_basesurv_ms <- function(x, coefs, basis) {
-  -linear_predictor(coefs, basis_matrix(x, basis = basis, integrate = TRUE))
+log_basesurv_ms <- function(x, coefs, basis, intercept) {
+  - exp(as.vector(intercept)) *
+      linear_predictor(coefs, basis_matrix(x, basis = basis, integrate = TRUE))
 }
 
-evaluate_log_surv <- function(times, basehaz, betas, aux, intercept = NULL, x, ...) {
+evaluate_log_surv <- function(times, basehaz, betas, b = NULL, aux, 
+                              intercept = NULL, x, z = NULL, ...) {
   eta  <- linear_predictor(betas, x)
+  if (!is.null(z$Zt) && ncol(z$Zt)) {
+    b <- pp_b_ord(b, z$Z_names)
+    z <- as.matrix(t(z$Zt))
+    eta <- eta + linear_predictor(b, z)
+  }
   eta  <- switch(get_basehaz_name(basehaz),
                  "exp-aft"     = sweep(eta, 1L, -1, `*`),
                  "weibull-aft" = sweep(eta, 1L, -as.vector(aux), `*`),

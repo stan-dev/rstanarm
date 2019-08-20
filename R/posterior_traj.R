@@ -73,13 +73,13 @@
 #'     event or censoring time if no new data is provided; the time specified
 #'     in the "last_time" column if provided in the new data (see \strong{Details}
 #'     section below); or the time of the last longitudinal measurement if new
-#'     data is provided but no "last_time" column is included. The default is 15.}
+#'     data is provided but no "last_time" column is included. The default is 100.}
 #'     \item{\code{epoints}}{a positive integer specifying the number of discrete 
 #'     time points at which to calculate the estimated longitudinal response for
 #'     \code{extrapolate = TRUE}. These time points are evenly spaced between the 
 #'     last known observation time for each individual and the extrapolation 
 #'     distance specifed using either \code{edist} or \code{eprop}.
-#'     The default is 15.}
+#'     The default is 100.}
 #'     \item{\code{eprop}}{a positive scalar between 0 and 1 specifying the 
 #'     amount of time across which to extrapolate the longitudinal trajectory,
 #'     represented as a proportion of the total observed follow up time for each
@@ -271,25 +271,43 @@
 #'   head(pt8)  # note the much narrower ci, compared with pt5
 #' }
 #' 
-posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
-                           newdataEvent = NULL, interpolate = TRUE, extrapolate = FALSE,
-                           control = list(), last_time = NULL, prob = 0.95, ids, 
-                           dynamic = TRUE, scale = 1.5, draws = NULL, seed = NULL, 
-                           return_matrix = FALSE, ...) {
+posterior_traj <- function(object, 
+                           m             = 1, 
+                           newdata       = NULL, 
+                           newdataLong   = NULL,
+                           newdataEvent  = NULL, 
+                           interpolate   = TRUE, 
+                           extrapolate   = FALSE,
+                           control       = list(), 
+                           last_time     = NULL, 
+                           prob          = 0.95, 
+                           ids, 
+                           dynamic       = TRUE, 
+                           scale         = 1.5, 
+                           draws         = NULL, 
+                           seed          = NULL, 
+                           return_matrix = FALSE, 
+                           ...) {
+  
   if (!requireNamespace("data.table"))
     stop("the 'data.table' package must be installed to use this function")
+  
   validate_stanjm_object(object)
+  
   M         <- object$n_markers; validate_positive_scalar(m, M)
   id_var    <- object$id_var
   time_var  <- object$time_var
   grp_stuff <- object$grp_stuff[[m]]
+  
   if (!is.null(seed)) 
     set.seed(seed)
+  
   if (missing(ids)) 
     ids <- NULL
+  
   dots <- list(...)
   
-  # Deal with deprecate newdata argument
+  # Deal with deprecated newdata argument
   if (!is.null(newdata)) {
     warning("The 'newdata' argument is deprecated. Use 'newdataLong' instead.")
     if (!is.null(newdataLong))
@@ -351,23 +369,18 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
   }
   
   # Get stanmat parameter matrix for specified number of draws
-  S <- posterior_sample_size(object)
-  if (is.null(draws)) 
-    draws <- if (S > 200L) 200L else S 
-  if (draws > S)
-    stop("'draws' should be <= posterior sample size (", S, ").")
-  stanmat <- as.matrix(object$stanfit)
-  some_draws <- isTRUE(draws < S)
-  if (some_draws) {
-    samp <- sample(S, draws)
-    stanmat <- stanmat[samp, , drop = FALSE]
-  }
-  
+  stanmat <- sample_stanmat(object, draws = draws, default_draws = 200) 
+
   # Draw b pars for new individuals
   if (dynamic && !is.null(newdataEvent)) {
-    stanmat <- simulate_b_pars(object, stanmat = stanmat, ndL = ndL, ndE = ndE,
-                               ids = id_list, times = last_time, scale = scale)
-    b_new <- attr(stanmat, "b_new")
+    stanmat <- simulate_b_pars(object, 
+                               stanmat = stanmat, 
+                               ndL     = ndL, 
+                               ndE     = ndE,
+                               ids     = id_list, 
+                               times   = last_time, 
+                               scale   = scale)
+    b_new           <- attr(stanmat, "b_new")
     acceptance_rate <- attr(stanmat, "acceptance_rate")
   }
   
@@ -396,41 +409,76 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
       newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]])
     }
   }
-    
-  ytilde <- posterior_predict(object, newdata = newX, m = m, stanmat = stanmat, ...)
+  
+  # Obtain posterior predictions at specified times
+  ytilde <- posterior_predict(object, m = m, 
+                              newdata = newX, 
+                              stanmat = stanmat, 
+                              ...)
+  
+  # Optionally return S * N matrix of draws (instead of data frame)
   if (return_matrix) {
     attr(ytilde, "mu") <- NULL # remove attribute mu
-    return(ytilde) # return S * N matrix, instead of data frame 
-  } 
+    return(ytilde)
+  }
+
+  # Extract draws for the posterior mean
   mutilde <- attr(ytilde, "mu")
   if (!is.null(newX) && nrow(newX) == 1L) 
     mutilde <- t(mutilde)
+  
+
   ytilde_bounds  <- median_and_bounds(ytilde,  prob) # median and prob% CrI limits
   mutilde_bounds <- median_and_bounds(mutilde, prob) # median and prob% CrI limits
-  out <- data.frame(IDVAR = newX[[id_var]], 
-                    TIMEVAR = newX[[time_var]], 
-                    yfit = mutilde_bounds$med,
-                    ci_lb = mutilde_bounds$lb, ci_ub = mutilde_bounds$ub,
-                    pi_lb = ytilde_bounds$lb,  pi_ub = ytilde_bounds$ub)
+  
+  # Summarise posterior draws to get median and CI
   if (grp_stuff$has_grp) {
-    out$GRPVAR = newX[[grp_var]] # add grp_var and reorder cols
-    out <- out[, c("IDVAR", "GRPVAR", "TIMEVAR", 
-                   "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")]
+    
+    nms <- c(id_var, grp_var, time_var, "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")
+    
+    out <- data.frame(IDVAR   = newX[[id_var]], 
+                      TIMEVAR = newX[[time_var]],
+                      GRPVAR  = newX[[grp_var]],
+                      yfit    = mutilde_bounds$med,
+                      ci_lb   = mutilde_bounds$lb, 
+                      ci_ub   = mutilde_bounds$ub,
+                      pi_lb   = ytilde_bounds$lb,  
+                      pi_ub   = ytilde_bounds$ub)
+    
+  } else {
+    
+    nms <- c(id_var, time_var, "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")
+    
+    out <- data.frame(IDVAR   = newX[[id_var]], 
+                      TIMEVAR = newX[[time_var]], 
+                      yfit    = mutilde_bounds$med,
+                      ci_lb   = mutilde_bounds$lb, 
+                      ci_ub   = mutilde_bounds$ub,
+                      pi_lb   = ytilde_bounds$lb,  
+                      pi_ub   = ytilde_bounds$ub)
+    
   }
-  colnames(out) <- c(id_var, if (grp_stuff$has_grp) grp_var, time_var, 
-                     "yfit", "ci_lb", "ci_ub", "pi_lb", "pi_ub")
-  class(out) <- c("predict.stanjm", "data.frame")
-  Terms <- terms(formula(object, m = m))
-  vars  <- rownames(attr(Terms, "factors"))
-  y_var <- vars[[attr(Terms, "response")]]
-  out <- structure(out, observed_data = ndL[[m]], last_time = last_time,
-                   y_var = y_var, id_var = id_var, time_var = time_var,
-                   grp_var = if (grp_stuff$has_grp) grp_var else NULL, 
-                   interpolate = interpolate, extrapolate = extrapolate, 
-                   control = control, call = match.call())  
+  
+  out <- set_colnames(out, nms)
+  
+  # Return object
+  out <- structure(out, 
+                   observed_data = ndL[[m]], 
+                   last_time     = last_time,
+                   y_var         = get_resp_name(object, m = m), 
+                   id_var        = id_var, 
+                   time_var      = time_var,
+                   grp_var       = if (grp_stuff$has_grp) grp_var else NULL, 
+                   interpolate   = interpolate, 
+                   extrapolate   = extrapolate, 
+                   control       = control, 
+                   call          = match.call(),
+                   class         = c("predict.stanjm", "data.frame"))  
+  
   if (dynamic && !is.null(newdataEvent)) {
     out <- structure(out, b_new = b_new, acceptance_rate = acceptance_rate)
   }
+  
   out  
 }
 
@@ -526,165 +574,224 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
 #'     ggplot2::theme(strip.background = ggplot2::element_blank()) +
 #'     ggplot2::labs(title = "Some plotted longitudinal trajectories")
 #' }
-plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"), 
-                                xlab = NULL, ylab = NULL, vline = FALSE, 
-                                plot_observed = FALSE, facet_scales = "free_x", 
-                                ci_geom_args = NULL, grp_overlay = FALSE, ...) {
+plot.predict.stanjm <- function(x, 
+                                ids           = NULL, 
+                                limits        = c("ci", "pi", "none"), 
+                                xlab          = NULL, 
+                                ylab          = NULL, 
+                                vline         = FALSE, 
+                                plot_observed = FALSE, 
+                                facet_scales  = "free_x", 
+                                ci_geom_args  = NULL, 
+                                grp_overlay   = FALSE, 
+                                ...) {
   
   limits <- match.arg(limits)
-  if (!(limits == "none")) ci <- (limits == "ci")
-  y_var <- attr(x, "y_var")
-  id_var <- attr(x, "id_var")
-  time_var <- attr(x, "time_var")
-  grp_var <- attr(x, "grp_var")
-  obs_dat <- attr(x, "observed_data")
+  ci <- as.logical(limits == "ci")
+  pi <- as.logical(limits == "pi")
+  
+  y_var   <- attr(x, "y_var")         # outcome   variable
+  i_var   <- attr(x, "id_var")        # id        variable
+  g_var   <- attr(x, "grp_var")       # cluster   variable
+  t_var   <- attr(x, "time_var")      # time      variable
+  obs_dat <- attr(x, "observed_data") # observed  data
+  fit_dat <- x                        # predicted data
+  
   if (is.null(ylab)) ylab <- paste0("Long. response (", y_var, ")")
-  if (is.null(xlab)) xlab <- paste0("Time (", time_var, ")")
-  if (!id_var %in% colnames(x))
+  if (is.null(xlab)) xlab <- paste0("Time (",           t_var, ")")
+  
+  if (!i_var %in% colnames(x))
     stop("Bug found: could not find 'id_var' column in the data frame.")
-  if (!is.null(grp_var) && (!grp_var %in% colnames(x)))
+  
+  if (!is.null(g_var) && (!g_var %in% colnames(x)))
     stop("Bug found: could not find 'grp_var' column in the data frame.")
+  
+  # subset data if only plotting for some individuals
   if (!is.null(ids)) {
-    ids_missing <- which(!ids %in% x[[id_var]])
-    if (length(ids_missing))
-      stop("The following 'ids' are not present in the predict.stanjm object: ",
-           paste(ids[ids_missing], collapse = ", "), call. = FALSE)
-    plot_dat <- x[x[[id_var]] %in% ids, , drop = FALSE]
-    obs_dat <- obs_dat[obs_dat[[id_var]] %in% ids, , drop = FALSE]
-  } else {
-    plot_dat <- x
+    fit_dat <- subset_ids(fit_dat, ids, i_var)
+    obs_dat <- subset_ids(obs_dat, ids, i_var)
+  }
+
+  # deal with outcome data if plotting observed data points
+  if (plot_observed) {
+    obs_dat <- handle_obs_data(obs_dat,
+                               y_var = y_var,
+                               i_var = i_var,
+                               t_var = t_var,
+                               g_var = g_var)
   }
   
-  # 'id_list' provides unique IDs sorted in the same order as plotting data
-  id_list <- unique(plot_dat[[id_var]])
-  if (!is.null(grp_var))
-    grp_list <- unique(plot_dat[[grp_var]])
-    
-  plot_dat$id <- factor(plot_dat[[id_var]])
-  plot_dat$time <- plot_dat[[time_var]]
-  if (!is.null(grp_var))
-    plot_dat$grp <- plot_dat[[grp_var]]
+  # obtain list of ids/clusters in the same order as plotting data
+  i_list <- if (is.null(i_var)) NULL else unique(fit_dat[[i_var]]) # ids
+  g_list <- if (is.null(g_var)) NULL else unique(fit_dat[[g_var]]) # clusters
   
-  geom_defaults <- list(color = "black", method = "loess", se = FALSE)
-  geom_args <- set_geom_args(geom_defaults, ...)
+  # create columns with desired names
+  fit_dat$id   <- if (is.null(i_var)) NULL else fit_dat[[i_var]] # ids
+  fit_dat$grp  <- if (is.null(g_var)) NULL else fit_dat[[g_var]] # clusters
+  fit_dat$time <- if (is.null(t_var)) NULL else fit_dat[[t_var]] # times
   
-  lim_defaults <- list(alpha = 0.3)
-  lim_args <- do.call("set_geom_args", c(defaults = list(lim_defaults), ci_geom_args))
+  # promote ids to factors (same as observed data used to fit the model)
+  fit_dat$id <- factor(fit_dat$id)
   
-  obs_defaults <- list()
-  obs_args <- set_geom_args(obs_defaults)
-
-  if (is.null(grp_var)) { # no lower level clusters
+  # determine appropriate variable to use for facets
+  if (is.null(g_var)) {    
+    # no lower level clusters
     group_var <- NULL
     facet_var <- "id"
-  } else if (grp_overlay) { # overlay lower level clusters
+  } else if (grp_overlay) {  
+    # overlay lower level clusters
     group_var <- "grp"
     facet_var <- "id"
-  } else { # separate facets for lower level clusters
+  } else {                   
+    # separate facet for each lower level cluster
     group_var <- NULL
     facet_var <- "grp"
   }  
-  n_facets <- if (facet_var == "id") length(id_list) else length(grp_list)
   
-  if (n_facets > 60L) {
-    stop("Too many facets (ie. individuals) to plot. Perhaps limit the ",
-         "number of individuals by specifying the 'ids' argument.")
-  } else if (n_facets > 1L) {
-    geom_mapp <- list(
-      mapping = aes_string(x = "time", y = "yfit", group = group_var), 
-      data = plot_dat)
-    graph <- ggplot() + theme_bw() +
-      do.call("geom_smooth", c(geom_mapp, geom_args)) +
+  # validate the number of facets
+  n_facets <- if (facet_var == "id") length(i_list) else length(g_list)
+  
+  if (n_facets > 60L)
+    stop("Too many facets (ie. individuals) to plot. Perhaps ",
+         "limit the number of individuals by specifying the 'ids' argument.")
+
+  # determine which limits to plot (used in aes mapping)
+  lim_lb <- if (ci) "ci_lb" else "pi_lb"
+  lim_ub <- if (ci) "ci_ub" else "pi_ub"
+
+  # geom mapping for posterior median
+  med_mapp <- create_geom_mapp(x     = "time", 
+                               y     = "yfit", 
+                               group = group_var)
+  
+  # geom mapping for ci limits
+  lim_mapp <- create_geom_mapp(x     = "time", 
+                               ymin  = lim_lb, 
+                               ymax  = lim_ub)
+
+  # geom mapping for observed data
+  obs_mapp <- create_geom_mapp(x     = "time", 
+                               y     = "yobs", 
+                               group = group_var)
+  
+  # determine default plotting args
+  med_defaults <- list(color = "black") # for posterior median
+  lim_defaults <- list(alpha = 0.3)     # for ci limits
+  obs_defaults <- list()                # for observed data
+  
+  # combine default and user-specified plotting args
+  med_args <- create_geom_args(med_defaults, list(...))
+  lim_args <- create_geom_args(lim_defaults, ci_geom_args)
+  obs_args <- create_geom_args(obs_defaults, list())
+
+  # construct each plot component
+  graph_base <-
+    ggplot(fit_dat) + theme_bw() + 
+    do.call("geom_line", c(med_mapp, med_args))
+  
+  graph_limits <- 
+    if (ci || pi) {
+      do.call("geom_ribbon", c(lim_mapp, lim_args)) 
+    } else NULL  
+   
+  graph_facet <- 
+    if (n_facets > 1L) {
       facet_wrap(facet_var, scales = facet_scales)
-    if (!limits == "none") {
-      graph_smoothlim <- ggplot(plot_dat) + 
-        geom_smooth(
-          aes_string(x = "time", y = if (ci) "ci_lb" else "pi_lb", group = group_var),
-          method = "loess", se = FALSE) +
-        geom_smooth(
-          aes_string(x = "time", y = if (ci) "ci_ub" else "pi_ub", group = group_var), 
-          method = "loess", se = FALSE) +
-        facet_wrap(facet_var, scales = facet_scales)
-      build_smoothlim <- ggplot_build(graph_smoothlim)
-      df_smoothlim <- data.frame(PANEL = build_smoothlim$data[[1]]$PANEL,
-                                 time = build_smoothlim$data[[1]]$x,
-                                 lb = build_smoothlim$data[[1]]$y,
-                                 ub = build_smoothlim$data[[2]]$y,
-                                 group = build_smoothlim$data[[1]]$group)
-      panel_id_map <- build_smoothlim$layout$layout[, c("PANEL", facet_var), drop = FALSE]
-      df_smoothlim <- merge(df_smoothlim, panel_id_map)
-      lim_mapp <- list(
-        mapping = aes_string(x = "time", ymin = "lb", ymax = "ub", group = "group"), 
-        data = df_smoothlim)
-      graph_limits <- do.call("geom_ribbon", c(lim_mapp, lim_args))
-    } else graph_limits <- NULL
-  } else {
-    geom_mapp <- list(mapping = aes_string(x = "time", y = "yfit", group = group_var), 
-                      data = plot_dat)
-    graph <- ggplot() + theme_bw() + 
-      do.call("geom_smooth", c(geom_mapp, geom_args))
-    if (!(limits == "none")) {
-      graph_smoothlim <- ggplot(plot_dat) + 
-        geom_smooth(aes_string(x = "time", y = if (ci) "ci_lb" else "pi_lb"), 
-                    method = "loess", se = FALSE) +
-        geom_smooth(aes_string(x = "time", y = if (ci) "ci_ub" else "pi_ub"), 
-                    method = "loess", se = FALSE)
-      build_smoothlim <- ggplot_build(graph_smoothlim)
-      df_smoothlim <- data.frame(time = build_smoothlim$data[[1]]$x,
-                                 lb = build_smoothlim$data[[1]]$y,
-                                 ub = build_smoothlim$data[[2]]$y,
-                                 group = build_smoothlim$data[[1]]$group) 
-      lim_mapp <- list(
-        mapping = aes_string(x = "time", ymin = "lb", ymax = "ub", group = "group"), 
-        data = df_smoothlim)
-      graph_limits <- do.call("geom_ribbon", c(lim_mapp, lim_args))
-    } else graph_limits <- NULL
-  }    
-  if (plot_observed) {
-    if (y_var %in% colnames(obs_dat)) {
-      obs_dat$y <- obs_dat[[y_var]]
-    } else {
-      obs_dat$y <- try(eval(parse(text = y_var), obs_dat))
-      if (inherits(obs_dat$y, "try-error"))
-        stop("Could not find ", y_var, "in observed data, nor able to parse ",
-             y_var, "as an expression.")
-    }
-    obs_dat$id <- factor(obs_dat[[id_var]])
-    obs_dat$time <- obs_dat[[time_var]]
-    if (!is.null(grp_var))
-      obs_dat$grp <- obs_dat[[grp_var]]
-    if (is.null(obs_dat[["y"]]))
-      stop("Cannot find observed outcome data to add to plot.")
-    obs_mapp <- list(
-      mapping = aes_string(x = "time", y = "y", group = group_var), 
-      data = obs_dat)
-    graph_obs <- do.call("geom_point", c(obs_mapp, obs_args)) 
-  } else graph_obs <- NULL
-  if (vline) {
-    if (facet_var == "id") {
-      facet_list <- unique(plot_dat[, id_var])
-      last_time <- attr(x, "last_time")[as.character(facet_list)] # potentially reorder last_time to match plot_dat
-    } else {
-      facet_list <- unique(plot_dat[, c(id_var, grp_var)])
-      last_time <- attr(x, "last_time")[as.character(facet_list[[id_var]])] # potentially reorder last_time to match plot_dat
-      facet_list <- facet_list[[grp_var]]
-    }
-    vline_dat <- data.frame(FACETVAR = facet_list, last_time = last_time)
-    colnames(vline_dat) <- c(facet_var, "last_time")
-    graph_vline <- geom_vline(
-      mapping = aes_string(xintercept = "last_time"), 
-      data = vline_dat, linetype = 2)
-  } else graph_vline <- NULL
+    } else NULL
+ 
+  graph_obs <- 
+    if (plot_observed) {
+      obs_mapp$data <- obs_dat
+      do.call("geom_point", c(obs_mapp, obs_args))
+    } else NULL
   
-  ret <- graph + graph_limits + graph_obs + graph_vline + labs(x = xlab, y = ylab) 
-  class_ret <- class(ret)
-  class(ret) <- c("plot.predict.stanjm", class_ret)
-  ret
+  graph_vline <- 
+    if (vline) {
+      # potentially reorder last_time to match ordering in fit_dat
+      if (facet_var == "id") {
+        facet_list <- unique(fit_dat[, i_var])
+        last_time <- attr(x, "last_time")[as.character(facet_list)]
+      } else {
+        facet_list <- unique(fit_dat[, c(i_var, g_var)])
+        last_time <- attr(x, "last_time")[as.character(facet_list[[i_var]])] 
+        facet_list <- facet_list[[g_var]]
+      }
+      vline_dat <- data.frame(FACETVAR = facet_list, last_time = last_time)
+      vline_dat <- set_colnames(vline_dat, c(facet_var, "last_time"))
+      geom_vline(mapping  = aes_string(xintercept = "last_time"),
+                 data     = vline_dat, 
+                 linetype = 2)
+    } else NULL
   
+  graph_labels <- labs(x = xlab, y = ylab)
+  
+  gg <- 
+    graph_base + 
+    graph_facet + 
+    graph_limits + 
+    graph_labels + 
+    graph_obs + 
+    graph_vline
+  
+  class_gg <- class(gg)
+  class(gg) <- c("plot.predict.stanjm", class_gg)
+  gg
 }
 
 
 # internal ----------------------------------------------------------------
+
+# Get the name of the response variable
+#
+# @param object A stanjm model.
+# @param m Integer specifying which submodel.
+get_resp_name <- function(object, m) {
+  Terms <- terms(formula(object, m = m))
+  vars  <- rownames(attr(Terms, "factors"))
+  yvar  <- vars[[attr(Terms, "response")]]
+  yvar
+}
+
+# Return a list with the aes mapping
+create_geom_mapp <- function(...) {
+  list(mapping = ggplot2::aes_string(...))
+}
+
+# Call set_geom_args on the default and user-specified plotting args
+create_geom_args <- function(defaults = list(), more_args = list()) {
+  do.call("set_geom_args", c(defaults = list(defaults), more_args))
+}
+
+# Construct a data frame for plotting observed biomarker data
+handle_obs_data <- function(data, y_var, i_var, t_var, g_var) {
+  
+  # add outcome variable
+  if (y_var %in% colnames(data)) {
+    data$yobs <- data[[y_var]]
+  } else {
+    data$yobs <- try(eval(parse(text = y_var), data))
+    if (inherits(data$yobs, "try-error"))
+      stop("Could not find ", y_var, "in observed data, nor able to parse ",
+           y_var, "as an expression.")
+  }
+  
+  # add id variable
+  data$id   <- factor(data[[i_var]])
+  
+  # add time variable
+  data$time <- data[[t_var]]
+  
+  # add grp variable (identifier for lower level clusters)
+  if (!is.null(g_var))
+    data$grp <- data[[g_var]] 
+  
+  # final validation that outcome data exists in data frame
+  if (is.null(data[["yobs"]]))
+    stop("Cannot find observed outcome data to add to plot.")
+  
+  data
+}
+
 
 # Return a list with the control arguments for interpolation and/or
 # extrapolation in posterior_predict.stanmvreg and posterior_survfit.stanjm
@@ -695,7 +802,7 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
 # @return A named list
 extrapolation_control <- 
   function(control = list(), ok_args = c("epoints", "edist", "eprop")) {
-  defaults <- list(ipoints = 15, epoints = 15, edist = NULL, eprop = 0.2, last_time = NULL)
+  defaults <- list(ipoints = 100, epoints = 100, edist = NULL, eprop = 0.2, last_time = NULL)
   if (!is.list(control)) {
     stop("'control' should be a named list.")
   } else if (!length(control)) {

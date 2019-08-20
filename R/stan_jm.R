@@ -116,7 +116,7 @@
 #' @param basehaz A character string indicating which baseline hazard to use
 #'   for the event submodel. Options are a B-splines approximation estimated 
 #'   for the log baseline hazard (\code{"bs"}, the default), a Weibull 
-#'   baseline hazard (\code{"weibull"}, the default), or a piecewise
+#'   baseline hazard (\code{"weibull"}), or a piecewise
 #'   constant baseline hazard (\code{"piecewise"}). (Note however that there  
 #'   is currently limited post-estimation functionality available for
 #'   models estimated using a piecewise constant baseline hazard).

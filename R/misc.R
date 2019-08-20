@@ -1191,7 +1191,7 @@ STOP_arg_required_for_stanmvreg <- function(arg) {
 # @param arg The argument
 STOP_id_var_required <- function() {
   stop2("'id_var' must be specified for models with a start-stop response ",
-        "or with time dependent effects.")
+        "or with time-varying effects.")
 }
 
 # Error message when a function is not yet implemented for stanmvreg objects
@@ -1298,9 +1298,11 @@ check_pp_ids <- function(object, ids, m = 1) {
 #   variable must be included in the new data frame
 # @return A list of validated data frames
 validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
-                              duplicate_ok = FALSE, response = TRUE) {
+                              duplicate_ok = FALSE, response = TRUE,
+                              needs_time_var = TRUE) {
   validate_stanmvreg_object(object)
   id_var <- object$id_var
+  time_var <- object$time_var
   newdatas <- list()
   if (!is.null(newdataLong)) {
     if (!is(newdataLong, "list"))
@@ -1308,6 +1310,14 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
     dfcheck <- sapply(newdataLong, is.data.frame)
     if (!all(dfcheck))
       stop("'newdataLong' must be a data frame or list of data frames.", call. = FALSE)
+    if (!needs_time_var) {
+      newdataLong <- lapply(newdataLong, function(m) {
+        if (!time_var %in% colnames(m)) {
+          m[[time_var]] <- 0 # hack to pass nacheck below
+        }
+        m
+      })
+    }
     nacheck <- sapply(seq_along(newdataLong), function(m) {
       if (response) { # newdataLong needs the reponse variable
         fmL <- formula(object, m = m)
@@ -1334,7 +1344,7 @@ validate_newdatas <- function(object, newdataLong = NULL, newdataEvent = NULL,
       stop("'newdataEvent' cannot contain NAs.", call. = FALSE)
     if (!duplicate_ok && any(duplicated(newdataEvent[[id_var]])))
       stop("'newdataEvent' should only contain one row per individual, since ",
-           "time varying covariates are not allowed in the prediction data.")
+           "time-varying covariates are not allowed in the prediction data.")
     newdatas <- c(newdatas, list(Event = newdataEvent))
   }
   if (length(newdatas)) {
@@ -1493,16 +1503,18 @@ extract_pars.stansurv <- function(object, stanmat = NULL, means = FALSE) {
   if (means) 
     stanmat <- t(colMeans(stanmat)) # return posterior means
   nms_beta <- colnames(object$x)
-  nms_tde  <- get_smooth_name(object$s_cpts, type = "smooth_coefs")
+  nms_tve  <- get_smooth_name(object$s_cpts, type = "smooth_coefs")
   nms_smth <- get_smooth_name(object$s_cpts, type = "smooth_sd")
   nms_int  <- get_int_name_basehaz(object$basehaz)
   nms_aux  <- get_aux_name_basehaz(object$basehaz)
+  nms_b    <- b_names(colnames(stanmat))
   alpha    <- stanmat[, nms_int,  drop = FALSE]
   beta     <- stanmat[, nms_beta, drop = FALSE]
-  beta_tde <- stanmat[, nms_tde,  drop = FALSE]
+  beta_tve <- stanmat[, nms_tve,  drop = FALSE]
   aux      <- stanmat[, nms_aux,  drop = FALSE]
   smooth   <- stanmat[, nms_smth, drop = FALSE]
-  nlist(alpha, beta, beta_tde, aux, smooth, stanmat)
+  b        <- stanmat[, nms_b,    drop = FALSE]
+  nlist(alpha, beta, beta_tve, aux, smooth, b, stanmat)
 }
 
 extract_pars.stanmvreg <- function(object, stanmat = NULL, means = FALSE) {
@@ -1744,18 +1756,18 @@ qtile <- function(x, nq = 2) {
 
 # Return the desired spline basis for the given knot locations
 get_basis <- function(x, iknots, bknots = range(x), 
-                      degree = 3, intercept = TRUE, 
+                      degree = 3, intercept = FALSE, 
                       type = c("bs", "is", "ms")) {
   type <- match.arg(type)
   if (type == "bs") {
-    out <- splines::bs(x, knots = iknots, Boundary.knots = bknots,
-                       degree = degree, intercept = intercept)
+    out <- splines2::bSpline(x, knots = iknots, Boundary.knots = bknots,
+                             degree = degree, intercept = intercept)
   } else if (type == "is") {
     out <- splines2::iSpline(x, knots = iknots, Boundary.knots = bknots,
-                              degree = degree, intercept = intercept)
+                             degree = degree, intercept = TRUE)
   } else if (type == "ms") {
     out <- splines2::mSpline(x, knots = iknots, Boundary.knots = bknots,
-                              degree = degree, intercept = intercept)
+                             degree = degree, intercept = TRUE)
   } else {
     stop2("'type' is not yet accommodated.")
   }

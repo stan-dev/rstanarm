@@ -252,14 +252,17 @@ pp_data <-
   formula <- object$formula
   basehaz <- object$basehaz
   
+  # data with row subsetting etc
   if (is.null(newdata))
     newdata <- get_model_data(object)
   
   # flags
-  has_tde        <- object$has_tde
+  has_tve        <- object$has_tve
   has_quadrature <- object$has_quadrature
+  has_bars       <- object$has_bars
   
-  # define dimensions and times for quadrature
+  #----- dimensions and times
+  
   if (has_quadrature && at_quadpoints) {
     
     if (is.null(times))
@@ -286,26 +289,45 @@ pp_data <-
     
   } else { # predictions don't require quadrature
     
-    pts    <- times
-    wts    <- rep(NA, length(times))
-    ids    <- seq_along(times)
+    pts <- times
+    wts <- rep(NA, length(times))
+    ids <- seq_along(times)
 
   }
 
-  # time-fixed predictor matrix
-  tf_form <- reformulate_rhs(rhs(formula$tf_form))
-  mf <- make_model_frame(tf_form, newdata, check_constant = FALSE)$mf 
-  x  <- make_x(tf_form, mf, xlevs= object$xlevs, check_constant = FALSE)$x
-  if (has_quadrature && at_quadpoints) {
-    x <- rep_rows(x, times = qnodes)
-  }
+  #----- time-fixed predictor matrix
   
-  # time-varying predictor matrix
-  if (has_tde) { # model has tde
-    if (at_quadpoints) {
-      # expand covariate data
-      newdata <- rep_rows(newdata, times = qnodes)
-    }
+  # check all vars are in newdata
+  vars <- all.vars(delete.response(terms(object, fixed.only = FALSE)))
+  miss <- which(!vars %in% colnames(newdata))
+  if (length(miss))
+    stop2("The following variables are missing from the data: ", comma(vars[miss]))
+  
+  # drop response from fixed effect formula
+  tt <- delete.response(terms(object, fixed.only = TRUE))
+  
+  # make model frame based on time-fixed part of model formula
+  mf <- make_model_frame(tt, newdata, xlevs = object$xlevs)$mf
+  
+  # if using quadrature then expand rows of time-fixed predictor matrix
+  if (has_quadrature && at_quadpoints)
+    mf <- rep_rows(mf, times = qnodes)
+  
+  # check data classes in the model frame match those used in model fitting
+  if (!is.null(cl <- attr(tt, "dataClasses"))) 
+    .checkMFClasses(cl, mf)
+
+  # check model frame dimensions are correct (may be errors due to NAs?)
+  if (!length(pts) == nrow(mf))
+    stop("Bug found: length of 'pts' should equal number rows in model frame.")
+  
+  # construct time-fixed predictor matrix
+  x  <- make_x(tt, mf, check_constant = FALSE)$x
+  
+  #----- time-varying predictor matrix
+  
+  if (has_tve) {
+    
     if (all(is.na(pts))) {
       # temporary replacement to avoid error in creating spline basis
       pts_tmp <- rep(0, length(pts))
@@ -313,17 +335,61 @@ pp_data <-
       # else use prediction times or quadrature points
       pts_tmp <- pts
     }
-    s <- make_s(formula = object$formula$td_form,
-                data    = newdata,
-                times   = pts_tmp,
-                xlevs   = object$xlevs)
+    
+    # generate a model frame with time transformations for tve effects
+    mf_s <- make_model_frame(formula$tt_frame, data.frame(times__ = pts_tmp))$mf
+    
+    # check model frame dimensions are correct
+    if (!length(pts) == nrow(mf_s))
+      stop("Bug found: length of 'pts' should equal number rows in model frame.")
+    
+    # NB next line avoids dropping terms attribute from 'mf'
+    mf[, colnames(mf_s)] <- mf_s
+        
+    # construct time-varying predictor matrix
+    s <- make_s(formula, mf, xlevs = xlevs) 
+
     if (all(is.na(pts))) {
       # if pts were all NA then replace the time-varying predictor
       # matrix with all NA, but retain appropriate dimensions
       s[] <- NaN
-    }
-  } else { # model does not have tde
-    s <- matrix(0, length(pts), 0)
+    }    
+      
+  } else {
+    
+    s <- matrix(0, nrow(mf), 0)
+    
+  }
+  
+  #----- random effects predictor matrix
+  
+  if (has_bars) {
+
+    # drop response from random effects part of model formula
+    tt_z <- delete.response(terms(object, random.only = TRUE))
+    
+    # make model frame based on random effects part of model formula
+    mf_z <- make_model_frame(formula   = tt_z, 
+                             data      = newdata, 
+                             xlevs     = object$xlevs, 
+                             na.action = na.pass)$mf
+    
+    # if using quadrature then expand rows
+    if (has_quadrature && at_quadpoints)
+      mf_z <- rep_rows(mf_z, times = qnodes)
+    
+    # check model frame dimensions are correct
+    if (!length(pts) == nrow(mf_z))
+      stop("Bug found: length of 'pts' should equal number rows in model frame.")
+    
+    # construct random effects predictor matrix
+    ReTrms <- lme4::mkReTrms(formula$bars, mf_z)
+    z <- nlist(Zt = ReTrms$Zt, Z_names = make_b_nms(ReTrms))
+    
+  } else {
+    
+    z <- list()
+  
   }
 
   # return object
@@ -332,7 +398,10 @@ pp_data <-
                ids,
                x,
                s,
+               z,
                has_quadrature,
+               has_tve,
+               has_bars,
                at_quadpoints,
                qnodes = object$qnodes))
 }
@@ -356,17 +425,31 @@ pp_data <-
 #   the fitted object (if newdataEvent is NULL) or in newdataEvent.
 # @param long_parts,event_parts A logical specifying whether to return the
 #   design matrices for the longitudinal and/or event submodels.
+# @param response Logical specifying whether the newdataLong requires the
+#   response variable.
 # @return A named list (with components M, Npat, ndL, ndE, yX, tZt, 
 #   yZnames, eXq, assoc_parts) 
-.pp_data_jm <- function(object, newdataLong = NULL, newdataEvent = NULL, 
-                        ids = NULL, etimes = NULL, long_parts = TRUE, 
-                        event_parts = TRUE) {
+.pp_data_jm <- function(object, 
+                        newdataLong  = NULL, 
+                        newdataEvent = NULL, 
+                        ids          = NULL, 
+                        etimes       = NULL, 
+                        long_parts   = TRUE, 
+                        event_parts  = TRUE, 
+                        response     = TRUE,
+                        needs_time_var = TRUE) {
+  
   M <- get_M(object)
+  
   id_var   <- object$id_var
   time_var <- object$time_var
   
   if (!is.null(newdataLong) || !is.null(newdataEvent))
-    newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
+    newdatas <- validate_newdatas(object, 
+                                  newdataLong, 
+                                  newdataEvent, 
+                                  response = response,
+                                  needs_time_var = needs_time_var)
   
   # prediction data for longitudinal submodels
   ndL <- if (is.null(newdataLong)) 
@@ -408,7 +491,7 @@ pp_data <-
   
   if (long_parts && event_parts)
     lapply(ndL, function(x) {
-      if (!time_var %in% colnames(x)) 
+      if (!time_var %in% colnames(x))
         STOP_no_var(time_var)
       if (!id_var %in% colnames(x)) 
         STOP_no_var(id_var)
@@ -438,6 +521,8 @@ pp_data <-
     qtimes <- uapply(qq$points,  unstandardise_qpts, 0, etimes)
     qwts   <- uapply(qq$weights, unstandardise_qwts, 0, etimes)
     starttime <- deparse(formula(object, m = "Event")[[2L]][[2L]])
+    if ((!response) && (!starttime %in% colnames(ndE)))
+      ndE[[starttime]] <- 0
     edat <- prepare_data_table(ndE, id_var, time_var = starttime)
     id_rep <- rep(id_list, qnodes + 1)
     times <- c(etimes, qtimes) # times used to design event submodel matrices
@@ -490,7 +575,7 @@ get_model_data <- function(object, ...) UseMethod("get_model_data")
 
 get_model_data.stansurv <- function(object, ...) {
   validate_stansurv_object(object)
-  terms <- terms(object)
+  terms <- terms(object, fixed.only = FALSE)
   row_nms <- row.names(model.frame(object))
   get_all_vars(terms, object$data)[row_nms, , drop = FALSE]
 }
