@@ -149,7 +149,6 @@ posterior_vs_prior.stanreg <-
         object,
         prior_PD = TRUE,
         refresh = -1,
-        iter = 2000,
         chains = 2
       ))
     )
