@@ -1,0 +1,618 @@
+---
+title: "MRP in RStanarm"
+author: "Lauren Kennedy & Jonah Gabry"
+date: "`r Sys.Date()`"
+output: 
+  html_vignette:
+  toc: yes
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
+bibliography: bibliography.bib
+
+---
+```{r libraries.etc, echo=FALSE, results='hide', message=FALSE}
+#Use these to cache data/plots or models
+cachedata =FALSE
+cachemodel = FALSE
+```
+
+```{r, child="children/SETTINGS-gg.txt"}
+```
+```{r, child="children/SETTINGS-rstan.txt"}
+```
+```{r, child="children/SETTINGS-knitr.txt"}
+```
+
+Inference about the population is one the main aims of statistical methodology. Multi-level regression with post-stratification [@little1993post; @lax2009should; @park2004bayesian] has been shown to be an effective method of adjusting the sample so that it is representative of the population for a set of key variables. Recent work has demonstrated the effectiveness of MRP when there are a number of suspected interactions between these variables [@ghitza2013deep], replicated by @lei20172008. While @ghitza2013deep use approximate marginal maximum likelihood estimates; @lei20172008 implement a fully Bayesian approach through Stan. 
+
+Recently, the @RStanArm have implemented a package (rstanarm) that allows the user to conduct complicated regression analyses in Stan with the simplicity of standard formula notation in R. The purpose of this vignette is to demonstrate the utility of this package when conducting MRP analyses. We will not delve into the details of conducting logistic regression with rstanarm as this is already covered in [other vignettes](https://cran.r-project.org/web/packages/rstanarm/vignettes/binomial.html). All of the data is  simulated and [available through Github](https://github.com/lauken13/MRPinRStanArm).
+
+```{r message=FALSE,data.loading.chunk1, cache = cachedata,echo=FALSE}
+library(rstanarm)
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+library(tidyr)
+
+simulate_mrp_data<-function(n){
+  J <- c(2, 3, 7, 3, 50) #male or not, eth, age, income level, state
+  poststrat <- as.data.frame(array(NA, c(prod(J), length(J)+1))) #Columns of post-strat matrix, plus one for size
+  colnames(poststrat) <- c("male", "eth", "age","income", "state",'N')
+  count <- 0
+  for (i1 in 1:J[1]){
+    for (i2 in 1:J[2]){
+      for (i3 in 1:J[3]){
+        for (i4 in 1:J[4]){
+          for (i5 in 1:J[5]){
+              count <- count + 1
+              poststrat[count, 1:5] <- c(i1-1, i2, i3,i4,i5) #Fill them in so we know what category we are referring to
+          }
+        }
+      }
+    }
+  }
+  #Proportion in each sample in the population
+  p_male <- c(0.52, 0.48)
+  p_eth <- c(0.5, 0.2, 0.3)
+  p_age <- c(0.2,.1,0.2,0.2, 0.10, 0.1, 0.1)
+  p_income<-c(.50,.35,.15)
+  p_state_tmp<-runif(50,10,20)
+  p_state<-p_state_tmp/sum(p_state_tmp)
+  poststrat$N<-0
+  for (j in 1:prod(J)){
+    poststrat$N[j] <- round(250e6 * p_male[poststrat[j,1]+1] * p_eth[poststrat[j,2]] *
+      p_age[poststrat[j,3]]*p_income[poststrat[j,4]]*p_state[poststrat[j,5]]) #Adjust the N to be the number observed in each category in each group
+  }
+  
+  #Now let's adjust for the probability of response
+  p_response_baseline <- 0.01
+  p_response_male <- c(2, 0.8)/2.8
+  p_response_eth <- c(1, 1.2, 2.5)/3.7
+  p_response_age <- c(1,0.4, 1, 1.5,  3, 5, 7)/18.9
+  p_response_inc <- c(1, 0.9, 0.8)/2.7
+  p_response_state <- rbeta(50,1,1)
+  p_response_state <- p_response_state/sum(p_response_state)
+  p_response <- rep(NA, prod(J))
+  for (j in 1:prod(J)){
+    p_response[j] <- p_response_baseline * p_response_male[poststrat[j,1]+1] *
+    p_response_eth[poststrat[j,2]] * p_response_age[poststrat[j,3]]*
+      p_response_inc[poststrat[j,4]]*p_response_state[poststrat[j,5]]
+  }
+  people <- sample(prod(J), n, replace=TRUE, prob=poststrat$N*p_response)
+  
+  ## For respondent i, people[i] is that person's poststrat cell,
+  ## some number between 1 and 32
+  n_cell <- rep(NA, prod(J))
+  for (j in 1:prod(J)){
+    n_cell[j] <- sum(people==j)
+  }
+  
+  coef_male <- c(0, -0.3)
+  coef_eth <- c(0, 0.6, 0.9)
+  coef_age <- c(0, -0.2, -0.3, 0.4, 0.5,.7,.8,.9)
+  coef_income <- c(0, -0.2, 0.6)
+  coef_state<-c(0,round(rnorm(49,0,1),1))
+  coef_age_male<-t(cbind(
+    c(0,.1,.23,.3,.43,.5,.6),
+    c(0,-.1,-.23,-.5,-.43,-.5,-.6)))
+  true.popn <- data.frame(poststrat[,1:5],cat.pref=rep(NA, prod(J)))
+  for (j in 1:prod(J)){
+    true.popn$cat.pref[j] <- invlogit(coef_male[poststrat[j,1]+1] +
+                              coef_eth[poststrat[j,2]] +coef_age[poststrat[j,3]] +
+                              coef_income[poststrat[j,4]] +coef_state[poststrat[j,5]] +
+                              coef_age_male[poststrat[j,1]+1,poststrat[j,3]])
+  }
+  
+  
+  #male or not, eth, age, income level, state, city
+  y <- rbinom(n, 1, true.popn$cat.pref[people])
+  male <- poststrat[people,1] 
+  eth <- poststrat[people,2]
+  age <- poststrat[people,3]
+  income <- poststrat[people,4]
+  state <- poststrat[people,5]
+  
+  sample <- data.frame(cat.pref=y, male, age, eth,income,state,id=1:length(people))
+  
+  #Make all numeric:
+  for (i in 1: ncol(poststrat)){
+    poststrat[,i]<-as.numeric(poststrat[,i])
+  }
+  for (i in 1: ncol(true.popn)){
+    true.popn[,i]<-as.numeric(true.popn[,i])
+  }
+  for (i in 1: ncol(sample)){
+    sample[,i]<-as.numeric(sample[,i])
+  }
+  return(list(sample,poststrat,true.popn))
+}
+
+invlogit <- function (x){
+    1/(1 + exp(-x))
+}
+
+```
+
+# The Data
+
+Three data sets can be simulated using the function simulate_mrp_data. The first, *sample* contains $n$ observations from the individuals that form our sample (i.e., $n$ rows). For each individual we have their age (recorded as membership within a specific age bracket), ethnicity, income level (recorded as membership within a specific bracket), and male/gender. Participants were randomly sampled from a state. The outcome variable of interest is a binary variable (MRP can also be used with a continuous variable outcome variable). Oftentimes this is the outcome of a two option fixed choice question (for example McCain's share of two party vote [@ghitza2013deep]; support for George W Bush, [@park2004bayesian]; or support for the death penalty [@shirley2015hierarchical]). As this is a simple toy example, we will describe the proportion of the population who would choose to adopt a cat over a dog, given the opportunity. We will simulate code using a function that is included in the appendix of this document. This function simulates sample of 1200 from a much larger population. It returns a list including the sample, population poststratification matrix and the true population preference for cats. 
+
+```{r message=FALSE,data.loading.chunk2a, cache = cachedata,echo=FALSE,results='hide'}
+mrp_sim <- simulate_mrp_data(n=1200)
+```
+
+```{r message=FALSE,data.loading.chunk2b, cache = cachedata}
+sample <- mrp_sim[[1]]
+rbind(head(sample),tail(sample))
+```
+The variables describing the individual (age, ethnicity, income level and gender) will be use to match the sample to the population of interest. To do this we will need to form a post-stratification table, which contains the number of people in each possible combination of post-stratification variable. As we have 4 variables with 2 (male), 7 (age), 3 (ethnicity) and 3 (income) levels, there are 2x7x3x3 different levels. Participants are also selected from a state (50), increasing the number of possible levels to $6300$. 
+
+To make inference about the population, we will also need the proportion of the population in each  post stratification cell at the *population* level. We will use this information to update the estimate of our outcome variable from the sample so that is more representative of the population. This is particularly helpful if there is a belief that the sample has some bias (i.e., a greater proportion of females responded than males), and that bias impacts the outcome variable (i.e, women are more likely to adopt a cat than men).  For each possible combination of factors, the post-stratification table shows the proportion/number of the population in that cell (rather than the proportion/number in the sample in the cell). Below we read in the poststrat data our simulated data list. 
+
+```{r message=FALSE,data.loading.chunk3, cache = cachedata}
+poststrat <- mrp_sim[[2]]
+rbind(head(poststrat),tail(poststrat))
+```
+
+One of the benefits of using a simulated data set for this example is that the actual, population level probability of cat preference is known for each post-stratification cell. In real world data analysis, we don't have this luxury, but we will use it later in this case study to check the predictions of the model. Here we load the variable true.popn from Github. Details regarding the simulation of this data are available in the appendix.
+
+```{r message=FALSE,data.loading.chunk4, cache = cachedata}
+true.popn <- mrp_sim[[3]]
+rbind(head(true.popn),tail(true.popn))
+```
+
+#Data cleaning
+
+To make the plots nice and tidy, we want to use them order the states by the number we observed. 
+
+```{r, echo=FALSE, fig.height = 4, fig.width = 7, fig.align = "center",data.loading.chunk5, cache = cachedata}
+sample$state <- factor(sample$state,levels=1:50)
+sample$state<-with(sample, factor(state, levels=order(table(state))))
+true.popn$state<-factor(true.popn$state,levels = levels(sample$state))
+poststrat$state <- factor(poststrat$state,levels = levels(sample$state))
+
+```
+
+# Exploring Graphically
+
+Before we begin with the MRP analysis, we first explore the data set with some basic visualizations.
+
+## Comparing sample to population
+The aim of this analysis is to obtain a \textit{population} estimation of cat preference given our sample of $4626$. We can see in the following plot the difference in proportions between the sample and the population. Horizontal panels represent each variable. Bars represent the proportion of the sample (solid) and population (dashed) in each category (represented by colour and the x-axis). For ease of viewing, we ordered the states in terms of the proportion of the sample in that state that was observed. We will continue this formatting choice thoughout this vignette. 
+
+```{r, echo=FALSE, fig.height = 4, fig.width = 7, fig.align = "center",data.loading.chunk6, cache = cachedata}
+income.popn<-poststrat%>%
+  group_by(income)%>%
+  summarize(Num=sum(N))%>%
+  mutate(PROP=Num/sum(Num),TYPE='Popn',VAR='Income',CAT=income)%>%
+ ungroup()
+income.data<-sample%>%
+  group_by(income)%>%
+  summarise(Num=n())%>%
+  mutate(PROP=Num/sum(Num),TYPE='Sample',VAR='Income',CAT=income)%>%
+  ungroup()
+income<-rbind(income.data[,2:6],income.popn[,2:6])
+
+age.popn<-poststrat%>%
+  group_by(age)%>%
+  summarize(Num=sum(N))%>%
+  mutate(PROP=Num/sum(Num),TYPE='Popn',VAR='Age',CAT=age)%>%
+  ungroup()
+age.data<-sample%>%
+  group_by(age)%>%
+  summarise(Num=n())%>%
+  mutate(PROP=Num/sum(Num),TYPE='Sample',VAR='Age',CAT=age)%>%
+  ungroup()
+age<-rbind(age.data[,2:6],age.popn[,2:6] )
+
+eth.popn<-poststrat%>%
+  group_by(eth)%>%
+  summarize(Num=sum(N))%>%
+  mutate(PROP=Num/sum(Num),TYPE='Popn',VAR='Ethnicity',CAT=eth)%>%
+  ungroup()
+eth.data<-sample%>%
+  group_by(eth)%>%
+  summarise(Num=n())%>%
+  mutate(PROP=Num/sum(Num),TYPE='Sample',VAR='Ethnicity',CAT=eth)%>%
+  ungroup()
+eth<-rbind(eth.data[,2:6],eth.popn[,2:6])
+
+male.popn<-poststrat%>%
+  group_by(male)%>%
+  summarize(Num=sum(N))%>%
+  mutate(PROP=Num/sum(Num),TYPE='Popn',VAR='Male',CAT=male)%>%
+  ungroup()
+male.data<-sample%>%
+  group_by(male)%>%
+  summarise(Num=n())%>%
+  mutate(PROP=Num/sum(Num),TYPE='Sample',VAR='Male',CAT=male)%>%
+  ungroup()
+male<-rbind(male.data[,2:6],male.popn[,2:6])
+
+state.popn<-poststrat%>%
+  group_by(state)%>%
+  summarize(Num=sum(N))%>%
+  mutate(PROP=Num/sum(poststrat$N),TYPE='Popn',VAR='State',CAT=state)%>%
+  ungroup()
+state.data<-sample%>%
+  group_by(state)%>%
+  summarise(Num=n())%>%
+  mutate(PROP=Num/nrow(sample),TYPE='Sample',VAR='State',CAT=state)%>%
+  ungroup()
+state<-rbind(state.data[,2:6],state.popn[,2:6])
+
+
+plot.data<-rbind(male,eth,age,income)
+
+plot.data$TYPE <- factor(plot.data$TYPE, levels = c("Sample","Popn"))
+ggplot(data=plot.data, aes(x=as.factor(CAT), y=PROP, group=as.factor(TYPE), linetype=as.factor(TYPE))) +
+  geom_point(stat="identity",colour='black')+
+  geom_line()+
+  facet_wrap( ~ VAR, scales = "free",nrow=1,ncol=5)+
+  theme_bw()+
+  scale_fill_manual(values=c('#1f78b4','#33a02c',
+                             '#e31a1c','#ff7f00','#8856a7'),guide=FALSE)+
+  scale_y_continuous(breaks=c(0,.25,.5,.75,1), labels=c('0%','25%',"50%","75%",
+                                        "100%"))+
+  scale_alpha_manual(values=c(1, .3))+
+  ylab('Proportion')+
+  labs(alpha='')+
+  theme(legend.position="bottom",
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        legend.title=element_blank(),
+        legend.text=element_text(size=10),
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=10),
+        strip.background = element_rect(fill='grey92'))
+
+state$TYPE <- factor(state$TYPE, levels = c("Sample","Popn"))
+
+ggplot(data=state, aes(x=as.factor(CAT), y=PROP, group=as.factor(TYPE), linetype=as.factor(TYPE))) +
+  geom_point(stat="identity",colour='black')+
+  geom_line()+
+  facet_wrap( ~ VAR)+
+  theme_bw()+
+  scale_fill_manual(values=c('#1f78b4','#33a02c',
+                             '#e31a1c','#ff7f00','#8856a7'),guide=FALSE)+
+  scale_y_continuous(breaks=c(0,.025,.05,1), labels=c('0%','2.5%',"5%","100%"),expand=c(0,0),limits=c(0,.06))+
+  scale_alpha_manual(values=c(1, .3))+
+  ylab('Proportion')+
+  labs(alpha='')+
+  theme(legend.position="bottom",
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank(),
+        legend.title=element_blank(),
+        legend.text=element_text(size=10),
+        axis.text.y=element_text(size=10),
+        axis.text.x=element_text(size=8,angle=90),
+        strip.text=element_text(size=10),
+        strip.background = element_rect(fill='grey92'))
+
+```
+
+# Effect of the post-stratification variable on preference for cats
+Secondly; we consider the evidence of different proportions across different levels of a post-stratification variable; which we should consider for each of the post-stratification variables. Here we break down the proportion of individuals who would prefer a cat (*y-axis*) by different levels (*x-axis*) of the post-stratification variable (*horizontal panels*). We can see from this figure that there appears to be differences in cat preference for the different levels of post-stratification variables. Given the previous figure, which suggested that the sample was different to the population in the share of different levels of theses variables, this should suggest that using the sample to estimate cat preference may not give accurate estimates of cat preference in the population. 
+
+```{r,echo=FALSE, fig.height = 4, fig.width = 7, fig.align = "center", data.loading.chunk7, cache = cachedata}
+#Summarise
+temp<-sample%>%
+  gather(variable,category,c("income","eth","age","male"))%>%
+  group_by(variable,category)%>%
+  #Wald confidence interval
+  summarise(y.mean=mean(cat.pref),y.sd=sqrt(mean(cat.pref)*(1-mean(cat.pref))/n()))%>%
+  ungroup()
+temp$variable<-as.factor(temp$variable)
+levels(temp$variable)<- list('Age'='age','Ethnicity'='eth','Income'='income','Male'='male')
+
+ggplot(data=temp, aes(x=as.factor(category), y=y.mean,group=1)) +
+  geom_errorbar(aes(ymin=y.mean-y.sd, ymax=y.mean+y.sd), width=0)+
+  geom_line()+
+  geom_point()+
+  scale_colour_manual(values=c('#1f78b4','#33a02c','#e31a1c','#ff7f00',
+                             '#8856a7'))+theme_bw()+
+facet_wrap(~variable,scales = "free_x",nrow=1,ncol=5)+
+    scale_y_continuous(breaks=c(.5,.75,1), labels=c("50%","75%",
+                                        "100%"), limits=c(0.4-.4*.05,.9),expand = c(0,0))+
+  labs(x="",y="Cat preference")+
+  theme(legend.position="none",
+        axis.title.y=element_text(size=10),
+        axis.title.x=element_blank(),
+        axis.text=element_text(size=10),
+        strip.text=element_text(size=10),
+        strip.background = element_rect(fill='grey92'))
+
+
+    ```
+
+## Interaction effect
+Thirdly, we demonstrate visually that there is an interaction between age and gender; and to compare this interaction to a case where there is no interaction. Here a simulated interaction effect between age (*x-axis*) and gender (*shape*), right panel, is contrasted with no interaction effect (*left panel*). While both panels demonstrate a difference between the genders and the proportion (*y-axis*), only the second panel shows this difference changing with the variable on the x-axis.
+
+
+```{r,echo=FALSE, fig.height = 4, fig.width = 7, fig.align = "center",data.loading.chunk8, cache = cachedata}
+#Summarise
+interaction<-sample%>%
+  gather(variable,category,c("age","eth"))%>%
+  group_by(variable,category,male)%>%
+  summarise(y.mean=mean(cat.pref),y.sd=sqrt(mean(cat.pref)*(1-mean(cat.pref))/n()))%>%
+  ungroup()
+#Tidy for nice facet labels
+interaction$variable<-as.factor(interaction$variable)
+levels(interaction$variable)<- list('Ethnicity'='eth','Age'='age')
+#Plot
+ggplot(data=interaction, aes(x=as.factor(category), y=y.mean, colour=as.factor(male),group=as.factor(male))) +
+  geom_errorbar(aes(ymin=y.mean-y.sd, ymax=y.mean+y.sd),width=0 )+
+  geom_line(aes(x=as.factor(category), y=y.mean,colour=as.factor(male)))+
+  geom_point()+
+  facet_wrap(~variable,scales = "free_x",nrow=1,ncol=2)+
+  labs(x="",y="Cat preference",colour='Gender')+
+  scale_y_continuous(breaks=c(0,.25,.5,.75,1), labels=c("0%",'25%',"50%","75%",
+                                        "100%"), limits=c(0,1),expand=c(0,0))+
+  scale_colour_manual(values=c('#4575b4','#d73027'))+theme_bw()+
+  theme(axis.title=element_text(size=10),
+        axis.text=element_text(size=10),
+        legend.position='none',
+        strip.text=element_text(size=10),
+        strip.background = element_rect(fill='grey92'))
+
+```
+
+
+## Design effect
+Lastly we look at the difference in cat preference between states, which will form the basis for the multi-level component of our analysis. Participants were randomly selected from particular states. Plotting the state (*x-axis*) against the overall proportion of participants who prefer cats (*y-axis*) demonstrates state differences. The downward slope is because we ordered the x-axis by the proportion of cat preference for ease of viewing. We also include second plot with a horizontal line to represent the overall preference for cats in the total population, according to the sample. 
+
+
+```{r,echo=FALSE, fig.height = 4, fig.width = 8, fig.align = "center",data.loading.chunk10, cache = cachedata}
+#Summarise by state
+Estimates<-sample%>%
+  group_by(state)%>%
+  summarise(y.mean=mean(cat.pref),y.sd=sqrt(mean(cat.pref)*(1-mean(cat.pref))/n()))%>%
+  ungroup()
+
+compare<-ggplot(data=Estimates, aes(x=state, y=y.mean,group=1)) +
+  geom_ribbon(aes(ymin=y.mean-y.sd,ymax=y.mean+y.sd,x=state),fill='lightgrey',alpha=.7)+
+  geom_line(aes(x=state, y=y.mean))+
+  geom_point()+
+  scale_y_continuous(breaks=c(0,.25,.5,.75,1), labels=c("0%","25%","50%","75%","100%"), limits=c(0,1),expand=c(0,0))+
+  scale_x_discrete(drop=FALSE)+
+  scale_colour_manual(values=c('#1f78b4','#33a02c','#e31a1c','#ff7f00',
+                               '#8856a7'))+theme_bw()+
+  labs(x="States",y="Cat preference")+
+  theme(legend.position="none",
+        axis.title=element_text(size=10),
+        axis.text.y=element_text(size=10),
+        axis.text.x=element_text(angle=90,size=8),
+        legend.title=element_text(size=10),
+        legend.text=element_text(size=10))
+
+compare2<-ggplot()+
+  geom_hline(yintercept = mean(sample$cat.pref),size=.8)+
+  geom_text(aes(x = 5.2, y = mean(sample$cat.pref)+.025, label = "Sample"))+
+  scale_y_continuous(breaks=c(0,.25,.5,.75,1), labels=c("0%","25%","50%","75%","100%"), limits=c(-0.25,1.25),expand=c(0,0))+theme_bw()+
+  labs(x="Popn",y="")+
+   theme(legend.position="none",
+        axis.title.y=element_blank(),
+        axis.title.x=element_text(size=10),
+        axis.text=element_blank(),
+        axis.ticks=element_blank(),
+        legend.title=element_text(size=10),
+        legend.text=element_text(size=10))
+
+grid.arrange(compare,compare2,nrow=1, widths = c(8,1))
+```
+
+
+# MRP in RStanArm
+
+From visual inspection, it appears that different levels of post-stratification variable have different preferences for cats. Our survey also appears to have sampling bias; indicating that some groups were over/under sampled relative to the population. The net effect of this is that we could not make good population level estimates of cat preference straight from our sample. Our aim is to infer the preference for cats in the *population* using the post-stratification variables to account for systematic differences between the sample and population. Using rstanarm, this becomes a simple procedure.
+
+The first step is to use a multi-level generalized logistic regression model to predict preference for cats in the sample given the variables that we wish to post-stratify with. Note that we actually have more rows in the post-stratification matrix than the we have observed units, so there are some cells in the poststrat matrix that we don't observe. We can use a multi-level model to partially pool information across the different levels within each variable to assist with this. In the model described below, we use a fixed intercept for male, and random intercepts for each of the other factors. This model is included below, with $\theta_{j}$ representing the preference for cats in the poststratification cell $j$, and $X_j$ representing the predictor male. 
+
+$$\theta_j= logit^{-1}(X_{j}\beta)$$
+The multi level component part of the model fits for each post-stratification variable (other than male) a variable $\sigma_{S[j]}$ so that we model for each variable an intercept $\alpha_{S[J]}$ but constrain $\alpha_{S[j]}$ so that it is drawn from $N(0,\sigma_{S[J]})$. This is beneficial as it means we share information between the levels of each variable, we can prevent little observed levels from being fit too tightly to the observed values, and for those levels that we don't observe, we can make a good estimate based on the distribution of levels that we do observe. For more benefits of this type of model, see @gelman2005analysis. For simplicity we will use an intercept only model with states, ethnicity, income and age allowed to have different baseline cat preferences, but @ghitza2013deep extend this for other possible models. 
+
+$$\theta_j = logit^{-1}(X_{j}\beta + \alpha_{S[j]}^{S})$$
+
+where:
+
+$$\alpha_{S[j]}^{S} \sim N(0, \sigma^2_{S[j]})$$
+
+In the following code we predict y (preference for cats) using fixed effects for gender and an interaction between age and gender, which allows the relationship between gender and cat preference to differ with age. We chose to use fixed effects for gender because with two levels it is difficult to fit a varying effect. An alternative would be to use a strong prior as in @si2017bayesian.  Lastly we include a term that suggests that the intercept might differ by state, ethnicity, age and income. In the appendix a number of different model structures are tabled for ease of use. They are all highly similar to the formulae used by the glmer in the lme4 package. 
+
+Finally we specify the relationship between the predictors and outcome variable, in this case a logit function. The final element of the input specifies the data frame that contains the variables in the formula and manually sets the adapt_delta value. 
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE, results='hide',cache=TRUE,data.fitting.chunk1, cache = cachemodel}
+fit <- stan_glmer(cat.pref ~ factor(male) +
+                factor(male)*factor(age) + (1|state)+(1|age)+(1|eth)+(1|income),
+                family=binomial(link="logit"), data=sample,adapt_delta=.99,
+                        refresh = 0)
+save(fit,file='fit.Rdata')
+```
+
+
+```{r,data.loading.chunk11, cache = cachedata}
+print(fit)
+```
+
+As a first pass to check whether the model is performing well, note that there are no warnings about divergent chains, failure to converge or tree depth. If these errors do occur, more information on how to alleviate them is provided [here](https://cran.rstudio.com/web/packages/rstanarm/vignettes/rstanarm.html#step-3-criticize-the-model "Criticize the model"). Many diagnostic plots to test model performance can be produced and explored with the command 
+
+```{r, eval=FALSE}
+launch_shinystan(fit)
+```
+## Population Estimate
+
+From this we get a summary of the baseline log odds of cat preference at the first element of each factor (i.e., male = 0, age = 1) for each state, plus estimates on variability of the intercept for state, ethnicity, age and income. Whilst this is interesting, currently all we have achieved is a model that predicts cat preference given a number of factor-type predictors in a sample. What we would like to do is estimate cat preference in the population by accounting for differences between our sample and the population. We use the posterior_linpred function to obtain posterior estimates for cat preference given the proportion of people in the *population* in each level of the factors included in the model.
+
+```{r, message=FALSE,data.loading.chunk12, cache = cachedata}
+pred_sim<-posterior_linpred(fit, transform=TRUE,
+                  newdata=as.data.frame(poststrat))
+poststrat_sim <- pred_sim %*% poststrat$N / sum(poststrat$N)
+model.popn.pref<-c(round(mean(poststrat_sim),4), round(sd(poststrat_sim),4))
+print(model.popn.pref)
+```
+
+
+We can compare this to the estimate we would have made if we had just used the sample:
+```{r, message=FALSE,data.loading.chunk13, cache = cachedata}
+sample.popn.pref<-round(mean(sample$cat.pref),4)
+print(sample.popn.pref)
+```
+
+We can also add it to the last figure to graphically represent the difference between the sample and population estimate. 
+
+```{r, message=FALSE,fig.height = 4, fig.width = 8, fig.align = "center",data.loading.chunk14, cache = cachedata}
+compare2<-compare2+
+  geom_hline(yintercept =model.popn.pref[1],colour='#2ca25f',size=.8)+
+  geom_text(aes(x = 5.2, y = model.popn.pref[1]+.025), label = "MRP",colour='#2ca25f')
+grid.arrange(compare,compare2,nrow=1, widths = c(8,1))
+```
+
+
+As  this is simulated data, we can look directly at the preference for cats that we simulated from to consider how good our estimate is.  
+```{r, message=FALSE,data.loading.chunk15, cache = cachedata}
+true.popn.pref<-round(sum(true.popn$cat.pref*poststrat$N)/sum(poststrat$N),4)
+print(true.popn.pref)
+```
+Which we will also add to the figure.
+```{r, message=FALSE,fig.height = 4, fig.width = 8, fig.align = "center",data.loading.chunk16, cache = cachedata,echo=FALSE}
+compare2<-compare2+
+  geom_hline(yintercept = mean(true.popn.pref),linetype='dashed',size=.8)+
+  geom_text(aes(x = 5.2, y = mean(true.popn.pref)-.025),label = "True")
+grid.arrange(compare,compare2,nrow=1, widths = c(8,1)) 
+```
+
+
+Our MRP estimate is off by only .05 %, while our sample estimate is off by almost 12.69%. This indicates that using MRP helps to make estimates for the population from our sample that are more accurate.
+
+## Estimate for states
+
+One of the nice benefits of using MRP to make inference about the population is that we can change the population of interest. In the previous paragraph we inferred the preference for cats in the whole population. We can also infer the preference for cats in a single state. In the following code we post-stratify for each state in turn. Note that we can reuse the predictive model from the previous step and update for different population demographics. This is particularly useful for complicated cases or large data sets where the model takes some time to fit.
+
+As before, first we use the proportion of the population in each combination of post-stratification group to estimate the proportion of people who preferred cats in the population, only in this case the population of interest is the state. 
+
+
+```{r, message=FALSE,data.loading.chunk18, cache = cachedata}
+state_df<-data.frame(State=1:50,
+           model.state.sd=rep(-1,50),
+           model.state.pref=rep(-1,50),
+           sample.state.pref=rep(-1,50),
+           true.state.pref=rep(-1,50),
+           N = rep(-1,50))
+
+for(i in 1:length(levels(as.factor(poststrat$state)))){
+  poststrat_state<-poststrat[poststrat$state==i,]
+  pred_sim_state<-posterior_linpred(fit, transform=TRUE, draw=1000,
+                              newdata=as.data.frame(poststrat_state))
+  poststrat_sim_state<- (pred_sim_state %*% poststrat_state$N) / sum(poststrat_state$N)
+  #This is the estimate for popn in state:
+  state_df$model.state.pref[i]<-round(mean(poststrat_sim_state),4)
+  state_df$model.state.sd[i]<-round(sd(poststrat_sim_state),4)
+  #This is the estimate for sample
+  state_df$sample.state.pref[i]<-round(mean(sample$cat.pref[sample$state==i]),4)
+  #And what is the actual popn?
+  state_df$true.state.pref[i]<-round(sum(true.popn$cat.pref[true.popn$state==i]*poststrat_state$N)/sum(poststrat_state$N),4)
+  state_df$N[i]<-length(sample$cat.pref[sample$state==i])
+}
+
+state_df[c(1,3:6)]
+state_df$State<-factor(state_df$State,levels = levels(sample$state))
+```
+
+Here we similar findings to when we considered the population as whole. While estimates for cat preference using the sample are out by up to 
+```{r} 
+round(max(abs(state_df$sample.state.pref-state_df$true.state.pref))*100) #max
+round(mean(abs(state_df$sample.state.pref-state_df$true.state.pref))*100) #mean
+```
+the MRP based estimates are much closer to the actual preference
+```{r}
+round(max(abs(state_df$model.state.pref-state_df$true.state.pref))*100) #max
+round(mean(abs(state_df$model.state.pref-state_df$true.state.pref))*100) #mean
+```
+especially when the sample size for that population is relatively small. This is easier to see graphically, so we will continue to add additional layers to the previous figure. Here we add model estimates,represented by triangles, and the true population cat preference, represented as transparent circles. 
+
+```{r, fig.height = 4, fig.width = 8, fig.align = "center",warning=FALSE, fig.align = "center", message=FALSE,data.loading.chunk19, cache = cachedata,echo=FALSE}
+#Summarise by state
+compare<-compare+
+  geom_point(data=state_df, mapping=aes(x=State, y=model.state.pref), inherit.aes=TRUE,colour='#238b45')+
+  geom_line(data=state_df, mapping=aes(x=State, y=model.state.pref,group=1),inherit.aes=TRUE,colour='#238b45')+
+  geom_ribbon(data=state_df,mapping=aes(x=State,ymin=model.state.pref-model.state.sd, ymax=model.state.pref+model.state.sd,group=1), inherit.aes=FALSE,fill='#2ca25f',alpha=.3)+
+  geom_point(data=state_df, mapping=aes(x=State, y=true.state.pref),alpha=.5,inherit.aes=TRUE)+
+  geom_line(data=state_df, mapping=aes(x=State, y=true.state.pref),inherit.aes = TRUE,linetype='dashed')
+grid.arrange(compare,compare2,nrow=1, widths = c(8,1))
+```
+
+# Other formats
+
+## Alternate methods of modelling
+
+Previously the model 'fit' was created by modelling the dependent variable as a binary outcome. An alternative form of this model is to model the proportion of success (or endorsement of cat preference in this case) out of the total number of people in that cell in the sample. To do this we need to create two n x 1 outcome variables, cat.pref and n. 
+```{r,data.loading.chunk20, cache = cachedata}
+sample.alt<-sample%>%
+  group_by(male, age,income, state, eth)%>%
+  summarise(cat.pref.tot=sum(cat.pref),N=n())%>%
+  ungroup()
+pref=sample.alt$cat.pref.tot
+N=sample.alt$N
+```
+
+We then can use these two outcome variables to model the data as samples from a binomial distribution. 
+```{r,echo=FALSE, message=FALSE, warning=FALSE, results='hide',cache=TRUE,data.fitting.chunk2, cache = cachemodel}
+fit2 <- stan_glmer(cbind(pref,N-pref) ~ factor(male)+
+                factor(male)*factor(age) + (1|state)+(1|age)+(1|eth)+(1|income),
+                family=binomial("logit"), data=sample.alt,adapt_delta=.99,
+                        refresh = 0)
+```
+
+```{r}
+print(fit2)
+```
+
+Like before, we can use the posterior_linpred function to obtain an estimate of the preference for cats in the population. This is particularly useful because the two forms are mathematically equivalent, so we can use whichever form is most convenient for the data at hand. More details on these two forms are available [here](https://cran.r-project.org/web/packages/rstanarm/vignettes/binomial.html).
+
+```{r, message=FALSE,data.loading.chunk21, cache = cachedata}
+pred_sim.alt<-posterior_linpred(fit2, transform=TRUE,
+                  newdata=as.data.frame(poststrat))
+poststrat_sim.alt<- pred_sim.alt %*% poststrat$N / sum(poststrat$N)
+model.popn.pref.alt<-c(round(mean(poststrat_sim.alt),4), round(sd(poststrat_sim.alt),4))
+print(model.popn.pref.alt)
+```
+
+## Alternate method of estimating the population
+
+
+In rstanarm there is an alternate method of sampling from the posterior. Whilst the posterior_linpred function allows the user to obtain an estimate of the probability of cat preference given membership of a particular post stratification cell, the posterior_predict function generates new instances of the outcome variable given membership of a particular cell. 
+
+Accordingly, using the first model where the outcome variable is binary, posterior_predict draws (in this case $4000$) from the fitted model for each cell of the post-stratification matrix and returns the outcome variable (i.e., preference for cats) for each draw. We can use this to estimate the preference for cats in the population. 
+
+```{r, message=FALSE,data.loading.chunk22, cache = cachedata}
+posterior_sim.alt<-posterior_predict(fit,
+                  newdata=data.frame(poststrat,cat.pref=rep(0,nrow(poststrat))), draws=4000)
+poststrat_sim.alt <- apply(posterior_sim.alt/poststrat$N,c(2),mean)
+model.popn.pref.alt<-c(round(mean(poststrat_sim),4), round(sd(poststrat_sim),4))
+print(model.popn.pref.alt)
+```
+
+We can also use the posterior_predict function with the alternative form of the model, fit2. In this case the posterior_predict function uses the $N$ variable that contains the total number of people in each post-stratification cell in the population, and predicts how many out of that $N$ would prefer cats. Note that when using the posterior_predict function, we need to specify cat.pref/pref as an vector of $0$ when specifying new data. 
+
+```{r, message=FALSE,data.loading.chunk23, cache = cachedata}
+posterior_sim.alt<-posterior_predict(fit2,
+                  newdata=data.frame(poststrat,pref=rep(0,nrow(poststrat))), draws=4000)
+poststrat_sim.alt <- apply(posterior_sim.alt/poststrat$N,c(2),mean)
+model.popn.pref.alt<-c(round(mean(poststrat_sim),4), round(sd(poststrat_sim),4))
+print(model.popn.pref.alt)
+```
+
+
+## Examples of other formula
+Examples of other formula for fitting mixture models in Rstanarm are analougous to those in the lmer4 package. A table of examples can be found in Table 2 of the vignette for the lmer4 package, available [here](https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf).
+
+# Appendix: Code to simulate the data
+
+```{r}
+print(simulate_mrp_data)
+```
+
+# References
+
+
+
