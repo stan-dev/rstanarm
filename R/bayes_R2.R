@@ -58,7 +58,7 @@ bayes_R2.stanreg <- function(object, ..., re.form = NULL) {
         sigma2 <- rowMeans(tmp * (1 - mu_pred))
         mu_pred <- tmp
       } else {
-        sigma2 <- rowMeans(mu_pred * (1 - mu_pred) * trials_mat)
+        sigma2 <- rowMeans(mu_pred * (1 - mu_pred))
       }
     } else {
       sigma2 <- drop(as.matrix(object, pars = "sigma"))^2
