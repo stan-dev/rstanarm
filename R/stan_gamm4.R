@@ -147,7 +147,10 @@ stan_gamm4 <-
                   "+", random[2], collapse = " ")
     glmod <- lme4::glFormula(as.formula(form), data, family = gaussian,
                              subset, weights, na.action,
-                             control = make_glmerControl())
+                             control = make_glmerControl(
+                               ignore_x_scale = prior$autoscale %ORifNULL% FALSE
+                               )
+                             )
     data <- glmod$fr
     weights <- validate_weights(glmod$fr$weights)
   }
@@ -201,6 +204,13 @@ stan_gamm4 <-
   if (any(sapply(S, length) > 1)) S <- unlist(S, recursive = FALSE)
   names(S) <- names(jd$pregam$sp)
   X <- X[,mark, drop = FALSE]
+  
+  for (s in seq_along(S)) {
+    # sometimes elements of S are lists themselves that need to be unpacked 
+    # before passing to stan_glm.fit (https://github.com/stan-dev/rstanarm/issues/362)
+    if (is.list(S[[s]]))
+      S[[s]] <- do.call(cbind, S[[s]])
+  }
   X <- c(list(X), S)
   
   if (is.null(prior)) prior <- list()

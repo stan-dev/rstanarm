@@ -10,19 +10,21 @@
 #' @param ... Currently ignored.
 #' 
 #' @return A vector of R-squared values with length equal to the posterior
-#'   sample size.
+#'   sample size (the posterior distribution of R-squared).
 #'   
 #' @references
 #' Andrew Gelman, Ben Goodrich, Jonah Gabry, and Aki Vehtari (2018). R-squared
 #' for Bayesian regression models. \emph{The American Statistician}, to appear.
 #' DOI: 10.1080/00031305.2018.1549100.
-#' (\href{http://www.stat.columbia.edu/~gelman/research/published/bayes_R2_v3.pdf}{Preprint},
+#' (\href{https://doi.org/10.1080/00031305.2018.1549100}{Journal},
+#' \href{http://www.stat.columbia.edu/~gelman/research/published/bayes_R2_v3.pdf}{Preprint},
 #' \href{https://avehtari.github.io/bayes_R2/bayes_R2.html}{Notebook})
 #' 
 #' @examples
 #' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars, QR = TRUE, chains = 2)
 #' rsq <- bayes_R2(fit)
 #' print(median(rsq))
+#' hist(rsq)
 #' 
 #' loo_rsq <- loo_R2(fit)
 #' print(median(loo_rsq))
@@ -50,11 +52,16 @@ bayes_R2.stanreg <- function(object, ..., re.form = NULL) {
       y <- get_y(object)
       if (NCOL(y) == 2) {
         trials <- rowSums(y)
-        mu_pred <- mu_pred %*% diag(trials)
+        trials_mat <- matrix(trials, nrow = nrow(mu_pred), ncol = ncol(mu_pred), 
+                             byrow = TRUE)
+        tmp <- mu_pred * trials_mat
+        sigma2 <- rowMeans(tmp * (1 - mu_pred))
+        mu_pred <- tmp
+      } else {
+        sigma2 <- rowMeans(mu_pred * (1 - mu_pred))
       }
-      sigma2 <- rowMeans(mu_pred * (1 - mu_pred))
     } else {
-      sigma2 <- drop(as.matrix(fit, pars = "sigma"))^2
+      sigma2 <- drop(as.matrix(object, pars = "sigma"))^2
     }
     
     var_mu_pred <- apply(mu_pred, 1, var)
@@ -70,7 +77,7 @@ bayes_R2.stanreg <- function(object, ..., re.form = NULL) {
 #' 
 loo_R2.stanreg <- function(object, ...) {
   if (!used.sampling(object))
-    STOP_sampling_only("bayes_R2")
+    STOP_sampling_only("loo_R2")
   if (is_polr(object))
     stop("loo_R2 is not available for stan_polr models.")
   
@@ -79,21 +86,23 @@ loo_R2.stanreg <- function(object, ...) {
     stop("loo_R2 is only available for Gaussian and binomial models.")
   }
   
-  y <- get_y(fit)
-  log_ratios <- -log_lik(fit)
-  psis_object <- fit[["loo"]][["psis_object"]]
+  y <- get_y(object)
+  log_ratios <- -log_lik(object)
+  psis_object <- object[["loo"]][["psis_object"]]
   if (is.null(psis_object)) {
     psis_object <- loo::psis(log_ratios, r_eff = NA)
   }
   
-  mu_pred <- posterior_linpred(fit, transform = TRUE)
+  mu_pred <- posterior_linpred(object, transform = TRUE)
   if (is.binomial(fam)) {
     if (is.factor(y)) {
       y <- fac2bin(y)
     } else if (NCOL(y) == 2) {
       trials <- rowSums(y)
       y <- y[, 1]
-      mu_pred <- mu_pred %*% diag(trials)
+      trials_mat <- matrix(trials, nrow = nrow(mu_pred), ncol = ncol(mu_pred), 
+                           byrow = TRUE)
+      mu_pred <- mu_pred * trials_mat
     }
   }
   mu_pred_loo <- loo::E_loo(mu_pred, psis_object, log_ratios = log_ratios)$value

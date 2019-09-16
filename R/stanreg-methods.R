@@ -233,34 +233,76 @@ nsamples.stanreg <- function(object, ...) {
 #' @importFrom lme4 ranef
 #' 
 ranef.stanreg <- function(object, ...) {
-  all_names <- if (used.optimizing(object))
-    rownames(object$stan_summary) else object$stanfit@sim$fnames_oi
-  sel <- b_names(all_names)
-  ans <- object$stan_summary[sel, select_median(object$algorithm)]
-  # avoid returning the extra levels that were included
-  ans <- ans[!grepl("_NEW_", names(ans), fixed = TRUE)]
-  fl <- .flist(object)
-  levs <- lapply(fl, levels)
-  asgn <- attr(fl, "assign")
-  cnms <- .cnms(object)
-  fl <- fl
-  asgn <- asgn
-  levs <- levs
-  cnms <- cnms
-  nc <- vapply(cnms, length, 1L)
-  nb <- nc * vapply(levs, length, 1L)
-  nbseq <- rep.int(seq_along(nb), nb)
-  ml <- split(ans, nbseq)
-  for (i in seq_along(ml)) {
-    ml[[i]] <- matrix(ml[[i]], ncol = nc[i], byrow = TRUE, 
-                      dimnames = list(NULL, cnms[[i]]))
+  .glmer_check(object)
+  point_estimates <- object$stan_summary[, select_median(object$algorithm)]
+  out <- ranef_template(object)
+  group_vars <- names(out)
+  for (j in seq_along(out)) {
+    tmp <- out[[j]]
+    pars <- colnames(tmp) 
+    levs <- rownames(tmp)
+    for (p in seq_along(pars)) {
+      stan_pars <- paste0("b[", pars[p], " ", group_vars[j],  ":", levs, "]")
+      tmp[[pars[p]]] <- unname(point_estimates[stan_pars])
+    }
+    out[[j]] <- tmp
   }
-  ans <- lapply(seq_along(fl), function(i) {
-    data.frame(do.call(cbind, ml[i]), row.names = levs[[i]], 
-               check.names = FALSE)
-  })
-  names(ans) <- names(fl)
-  structure(ans, class = "ranef.mer")
+  out
+}
+
+# Call lme4 to get the right structure for ranef objects
+#' @importFrom lme4 lmerControl glmerControl nlmerControl lmer glmer nlmer
+ranef_template <- function(object) {
+  stan_fun <- object$stan_function %ORifNULL% "stan_glmer"
+  lme4_fun <- switch(
+    stan_fun,
+    "stan_lmer" = "lmer",
+    "stan_nlmer" = "nlmer",
+    "glmer" # for both stan_glmer and stan_glmer.nb
+  )
+  cntrl_args <- list(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 1))
+  if (lme4_fun != "nlmer") { # nlmerControl doesn't allow these
+    cntrl_args$check.conv.grad <- "ignore"
+    cntrl_args$check.conv.singular <- "ignore"
+    cntrl_args$check.conv.hess <- "ignore"
+    cntrl_args$check.nlev.gtreq.5 <- "ignore"
+    cntrl_args$check.nobs.vs.rankZ <- "ignore"
+    cntrl_args$check.nobs.vs.nlev <- "ignore"
+    cntrl_args$check.nobs.vs.nRE <- "ignore"
+    if (lme4_fun == "glmer") {
+      cntrl_args$check.response.not.const <- "ignore"
+    }
+  }
+  
+  cntrl <- do.call(paste0(lme4_fun, "Control"), cntrl_args)
+  
+  fit_args <- list(
+    formula = formula(object),
+    data = object$data,
+    control = cntrl
+  )
+  
+  if (lme4_fun == "nlmer") { # create starting values to avoid error
+    fit_args$start <- unlist(getInitial(
+      object = as.formula(as.character(formula(object))[2]),
+      data = object$data,
+      control = list(maxiter = 0, warnOnly = TRUE)
+    ))
+  }
+  
+  family <- family(object)
+  fam <- family$family
+  if (!(fam %in% c("gaussian", "beta"))) {
+    if (fam == "neg_binomial_2") {
+      family <- stats::poisson()
+    } else if (fam == "beta_binomial") {
+      family <- stats::binomial()
+    }
+    fit_args$family <- family
+  }
+  
+  lme4_fit <- suppressWarnings(do.call(lme4_fun, args = fit_args))
+  ranef(lme4_fit)
 }
 
 

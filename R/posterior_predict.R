@@ -207,8 +207,11 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
 
   ppfun <- pp_fun(object, m = m)
   ytilde <- do.call(ppfun, ppargs)
-  if (!is.null(newdata) && nrow(newdata) == 1L)
+  
+  if ((is.null(newdata) && nobs(object) == 1L) || 
+      (!is.null(newdata) && nrow(newdata) == 1L)) {
     ytilde <- t(ytilde)
+  }
   if (!is.null(fun))
     ytilde <- do.call(fun, list(ytilde))
   if (is_polr(object) && !is_scobit(object))

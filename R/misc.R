@@ -144,7 +144,7 @@ used.variational <- function(x) {
   x$algorithm %in% c("meanfield", "fullrank")
 }
 
-# Test if stanreg object used stan_(g)lmer
+# Test if stanreg object used stan_[gn]lmer
 #
 # @param x A stanreg object.
 is.mer <- function(x) {
@@ -348,14 +348,18 @@ has_outcome_variable <- function(f) {
 
 
 # Check if any variables in a model frame are constants
-# (the exception is that a constant variable of all 1's is allowed)
+#
+# exceptions: constant variable of all 1's is allowed and outcomes with all 0s
+# or 1s are allowed (e.g., for binomial models)
 # 
 # @param mf A model frame or model matrix
 # @return If no constant variables are found mf is returned, otherwise an error
 #   is thrown.
 check_constant_vars <- function(mf) {
-  # don't check if columns are constant for binomial
-  mf1 <- if (NCOL(mf[, 1]) == 2) mf[, -1, drop=FALSE] else mf
+  mf1 <- mf
+  if (NCOL(mf[, 1]) == 2 || all(mf[, 1] %in% c(0, 1))) {
+    mf1 <- mf[, -1, drop=FALSE] 
+  }
   
   lu1 <- function(x) !all(x == 1) && length(unique(x)) == 1
   nocheck <- c("(weights)", "(offset)", "(Intercept)")
@@ -683,14 +687,15 @@ check_reTrms <- function(reTrms) {
 }
 
 #' @importFrom lme4 glmerControl
-# @param checkLHS throw error if formula LHS is missing? (relevant if prior_PD is TRUE)
-make_glmerControl <- function(..., checkLHS = TRUE) {
+# @param ignore_lhs ignore or throw error if LHS of formula is missing? (relevant if prior_PD is TRUE)
+make_glmerControl <- function(..., ignore_lhs = FALSE, ignore_x_scale = FALSE) {
   glmerControl(check.nlev.gtreq.5 = "ignore",
                check.nlev.gtr.1 = "stop",
                check.nobs.vs.rankZ = "ignore",
                check.nobs.vs.nlev = "ignore",
                check.nobs.vs.nRE = "ignore", 
-               check.formula.LHS = if (checkLHS) "stop" else "ignore",
+               check.formula.LHS = if (ignore_lhs) "ignore" else "stop",
+               check.scaleX = if (ignore_x_scale) "ignore" else "warning",
                ...)  
 }
 
@@ -767,9 +772,9 @@ warn_data_arg_missing <- function() {
 
 # Validate newdata argument for posterior_predict, log_lik, etc.
 #
-# Drops unused variables from newdata, checks for NAs in used variables, and
-# also drops any unused dimensions in variables (e.g. a one column matrix inside
-# a data frame is converted to a vector).
+# Checks for NAs in used variables only (but returns all variables), 
+# and also drops any unused dimensions in variables (e.g. a one column 
+# matrix inside a data frame is converted to a vector).
 #
 # @param object stanreg object
 # @param newdata NULL or a data frame

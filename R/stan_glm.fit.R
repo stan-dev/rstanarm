@@ -31,9 +31,8 @@
 #'   when \code{algorithm} is \code{"optimizing"} but defaults to \code{TRUE}
 #'   in that case
 #' @param keep_every Positive integer, which defaults to 1, but can be higher
-#'   in order to thin the importance sampling realizations and also only
-#'   apples when \code{algorithm} is \code{"optimizing"} but defaults to
-#'   \code{TRUE} in that case
+#'   in order to "thin" the importance sampling realizations. Applies only
+#'   when \code{importance_resampling=TRUE}.
 #' @importFrom lme4 mkVarCorr
 #' @importFrom loo psis
 stan_glm.fit <- 
@@ -84,15 +83,21 @@ stan_glm.fit <-
   if (!length(link)) 
     stop("'link' must be one of ", paste(supported_links, collapse = ", "))
   
-  if (binom_y_prop(y, family, weights))
+  if (binom_y_prop(y, family, weights)) {
     stop("To specify 'y' as proportion of successes and 'weights' as ",
          "number of trials please use stan_glm rather than calling ",
-         "stan_glm.fit directly.")
+         "stan_glm.fit directly.", call. = FALSE)
+  }
   
   y <- validate_glm_outcome_support(y, family)
+  trials <- NULL
   if (is.binomial(family$family) && NCOL(y) == 2L) {
     trials <- as.integer(y[, 1L] + y[, 2L])
     y <- as.integer(y[, 1L])
+    if (length(y == 1)) {
+      y <- array(y)
+      trials <- array(trials)
+    }
   }
 
   # useless assignments to pass R CMD check
@@ -187,6 +192,8 @@ stan_glm.fit <-
     }
     for (i in names(prior_smooth_stuff))
       assign(i, prior_smooth_stuff[[i]])
+    
+    prior_scale_for_smooth <- array(prior_scale_for_smooth)
   } else {
     prior_dist_for_smooth <- 0L
     prior_mean_for_smooth <- array(NA_real_, dim = 0)
@@ -195,7 +202,7 @@ stan_glm.fit <-
   }
   
   famname <- supported_families[fam]
-  is_bernoulli <- is.binomial(famname) && all(y %in% 0:1)
+  is_bernoulli <- is.binomial(famname) && all(y %in% 0:1) && is.null(trials)
   is_nb <- is.nb(famname)
   is_gaussian <- is.gaussian(famname)
   is_gamma <- is.gamma(famname)
