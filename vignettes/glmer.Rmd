@@ -118,7 +118,9 @@ unknown covariance matrix to be estimated. Unfortunately,
 expressing prior information about a covariance matrix is not intuitive and can 
 also be computationally challenging. When the covariance matrix is not $1\times 1$, 
 it is often both much more intuitive and 
-efficient to work instead with the __correlation__ matrix and variances.
+efficient to work instead with the __correlation__ matrix and variances. When the
+covariance matrix is $1\times 1$, we still denote it as $\boldsymbol{\Sigma}$ but
+most of the details in this section do not apply.
 
 The variances are in turn decomposed into the product of
 a simplex vector (probability vector) and the trace of the implied covariance matrix,
@@ -177,7 +179,9 @@ For this reason, it is sensible to use a scale-invariant prior for $\tau$.
 We choose a Gamma distribution, with shape and scale parameters both set to $1$
 by default, implying a unit-exponential distribution. Users can set the shape 
 hyperparameter to some value greater than one to ensure that the posterior trace
-is not zero.
+is not zero. In the case where $\boldsymbol{\Sigma}$ is $1\times 1$, this shape
+parameter is the cross-group standard deviation in the parameters and its square
+is the variance.
 
 # Comparison with __lme4__
 

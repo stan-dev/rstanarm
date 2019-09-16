@@ -74,7 +74,15 @@
 #'   \code{link}, is a wrapper for \code{stan_glmer} with \code{family = 
 #'   \link{neg_binomial_2}(link)}.
 #'   
-#'   
+#' @return A list with classes \code{stanreg}, \code{glm}, \code{lm}, 
+#'   and \code{lmerMod}. The conventions for the parameter names are the
+#'   same as in the lme4 package with the addition that the standard
+#'   deviation of the errors is called \code{sigma} and the variance-covariance
+#'   matrix of the group-specific deviations from the common parameters is
+#'   called \code{Sigma}, even if this variance-covariance matrix only has
+#'   one row and one column (in which case it is just the group-level variance).
+#' 
+#' 
 #' @seealso The vignette for \code{stan_glmer} and the \emph{Hierarchical 
 #'   Partial Pooling} vignette. \url{http://mc-stan.org/rstanarm/articles/}
 #'    
