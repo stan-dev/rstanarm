@@ -130,8 +130,10 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
     check <- check_stanfit(out)
     if (!isTRUE(check)) return(standata)
     if (K == 1)
-        out$theta_tilde[,'R2[1]'] <- (out$theta_tilde[,'R2[1]'])^2
-    pars_idx <- unlist(sapply(1:length(pars), function(i) which(grepl(paste('^',pars[i],sep=''), names(out$par)))))
+        out$theta_tilde[,'R2[1]'] <- (out$theta_tilde[,'R2[1]']) ^ 2
+    pars_idx <- unlist(sapply(1:length(pars), function(i) {
+      which(grepl(paste('^', pars[i], sep=''), names(out$par)))
+    }))
     nrows <- dim(out$theta_tilde)[1]
     out$theta_tilde <- out$theta_tilde[,pars_idx]
     dim(out$theta_tilde) <- c(nrows, length(pars_idx))
@@ -139,32 +141,14 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
                    if (prior_PD == 0) "log-fit_ratio", 
                    "R2", "mean_PPD")
     colnames(out$theta_tilde) <- new_names
-    ## stanfit@sim$fnames_oi <- new_names
-    ## new_names <- names(out$par)
-    ## mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
-    ## if (QR) {
-    ##   out$par[mark] <- R_inv %*% out$par[mark]
-    ##   out$theta_tilde[,mark] <- out$theta_tilde[, mark] %*% t(R_inv)
-    ## }
-    ## new_names[mark] <- colnames(xtemp)
-    ## if (ncol(S)) {
-    ##   mark <- grepl("^beta_smooth\\[[[:digit:]]+\\]$", new_names)
-    ##   new_names[mark] <- colnames(S)
-    ## }
-    ## new_names[new_names == "alpha[1]"] <- "(Intercept)"
-    ## new_names[grepl("aux(\\[1\\])?$", new_names)] <- 
-    ##   if (is_gaussian) "sigma" else
-    ##     if (is_gamma) "shape" else
-    ##       if (is_ig) "lambda" else 
-    ##         if (is_nb) "reciprocal_dispersion" else
-    ##           if (is_beta) "(phi)" else NA
-    if (draws>0) {
-        ## begin: psis diagnostics and importance resampling
+    if (draws > 0) { # begin: psis diagnostics and importance resampling
         lr <- out$log_p-out$log_g
-        lr[lr==-Inf] <- -800
-        p <- suppressWarnings(loo::psis(lr, r_eff=1))
-        p$log_weights <- p$log_weights-log_sum_exp(p$log_weights)
-        theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) if (all(is.finite(col))) loo::psis(log1p(col^2)/2+lr, r_eff=1)$diagnostics$pareto_k else NaN))
+        lr[lr == -Inf] <- -800
+        p <- suppressWarnings(loo::psis(lr, r_eff = 1))
+        p$log_weights <- p$log_weights - log_sum_exp(p$log_weights)
+        theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) {
+          if (all(is.finite(col))) loo::psis(log1p(col ^ 2) / 2 + lr, r_eff = 1)$diagnostics$pareto_k else NaN
+        }))
         ## todo: change fixed threshold to an option
         if (any(theta_pareto_k > 0.7, na.rm = TRUE)) {
             warning("Some Pareto k diagnostic values are too high. Resampling disabled.",
@@ -181,15 +165,14 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
       theta_pareto_k <- rep(NaN, length(new_names))
       importance_resampling <- FALSE
     }
-    ## importance_resampling
     if (importance_resampling) {  
-      ir_idx <- .sample_indices(exp(p$log_weights), n_draws=ceiling(draws / keep_every))
+      ir_idx <- .sample_indices(exp(p$log_weights), n_draws = ceiling(draws / keep_every))
       out$theta_tilde <- out$theta_tilde[ir_idx,]
       out$ir_idx <- ir_idx
       ## SIR mcse and n_eff
       w_sir <- as.numeric(table(ir_idx)) / length(ir_idx)
       mcse <- apply(out$theta_tilde[!duplicated(ir_idx),], 2L, function(col) {
-        if (all(is.finite(col))) sqrt(sum(w_sir^2 * (col-mean(col))^2)) 
+        if (all(is.finite(col))) sqrt(sum(w_sir ^ 2 * (col-mean(col)) ^ 2)) 
         else NaN
       })
       n_eff <- round(apply(out$theta_tilde[!duplicated(ir_idx),], 2L, var) / (mcse^2), digits = 0)
