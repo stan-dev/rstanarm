@@ -168,7 +168,12 @@ stan_glmer <-
                           group = group, QR = QR, sparse = sparse, 
                           mean_PPD = !prior_PD,
                           ...)
-  if (family$family == "Beta regression") family$family <- "beta"
+  
+  add_classes <- "lmerMod" # additional classes to eventually add to stanreg object
+  if (family$family == "Beta regression") {
+    add_classes <- c(add_classes, "betareg")
+    family$family <- "beta"
+  }
   sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
   X <- X[ , !sel, drop = FALSE]
   Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
@@ -180,7 +185,7 @@ stan_glmer <-
                na.action = attr(glmod$fr, "na.action"), contrasts, algorithm, glmod, 
                stan_function = "stan_glmer")
   out <- stanreg(fit)
-  class(out) <- c(class(out), "lmerMod")
+  class(out) <- c(class(out), add_classes)
   
   return(out)
 }
