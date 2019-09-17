@@ -55,8 +55,8 @@ Most of the code for data manipulation and plotting is not shown in the text
 but is available in the R markdown 
 [source code on GitHub](https://github.com/stan-dev/rstanarm/blob/master/vignettes/mrp.Rmd).
 
-```{r, include=FALSE}
-simulate_mrp_data<-function(n) {
+```{r, include=FALSE, collapse=TRUE}
+simulate_mrp_data <- function(n) {
   J <- c(2, 3, 7, 3, 50) # male or not, eth, age, income level, state
   poststrat <- as.data.frame(array(NA, c(prod(J), length(J)+1))) # Columns of post-strat matrix, plus one for size
   colnames(poststrat) <- c("male", "eth", "age","income", "state",'N')
@@ -319,19 +319,19 @@ state_popn <- poststrat%>%
   mutate(PROP=Num/sum(poststrat$N),TYPE='Popn',VAR='State',CAT=state)%>%
   ungroup()
 
-state_data <- sample%>%
+state_plot_data <- sample%>%
   group_by(state)%>%
   summarise(Num=n())%>%
   mutate(PROP=Num/nrow(sample),TYPE='Sample',VAR='State',CAT=state)%>%
   ungroup()
 
-state_data <- rbind(state_data[,2:6],state_popn[,2:6])
-state_data$TYPE <- factor(state_data$TYPE, levels = c("Sample","Popn"))
+state_plot_data <- rbind(state_plot_data[,2:6],state_popn[,2:6])
+state_plot_data$TYPE <- factor(state_plot_data$TYPE, levels = c("Sample","Popn"))
 
 plot_data <- rbind(male,eth,age,income)
 plot_data$TYPE <- factor(plot_data$TYPE, levels = c("Sample","Popn"))
 
-save(state_data, file = "mrp-files/state_data.rda")
+save(state_plot_data, file = "mrp-files/state_plot_data.rda")
 save(plot_data, file = "mrp-files/plot_data.rda")
 ```
 
@@ -357,8 +357,8 @@ ggplot(data=plot_data, aes(x=as.factor(CAT), y=PROP, group=as.factor(TYPE), line
         strip.text=element_text(size=10),
         strip.background = element_rect(fill='grey92'))
 
-load("mrp-files/state_data.rda") # created in previous chunk
-ggplot(data=state_data, aes(x=as.factor(CAT), y=PROP, group=as.factor(TYPE),    linetype=as.factor(TYPE))) +
+load("mrp-files/state_plot_data.rda") # created in previous chunk
+ggplot(data=state_plot_data, aes(x=as.factor(CAT), y=PROP, group=as.factor(TYPE),    linetype=as.factor(TYPE))) +
   geom_point(stat="identity",colour='black')+
   geom_line()+
   facet_wrap( ~ VAR)+
@@ -398,7 +398,7 @@ the population.
 # not evaluated to avoid dependency on tidyverse
 
 #Summarise
-summary_by_poststrat_var <-sample %>%
+summary_by_poststrat_var <- sample %>%
   gather(variable,category,c("income","eth","age","male")) %>%
   group_by(variable,category) %>%
   #Wald confidence interval
@@ -434,9 +434,9 @@ facet_wrap(~variable,scales = "free_x",nrow=1,ncol=5)+
 
 Thirdly, we demonstrate visually that there is an interaction between age and
 gender and compare to a case where there is no interaction.
-Here a simulated interaction effect between age (*x-axis*) and gender (*shape*),
+Here a simulated interaction effect between age (*x-axis*) and gender (*color*),
 right panel, is contrasted with no interaction effect (*left panel*). While both
-panels demonstrate a difference between the genders and the proportion
+panels demonstrate a difference between the genders on the outcome variable
 (*y-axis*), only the second panel shows this difference changing with the
 variable on the x-axis.
 
@@ -448,7 +448,8 @@ variable on the x-axis.
 interaction <- sample %>%
   gather(variable, category, c("age", "eth")) %>%
   group_by(variable, category, male) %>%
-  summarise(y_mean = mean(cat_pref), y_sd = sqrt(mean(cat_pref) * (1 - mean(cat_pref)) / n())) %>%
+  summarise(y_mean = mean(cat_pref), 
+            y_sd = sqrt(mean(cat_pref) * (1 - mean(cat_pref)) / n())) %>%
   ungroup()
 
 #Tidy for nice facet labels
@@ -570,8 +571,8 @@ $$\theta_j= logit^{-1}(X_{j}\beta)$$
 
 The multi level component part of the model fits for each post-stratification
 variable (other than male) a variable $\sigma_{S[j]}$ so that we model for each
-variable an intercept $\alpha_{S[J]}$ but constrain $\alpha_{S[j]}$ so that it
-is drawn from $N(0,\sigma_{S[J]})$. This is beneficial as it means we share
+variable an intercept $\alpha_{S[j]}$ but constrain $\alpha_{S[j]}$ so that it
+is distributed $N(0,\sigma_{S[j]})$. This is beneficial as it means we share
 information between the levels of each variable, we can prevent little observed
 levels from being fit too tightly to the observed values, and for those levels
 that we don't observe, we can make a good estimate based on the distribution of
@@ -601,7 +602,7 @@ in this case a logit function. The final element of the input specifies the data
 frame that contains the variables in the formula and manually sets the
 adapt_delta value.
 
-```{r,echo=FALSE, message=FALSE, warning=FALSE, results='hide',cache=TRUE,data.fitting.chunk1, cache = cachemodel}
+```{r,echo=FALSE, message=FALSE, warning=FALSE, results='hide', cache = cachemodel}
 fit <- stan_glmer(
   cat_pref ~ factor(male) + factor(male) * factor(age) + 
     (1 | state) + (1 | age) + (1 | eth) + (1 | income),
@@ -617,7 +618,7 @@ print(fit)
 ```
 
 As a first pass to check whether the model is performing well, note that there
-are no warnings about divergent chains, failure to converge or tree depth. If
+are no warnings about divergences, failure to converge or tree depth. If
 these errors do occur, more information on how to alleviate them is provided
 [here](https://mc-stan.org/rstanarm/articles/rstanarm.html#step-3-criticize-the-model).
 
@@ -636,17 +637,16 @@ given the proportion of people in the *population* in each level of the factors
 included in the model.
 
 ```{r, message=FALSE,data.loading.chunk12, cache = cachedata}
-pred_sim <- posterior_linpred(fit, transform = TRUE,
-                              newdata = as.data.frame(poststrat))
-poststrat_sim <- pred_sim %*% poststrat$N / sum(poststrat$N)
-model_popn_pref <- c(mean = round(mean(poststrat_sim), 4), sd = round(sd(poststrat_sim), 4))
+posterior_prob <- posterior_linpred(fit, transform = TRUE, newdata = poststrat)
+poststrat_prob <- posterior_prob %*% poststrat$N / sum(poststrat$N)
+model_popn_pref <- c(mean = round(mean(poststrat_prob), 3), sd = round(sd(poststrat_prob), 3))
 print(model_popn_pref)
 ```
 
 
 We can compare this to the estimate we would have made if we had just used the sample:
 ```{r, message=FALSE,data.loading.chunk13, cache = cachedata}
-sample_popn_pref <- round(mean(sample$cat_pref), 4)
+sample_popn_pref <- round(mean(sample$cat_pref), 3)
 print(sample_popn_pref)
 ```
 
@@ -662,10 +662,12 @@ bayesplot_grid(compare, compare2,
 ```
 
 
-As this is simulated data, we can look directly at the preference for cats that we simulated from to consider how good our estimate is.  
+As this is simulated data, we can look directly at the preference for cats that
+we simulated from to consider how good our estimate is.
+
 ```{r, message=FALSE,data.loading.chunk15, cache = cachedata}
 true_popn_pref <-
-  round(sum(true_popn$cat_pref * poststrat$N) / sum(poststrat$N), 4)
+  round(sum(true_popn$cat_pref * poststrat$N) / sum(poststrat$N), 3)
 print(true_popn_pref)
 ```
 
@@ -678,7 +680,7 @@ bayesplot_grid(compare, compare2,
                grid_args = list(nrow = 1, widths = c(8, 1)))
 ```
 
-Our MRP estimate is barely off, while our sample estimate is off by about 12
+Our MRP estimate is barely off, while our sample estimate is off by more than 10
 percentage points. This indicates that using MRP helps to make estimates for the
 population from our sample that are more accurate.
 
@@ -694,9 +696,9 @@ particularly useful for complicated cases or large data sets where the model
 takes some time to fit.
 
 As before, first we use the proportion of the population in each combination of
-post-stratification group to estimate the proportion of people who preferred
-cats in the population, only in this case the population of interest is the
-state.
+the post-stratification groups to estimate the proportion of people who
+preferred cats in the population, only in this case the population of interest
+is the state.
 
 
 ```{r, message=FALSE,data.loading.chunk18, cache = cachedata}
@@ -711,16 +713,16 @@ state_df <- data.frame(
 
 for(i in 1:length(levels(as.factor(poststrat$state)))) {
   poststrat_state <- poststrat[poststrat$state == i, ]
-  pred_sim_state <- posterior_linpred(
+    posterior_prob_state <- posterior_linpred(
     fit,
     transform = TRUE,
     draws = 1000,
     newdata = as.data.frame(poststrat_state)
   )
-  poststrat_sim_state <- (pred_sim_state %*% poststrat_state$N) / sum(poststrat_state$N)
+  poststrat_prob_state <- (posterior_prob_state %*% poststrat_state$N) / sum(poststrat_state$N)
   #This is the estimate for popn in state:
-  state_df$model_state_pref[i] <- round(mean(poststrat_sim_state), 4)
-  state_df$model_state_sd[i] <- round(sd(poststrat_sim_state), 4)
+  state_df$model_state_pref[i] <- round(mean(poststrat_prob_state), 4)
+  state_df$model_state_sd[i] <- round(sd(poststrat_prob_state), 4)
   #This is the estimate for sample
   state_df$sample_state_pref[i] <- round(mean(sample$cat_pref[sample$state == i]), 4)
   #And what is the actual popn?
@@ -738,8 +740,10 @@ Here we similar findings to when we considered the population as whole. While
 estimates for cat preference (in percent) using the sample are off by
 ```{r} 
 c(
-  mean = round(mean(abs(state_df$sample_state_pref-state_df$true_state_pref), na.rm = TRUE)*100),
-  max = round(max(abs(state_df$sample_state_pref-state_df$true_state_pref), na.rm = TRUE)*100)
+  mean = round(mean(abs(state_df$sample_state_pref-state_df$true_state_pref),
+                    na.rm = TRUE)*100),
+  max = round(max(abs(state_df$sample_state_pref-state_df$true_state_pref), 
+                  na.rm = TRUE)*100)
 )
 ```
 the MRP based estimates are much closer to the actual percentage,
@@ -777,17 +781,18 @@ bayesplot_grid(compare, compare2,
 
 ## Alternate methods of modelling
 
-Previously the model 'fit' was created by modelling the dependent variable as a
-binary outcome. An alternative form of this model is to model the proportion of
-success (or endorsement of cat preference in this case) out of the total number
-of people in that cell in the sample. To do this we need to create two n x 1
-outcome variables, `cat_pref` and `N`.
+Previously we used a binary outcome variable. An alternative form of this model
+is to aggregate the data to the poststrat cell level and model the number of
+successes (or endorsement of cat preference in this case) out of the total
+number of people in that cell. To do this we need to create two n x 1 outcome
+variables, `N_cat_pref` (number in cell who prefer cats) and `N` (number in the
+poststrat cell).
 
 ```{r, eval=FALSE, data.loading.chunk20, cache = cachedata}
 # not evaluated to avoid dependency on tidyverse
 sample_alt <- sample %>%
   group_by(male, age, income, state, eth) %>%
-  summarise(pref = sum(cat_pref), N = n()) %>%
+  summarise(N_cat_pref = sum(cat_pref), N = n()) %>%
   ungroup()
 ```
 
@@ -795,7 +800,7 @@ sample_alt <- sample %>%
 <!-- # not evaluated to avoid dependency on tidyverse -->
 <!-- sample_alt <- sample %>% -->
 <!--   group_by(male, age, income, state, eth) %>% -->
-<!--   summarise(pref = sum(cat_pref), N = n()) %>% -->
+<!--   summarise(N_cat_pref = sum(cat_pref), N = n()) %>% -->
 <!--   ungroup() -->
 <!-- save(sample_alt, file = "mrp-files/sample_alt.rda") -->
 <!-- ``` -->
@@ -808,11 +813,10 @@ We then can use these two outcome variables to model the data using the
 binomial distribution.
 ```{r, message=FALSE, warning=FALSE, results='hide',cache=TRUE,data.fitting.chunk2, cache = cachemodel}
 fit2 <- stan_glmer(
-  cbind(pref, N - pref) ~ factor(male) + factor(male) * factor(age) + 
+  cbind(N_cat_pref, N - N_cat_pref) ~ factor(male) + factor(male) * factor(age) + 
     (1 | state) + (1 | age) + (1 | eth) + (1 | income),
   family = binomial("logit"),
   data = sample_alt,
-  adapt_delta = .99,
   refresh = 0
 )
 ```
@@ -821,61 +825,29 @@ fit2 <- stan_glmer(
 print(fit2)
 ```
 
-Like before, we can use the posterior_linpred function to obtain an estimate of
-the preference for cats in the population. This is particularly useful because
-the two forms are mathematically equivalent, so we can use whichever form is
-most convenient for the data at hand. More details on these two forms are
-available [here](https://mc-stan.org/rstanarm/articles/binomial.html).
+Like before, we can use the `posterior_linpred()` function to obtain an estimate of
+the preference for cats in the population. 
 
 ```{r, message=FALSE,data.loading.chunk21, cache = cachedata}
-pred_sim_alt <- posterior_linpred(fit2, transform = TRUE, 
-                                  newdata = as.data.frame(poststrat))
-poststrat_sim_alt <- pred_sim_alt %*% poststrat$N / sum(poststrat$N)
-model_popn_pref_alt <- c(round(mean(poststrat_sim_alt), 4), round(sd(poststrat_sim_alt), 4))
+posterior_prob_alt <- posterior_linpred(fit2, transform = TRUE, newdata = poststrat)
+poststrat_prob_alt <- posterior_prob_alt %*% poststrat$N / sum(poststrat$N)
+model_popn_pref_alt <- c(mean = round(mean(poststrat_prob_alt), 3), 
+                         sd = round(sd(poststrat_prob_alt), 3))
 print(model_popn_pref_alt)
 ```
 
-
-## Alternate method of estimating the population
-
-In rstanarm there is an alternate method of sampling from the posterior. Whilst
-the `posterior_linpred()` function allows the user to obtain an estimate of the
-probability of cat preference given membership of a particular post
-stratification cell, the `posterior_predict()` function generates new instances
-of the outcome variable given membership of a particular cell.
-
-Accordingly, using the first model where the outcome variable is binary,
-`posterior_predict()` draws (in this case $4000$ times) from the
-predictive distribution implied by the fitted model for each
-cell of the post-stratification matrix and returns the predicted outcome (i.e.,
-preference for cats) for each draw. We can use this to estimate the preference
-for cats in the population.
-
-```{r, message=FALSE,data.loading.chunk22, cache = cachedata}
-posterior_sim_alt <-
-  posterior_predict(fit,
-                    newdata = data.frame(poststrat, cat_pref = rep(0, nrow(poststrat))),
-                    draws = 4000)
-poststrat_sim_alt <- apply(posterior_sim_alt / poststrat$N, 2, mean)
-model_popn_pref_alt <- c(round(mean(poststrat_sim), 4), round(sd(poststrat_sim), 4))
-print(model_popn_pref_alt)
-```
-
-We can also use the posterior_predict function with the alternative form of the model, fit2. In this case the posterior_predict function uses the $N$ variable that contains the total number of people in each post-stratification cell in the population, and predicts how many out of that $N$ would prefer cats. Note that when using the posterior_predict function, we need to specify cat_pref/pref as an vector of $0$ when specifying new data. 
-
-```{r, message=FALSE,data.loading.chunk23, cache = cachedata}
-posterior_sim_alt <- 
-  posterior_predict(fit2,
-                    newdata = data.frame(poststrat, pref = rep(0, nrow(poststrat))),
-                    draws = 4000)
-poststrat_sim_alt <- apply(posterior_sim_alt / poststrat$N, 2, mean)
-model_popn_pref_alt <- c(round(mean(poststrat_sim), 4), round(sd(poststrat_sim), 4))
-print(model_popn_pref_alt)
-```
+As we should, we get the same answer as when we fit the model using the binary
+outcome. The two ways are equivalent, so we can use whichever form is most
+convenient for the data at hand. More details on these two forms of binomial models 
+are available [here](https://mc-stan.org/rstanarm/articles/binomial.html).
 
 
-## Examples of other formula
-Examples of other formula for fitting mixture models in Rstanarm are analougous to those in the lmer4 package. A table of examples can be found in Table 2 of the vignette for the lmer4 package, available [here](https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf).
+## Examples of other formulas
+
+The formulas for fitting so-called "mixed-effects" models in **rstanarm** are
+the same as those in the **lme4** package. A table of examples can be found in
+Table 2 of the vignette for the **lme4** package, available
+[here](https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf).
 
 # Appendix: Code to simulate the data
 
@@ -885,5 +857,5 @@ print(simulate_mrp_data)
 
 # References
 
-
+<!-- mrp.bib specified at the top -->
 
