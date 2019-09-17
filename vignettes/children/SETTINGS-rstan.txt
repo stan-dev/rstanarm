@@ -1,8 +1,0 @@
-```{r, SETTINGS-rstan, include=FALSE}
-# MCMC settings to use later when fitting models
-# small number of iters and chains just to make vignette build faster
-ITER <- 500
-CHAINS <- 2
-CORES <- 2
-SEED <- 12345
-```
