@@ -667,7 +667,7 @@ stan_glm.fit <-
       vb_args <- list(...)
       if (is.null(vb_args$output_samples)) vb_args$output_samples <- 1000L
       if (is.null(vb_args$tol_rel_obj)) vb_args$tol_rel_obj <- 1e-4
-      if (is.null(vb_args$thin)) vb_args$thin <- keep_every
+      if (is.null(vb_args$keep_every)) vb_args$keep_every <- keep_every
       vb_args$object <- stanfit
       vb_args$data <- standata
       vb_args$pars <- pars
