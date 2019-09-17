@@ -1,5 +1,5 @@
 ---
-title: "MRP in RStanarm"
+title: "MRP in rstanarm"
 author: "Lauren Kennedy and Jonah Gabry"
 date: "`r Sys.Date()`"
 output: 
@@ -10,11 +10,6 @@ params:
 bibliography: mrp-files/mrp.bib
 
 ---
-```{r caching, echo=FALSE, results='hide', message=FALSE}
-#Use these to cache data/plots or models
-cachedata <- FALSE
-cachemodel <- FALSE
-```
 
 ```{r, child="children/SETTINGS-rstan.txt"}
 ```
@@ -197,7 +192,7 @@ load("mrp-files/mrp_sim.rda")
 str(mrp_sim)
 ```
 
-```{r message=FALSE,data.loading.chunk2b, cache = cachedata}
+```{r, message=FALSE}
 sample <- mrp_sim[["sample"]]
 rbind(head(sample), tail(sample))
 ```
@@ -221,7 +216,7 @@ proportion/number of the population in that cell (rather than the
 proportion/number in the sample in the cell). Below we read in the poststrat
 data our simulated data list.
 
-```{r message=FALSE,data.loading.chunk3, cache = cachedata}
+```{r message=FALSE}
 poststrat <- mrp_sim[["poststrat"]]
 rbind(head(poststrat), tail(poststrat))
 ```
@@ -233,7 +228,7 @@ luxury, but we will use it later in this case study to check the predictions of
 the model. Details regarding the simulation of this data are available in the
 appendix.
 
-```{r message=FALSE,data.loading.chunk4, cache = cachedata}
+```{r message=FALSE}
 true_popn <- mrp_sim[["true_popn"]]
 rbind(head(true_popn), tail(true_popn))
 ```
@@ -263,7 +258,7 @@ true_popn$state <- factor(true_popn$state,levels = levels(sample$state))
 poststrat$state <- factor(poststrat$state,levels = levels(sample$state))
 ```
 
-```{r state-and-pop-data-for-plots, eval=FALSE, include=FALSE, cache = cachedata}
+```{r state-and-pop-data-for-plots, eval=FALSE, include=FALSE}
 # not evaluated to avoid tidyverse dependency 
 income_popn <- poststrat %>%
   group_by(income) %>%
@@ -394,7 +389,7 @@ different levels of theses variables, this should suggest that using the sample
 to estimate cat preference may not give accurate estimates of cat preference in
 the population.
 
-```{r, eval=FALSE, echo=FALSE, cache = cachedata}
+```{r, eval=FALSE, echo=FALSE}
 # not evaluated to avoid dependency on tidyverse
 
 #Summarise
@@ -410,7 +405,7 @@ levels(summary_by_poststrat_var$variable) <- list('Age'='age','Ethnicity'='eth',
 save(summary_by_poststrat_var, file = "mrp-files/summary_by_poststrat_var.rda")
 ```
 
-```{r plot-summary-by-poststrat-var, echo=FALSE, fig.height = 4, fig.width = 7, fig.align = "center", cache = cachedata}
+```{r plot-summary-by-poststrat-var, echo=FALSE, fig.height = 4, fig.width = 7, fig.align = "center"}
 load("mrp-files/summary_by_poststrat_var.rda") # created in previous chunk
 ggplot(data=summary_by_poststrat_var, aes(x=as.factor(category), y=y_mean,group=1)) +
   geom_errorbar(aes(ymin=y_mean-y_sd, ymax=y_mean+y_sd), width=0)+
@@ -441,7 +436,7 @@ panels demonstrate a difference between the genders on the outcome variable
 variable on the x-axis.
 
 
-```{r interaction-summary, eval=FALSE, echo=FALSE, cache = cachedata}
+```{r interaction-summary, eval=FALSE, echo=FALSE}
 # not evaluated to avoid dependency on tidyverse
 
 #Summarise
@@ -490,7 +485,7 @@ with a horizontal line to represent the overall preference for cats in the total
 population, according to the sample.
 
 
-```{r, eval=FALSE, echo=FALSE, cache = cachedata}
+```{r, eval=FALSE, echo=FALSE}
 # not evaluated to avoid dependency on tidyverse
 
 #Summarise by state
@@ -602,7 +597,7 @@ in this case a logit function. The final element of the input specifies the data
 frame that contains the variables in the formula and manually sets the
 adapt_delta value.
 
-```{r,echo=FALSE, message=FALSE, warning=FALSE, results='hide', cache = cachemodel}
+```{r,echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 fit <- stan_glmer(
   cat_pref ~ factor(male) + factor(male) * factor(age) + 
     (1 | state) + (1 | age) + (1 | eth) + (1 | income),
@@ -613,7 +608,7 @@ fit <- stan_glmer(
 ```
 
 
-```{r,data.loading.chunk11, cache = cachedata}
+```{r}
 print(fit)
 ```
 
@@ -636,7 +631,7 @@ accounting for differences between our sample and the population. We use the
 given the proportion of people in the *population* in each level of the factors
 included in the model.
 
-```{r, message=FALSE,data.loading.chunk12, cache = cachedata}
+```{r, message=FALSE}
 posterior_prob <- posterior_linpred(fit, transform = TRUE, newdata = poststrat)
 poststrat_prob <- posterior_prob %*% poststrat$N / sum(poststrat$N)
 model_popn_pref <- c(mean = round(mean(poststrat_prob), 3), sd = round(sd(poststrat_prob), 3))
@@ -645,7 +640,7 @@ print(model_popn_pref)
 
 
 We can compare this to the estimate we would have made if we had just used the sample:
-```{r, message=FALSE,data.loading.chunk13, cache = cachedata}
+```{r, message=FALSE}
 sample_popn_pref <- round(mean(sample$cat_pref), 3)
 print(sample_popn_pref)
 ```
@@ -653,7 +648,7 @@ print(sample_popn_pref)
 We can also add it to the last figure to graphically represent the difference
 between the sample and population estimate.
 
-```{r, message=FALSE,fig.height = 4, fig.width = 8, fig.align = "center",data.loading.chunk14, cache = cachedata}
+```{r, message=FALSE,fig.height = 4, fig.width = 8, fig.align = "center"}
 compare2 <- compare2 +
   geom_hline(yintercept = model_popn_pref[1], colour = '#2ca25f', size = 1) +
   geom_text(aes(x = 5.2, y = model_popn_pref[1] + .025), label = "MRP", colour = '#2ca25f')
@@ -665,14 +660,14 @@ bayesplot_grid(compare, compare2,
 As this is simulated data, we can look directly at the preference for cats that
 we simulated from to consider how good our estimate is.
 
-```{r, message=FALSE,data.loading.chunk15, cache = cachedata}
+```{r, message=FALSE}
 true_popn_pref <-
   round(sum(true_popn$cat_pref * poststrat$N) / sum(poststrat$N), 3)
 print(true_popn_pref)
 ```
 
 Which we will also add to the figure.
-```{r, message=FALSE,fig.height = 4, fig.width = 8, fig.align = "center",data.loading.chunk16, cache = cachedata,echo=FALSE}
+```{r, echo=FALSE, message=FALSE,fig.height = 4, fig.width = 8, fig.align = "center"}
 compare2 <- compare2 +
   geom_hline(yintercept = mean(true_popn_pref), linetype = 'dashed', size = .8) +
   geom_text(aes(x = 5.2, y = mean(true_popn_pref) - .025), label = "True")
@@ -701,7 +696,7 @@ preferred cats in the population, only in this case the population of interest
 is the state.
 
 
-```{r, message=FALSE,data.loading.chunk18, cache = cachedata}
+```{r, message=FALSE}
 state_df <- data.frame(
   State = 1:50,
   model_state_sd = rep(-1, 50),
@@ -758,7 +753,7 @@ This is easier to see graphically, so we will continue to add additional layers
 to the previous figure. Here we add model estimates,represented by triangles,
 and the true population cat preference, represented as transparent circles.
 
-```{r, fig.height = 4, fig.width = 8, fig.align = "center",warning=FALSE, fig.align = "center", message=FALSE,data.loading.chunk19, cache = cachedata,echo=FALSE}
+```{r, message=FALSE, echo=FALSE, fig.height = 4, fig.width = 8, fig.align = "center",warning=FALSE, fig.align = "center"}
 #Summarise by state
 compare <- compare +
   geom_point(data=state_df, mapping=aes(x=State, y=model_state_pref),
@@ -788,7 +783,7 @@ number of people in that cell. To do this we need to create two n x 1 outcome
 variables, `N_cat_pref` (number in cell who prefer cats) and `N` (number in the
 poststrat cell).
 
-```{r, eval=FALSE, data.loading.chunk20, cache = cachedata}
+```{r, eval=FALSE}
 # not evaluated to avoid dependency on tidyverse
 sample_alt <- sample %>%
   group_by(male, age, income, state, eth) %>%
@@ -796,7 +791,7 @@ sample_alt <- sample %>%
   ungroup()
 ```
 
-<!-- ```{r, include=FALSE, eval=FALSE, cache = cachedata} -->
+<!-- ```{r, include=FALSE, eval=FALSE} -->
 <!-- # not evaluated to avoid dependency on tidyverse -->
 <!-- sample_alt <- sample %>% -->
 <!--   group_by(male, age, income, state, eth) %>% -->
@@ -811,7 +806,7 @@ load("mrp-files/sample_alt.rda")
 
 We then can use these two outcome variables to model the data using the
 binomial distribution.
-```{r, message=FALSE, warning=FALSE, results='hide',cache=TRUE,data.fitting.chunk2, cache = cachemodel}
+```{r, message=FALSE, warning=FALSE, results='hide'}
 fit2 <- stan_glmer(
   cbind(N_cat_pref, N - N_cat_pref) ~ factor(male) + factor(male) * factor(age) + 
     (1 | state) + (1 | age) + (1 | eth) + (1 | income),
@@ -828,7 +823,7 @@ print(fit2)
 Like before, we can use the `posterior_linpred()` function to obtain an estimate of
 the preference for cats in the population. 
 
-```{r, message=FALSE,data.loading.chunk21, cache = cachedata}
+```{r, message=FALSE}
 posterior_prob_alt <- posterior_linpred(fit2, transform = TRUE, newdata = poststrat)
 poststrat_prob_alt <- posterior_prob_alt %*% poststrat$N / sum(poststrat$N)
 model_popn_pref_alt <- c(mean = round(mean(poststrat_prob_alt), 3), 

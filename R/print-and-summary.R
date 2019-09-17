@@ -504,7 +504,7 @@ print.summary.stanreg <-
       .printfr(ppd_estimates, digits)
       cat("\nThe mean_ppd is the sample average posterior predictive ", 
           "distribution of the outcome variable ", 
-          "(for details see help('summary.stanreg').\n",
+          "(for details see help('summary.stanreg')).\n",
           sep = '')
     }
     
