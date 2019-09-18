@@ -1,4 +1,0 @@
-```{r, SETTINGS-loo, include=FALSE}
-loo.cores <- if (exists("CORES")) CORES else 1L
-options(mc.cores = loo.cores)
-```

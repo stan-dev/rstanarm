@@ -16,10 +16,6 @@ params:
 ```
 ```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="children/SETTINGS-rstan.txt"}
-```
-```{r, child="children/SETTINGS-loo.txt"}
-```
 
 # Introduction
 
@@ -109,7 +105,7 @@ computer is allowed to utilize:
 library(rstanarm)
 post1 <- stan_aov(weightgain ~ source * type, data = weightgain, 
                   prior = R2(location = 0.5), adapt_delta = 0.999,
-                  chains = CHAINS, cores = CORES, seed = SEED)
+                  seed = 12345)
 post1
 ```
 ```{r, echo=FALSE}
@@ -126,8 +122,7 @@ priors
 post2 <- stan_lmer(weightgain ~ 1 + (1|source) + (1|type) + (1|source:type),
                    data = weightgain, prior_intercept = cauchy(),
                    prior_covariance = decov(shape = 2, scale = 2),
-                   adapt_delta = 0.999, chains = CHAINS, cores = CORES, 
-                   seed = SEED)
+                   adapt_delta = 0.999, seed = 12345)
 ```
 Comparing these two models using the `loo` function in the __loo__ package 
 reveals a negligible preference for the first approach that is almost entirely
