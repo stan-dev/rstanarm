@@ -517,6 +517,12 @@ model.frame.stanmvreg <- function(formula, fixed.only = FALSE, m = NULL, ...) {
   NextMethod("model.frame")
 }
 
+#' @rdname stanreg-methods
+#' @export 
+nobs.stanmvreg <- function(object, ...) {
+  nrow(model.frame(object, m = 1))
+}
+
 
 # internal ----------------------------------------------------------------
 
