@@ -180,7 +180,7 @@ the true population preference for cats.
 
 ```{r include=FALSE, eval=FALSE}
 mrp_sim <- simulate_mrp_data(n=1200)
-save(mrp_sim, file = "mrp-files/mrp_sim.rda")
+save(mrp_sim, file = "mrp-files/mrp_sim.rda", version = 2)
 ```
 
 ```{r eval=FALSE}
@@ -327,8 +327,8 @@ state_plot_data$TYPE <- factor(state_plot_data$TYPE, levels = c("Sample","Popn")
 plot_data <- rbind(male,eth,age,income)
 plot_data$TYPE <- factor(plot_data$TYPE, levels = c("Sample","Popn"))
 
-save(state_plot_data, file = "mrp-files/state_plot_data.rda")
-save(plot_data, file = "mrp-files/plot_data.rda")
+save(state_plot_data, file = "mrp-files/state_plot_data.rda", version = 2)
+save(plot_data, file = "mrp-files/plot_data.rda", version = 2)
 ```
 
 ```{r plot-data, echo=FALSE, fig.height = 4, fig.width = 7, fig.align = "center"}
@@ -403,7 +403,8 @@ summary_by_poststrat_var <- sample %>%
 summary_by_poststrat_var$variable <- as.factor(summary_by_poststrat_var$variable)
 levels(summary_by_poststrat_var$variable) <- list('Age'='age','Ethnicity'='eth','Income'='income','Male'='male')
 
-save(summary_by_poststrat_var, file = "mrp-files/summary_by_poststrat_var.rda")
+save(summary_by_poststrat_var, file = "mrp-files/summary_by_poststrat_var.rda", 
+     version = 2)
 ```
 
 ```{r plot-summary-by-poststrat-var, echo=FALSE, fig.height = 4, fig.width = 7, fig.align = "center"}
@@ -451,7 +452,7 @@ interaction <- sample %>%
 #Tidy for nice facet labels
 interaction$variable <- as.factor(interaction$variable)
 levels(interaction$variable) <- list('Ethnicity' = 'eth', 'Age' = 'age')
-save(interaction, file = "mrp-files/interaction.rda")
+save(interaction, file = "mrp-files/interaction.rda", version = 2)
 ```
 
 ```{r plot-interaction, echo=FALSE, fig.height = 4, fig.width = 7, fig.align = "center"}
@@ -496,7 +497,7 @@ preference_by_state <- sample %>%
             y_sd = sqrt(mean(cat_pref) * (1 - mean(cat_pref)) / n())) %>%
   ungroup()
 
-save(preference_by_state, file = "mrp-files/preference_by_state.rda")
+save(preference_by_state, file = "mrp-files/preference_by_state.rda", version = 2)
 ```
 
 ```{r, echo=FALSE, fig.height = 4, fig.width = 8, fig.align = "center"}
@@ -635,15 +636,15 @@ included in the model.
 ```{r, message=FALSE}
 posterior_prob <- posterior_linpred(fit, transform = TRUE, newdata = poststrat)
 poststrat_prob <- posterior_prob %*% poststrat$N / sum(poststrat$N)
-model_popn_pref <- c(mean = round(mean(poststrat_prob), 3), sd = round(sd(poststrat_prob), 3))
-print(model_popn_pref)
+model_popn_pref <- c(mean = mean(poststrat_prob), sd = sd(poststrat_prob))
+round(model_popn_pref, 3)
 ```
 
 
 We can compare this to the estimate we would have made if we had just used the sample:
 ```{r, message=FALSE}
-sample_popn_pref <- round(mean(sample$cat_pref), 3)
-print(sample_popn_pref)
+sample_popn_pref <- mean(sample$cat_pref)
+round(sample_popn_pref, 3)
 ```
 
 We can also add it to the last figure to graphically represent the difference
@@ -662,9 +663,8 @@ As this is simulated data, we can look directly at the preference for cats that
 we simulated from to consider how good our estimate is.
 
 ```{r, message=FALSE}
-true_popn_pref <-
-  round(sum(true_popn$cat_pref * poststrat$N) / sum(poststrat$N), 3)
-print(true_popn_pref)
+true_popn_pref <- sum(true_popn$cat_pref * poststrat$N) / sum(poststrat$N)
+round(true_popn_pref, 3)
 ```
 
 Which we will also add to the figure.
@@ -680,7 +680,7 @@ Our MRP estimate is barely off, while our sample estimate is off by more than 10
 percentage points. This indicates that using MRP helps to make estimates for the
 population from our sample that are more accurate.
 
-## Estimate for states
+## Estimates for states
 
 One of the nice benefits of using MRP to make inference about the population is
 that we can change the population of interest. In the previous paragraph we
@@ -735,19 +735,17 @@ state_df$State <- factor(state_df$State, levels = levels(sample$state))
 Here we similar findings to when we considered the population as whole. While
 estimates for cat preference (in percent) using the sample are off by
 ```{r} 
-c(
-  mean = round(mean(abs(state_df$sample_state_pref-state_df$true_state_pref),
-                    na.rm = TRUE)*100),
-  max = round(max(abs(state_df$sample_state_pref-state_df$true_state_pref), 
-                  na.rm = TRUE)*100)
-)
+round(100 * c(
+  mean = mean(abs(state_df$sample_state_pref-state_df$true_state_pref), na.rm = TRUE),
+  max = max(abs(state_df$sample_state_pref-state_df$true_state_pref), na.rm = TRUE)
+))
 ```
 the MRP based estimates are much closer to the actual percentage,
 ```{r}
-c(
-  mean = round(mean(abs(state_df$model_state_pref-state_df$true_state_pref))*100),
-  max = round(max(abs(state_df$model_state_pref-state_df$true_state_pref))*100)
-)
+round(100 * c(
+  mean = mean(abs(state_df$model_state_pref-state_df$true_state_pref)),
+  max = max(abs(state_df$model_state_pref-state_df$true_state_pref))
+))
 ```
 and especially when the sample size for that population is relatively small.
 This is easier to see graphically, so we will continue to add additional layers
@@ -798,7 +796,7 @@ sample_alt <- sample %>%
 <!--   group_by(male, age, income, state, eth) %>% -->
 <!--   summarise(N_cat_pref = sum(cat_pref), N = n()) %>% -->
 <!--   ungroup() -->
-<!-- save(sample_alt, file = "mrp-files/sample_alt.rda") -->
+<!-- save(sample_alt, file = "mrp-files/sample_alt.rda", version = 2) -->
 <!-- ``` -->
 
 ```{r, include=FALSE}
@@ -827,9 +825,8 @@ the preference for cats in the population.
 ```{r, message=FALSE}
 posterior_prob_alt <- posterior_linpred(fit2, transform = TRUE, newdata = poststrat)
 poststrat_prob_alt <- posterior_prob_alt %*% poststrat$N / sum(poststrat$N)
-model_popn_pref_alt <- c(mean = round(mean(poststrat_prob_alt), 3), 
-                         sd = round(sd(poststrat_prob_alt), 3))
-print(model_popn_pref_alt)
+model_popn_pref_alt <- c(mean = mean(poststrat_prob_alt), sd = sd(poststrat_prob_alt))
+round(model_popn_pref_alt, 3)
 ```
 
 As we should, we get the same answer as when we fit the model using the binary
