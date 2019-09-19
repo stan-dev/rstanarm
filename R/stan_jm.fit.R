@@ -619,7 +619,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     vbpars <- pars_to_monitor(standata, is_jm = FALSE)
     vbargs <- c(list(stanmodels$mvmer, pars = vbpars, data = standata, 
                      algorithm = "meanfield"), vbdots)
-    utils::capture.output(init_fit <- do.call(rstan::vb, vbargs))
+    utils::capture.output(init_fit <- suppressWarnings(do.call(rstan::vb, vbargs)))
     init_new_nms <- c(y_intercept_nms, y_beta_nms,
                       if (length(standata$q)) c(paste0("b[", b_nms, "]")),
                       y_aux_nms, paste0("Sigma[", Sigma_nms, "]"),
@@ -892,6 +892,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     cat("Fitting a univariate", if (is_jm) "joint" else "glmer", "model.\n\n")
   if (M  > 1L) 
     cat("Fitting a multivariate", if (is_jm) "joint" else "glmer", "model.\n\n")
+  
   if (algorithm == "sampling") {
     cat("Please note the warmup may be much slower than later iterations!\n")             
     sampling_args <- set_jm_sampling_args(
