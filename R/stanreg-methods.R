@@ -237,10 +237,12 @@ ranef.stanreg <- function(object, ...) {
   point_estimates <- object$stan_summary[, select_median(object$algorithm)]
   out <- ranef_template(object)
   group_vars <- names(out)
+  
   for (j in seq_along(out)) {
     tmp <- out[[j]]
     pars <- colnames(tmp) 
     levs <- rownames(tmp)
+    levs <- gsub(" ", "_", levs) 
     for (p in seq_along(pars)) {
       stan_pars <- paste0("b[", pars[p], " ", group_vars[j],  ":", levs, "]")
       tmp[[pars[p]]] <- unname(point_estimates[stan_pars])
