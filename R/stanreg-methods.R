@@ -256,6 +256,17 @@ ranef.stanreg <- function(object, ...) {
 #' @importFrom lme4 lmerControl glmerControl nlmerControl lmer glmer nlmer
 ranef_template <- function(object) {
   stan_fun <- object$stan_function %ORifNULL% "stan_glmer"
+  
+  if (stan_fun != "stan_gamm4") {
+    new_formula <- formula(object)
+  } else {
+    # remove the part of the formula with s() terms just so we can call lme4
+    # to get the ranef template without error
+    new_formula_rhs <- as.character(object$call$random)[2]
+    new_formula_lhs <- as.character(formula(object))[2]
+    new_formula <- as.formula(paste(new_formula_lhs, "~", new_formula_rhs))
+  }
+  
   if (stan_fun != "stan_nlmer" && is.gaussian(object$family$family)) {
     stan_fun <- "stan_lmer"
   }
@@ -263,7 +274,7 @@ ranef_template <- function(object) {
     stan_fun,
     "stan_lmer" = "lmer",
     "stan_nlmer" = "nlmer",
-    "glmer" # for both stan_glmer and stan_glmer.nb
+    "glmer" # for stan_glmer, stan_glmer.nb, stan_gamm4 (unless gaussian)
   )
   cntrl_args <- list(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 1))
   if (lme4_fun != "nlmer") { # nlmerControl doesn't allow these
@@ -282,7 +293,7 @@ ranef_template <- function(object) {
   cntrl <- do.call(paste0(lme4_fun, "Control"), cntrl_args)
   
   fit_args <- list(
-    formula = formula(object),
+    formula = new_formula,
     data = object$data,
     control = cntrl
   )
