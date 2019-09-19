@@ -23,7 +23,7 @@
 #' those pages are provided in the \strong{See Also} section, below.
 #' 
 #' @name stanreg-methods
-#' @aliases VarCorr fixef ranef ngrps sigma
+#' @aliases VarCorr fixef ranef ngrps sigma nsamples
 #' 
 #' @templateVar stanregArg object,x
 #' @template args-stanreg-object
