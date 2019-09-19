@@ -254,6 +254,9 @@ ranef.stanreg <- function(object, ...) {
 #' @importFrom lme4 lmerControl glmerControl nlmerControl lmer glmer nlmer
 ranef_template <- function(object) {
   stan_fun <- object$stan_function %ORifNULL% "stan_glmer"
+  if (stan_fun != "stan_nlmer" && is.gaussian(object$family$family)) {
+    stan_fun <- "stan_lmer"
+  }
   lme4_fun <- switch(
     stan_fun,
     "stan_lmer" = "lmer",
@@ -296,6 +299,8 @@ ranef_template <- function(object) {
     if (fam == "neg_binomial_2") {
       family <- stats::poisson()
     } else if (fam == "beta_binomial") {
+      family <- stats::binomial()
+    } else if (fam == "binomial" && family$link == "clogit") {
       family <- stats::binomial()
     }
     fit_args$family <- family
