@@ -8,14 +8,15 @@ output:
 params:
   EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 bibliography: mrp-files/mrp.bib
-
 ---
-
-```{r, child="children/SETTINGS-rstan.txt"}
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{mrp: MRP in rstanarm}
+-->
+```{r, child="children/SETTINGS-knitr.txt"}
 ```
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
-
 ```{r packages-1, message=FALSE}
 library(rstanarm)
 library(ggplot2)
@@ -842,7 +843,7 @@ are available [here](https://mc-stan.org/rstanarm/articles/binomial.html).
 The formulas for fitting so-called "mixed-effects" models in **rstanarm** are
 the same as those in the **lme4** package. A table of examples can be found in
 Table 2 of the vignette for the **lme4** package, available
-[here](https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf).
+[here](https://CRAN.R-project.org/package=lme4/vignettes/lmer.pdf).
 
 # Appendix: Code to simulate the data
 
