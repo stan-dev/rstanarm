@@ -56,8 +56,6 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
                            prior_intercept = NULL, prior_PD = FALSE, 
                            algorithm = c("sampling", "meanfield", "fullrank", "optimizing"),
                            adapt_delta = NULL,
-                           tol_rel_grad = 1e4, 
-                           draws = 1000,
                            importance_resampling = TRUE,
                            keep_every = 1) {
   
@@ -125,8 +123,15 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
             if (prior_PD == 0) "log_omega", "R2", "mean_PPD")
   algorithm <- match.arg(algorithm)
   if (algorithm == "optimizing") {
-    out <- rstan::optimizing(stanfit, data = standata, tol_rel_grad = tol_rel_grad,
-                             draws = draws, constrained = TRUE, ...)
+    optimizing_args <- list(...)
+    if (is.null(optimizing_args$draws)) optimizing_args$draws <- 1000L
+    optimizing_args$object <- stanfit
+    optimizing_args$data <- standata
+    optimizing_args$constrained <- TRUE
+    optimizing_args$importance_resampling <- importance_resampling
+    if (is.null(optimizing_args$tol_rel_grad)) 
+      optimizing_args$tol_rel_grad <- 10000L
+    out <- do.call(optimizing, args = optimizing_args)
     check <- check_stanfit(out)
     if (!isTRUE(check)) return(standata)
     if (K == 1)
@@ -141,7 +146,7 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
                    if (prior_PD == 0) "log-fit_ratio", 
                    "R2", "mean_PPD")
     colnames(out$theta_tilde) <- new_names
-    if (draws > 0) { # begin: psis diagnostics and importance resampling
+    if (optimizing_args$draws > 0) { # begin: psis diagnostics and importance resampling
         lr <- out$log_p-out$log_g
         lr[lr == -Inf] <- -800
         p <- suppressWarnings(loo::psis(lr, r_eff = 1))
@@ -166,7 +171,8 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
       importance_resampling <- FALSE
     }
     if (importance_resampling) {  
-      ir_idx <- .sample_indices(exp(p$log_weights), n_draws = ceiling(draws / keep_every))
+      ir_idx <- .sample_indices(exp(p$log_weights), 
+                                n_draws = ceiling(optimizing_args$draws / keep_every))
       out$theta_tilde <- out$theta_tilde[ir_idx,]
       out$ir_idx <- ir_idx
       ## SIR mcse and n_eff
