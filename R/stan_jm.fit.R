@@ -613,7 +613,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # - obtaining initial values for joint model parameters
     # - obtaining appropriate scaling for priors on association parameters
     vbdots <- list(...)
-    dropargs <- c("chains", "cores", "iter", "refresh", "test_grad", "control")
+    dropargs <- c("chains", "cores", "iter", "refresh", "thin", "test_grad", "control")
     for (i in dropargs) 
       vbdots[[i]] <- NULL
     vbpars <- pars_to_monitor(standata, is_jm = FALSE)
