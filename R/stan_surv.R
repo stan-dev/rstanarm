@@ -1816,8 +1816,6 @@ parse_formula_and_data <- function(formula, data) {
   bars      <- lme4::findbars(tf_form)
   re_parts  <- lapply(bars, split_at_bars)
   re_forms  <- fetch(re_parts, "re_form")  
-  if (length(bars) > 2L)
-    stop2("A maximum of 2 grouping factors are allowed.")
 
   nlist(formula,
         data,
