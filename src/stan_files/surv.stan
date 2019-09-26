@@ -692,7 +692,7 @@ parameters {
   //   M-spline model: nvars = number of basis terms, ie. spline coefs
   //   B-spline model: nvars = number of basis terms, ie. spline coefs
   vector<lower=coefs_lb(type)>[type == 4 ? 0 : nvars] z_coefs;
-  simplex[nvars] ms_coefs[type == 4]; // constrained coefs for M-splines
+  simplex[type == 4 ? nvars : 1] ms_coefs; // constrained coefs for M-splines
 
   // unscaled tve spline coefficients
   vector[S] z_beta_tve;
@@ -916,12 +916,12 @@ model {
           if (ndelay > 0) target += -gompertz_log_surv(eta_delay, t_delay, scale);
         }
         else if (type == 4) { // M-splines, on haz scale
-          if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, ms_coefs[1]);
-          if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, ms_coefs[1]);
-          if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, ms_coefs[1]);
-          if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, ms_coefs[1]);
-          if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, ms_coefs[1]);
-          if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, ms_coefs[1]);
+          if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, ms_coefs);
+          if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, ms_coefs);
+          if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, ms_coefs);
+          if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, ms_coefs);
+          if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, ms_coefs);
+          if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, ms_coefs);
         }
         else {
           reject("Bug found: invalid baseline hazard (without quadrature).");
@@ -1108,13 +1108,13 @@ model {
           if (qdelay > 0) lhaz_qpts_delay = gompertz_log_haz(eta_qpts_delay, qpts_delay, scale);
         }
         else if (type == 4) { // M-splines, on haz scale
-          if (Nevent > 0) lhaz_epts_event = mspline_log_haz(eta_epts_event, basis_epts_event, ms_coefs[1]);
-          if (qevent > 0) lhaz_qpts_event = mspline_log_haz(eta_qpts_event, basis_qpts_event, ms_coefs[1]);
-          if (qlcens > 0) lhaz_qpts_lcens = mspline_log_haz(eta_qpts_lcens, basis_qpts_lcens, ms_coefs[1]);
-          if (qrcens > 0) lhaz_qpts_rcens = mspline_log_haz(eta_qpts_rcens, basis_qpts_rcens, ms_coefs[1]);
-          if (qicens > 0) lhaz_qpts_icenl = mspline_log_haz(eta_qpts_icenl, basis_qpts_icenl, ms_coefs[1]);
-          if (qicens > 0) lhaz_qpts_icenu = mspline_log_haz(eta_qpts_icenu, basis_qpts_icenu, ms_coefs[1]);
-          if (qdelay > 0) lhaz_qpts_delay = mspline_log_haz(eta_qpts_delay, basis_qpts_delay, ms_coefs[1]);
+          if (Nevent > 0) lhaz_epts_event = mspline_log_haz(eta_epts_event, basis_epts_event, ms_coefs);
+          if (qevent > 0) lhaz_qpts_event = mspline_log_haz(eta_qpts_event, basis_qpts_event, ms_coefs);
+          if (qlcens > 0) lhaz_qpts_lcens = mspline_log_haz(eta_qpts_lcens, basis_qpts_lcens, ms_coefs);
+          if (qrcens > 0) lhaz_qpts_rcens = mspline_log_haz(eta_qpts_rcens, basis_qpts_rcens, ms_coefs);
+          if (qicens > 0) lhaz_qpts_icenl = mspline_log_haz(eta_qpts_icenl, basis_qpts_icenl, ms_coefs);
+          if (qicens > 0) lhaz_qpts_icenu = mspline_log_haz(eta_qpts_icenu, basis_qpts_icenu, ms_coefs);
+          if (qdelay > 0) lhaz_qpts_delay = mspline_log_haz(eta_qpts_delay, basis_qpts_delay, ms_coefs);
         }
         else if (type == 2) { // B-splines, on log haz scale
           if (Nevent > 0) lhaz_epts_event = bspline_log_haz(eta_epts_event, basis_epts_event, coefs);
@@ -1162,7 +1162,7 @@ model {
 
   // log priors for baseline hazard parameters
   if (type == 4) {
-    real dummy = basehaz_lp(ms_coefs[1], prior_dist_for_aux, prior_conc_for_aux);
+    real dummy = basehaz_lp(ms_coefs, prior_dist_for_aux, prior_conc_for_aux);
   }
   else if (nvars > 0) {
     real dummy = basehaz_lp(z_coefs, prior_dist_for_aux, prior_df_for_aux);
@@ -1184,7 +1184,7 @@ model {
 
 generated quantities {
   // baseline hazard parameters to return
-  vector[nvars] aux = (type == 4) ? ms_coefs[1] : coefs;
+  vector[nvars] aux = (type == 4) ? ms_coefs : coefs;
 
   // transformed intercept
   real alpha;
