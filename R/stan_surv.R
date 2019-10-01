@@ -1472,7 +1472,7 @@ handle_basehaz_surv <- function(basehaz,
     
     degree <- NULL               # degree for splines
     bknots <- c(min_t, max_t)
-    iknots <- get_iknots(tt, df = df, iknots = knots)
+    iknots <- get_iknots(tt, df = df, iknots = knots, degree = 0)
     basis  <- NULL               # spline basis
     nvars  <- length(iknots) + 1 # number of aux parameters, dummy indicators
     
@@ -1940,7 +1940,7 @@ handle_tve <- function(formula, min_t, max_t, times, status) {
 
       if (type == "bs") {
         
-        iknots <- get_iknots(tt, df = df, iknots = knots)
+        iknots <- get_iknots(tt, df = df, iknots = knots, degree = degree)
  
         bknots <- c(min_t, max_t)
         

@@ -549,7 +549,6 @@ o<-SW(stan1 <- stan_surv(
   data    = merge(dat, covs),
   basehaz = "exp",
   chains  = CHAINS, 
-  cores   = CORES,
   refresh = REFRESH, 
   iter    = ITER))
 
