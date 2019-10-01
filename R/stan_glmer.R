@@ -74,7 +74,15 @@
 #'   \code{link}, is a wrapper for \code{stan_glmer} with \code{family = 
 #'   \link{neg_binomial_2}(link)}.
 #'   
-#'   
+#' @return A list with classes \code{stanreg}, \code{glm}, \code{lm}, 
+#'   and \code{lmerMod}. The conventions for the parameter names are the
+#'   same as in the lme4 package with the addition that the standard
+#'   deviation of the errors is called \code{sigma} and the variance-covariance
+#'   matrix of the group-specific deviations from the common parameters is
+#'   called \code{Sigma}, even if this variance-covariance matrix only has
+#'   one row and one column (in which case it is just the group-level variance).
+#' 
+#' 
 #' @seealso The vignette for \code{stan_glmer} and the \emph{Hierarchical 
 #'   Partial Pooling} vignette. \url{http://mc-stan.org/rstanarm/articles/}
 #'    
@@ -160,7 +168,12 @@ stan_glmer <-
                           group = group, QR = QR, sparse = sparse, 
                           mean_PPD = !prior_PD,
                           ...)
-  if (family$family == "Beta regression") family$family <- "beta"
+  
+  add_classes <- "lmerMod" # additional classes to eventually add to stanreg object
+  if (family$family == "Beta regression") {
+    add_classes <- c(add_classes, "betareg")
+    family$family <- "beta"
+  }
   sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
   X <- X[ , !sel, drop = FALSE]
   Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
@@ -172,7 +185,7 @@ stan_glmer <-
                na.action = attr(glmod$fr, "na.action"), contrasts, algorithm, glmod, 
                stan_function = "stan_glmer")
   out <- stanreg(fit)
-  class(out) <- c(class(out), "lmerMod")
+  class(out) <- c(class(out), add_classes)
   
   return(out)
 }

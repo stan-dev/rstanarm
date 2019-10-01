@@ -183,8 +183,6 @@ loo.stanreg <-
            cores = getOption("mc.cores", 1),
            save_psis = FALSE,
            k_threshold = NULL) {
-    if (!used.sampling(x) & !used.optimizing(x))
-      STOP_not_VB("loo")
     if (model_has_weights(x))
       recommend_exact_loo(reason = "model has weights")
 

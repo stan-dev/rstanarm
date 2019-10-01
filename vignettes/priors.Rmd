@@ -16,10 +16,6 @@ params:
 ```
 ```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="children/SETTINGS-rstan.txt"}
-```
-```{r, child="children/SETTINGS-loo.txt"}
-```
 
 # Introduction
 

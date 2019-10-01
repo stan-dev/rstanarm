@@ -16,10 +16,6 @@ params:
 ```
 ```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="children/SETTINGS-rstan.txt"}
-```
-```{r, child="children/SETTINGS-loo.txt"}
-```
 
 # Introduction
 
@@ -118,7 +114,9 @@ unknown covariance matrix to be estimated. Unfortunately,
 expressing prior information about a covariance matrix is not intuitive and can 
 also be computationally challenging. When the covariance matrix is not $1\times 1$, 
 it is often both much more intuitive and 
-efficient to work instead with the __correlation__ matrix and variances.
+efficient to work instead with the __correlation__ matrix and variances. When the
+covariance matrix is $1\times 1$, we still denote it as $\boldsymbol{\Sigma}$ but
+most of the details in this section do not apply.
 
 The variances are in turn decomposed into the product of
 a simplex vector (probability vector) and the trace of the implied covariance matrix,
@@ -177,7 +175,9 @@ For this reason, it is sensible to use a scale-invariant prior for $\tau$.
 We choose a Gamma distribution, with shape and scale parameters both set to $1$
 by default, implying a unit-exponential distribution. Users can set the shape 
 hyperparameter to some value greater than one to ensure that the posterior trace
-is not zero.
+is not zero. In the case where $\boldsymbol{\Sigma}$ is $1\times 1$, this shape
+parameter is the cross-group standard deviation in the parameters and its square
+is the variance.
 
 # Comparison with __lme4__
 
@@ -263,9 +263,10 @@ post <- stan_gamm4(
   data = roaches, 
   family = neg_binomial_2, 
   QR = TRUE,
-  chains = CHAINS, 
-  cores = CORES, 
-  seed = SEED
+  cores = 2,
+  chains = 2, 
+  adapt_delta = 0.99,
+  seed = 12345
 )
 ```
 ```{r}
@@ -328,8 +329,7 @@ To fit essentially the same model using Stan's implementation of MCMC, we add a
 `stan_` prefix
 ```{r, results = "hide"}
 post1 <- stan_nlmer(circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree,
-                    data = Orange, chains = CHAINS, cores = CORES, seed = SEED, 
-                    init_r = 0.5)
+                    data = Orange, cores = 2, seed = 12345, init_r = 0.5)
 ```
 ```{r}
 post1
@@ -364,7 +364,7 @@ first-order compartment model, such as
 ```{r, eval = FALSE}
 post3 <- stan_nlmer(conc ~ SSfol(Dose, Time, lKe, lKa, lCl) ~ 
                     (0 + lKe + lKa + lCl | Subject), data = Theoph,
-                    chains = CHAINS, cores = CORES, seed = SEED, 
+                    cores = 2, seed = 12345, 
                     QR = TRUE, init_r = 0.25, adapt_delta = 0.999)
 pairs(post3, regex_pars = "^l")
 pairs(post3, regex_pars = "igma")

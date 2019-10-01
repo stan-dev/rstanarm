@@ -510,18 +510,18 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
                                      unname(atts$ngrps), ")", 
                                      collapse = ", "))
   }
-  
+    
   cat("\n\nEstimates:\n")
-  if (!used.optimizing(atts)) {
+  if (used.optimizing(atts) || used.variational(atts)) {
+      hat <- "khat"
+      str_diag <- "Monte Carlo diagnostics"
+      str1 <- "and khat is the Pareto k diagnostic for importance sampling"
+      str2 <- " (perfomance is usually good when khat < 0.7).\n"
+  } else {
       hat <- "Rhat"
       str_diag <- "MCMC diagnostics"
       str1 <- "and Rhat is the potential scale reduction factor on split chains"
       str2 <- " (at convergence Rhat=1).\n"
-  } else {
-      hat <- "khat"
-      str_diag <- "Monte Carlo diagnostics"
-      str1 <- "and khat is the Pareto k diagnostic for importance sampling.\n"
-      str2 <- " (perfomance is usually good when khat < 0.7).\n"
   }
   sel <- which(colnames(x) %in% c("mcse", "n_eff", hat))
   has_mc_diagnostic <- length(sel) > 0
@@ -550,7 +550,7 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
     .printfr(ppd_estimates, digits)
     cat("\nThe mean_ppd is the sample average posterior predictive ", 
         "distribution of the outcome variable ", 
-        "(for details see help('summary.stanreg').\n",
+        "(for details see help('summary.stanreg')).\n",
         sep = '')
   }
   

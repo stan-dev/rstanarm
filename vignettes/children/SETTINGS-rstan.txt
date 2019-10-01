@@ -1,6 +1,0 @@
-```{r, SETTINGS-rstan, include=FALSE}
-ITER <- 500L
-CHAINS <- 2L
-CORES <- 2L
-SEED <- 12345
-```

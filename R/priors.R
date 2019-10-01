@@ -56,7 +56,7 @@
 #' @param df,df1,df2 Prior degrees of freedom. The default is \eqn{1} for 
 #'   \code{student_t}, in which case it is equivalent to \code{cauchy}. For the 
 #'   hierarchical shrinkage priors (\code{hs} and \code{hs_plus}) the degrees of
-#'   freedom parameter(s) default to \eqn{3}. For the \code{product_normal} 
+#'   freedom parameter(s) default to \eqn{1}. For the \code{product_normal}
 #'   prior, the degrees of freedom parameter must be an integer (vector) that is
 #'   at least \eqn{2} (the default).
 #' @param global_df,global_scale,slab_df,slab_scale Optional arguments for the

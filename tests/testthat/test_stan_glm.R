@@ -198,7 +198,7 @@ test_that("stan_glm returns expected result for glm poisson example", {
     # if (links[i] == "identity") expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
     if (links[i] == "sqrt") { # this is weird
       if (coef(ans)[1] > 0)
-        expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.04)
+        expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.1)
       else
         expect_equal(-coef(fit)[-1], coef(ans)[-1], tol = 0.04)
     }
@@ -273,7 +273,7 @@ test_that("stan_glm returns expected result for bernoulli", {
     val <- coef(fit)
     if (links[i] != "log") {
       ans <- coef(glm(y ~ x, family = fam, etastart = theta))
-      expect_equal(val, ans, 0.06, info = links[i])
+      expect_equal(val, ans, 0.09, info = links[i])
     }
     # else expect_equal(val[-1], ans[-1], 0.06, info = links[i])
   }
@@ -320,8 +320,8 @@ test_that("stan_glm returns expected result for binomial example", {
     expect_stanreg(fit2)
     
     val2 <- coef(fit2)
-    if (links[i] != "log") expect_equal(val2, ans, 0.018, info = links[i])
-    else expect_equal(val2[-1], ans[-1], 0.01, info = links[i])
+    if (links[i] != "log") expect_equal(val2, ans, 0.02, info = links[i])
+    else expect_equal(val2[-1], ans[-1], 0.02, info = links[i])
   }
 })
 

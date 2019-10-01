@@ -28,10 +28,7 @@ h1 { /* Header 1 */
 ```
 ```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="children/SETTINGS-rstan.txt"}
-```
-```{r, child="children/SETTINGS-loo.txt"}
-```
+
 
 ```{r setup_jm, include=FALSE, message=FALSE}
 knitr::opts_chunk$set(fig.width=10, fig.height=4)
