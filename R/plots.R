@@ -91,6 +91,9 @@
 #' # bayesplot::mcmc_areas directly
 #' x <- as.array(fit, regex_pars = "period")
 #' bayesplot::mcmc_areas(x, prob = 0.5, prob_outer = 0.9)
+#' 
+#' # Ridgelines version of the areas plot
+#' bayesplot::mcmc_areas_ridges(x, regex_pars = "period", prob = 0.9)
 #'
 #'
 #' ##################################
@@ -356,10 +359,7 @@ set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...,
     return(list(x = as.matrix(x, pars = pars), ...))
   }
 
-  if (needs_chains(plotfun))
-    list(x = as.array(x, pars = pars, regex_pars = regex_pars), ...)
-  else
-    list(x = as.matrix(x, pars = pars, regex_pars = regex_pars), ...)
+  list(x = as.array(x, pars = pars, regex_pars = regex_pars), ...)
 }
 
 mcmc_function_name <- function(fun) {
@@ -400,19 +400,19 @@ mcmc_function_name <- function(fun) {
 
 # check if a plotting function requires multiple chains
 needs_chains <- function(x) {
-  nms <- paste0("mcmc_",
-    c(
-      "trace",
-      "trace_highlight",
-      "acf",
-      "acf_bar",
-      "hist_by_chain",
-      "dens_overlay",
-      "violin",
-      "combo"
-    )
+  nms <- c(
+    "trace",
+    "trace_highlight",
+    "rank",
+    "rank_overlay",
+    "acf",
+    "acf_bar",
+    "hist_by_chain",
+    "dens_overlay",
+    "violin",
+    "combo"
   )
-  mcmc_function_name(x) %in% nms
+  mcmc_function_name(x) %in% paste0("mcmc_", nms)
 }
 
 # Select the correct plotting function

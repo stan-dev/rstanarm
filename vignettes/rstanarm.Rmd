@@ -16,10 +16,6 @@ params:
 ```
 ```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="children/SETTINGS-rstan.txt"}
-```
-```{r, child="children/SETTINGS-loo.txt"}
-```
 
 # Introduction
 
@@ -157,7 +153,7 @@ womensrole_bglm_1 <- stan_glm(cbind(agree, disagree) ~ education + gender,
                               family = binomial(link = "logit"), 
                               prior = student_t(df = 7), 
                               prior_intercept = student_t(df = 7),
-                              chains = CHAINS, cores = CORES, seed = SEED)
+                              cores = 2, seed = 12345)
 womensrole_bglm_1
 ```
 ```{r, echo=FALSE}
@@ -205,7 +201,7 @@ the tools you need to visualize the posterior distribution and diagnose any
 problems with the Markov chains. In this case, the results are fine and to
 verify that, you can call
 ```{r rstanarm-shinystan,eval=FALSE}
-launch_shinystan(womensrole_bglm_1)
+launch_shinystan(womensrole_bglm_1, ppd = FALSE)
 ```
 which will open a web browser that drives the visualizations. 
 
@@ -286,7 +282,7 @@ There are only one or two moderate outliers (whose statistics are greater than
 $0.5$), which should not have too much of an effect on the resulting model 
 comparison:
 ```{r, rstanarm-loo-compare}
-compare_models(loo_bglm_1, loo_bglm_2)
+loo_compare(loo_bglm_1, loo_bglm_2)
 ```
 In this case, there is little difference in the expected log pointwise deviance
 between the two models, so we are essentially indifferent between them after
@@ -371,15 +367,13 @@ __rstanarm__ we'll fit two models and run them for different numbers of
 iterations.
 
 ```{r, rstanarm-rhat-fit, results='hide', warning=TRUE}
-bad_rhat <- stan_glm(mpg ~ ., data = mtcars, iter = 20, 
-                     chains = CHAINS, cores = CORES, seed = SEED)
-good_rhat <- update(bad_rhat, iter = 500, 
-                    chains = CHAINS, cores = CORES, seed = SEED)
+bad_rhat <- stan_glm(mpg ~ ., data = mtcars, iter = 20, chains = 2, seed = 12345)
+good_rhat <- update(bad_rhat, iter = 1000, chains = 2, seed = 12345)
 ```
 
 Here the first model leads to the warning message about convergence but the 
-second model does not. Indeed, we can see that not all Rhat values are less than
-1.1 for the first model:
+second model does not. Indeed, we can see that many Rhat values are much bigger
+than 1 for the first model:
 
 ```{r, rstasnarm-rhat-bad}
 rhat <- summary(bad_rhat)[, "Rhat"]
@@ -387,15 +381,14 @@ rhat[rhat > 1.1]
 ```
 
 Since we didn't get a warning for the second model we shouldn't find any 
-parameters with an Rhat greater than 1.1:
+parameters with an Rhat far from 1:
 
 ```{r, rstasnarm-rhat-good}
 any(summary(good_rhat)[, "Rhat"] > 1.1)
 ```
 
 Details on the computation of Rhat and some of its limitations can be found in
-the  chapter of the [Stan Modeling Language User's Guide and Reference
-Manual](http://mc-stan.org/documentation/).
+[Stan Modeling Language User's Guide and Reference Manual](https://mc-stan.org/users/documentation/).
 
 ### Divergent transitions
 
@@ -468,7 +461,7 @@ If the posterior distribution that you specify in the first step cannot be
 sampled from using the __rstanarm__ package, then it is often possible to create
 a hand-written program in the the Stan language so that the posterior 
 distribution can be drawn from using the __rstan__ package. See the 
-documentation for the __rstan__ package or http://mc-stan.org for more details
+documentation for the __rstan__ package or https://mc-stan.org for more details
 about this more advanced usage of Stan. However, many relatively simple models
 can be fit using the __rstanarm__ package without writing any code in the Stan
 language, which is illustrated for each estimating function in the __rstanarm__

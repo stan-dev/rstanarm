@@ -30,10 +30,6 @@ opts_chunk$set(
 ```
 ```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="children/SETTINGS-rstan.txt"}
-```
-```{r, child="children/SETTINGS-loo.txt"}
-```
 
 
 # Introduction 
@@ -783,7 +779,7 @@ Vehtari, Gelman, and Gabry (2016) shows that the expected log predictive
 density can be approximated using the `loo` function for each model and 
 then compared across models:
 ```{r, loo}
-compare_models(loo(fit_partialpool), loo(fit_pool), loo(fit_nopool))
+loo_compare(loo(fit_partialpool), loo(fit_pool), loo(fit_nopool))
 ```
 The third column is the leave-one-out (loo) approximation to the
 expected log predictive density. This approximation is only 

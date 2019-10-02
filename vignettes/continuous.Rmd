@@ -17,10 +17,6 @@ params:
 ```
 ```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="children/SETTINGS-rstan.txt"}
-```
-```{r, child="children/SETTINGS-loo.txt"}
-```
 
 # Introduction
 
@@ -120,7 +116,7 @@ library(rstanarm)
 data(kidiq)
 post1 <- stan_glm(kid_score ~ mom_hs, data = kidiq, 
                   family = gaussian(link = "identity"), 
-                  chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
+                  seed = 12345)
 post2 <- update(post1, formula = . ~ mom_iq)
 post3 <- update(post1, formula = . ~ mom_hs + mom_iq)
 (post4 <- update(post1, formula = . ~ mom_hs * mom_iq))
@@ -211,11 +207,11 @@ in the __loo__ package:
 
 ```{r, continuous-kidiq-loo}
 # Compare them with loo
-loo1 <- loo(post1)
-loo2 <- loo(post2)
-loo3 <- loo(post3)
-loo4 <- loo(post4)
-(comp <- compare_models(loo1, loo2, loo3, loo4))
+loo1 <- loo(post1, cores = 2)
+loo2 <- loo(post2, cores = 2)
+loo3 <- loo(post3, cores = 2)
+loo4 <- loo(post4, cores = 2)
+(comp <- loo_compare(loo1, loo2, loo3, loo4))
 ```
 
 In this case the fourth model is preferred as it has the highest 
@@ -224,15 +220,15 @@ value of the LOO Information Criterion (`looic`). The fourth model
 is preferred by a lot over the first model
 
 ```{r, continuous-kidiq-loo-2}
-compare_models(loo1, loo4)
+loo_compare(loo1, loo4)
 ```
 
 because the difference in `elpd` is so much larger than the standard error. 
 However, the preference of the fourth model over the others isn't as strong:
 
 ```{r, continuous-kidiq-loo-3}
-compare_models(loo3, loo4)
-compare_models(loo2, loo4)
+loo_compare(loo3, loo4)
+loo_compare(loo2, loo4)
 ```
 
 ## The posterior predictive distribution 
@@ -378,7 +374,7 @@ clotting2 <- with(clotting, data.frame(
 
 fit <- stan_glm(clot_time ~ log_plasma * lot_id, data = clotting2, family = Gamma, 
                 prior_intercept = normal(0,1), prior = normal(0,1),
-                chains = CHAINS, cores = CORES, seed = SEED)
+                seed = 12345)
 ```
 
 ```{r}

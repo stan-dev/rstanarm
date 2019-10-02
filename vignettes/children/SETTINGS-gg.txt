@@ -1,4 +1,5 @@
-```{r, SETTINGS-gg, include=FALSE}
+```{r, SETTINGS-gg, include=TRUE}
 library(ggplot2)
+library(bayesplot)
 theme_set(bayesplot::theme_default())
 ```

@@ -48,7 +48,7 @@ SW(fit_binom2 <- update(fit_binom, formula = factor(dead) ~ .))
 d.AD <- data.frame(treatment = gl(3,3), outcome =  gl(3,1,9),
                    counts = c(18,17,15,20,10,20,25,13,12))
 SW(fit_pois <- stan_glm(counts ~ outcome + treatment, data = d.AD,
-                        family = poisson, chains = CHAINS, iter = ITER,
+                        family = poisson, chains = CHAINS, iter = 10 * ITER,
                         seed = SEED, refresh = 0))
 SW(fit_negbin <- update(fit_pois, family = neg_binomial_2))
 
@@ -194,11 +194,11 @@ test_that("stan_glm returns expected result for glm poisson example", {
     
     ans <- glm(counts ~ outcome + treatment, data = d.AD,
                family = poisson(links[i]), start = coef(fit))
-    if (links[i] == "log") expect_equal(coef(fit), coef(ans), tol = 0.01)
+    if (links[i] == "log") expect_equal(coef(fit), coef(ans), tol = 0.03)
     # if (links[i] == "identity") expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
     if (links[i] == "sqrt") { # this is weird
       if (coef(ans)[1] > 0)
-        expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.04)
+        expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.1)
       else
         expect_equal(-coef(fit)[-1], coef(ans)[-1], tol = 0.04)
     }
@@ -273,7 +273,7 @@ test_that("stan_glm returns expected result for bernoulli", {
     val <- coef(fit)
     if (links[i] != "log") {
       ans <- coef(glm(y ~ x, family = fam, etastart = theta))
-      expect_equal(val, ans, 0.03, info = links[i])
+      expect_equal(val, ans, 0.09, info = links[i])
     }
     # else expect_equal(val[-1], ans[-1], 0.06, info = links[i])
   }
@@ -307,8 +307,8 @@ test_that("stan_glm returns expected result for binomial example", {
     
     val <- coef(fit)
     ans <- coef(glm(y ~ x1 + x2 + x3, data = dat, family = fam, start = b))
-    if (links[i] != "log") expect_equal(val, ans, 0.017, info = links[i])
-    else expect_equal(val[-1], ans[-1], 0.008, info = links[i])
+    if (links[i] != "log") expect_equal(val, ans, 0.02, info = links[i])
+    else expect_equal(val[-1], ans[-1], 0.02, info = links[i])
 
     prop <- yes / trials
     dat$prop <- prop
@@ -320,8 +320,8 @@ test_that("stan_glm returns expected result for binomial example", {
     expect_stanreg(fit2)
     
     val2 <- coef(fit2)
-    if (links[i] != "log") expect_equal(val2, ans, 0.018, info = links[i])
-    else expect_equal(val2[-1], ans[-1], 0.01, info = links[i])
+    if (links[i] != "log") expect_equal(val2, ans, 0.02, info = links[i])
+    else expect_equal(val2[-1], ans[-1], 0.02, info = links[i])
   }
 })
 
@@ -377,7 +377,7 @@ test_that("prior_aux argument is detected properly", {
   expect_output(print(prior_summary(fit)), 
                 "~ exponential(rate = ", fixed = TRUE)
   expect_output(print(prior_summary(fit)), 
-                "**adjusted scale", fixed = TRUE)
+                "Adjusted prior", fixed = TRUE)
 })
 
 test_that("prior_aux can be NULL", {
@@ -401,7 +401,7 @@ test_that("autoscale works (insofar as it's reported by prior_summary)", {
   
   expect_output(
     print(prior_summary(fit2)), 
-    "**adjusted scale", 
+    "Adjusted prior", 
     fixed = TRUE
   )
 })

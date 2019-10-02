@@ -127,6 +127,7 @@
 #'  plot(fit)
 #' }
 #'
+#' @importFrom utils packageVersion
 stan_polr <- function(formula, data, weights, ..., subset,
                       na.action = getOption("na.action", "na.omit"),
                       contrasts = NULL, model = TRUE,
@@ -260,7 +261,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
                call, formula, terms = Terms,
                prior.info = attr(stanfit, "prior.info"),
                algorithm, stan_summary, stanfit, 
-               rstan_version = utils::packageVersion("rstan"), 
+               rstan_version = packageVersion("rstan"), 
                stan_function = "stan_polr")
   structure(out, class = c("stanreg", "polr"))
 }

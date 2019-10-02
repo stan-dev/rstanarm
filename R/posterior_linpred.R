@@ -85,7 +85,7 @@ posterior_linpred.stanreg <-
     if (is.stansurv(object))
       STOP_if_stansurv("'poterior_linpred'")
     
-    newdata <- validate_newdata(newdata)
+    newdata <- validate_newdata(object, newdata = newdata, m = NULL)
     dat <- pp_data(object,
                    newdata = newdata,
                    re.form = re.form,

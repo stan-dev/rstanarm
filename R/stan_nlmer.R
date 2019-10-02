@@ -103,13 +103,17 @@ stan_nlmer <-
            adapt_delta = NULL,
            QR = FALSE,
            sparse = FALSE) {
-    
+
+  if (!has_outcome_variable(formula[[2]])) {
+    stop("LHS of formula must be specified.")
+  }
   f <- as.character(formula[-3])
   SSfunctions <- grep("^SS[[:lower:]]+", ls("package:stats"), value = TRUE) 
   SSfun <- sapply(SSfunctions, function(ss) 
     grepl(paste0(ss, "("), x = f[2], fixed = TRUE))
-  if (!any(SSfun))
+  if (!any(SSfun)) {
     stop("'stan_nlmer' requires a named self-starting nonlinear function.")
+  }
   SSfun <- which(SSfun)
   SSfun_char <- names(SSfun)
   
@@ -148,7 +152,10 @@ stan_nlmer <-
                           prior_aux = prior_aux, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = nlf$reTrms, QR = QR, sparse = sparse, ...)
-  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) {
+    return(stanfit)
+  }
+  
   if (SSfun_char == "SSfpl") { # SSfun = 6
     stanfit@sim$samples <- lapply(stanfit@sim$samples, FUN = function(x) {
       x[[4L]] <- exp(x[[4L]])

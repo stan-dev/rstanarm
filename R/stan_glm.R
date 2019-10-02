@@ -235,6 +235,11 @@ stan_glm <-
     Y <- cbind(y1, y0 = weights - y1)
     weights <- double(0)
   }
+  
+  if (prior_PD) {
+    # can result in errors (e.g. from poisson) if draws from prior are weird
+    mean_PPD <- FALSE
+  }
 
   stanfit <- stan_glm.fit(
     x = X,
@@ -257,10 +262,10 @@ stan_glm <-
   if (family$family == "Beta regression") {
     family$family <- "beta"
   }
-  
+
   sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
   X <- X[ , !sel, drop = FALSE]  
-  
+
   fit <- nlist(stanfit, algorithm, family, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
@@ -268,6 +273,13 @@ stan_glm <-
                stan_function = "stan_glm")
   
   out <- stanreg(fit)
+  if (algorithm == "optimizing") {
+    out$log_p <- stanfit$log_p
+    out$log_g <- stanfit$log_g
+    out$psis <- stanfit$psis
+    out$ir_idx <- stanfit$ir_idx
+    out$diagnostics <- stanfit$diagnostics
+  }
   out$compute_mean_PPD <- mean_PPD
   out$xlevels <- .getXlevels(mt, mf)
   if (!x) 

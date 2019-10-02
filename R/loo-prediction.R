@@ -158,6 +158,6 @@ psis.stanreg <- function(object, ...) {
   message("Running PSIS to compute weights...")
   ll <- log_lik(object)
   r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(object))
-  psis1 <- loo::psis(-ll, r_eff = r_eff, ...)
+  loo::psis(-ll, r_eff = r_eff, ...)
 }
 

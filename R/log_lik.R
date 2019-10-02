@@ -68,9 +68,7 @@
 #' }
 #'
 log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
-  if (!used.sampling(object))
-    STOP_sampling_only("Pointwise log-likelihood matrix")
-  newdata <- validate_newdata(newdata)
+  newdata <- validate_newdata(object, newdata, m = NULL)
   calling_fun <- as.character(sys.call(-1))[1]
   dots <- list(...)
   
@@ -80,6 +78,7 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
     m <- NULL
   }
  
+  newdata <- validate_newdata(object, newdata = newdata, m = m)
   if (is.stansurv(object)) {
     args <- ll_args.stansurv(object, newdata = newdata, ...)
   } else {
@@ -87,7 +86,7 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
                             reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
                             ...)
   }
-  
+
   fun <- ll_fun(object, m = m)
   if (is.stansurv(object)) {
     out <-

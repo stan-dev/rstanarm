@@ -1472,7 +1472,7 @@ handle_basehaz_surv <- function(basehaz,
     
     degree <- NULL               # degree for splines
     bknots <- c(min_t, max_t)
-    iknots <- get_iknots(tt, df = df, iknots = knots)
+    iknots <- get_iknots(tt, df = df, iknots = knots, degree = 0)
     basis  <- NULL               # spline basis
     nvars  <- length(iknots) + 1 # number of aux parameters, dummy indicators
     
@@ -1816,8 +1816,6 @@ parse_formula_and_data <- function(formula, data) {
   bars      <- lme4::findbars(tf_form)
   re_parts  <- lapply(bars, split_at_bars)
   re_forms  <- fetch(re_parts, "re_form")  
-  if (length(bars) > 2L)
-    stop2("A maximum of 2 grouping factors are allowed.")
 
   nlist(formula,
         data,
@@ -1942,7 +1940,7 @@ handle_tve <- function(formula, min_t, max_t, times, status) {
 
       if (type == "bs") {
         
-        iknots <- get_iknots(tt, df = df, iknots = knots)
+        iknots <- get_iknots(tt, df = df, iknots = knots, degree = degree)
  
         bknots <- c(min_t, max_t)
         

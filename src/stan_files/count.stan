@@ -25,8 +25,16 @@ data {
 transformed data{
   real poisson_max = pow(2.0, 30.0);
   int<lower=1> V[special_case ? t : 0, N] = make_V(N, special_case ? t : 0, v);
+  
+  int can_do_countlogglm = link == 1 && prior_PD == 0 && dense_X == 1 && has_weights == 0 && t == 0;
+  matrix[can_do_countlogglm ? N : 0, can_do_countlogglm ? K + K_smooth : 0] XS;
+  
   // defines hs, len_z_T, len_var_group, delta, pos
 #include /tdata/tdata_glm.stan
+
+  if (can_do_countlogglm) {
+    XS = K_smooth > 0 ? append_col(X[1], S) : X[1];
+  }
 }
 parameters {
   real<lower=(link == 1 ? negative_infinity() : 0.0)> gamma[has_intercept];
@@ -71,42 +79,59 @@ transformed parameters {
   }
 }
 model {
-#include /model/make_eta.stan
-  if (t > 0) {
-#include /model/eta_add_Zb.stan
-  }
-  if (has_intercept == 1) {
-    if (link == 1) eta += gamma[1];
-    else eta += gamma[1] - min(eta);
-  }
-  else {
-#include /model/eta_no_intercept.stan
-  }
-  
-  if (family == 8) {
-    if      (link == 1) eta += log(aux) + log(noise[1]);
-    else if (link == 2) {
-      eta *= aux;
-      eta .*= noise[1];
-    }
-    else                eta += sqrt(aux) + sqrt(noise[1]);
-  }
-  
-  // Log-likelihood 
-  if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
+  if (can_do_countlogglm) {
+    vector[K + K_smooth] coeff = K_smooth > 0 ? append_row(beta, beta_smooth) : beta;
     if (family != 7) {
-      if (link == 1) target += poisson_log_lpmf(y | eta);
-      else target += poisson_lpmf(y | linkinv_count(eta, link));
+      if (has_offset) {
+        target += poisson_log_glm_lpmf(y | XS, has_intercept ? offset + gamma[1] : offset, coeff);
+      } else {
+        target += poisson_log_glm_lpmf(y | XS, has_intercept ? gamma[1] : 0.0, coeff);
+      }
+    } else {
+      if (has_offset) {
+        target += neg_binomial_2_log_glm_lpmf(y | XS, has_intercept ? offset + gamma[1] : offset, coeff, aux);
+      } else {
+        target += neg_binomial_2_log_glm_lpmf(y | XS, has_intercept ? gamma[1] : 0.0, coeff, aux);
+      }
+    }
+  } else if (prior_PD == 0) {
+#include /model/make_eta.stan
+    if (t > 0) {
+#include /model/eta_add_Zb.stan
+    }
+    if (has_intercept == 1) {
+      if (link == 1) eta += gamma[1];
+      else eta += gamma[1] - min(eta);
     }
     else {
-      if (link == 1) target += neg_binomial_2_log_lpmf(y | eta, aux);
-      else target += neg_binomial_2_lpmf(y | linkinv_count(eta, link), aux);
+#include /model/eta_no_intercept.stan
     }
+  
+    if (family == 8) {
+      if      (link == 1) eta += log(aux) + log(noise[1]);
+      else if (link == 2) {
+        eta *= aux;
+        eta .*= noise[1];
+      }
+      else                eta += sqrt(aux) + sqrt(noise[1]);
+    }
+  
+    // Log-likelihood
+    if (has_weights == 0) {  // unweighted log-likelihoods
+      if (family != 7) {
+        if (link == 1) target += poisson_log_lpmf(y | eta);
+        else target += poisson_lpmf(y | linkinv_count(eta, link));
+      }
+      else {
+        if (link == 1) target += neg_binomial_2_log_lpmf(y | eta, aux);
+        else target += neg_binomial_2_lpmf(y | linkinv_count(eta, link), aux);
+      }
+    }
+    else if (family != 7)
+      target += dot_product(weights, pw_pois(y, eta, link));
+    else
+      target += dot_product(weights, pw_nb(y, eta, aux, link));
   }
-  else if (family != 7 && prior_PD == 0)
-    target += dot_product(weights, pw_pois(y, eta, link));
-  else if (prior_PD == 0)
-    target += dot_product(weights, pw_nb(y, eta, aux, link));
   
   // Log-prior for aux
   if (family > 6 && 

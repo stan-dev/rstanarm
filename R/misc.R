@@ -178,7 +178,7 @@ used.variational <- function(x) {
   x$algorithm %in% c("meanfield", "fullrank")
 }
 
-# Test if stanreg object used stan_(g)lmer
+# Test if stanreg object used stan_[gn]lmer
 #
 # @param x A stanreg object.
 is.mer <- function(x) {
@@ -216,6 +216,17 @@ STOP_sampling_only <- function(what) {
 # @param what An optional message to prepend to the default message.
 STOP_not_optimizing <- function(what) {
   msg <- "not available for models fit using algorithm='optimizing'."
+  if (!missing(what)) 
+    msg <- paste(what, msg)
+  stop(msg, call. = FALSE)
+}
+
+# Consistent error message to use when something is only available for models
+# fit using MCMC or optimization but not VB
+# 
+# @param what An optional message to prepend to the default message.
+STOP_not_VB <- function(what) {
+  msg <- "not available for models fit using algorithm='meanfield|fullrank'."
   if (!missing(what)) 
     msg <- paste(what, msg)
   stop(msg, call. = FALSE)
@@ -357,17 +368,34 @@ validate_glm_formula <- function(f) {
 }
 
 
+# Check if model formula has something on the LHS of ~
+# @param f Model formula
+# @return FALSE if there is no outcome on the LHS of the formula
+has_outcome_variable <- function(f) {
+  tt <- terms(as.formula(f))
+  if (attr(tt, "response") == 0) {
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
+
 # Check if any variables in a model frame are constants
-# (the exception is that a constant variable of all 1's is allowed)
+#
+# exceptions: constant variable of all 1's is allowed and outcomes with all 0s
+# or 1s are allowed (e.g., for binomial models) and survival outcomes (e.g.,
+# incase all event indicators are 1s)
 # 
 # @param mf A model frame or model matrix
 # @return If no constant variables are found mf is returned, otherwise an error
 #   is thrown.
 check_constant_vars <- function(mf) {
-  # don't check if columns are constant for binomial or Surv object
-  mf1 <- if (NCOL(mf[, 1]) == 2 || survival::is.Surv(mf[, 1])) 
-    mf[, -1, drop=FALSE] else mf
-  
+  mf1 <- mf
+  if (NCOL(mf[, 1]) == 2 || all(mf[, 1] %in% c(0, 1)) || survival::is.Surv(mf[, 1])) {
+    mf1 <- mf[, -1, drop=FALSE] 
+  }
+
   lu1 <- function(x) !all(x == 1) && length(unique(x)) == 1
   nocheck <- c("(weights)", "(offset)", "(Intercept)")
   sel <- !colnames(mf1) %in% nocheck
@@ -711,12 +739,16 @@ check_reTrms <- function(reTrms) {
 }
 
 #' @importFrom lme4 glmerControl
-make_glmerControl <- function(...) {
+# @param ignore_lhs ignore or throw error if LHS of formula is missing? (relevant if prior_PD is TRUE)
+make_glmerControl <- function(..., ignore_lhs = FALSE, ignore_x_scale = FALSE) {
   glmerControl(check.nlev.gtreq.5 = "ignore",
                check.nlev.gtr.1 = "stop",
                check.nobs.vs.rankZ = "ignore",
                check.nobs.vs.nlev = "ignore",
-               check.nobs.vs.nRE = "ignore", ...)  
+               check.nobs.vs.nRE = "ignore", 
+               check.formula.LHS = if (ignore_lhs) "ignore" else "stop",
+               check.scaleX = if (ignore_x_scale) "ignore" else "warning",
+               ...)  
 }
 
 # Check if a fitted model (stanreg object) has weights
@@ -792,27 +824,35 @@ warn_data_arg_missing <- function() {
 
 # Validate newdata argument for posterior_predict, log_lik, etc.
 #
-# Doesn't check if the correct variables are included (that's done in pp_data),
-# just that newdata is either NULL or a data frame with no missing values. Also
-# drops any unused dimensions in variables (e.g. a one column matrix inside a
-# data frame is converted to a vector).
-# 
-# @param x User's 'newdata' argument
-# @return Either NULL or a data frame
+# Checks for NAs in used variables only (but returns all variables), 
+# and also drops any unused dimensions in variables (e.g. a one column 
+# matrix inside a data frame is converted to a vector).
 #
-validate_newdata <- function(x) {
-  if (is.null(x)) {
-    return(NULL)
+# @param object stanreg object
+# @param newdata NULL or a data frame
+# @pararm m For stanmvreg objects, the submodel (passed to formula())
+# @return NULL or a data frame
+#
+validate_newdata <- function(object, newdata = NULL, m = NULL) {
+  if (is.null(newdata)) {
+    return(newdata)
   }
-  if (!is.data.frame(x)) {
+  if (!is.data.frame(newdata)) {
     stop("If 'newdata' is specified it must be a data frame.", call. = FALSE)
   }
-  if (any(is.na(x))) {
+  
+  # drop other classes (e.g. 'tbl_df', 'tbl')
+  newdata <- as.data.frame(newdata)
+  
+  # only check for NAs in used variables
+  vars <- all.vars(formula(object, m = m))
+  newdata_check <- newdata[, colnames(newdata) %in% vars, drop=FALSE]
+  if (any(is.na(newdata_check))) {
     stop("NAs are not allowed in 'newdata'.", call. = FALSE)
   }
   
-  x <- as.data.frame(x)
-  drop_redundant_dims(x)
+  newdata <- drop_redundant_dims(newdata)
+  return(newdata)
 }
 
 
@@ -1863,6 +1903,12 @@ is_like_factor <- function(x) {
 # Check if 'x' is FALSE
 isFALSE <- function(x) {
   identical(FALSE, x)
+}
+
+# @param x numeric vector
+log_sum_exp <- function(x) {
+  max_x <- max(x)
+  max_x + log(sum(exp(x - max_x)))
 }
 
 # Concatenate (i.e. 'c(...)') but don't demote factors to integers
