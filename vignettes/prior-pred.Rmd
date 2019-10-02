@@ -1,1 +1,199 @@
+---
+title: "Choosing your Rstanarm prior with prior predictive checks"
+author: "Lauren Kennedy"
+date: "6/23/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+One important part of a Bayesian workflow is the selection of priors to include researcher and domain specific information while allowing the analysis to learn from the data. With complex likelihoods, it can be difficult to imagine the relative informativeness of the a given prior. Gabry et al. (2019) argue that one way of approaching this is to use prior predictive checks. In this vignette we describe how and why prior predictive checks are done, before working through an example with logisitic regression with a logit link function to explore the effects of different priors. For more information on the priors available, see \href{https://cran.r-project.org/web/packages/rstanarm/vignettes/priors.html}.
+
+```{r,echo=FALSE,message=FALSE}
+library(rstanarm)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(arm)
+```
+
+For the purposes of this vignette we focus on a logistic regression. To begin with we start with a simple intercept only model: 
+
+$$
+Pr(y=1) = logit^{-1}(\beta_0)
+$$
+For a very large $n$, the prior has limited impact on the estimate of $Pr(y=1)$, but for small $n$, the prior will impact the fitted values. Given that, we would like to understand the impact of prior choices on $Pr(y=1)$. In this vignette we demonstrate how to use rstanarm to do understand the impact of prior choices. 
+
+This, of course, can be done without rstanarm by the following method
+
+1. Sample from the priors specified in your model. If the prior for $\beta_0 \sim N(0,1)$, draw a number (in this case 1000) of samples from $N(0,1)$. 
+
+```{r}
+beta_0_ppc <- rnorm(1000,0,1)
+```
+
+2. Use those sampled priors with reasonable values of the covariates X (in this case the model has none) to understand the apriori suggested values for $Pr(y = 1)$. Here we simply take the inverse logit of the samples from the $\beta_0$ prior. 
+
+```{r}
+pr_y_ppc <- invlogit(beta_0_ppc) 
+```
+
+We can then visualize this using ggplot. 
+
+```{r}
+ggplot(data=data.frame(x=pr_y_ppc),aes(x=x, y=..density..))+
+  geom_histogram(binwidth=.005) + theme_bw() + xlab("Predicted Pr(y=1)") + ylab("Density")
+```
+
+However, rstanarm often uses complex priors, some of which may be unexpected. Priors in rstanarm often reflect the best use practices for priors at the current time, and can sometimes be complex to understand. 
+
+#Prior predictive checks with rstanarm
+
+This is relatively simple for this simple model, but how can we use this to explore priors in more complex models? In this vignette we use rstanarm to explore the default and alternative priors for logistic regression. To begin with, we simulate some data. We won't be using the data to update the priors (as we concern ourselves entirely with prior predictive checks), but we use the data to specify the form of the model to rstanarm. 
+
+```{r}
+dat_intercept <- data.frame(
+  y = rbinom(1000,1,.5),
+  x = rep(c(0,1),500) #The x variable will be used in the second stage of our vignette
+)
+```
+
+## Priors for intercept only models 
+
+To begin we focus on the simplest possible model---an intercept only model. 
+
+### Default priors in rstanarm
+We can begin by exploring the default priors used by rstanarm. We use the arguement prior_PD=TRUE to prevent rstanarm from updating the data given the data. 
+
+```{r, echo=TRUE, message=FALSE, results="hide"}
+m1 <- stan_glm(formula = y ~ 1, prior_PD=TRUE, family=binomial(link="logit"), data=dat_intercept)
+```
+And we can confirm the priors used
+
+```{r}
+prior_summary(m1)
+```
+
+Once we have sampled from the prior we can use the posterior_linpred function to observe expected probabilty. By default this function will provide a posterior distribution for each observation of $x$, even if the model didn't update based on the data. We use the transform = TRUE argument to ensure obtain predictions on the probability scale.
+
+```{r}
+m1_predict <- posterior_linpred(m1,transform = TRUE)
+dim(m1_predict)
+```
+
+We then take the prior median expected value for each observation, and plot the distribution of expected probabilites for $y=1$. 
+
+```{r}
+m1_long <- gather(data.frame(m1_predict))
+
+ggplot(m1_long, aes(x=value,group=key))+
+  geom_histogram(binwidth = .005, alpha=.5) + xlab("Expected probability") + ylab("Density")
+```
+
+As we can see, the default priors in rstanarm suggest that the probability ($Pr(y=1)$) is either very close to 1 or very close to 0. While there are some reasons to have such extreme priors, we use prior predictive checks to explore other alternative priors for the intercept. 
+
+### Uniform probability
+
+Say for example we have no apriori expectation for the likely probability for our outcome data. In this case we might want to specify a uniform prior so that every probability is equally likely. To do this exactly we would need the set $\beta_0 \sim logistic(0,1)$, but this is not a possible distribution in rstanarm. As an alternative we use  \href{an approximation to the logistic(0,1) distribution}{https://www.johndcook.com/blog/2010/05/18/normal-approximation-to-logistic/}, normal(0,1.6). The rationale for this is discussed in Gelman and Hill (2007).
+
+To explore how this impacts the expected probability values, we repeat the steps above but specify the prior as normal(0,1.6).
+
+```{r, echo= TRUE, message=FALSE, results="hide"}
+m1b <- stan_glm(formula = y ~ 1,prior_intercept = normal(0,1.6), prior_PD=TRUE, family=binomial(link="logit"), data=dat_intercept)
+```
+
+```{r}
+m1b_predict <- posterior_linpred(m1b,transform = TRUE)
+
+m1b_long <- gather(data.frame(m1b_predict))
+
+ggplot(m1b_long, aes(x=value,group=key))+
+  geom_histogram(binwidth = .005, alpha=.5) + xlab("Expected probability") + ylab("Density")
+```
+
+This prior suggests that many of the probabilities that y=1 are equally likely. 
+
+### Priors for rare events
+However sometimes we expect that the outcome is very unlikely. Perhaps we might like to use a prior that apriori suggests only very small probabilities. To do this, we need to set a prior that is negative, like a normal(-3,1). We use the same code as above to see the expected distribution of the probability $Pr(y=1)$ and see that that most of the expected mass is less than 20%.
+
+```{r, , echo= FALSE, message=FALSE, results="hide"}
+m1c <- stan_glm(formula = y ~ 1,prior_intercept = normal(-3,1), prior_PD=TRUE, family=binomial(link="logit"), data=dat_intercept)
+```
+
+```{r}
+m1c_predict <- posterior_linpred(m1c,transform = TRUE)
+
+m1c_long <- gather(data.frame(m1c_predict))
+
+ggplot(m1c_long, aes(x=value,group=key))+
+  geom_histogram(binwidth = .005, alpha=.5) + xlab("Expected probability") + ylab("Density")
+```
+
+## Priors for the slope 
+One of the challenges of picking priors is that they work in symphony with the rest of the model, including priors for other parameters. To explore this, we use the extend the intercept model to include a parameter that represents a binary variable (such as experimental condition). We start out with the default priors from rstanarm. 
+
+```{r, echo= TRUE, message=FALSE, results="hide"}
+m2 <- stan_glm(formula = y ~ x, prior_PD=TRUE, family=binomial(link="logit"), data=dat_intercept)
+prior_summary(m2)
+```
+There's a few different ways to visualize the impact of this prior, but we choose to consider it in terms of potential outcomes. We create two dataframes, to predict for using our priors. One supposes everyone is treated. The other supposes everyone is a control. The concept is to simulate for both groups the effect if treated and if control, and then compare the difference. 
+```{r}
+df_treat <- data.frame(dat_intercept$y,x=1)
+df_ctrl <- data.frame(dat_intercept$y,x=0)
+```
+
+To do this we use the newdata arguement in posterior_linpred, which allows us to predict for a new dataset. We predict assuming treated and control, and then compare the two. 
+
+```{r}
+m2_predict_treat <- posterior_linpred(m2, newdata = df_treat, transform = TRUE)
+m2_predict_ctrl <- posterior_linpred(m2, newdata = df_ctrl, transform = TRUE)
+m2_predict_dif <- m2_predict_treat-m2_predict_ctrl
+```
+
+We then take the median expected value for each observation, and plot the apriori expected difference between the two conditions. While we may have expected from our prior that the treatment effect was centered by zero, it is surprising that althought the prior for the effect term is relatively diffuse, the prior expected effect is very tight. 
+
+```{r}
+m2_long <- gather(data.frame(m2_predict_dif))
+
+ggplot(m2_long, aes(x=value,group=key))+
+  geom_histogram(binwidth = .005, alpha=.5) + xlab("Expected difference in probability") + ylab("Density")
+```
+
+##Now with a different intercept prior
+
+Now without changing the prior for the slope parameter, we show that changing the prior of the intercept can have large implications for the expected difference between groups. Here we change the prior for the intercept to a normal(0,1.6) as we used before. We follow the same steps as above
+
+```{r, echo= TRUE, message=FALSE, results="hide"}
+m2b <- stan_glm(formula = y ~ x, prior_PD=TRUE,,prior_intercept = normal(0,1.6), family=binomial(link="logit"), data=dat_intercept)
+prior_summary(m2b)
+```
+
+```{r}
+m2b_predict_treat <- posterior_linpred(m2b, newdata = df_treat, transform = TRUE)
+m2b_predict_ctrl <- posterior_linpred(m2b, newdata = df_ctrl, transform = TRUE)
+m2b_predict_dif <- m2b_predict_treat-m2b_predict_ctrl
+```
+
+We then take the median expected value for each observation, and plot the distribution of the expected difference between the two conditions. Without changing the prior on the effect of condition we can obtain vastly different expected differences between conditions.
+
+```{r}
+m2b_long <- gather(data.frame(m2b_predict_dif))
+
+ggplot(m2b_long, aes(x=value,group=key))+
+  geom_histogram(binwidth = .005, alpha=.5) + xlab("Expected difference in probability") + ylab("Density")
+```
+
+Priors are really difficult to think about. Not only are they only understood in the context of the likelihood, but they are also sensitive to other priors in the model. Rstanarm had to have default priors for functionality, but they should be used with caution. Ideally before running an analysis prior predictive checks should be used to understand apriori the implications of the priors chosen. We do not make recommendations for any specific prior in this vignette, but rather demonstrate how priors can be explored using rstanarm. This is a deliberate choice. Often priors are useful but specific to the context of the application. Rather than making broad statements of priors that should be chosen, instead we advocate for careful exploration. In this vignette we demonstrate using a simple model how to use the convenience functions included in the rstanarm package to do just that. 
+
+# Acknowledgements
+
+Many kind thanks to Andrew Gelman, Michael Betancourt and Jonah Gabry for their helpful thoughts and suggestions on this vignette. 
+
+# References
+
+Gabry, J., Simpson, D., Vehtari, A., Betancourt, M., & Gelman, A. (2019). Visualization in Bayesian workflow. Journal of the Royal Statistical Society: Series A (Statistics in Society), 182(2), 389-402.
+
+Gelman, A., & Hill, J. (2007). Data analysis using regression and multilevel/hierarchical models. Cambridge university press.
 
