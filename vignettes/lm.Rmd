@@ -330,7 +330,8 @@ distributions thoughtfully and take a short-cut by specifying one prior
 distribution that is taken to apply to all the regression coefficients as if
 they were independent of each other (and the intercept and error variance). 
 This short-cut is available in the `stan_glm` function and is described in more
-detail in other __rstanarm__ [vignette](glm.html) for Generalized Linear Models (GLMs).
+detail in other __rstanarm__ vignettes for Generalized Linear Models (GLMs),
+which can be found by navigating up one level.
 
 We are optimistic that this prior on the $R^2$ will greatly help in accomplishing 
 our goal for __rstanarm__ of making Bayesian estimation of regression models 
