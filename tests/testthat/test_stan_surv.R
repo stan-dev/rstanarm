@@ -782,7 +782,7 @@ o<-SW(m12 <- up(m1, formula. = ffi, data = dat_icens, basehaz = "ms"))
 
 # check the estimates against the true parameters
 for (j in c(1:12)) {
-  modfrail <- get(paste0("f", j))
+  modfrail <- get(paste0("m", j))
   for (i in 1:3)
     expect_equal(get_ests(modfrail)[[i]], true[[i]], tol = tols[[i]])
 }
@@ -826,7 +826,7 @@ if (run_sims) {
                      chains  = 1,
                      refresh = 0,
                      iter    = 2000)
-    
+      
     # true parameters (hard coded here)
     true <- c(intercept = log(0.1),
               trt       = 0.3,
@@ -843,6 +843,16 @@ if (run_sims) {
       ests <- ests[2:3]
     }
     
+    
+    # check Rhat
+    rhats <- summary(mod)[, "Rhat"]
+    rhats <- rhats[!names(rhats) %in% c("lp__", "log-posterior")]
+    
+    converged <- (all(rhats <= 1.1, na.rm = TRUE))
+
+    if (!converged)
+      ests <- rep(NA, length(ests)) # set estimates to NA if model didn't converge
+    
     if (return_relb)
       return(as.vector((ests - true) / true))
     
@@ -854,68 +864,98 @@ if (run_sims) {
   
   # functions to summarise the simulations and check relative bias
   summarise_sims <- function(x) {
-    rbind(true = colMeans(do.call(rbind, x["true",])),
-          ests = colMeans(do.call(rbind, x["ests",])),
-          bias = colMeans(do.call(rbind, x["bias",])),
-          relb = colMeans(do.call(rbind, x["relb",])))
+    message("Number of simulations that converged: ", 
+            sum(!is.na(do.call(rbind, x["ests",])[,1])))
+    rbind(true = colMeans(do.call(rbind, x["true",]), na.rm = TRUE),
+          ests = colMeans(do.call(rbind, x["ests",]), na.rm = TRUE),
+          bias = colMeans(do.call(rbind, x["bias",]), na.rm = TRUE),
+          relb = colMeans(do.call(rbind, x["relb",]), na.rm = TRUE))
   }
+  
   validate_relbias <- function(x, tol = 0.05) {
+    message("Number of simulations that converged: ", 
+            sum(!is.na(do.call(rbind, x["ests",])[,1])))
     relb <- as.vector(summarise_sims(x)["relb",])
     expect_equal(relb, rep(0, length(relb)), tol = tol)
   }
   
-  # right censored models
+}
+
+# right censored models
+if (run_sims) {
   set.seed(5050)
   sims_exp <- replicate(n_sims, sim_run(basehaz = "exp"))
   validate_relbias(sims_exp)
-  
+}
+
+if (run_sims) {
   set.seed(6060)
   sims_weibull <- replicate(n_sims, sim_run(basehaz = "weibull"))
   validate_relbias(sims_weibull)
-  
+}
+
+if (run_sims) {
   set.seed(7070)
   sims_gompertz <- replicate(n_sims, sim_run(basehaz = "gompertz"))
   validate_relbias(sims_gompertz)
-  
+}
+
+if (run_sims) {
   set.seed(8080)
   sims_ms <- replicate(n_sims, sim_run(basehaz = "ms"))
   validate_relbias(sims_ms)
-  
-  # delayed entry models
+}
+
+# delayed entry models
+if (run_sims) {
   set.seed(5050)
   sims_exp_d <- replicate(n_sims, sim_run(basehaz = "exp", delay = TRUE))
   validate_relbias(sims_exp_d)
-  
+}
+
+if (run_sims) {
   set.seed(6060)
   sims_weibull_d <- replicate(n_sims, sim_run(basehaz = "weibull", delay = TRUE))
   validate_relbias(sims_weibull_d)
-  
+}
+
+if (run_sims) {
   set.seed(7070)
   sims_gompertz_d <- replicate(n_sims, sim_run(basehaz = "gompertz", delay = TRUE))
   validate_relbias(sims_gompertz_d)
-  
+}
+
+if (run_sims) {
   set.seed(8080)
   sims_ms_d <- replicate(n_sims, sim_run(basehaz = "ms", delay = TRUE))
   validate_relbias(sims_ms_d)
-  
-  # interval censored models
+}
+
+# interval censored models
+if (run_sims) {
   set.seed(5050)
   sims_exp_i <- replicate(n_sims, sim_run(basehaz = "exp", icens = TRUE))
   validate_relbias(sims_exp_i)
-  
+}
+
+if (run_sims) {
   set.seed(6060)
   sims_weibull_i <- replicate(n_sims, sim_run(basehaz = "weibull", icens = TRUE))
   validate_relbias(sims_weibull_i)
-  
+}
+
+if (run_sims) {
   set.seed(7070)
   sims_gompertz_i <- replicate(n_sims, sim_run(basehaz = "gompertz", icens = TRUE))
   validate_relbias(sims_gompertz_i)
-  
+}
+
+if (run_sims) {
   set.seed(8080)
   sims_ms_i <- replicate(n_sims, sim_run(basehaz = "ms", icens = TRUE))
   validate_relbias(sims_ms_i)
-  
 }
+
 
 # run simulations to check piecewise constant time-varying effects
 if (run_sims) {
@@ -961,6 +1001,15 @@ if (run_sims) {
               trt       = fixef(mod)[2L],
               trt_tve   = fixef(mod)[3L])
     
+    # check Rhat
+    rhats <- summary(mod)[, "Rhat"]
+    rhats <- rhats[!names(rhats) %in% c("lp__", "log-posterior")]
+    
+    converged <- (all(rhats <= 1.1, na.rm = TRUE))
+    
+    if (!converged)
+      ests <- rep(NA, length(ests)) # set estimates to NA if model didn't converge
+    
     if (return_relb)
       return(as.vector((ests - true) / true))
     
@@ -972,19 +1021,26 @@ if (run_sims) {
   
   # functions to summarise the simulations and check relative bias
   summarise_sims <- function(x) {
+    message("Number of simulations that converged: ", 
+            sum(!is.na(do.call(rbind, x["ests",])[,1])))
     rbind(true = colMeans(do.call(rbind, x["true",])),
           ests = colMeans(do.call(rbind, x["ests",])),
           bias = colMeans(do.call(rbind, x["bias",])),
           relb = colMeans(do.call(rbind, x["relb",])))
   }
+  
   validate_relbias <- function(x, tol = 0.05) {
+    message("Number of simulations that converged: ", 
+            sum(!is.na(do.call(rbind, x["ests",])[,1])))
     relb <- as.vector(summarise_sims(x)["relb",])
     expect_equal(relb, rep(0, length(relb)), tol = tol)
   }
-  
-  # tve models
+
+}  
+
+# tve models
+if (run_sims) {
   set.seed(5050)
   sims_pw <- replicate(n_sims, sim_run())
   validate_relbias(sims_pw)
-
 }
