@@ -29,6 +29,7 @@ citEntry(entry = "Misc",
                     person("R", "Wolfe")),
          note = "StanCon 2018. 10-12 Jan 2018. Pacific Grove, CA, USA.",
          url = "https://github.com/stan-dev/stancon_talks/",
+         year = "2018",
          textVersion =
            paste("Brilleman SL, Crowther MJ, Moreno-Betancur M, Buros Novik J & Wolfe R.",
                  title = "Joint longitudinal and time-to-event models via Stan.",
