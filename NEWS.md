@@ -3,13 +3,24 @@
 ### Bug fixes
 
 * src/Makevars{.win} now uses a more robust way to find StanHeaders
-* `compare_models` is deprecated in favor of `loo_compare`
-* The `kfold` method now has a `cores` argument and parallelizes by fold rather
-than by Markov chain (unless otherwise specified), which should be much more
-efficient when many cores are available.
+* `compare_models()` is deprecated in favor of `loo_compare()`
 * Fixed bug where `ranef()` and `coef()` methods for `glmer`-style models 
 printed the wrong output for certain combinations of varying intercepts
 and slopes.
+
+### New features and improvements
+
+* New vignette on doing MRP using rstanarm (thanks to Lauren Kennedy).
+
+* The `kfold()` method now has a `cores` argument and parallelizes by fold
+rather than by Markov chain (unless otherwise specified), which should be much
+more efficient when many cores are available.
+
+* When possible rstanarm now uses Stan's new `_glm` functions (`normal_id_glm`,
+`bernoulli_logit_glm`, `poisson_log_glm`, `neg_binomial_2_log_glm`) under the
+hood to get a speed boost. Currently this isn't possible for multilevel models
+but will be implemented in the future.
+
 
 # rstanarm 2.18.1
 
