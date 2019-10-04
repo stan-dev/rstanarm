@@ -13,8 +13,7 @@ bibliography: mrp-files/mrp.bib
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{MRP in rstanarm}
 -->
-```{r, child="children/SETTINGS-knitr.txt"}
-```
+
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
 ```{r packages-1, message=FALSE}
