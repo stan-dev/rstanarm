@@ -391,7 +391,7 @@ posterior_survfit.stansurv <- function(object,
   
   dots <- list(...)
   
-  newdata <- validate_newdata(newdata)
+  newdata <- validate_newdata(object, newdata = newdata)
   has_newdata <- not.null(newdata)
   
   # Obtain a vector of unique subject ids 
