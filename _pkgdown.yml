@@ -63,6 +63,7 @@ articles:
     - lm
     - polr
     - jm
+    - mrp
 
 reference:
   - title: "About rstanarm"
