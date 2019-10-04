@@ -1,0 +1,21 @@
+pandoc: 2.3.1
+pkgdown: 1.4.1
+pkgdown_sha: ~
+articles:
+  aov: aov.html
+  betareg: betareg.html
+  binomial: binomial.html
+  continuous: continuous.html
+  count: count.html
+  glmer: glmer.html
+  jm: jm.html
+  lm: lm.html
+  mrp: mrp.html
+  polr: polr.html
+  pooling: pooling.html
+  priors: priors.html
+  rstanarm: rstanarm.html
+urls:
+  reference: https://mc-stan.org/rstanarm/reference
+  article: https://mc-stan.org/rstanarm/articles
+
