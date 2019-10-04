@@ -552,7 +552,7 @@ We now estimate a model with a piecewise constant time-varying effect for the co
 
 ```{r tve-fit2, warning = FALSE, message = FALSE, results='hide'}
 mod3 <- stan_surv(formula = Surv(eventtime, status) ~ 
-                    tve(trt, type = "pw", knots = 2.5),
+                    tve(trt, degree = 0, knots = 2.5),
                   data    = dat, 
                   chains  = CHAINS, 
                   cores   = CORES, 
@@ -560,7 +560,7 @@ mod3 <- stan_surv(formula = Surv(eventtime, status) ~
                   iter    = ITER)
 ```
 
-This time we specify some additional arguments to the `tve` function, so that our time-varying effect corresponds to the true data generating model used to simulate our event times. Specifically, we specify `type = "pw"` to say that we want the time-varying effect (i.e. the time-varying log hazard ratio) to be estimated using a piecewise constant function and `knots = 2.5` says that we only want one internal knot placed at the time $t = 2.5$.
+This time we specify some additional arguments to the `tve` function, so that our time-varying effect corresponds to the true data generating model used to simulate our event times. Specifically, we specify `degree = 0` to say that we want the time-varying effect (i.e. the time-varying log hazard ratio) to be estimated using a piecewise constant function and `knots = 2.5` says that we only want one internal knot placed at the time $t = 2.5$.
 
 We can again use the generic `plot` function with argument `plotfun = "tve"` to examine our estimated hazard ratio for treatment
 
