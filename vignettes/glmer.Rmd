@@ -16,19 +16,15 @@ params:
 ```
 ```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="children/SETTINGS-rstan.txt"}
-```
-```{r, child="children/SETTINGS-loo.txt"}
-```
 
 # Introduction
 
 This vignette explains how to use the `stan_lmer`, `stan_glmer`, `stan_nlmer`, 
 and `stan_gamm4` functions in the __rstanarm__ package to estimate linear and
 generalized (non-)linear models with parameters that may vary across groups.
-Before continuing, we recommend reading the [vignettes](glm.html) for the
-`stan_glm` function. The _Hierarchical Partial Pooling_ [vignette](pooling.html)
-also has examples of both `stan_glm` and `stan_glmer`.
+Before continuing, we recommend reading the vignettes (navigate up one level) for 
+the various ways to use the `stan_glm` function. The _Hierarchical Partial Pooling_ 
+vignette also has examples of both `stan_glm` and `stan_glmer`.
 
 # GLMs with group-specific terms
 
@@ -36,7 +32,7 @@ Models with this structure are refered to by many names: multilevel models,
 (generalized) linear mixed (effects) models (GLMM), hierarchical (generalized)
 linear models, etc. In the simplest case, the model for an outcome can be written as
 $$\mathbf{y} = \alpha + \mathbf{X} \boldsymbol{\beta} + \mathbf{Z} \mathbf{b} + \boldsymbol{\epsilon},$$
-where $\mathbf{X}$ is a matrix predictors that is analagous to that in Generalized
+where $\mathbf{X}$ is a matrix predictors that is analogous to that in Generalized
 Linear Models and $\mathbf{Z}$ is a matrix that encodes deviations in the 
 predictors across specified groups.
 
@@ -64,7 +60,7 @@ a "parameter" to be estimated because parameters are unknown constants that are
 fixed in repeated sampling.
 
 Bayesians condition on the data in-hand without reference to repeated sampling
-and describe their _beliefs_ about the unknows with prior distributions before
+and describe their _beliefs_ about the unknowns with prior distributions before
 observing the data. Thus, the likelihood in a simple hierarchical model in
 __rstarnarm__ is
 $$\mathbf{y} \thicksim \mathcal{N}\left(\alpha + \mathbf{X}\boldsymbol{\beta} + \mathbf{Z}\mathbf{b}, \sigma^2 \mathbf{I}\right)$$
@@ -88,7 +84,7 @@ if there actually were no between-group heterogeneity. Group-by-group analyses, 
 the other hand, are valid but produces estimates that are relatively imprecise. 
 While complete pooling or no pooling of data across groups is sometimes called for, 
 models that ignore the grouping structures in the data tend to underfit or overfit 
-(Gelman et al.,2013). Hierachical modeling provides a compromise by allowing parameters 
+(Gelman et al.,2013). Hierarchical modeling provides a compromise by allowing parameters
 to vary by group at lower levels of the hierarchy while estimating common
 parameters at higher levels. Inference for each group-level parameter is
 informed not only by the group-specific information contained in the data but
@@ -106,7 +102,7 @@ priors are discussed in greater detail below.
 
 # Priors on covariance matrices
 
-In this section we dicuss a flexible family of prior distributions for the
+In this section we discuss a flexible family of prior distributions for the
 unknown covariance matrices of the group-specific coefficients.
 
 
@@ -118,7 +114,9 @@ unknown covariance matrix to be estimated. Unfortunately,
 expressing prior information about a covariance matrix is not intuitive and can 
 also be computationally challenging. When the covariance matrix is not $1\times 1$, 
 it is often both much more intuitive and 
-efficient to work instead with the __correlation__ matrix and variances.
+efficient to work instead with the __correlation__ matrix and variances. When the
+covariance matrix is $1\times 1$, we still denote it as $\boldsymbol{\Sigma}$ but
+most of the details in this section do not apply.
 
 The variances are in turn decomposed into the product of
 a simplex vector (probability vector) and the trace of the implied covariance matrix,
@@ -177,7 +175,9 @@ For this reason, it is sensible to use a scale-invariant prior for $\tau$.
 We choose a Gamma distribution, with shape and scale parameters both set to $1$
 by default, implying a unit-exponential distribution. Users can set the shape 
 hyperparameter to some value greater than one to ensure that the posterior trace
-is not zero.
+is not zero. In the case where $\boldsymbol{\Sigma}$ is $1\times 1$, this shape
+parameter is the cross-group standard deviation in the parameters and its square
+is the variance.
 
 # Comparison with __lme4__
 
@@ -191,7 +191,7 @@ advantages as well as an important disadvantage.
 While __lme4__ uses (restricted) maximum likelihood (RE)ML estimation, 
 __rstanarm__ enables full Bayesian inference via MCMC to be performed. It is
 well known that (RE)ML tends to underestimate uncertainties because it relies on
-point estimates of hyperparameters. Full Bayes, on the other hand, propogates
+point estimates of hyperparameters. Full Bayes, on the other hand, propagates
 the uncertainty in the hyperparameters throughout all levels of the model and 
 provides more appropriate estimates of uncertainty for models that consist of a 
 mix of common and group-specific parameters.
@@ -263,9 +263,10 @@ post <- stan_gamm4(
   data = roaches, 
   family = neg_binomial_2, 
   QR = TRUE,
-  chains = CHAINS, 
-  cores = CORES, 
-  seed = SEED
+  cores = 2,
+  chains = 2, 
+  adapt_delta = 0.99,
+  seed = 12345
 )
 ```
 ```{r}
@@ -328,15 +329,14 @@ To fit essentially the same model using Stan's implementation of MCMC, we add a
 `stan_` prefix
 ```{r, results = "hide"}
 post1 <- stan_nlmer(circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree,
-                    data = Orange, chains = CHAINS, cores = CORES, seed = SEED, 
-                    init_r = 0.5)
+                    data = Orange, cores = 2, seed = 12345, init_r = 0.5)
 ```
 ```{r}
 post1
 ```
 
 In `stan_nlmer`, it is not necessary to supply starting values; however, in this
-case it was necessary to specify the `init_r` argument so that the ranomly-chosen
+case it was necessary to specify the `init_r` argument so that the randomly-chosen
 starting values were not more than $0.5$ away from zero (in the unconstrained
 parameter space). The default value of $2.0$ produced suboptimal results.
 
@@ -364,7 +364,7 @@ first-order compartment model, such as
 ```{r, eval = FALSE}
 post3 <- stan_nlmer(conc ~ SSfol(Dose, Time, lKe, lKa, lCl) ~ 
                     (0 + lKe + lKa + lCl | Subject), data = Theoph,
-                    chains = CHAINS, cores = CORES, seed = SEED, 
+                    cores = 2, seed = 12345, 
                     QR = TRUE, init_r = 0.25, adapt_delta = 0.999)
 pairs(post3, regex_pars = "^l")
 pairs(post3, regex_pars = "igma")

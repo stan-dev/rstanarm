@@ -41,14 +41,14 @@ expect_equivalent_loo <- function(fit) {
   expect_s3_class(l, "loo")
   expect_s3_class(w, "loo")
   expect_s3_class(w, "waic")
-  
-  att_names <- c("names", "dims", "class", "name", "discrete", "yhash", "formula")
+
+  att_names <- c("names", "dims", "class", "model_name", "discrete", "yhash", "formula")
   expect_named(attributes(l), att_names)
   expect_named(attributes(w), att_names)
-  
+
   discrete <- attr(l, "discrete")
   expect_true(!is.na(discrete) && is.logical(discrete))
-  
+
   llik <- log_lik(fit)
   r <- loo::relative_eff(exp(llik), chain_id = rstanarm:::chain_id_for_loo(fit))
   l2 <- suppressWarnings(loo(llik, r_eff = r, cores = LOO.CORES))
@@ -66,8 +66,8 @@ test_that("loo & waic throw error for non mcmc models", {
   SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
                       seed = 1234L, prior_intercept = NULL,
                       prior = NULL, prior_aux = NULL))
-  SW(fitvb1 <- update(fito, algorithm = "meanfield", iter = ITER))
-  SW(fitvb2 <- update(fito, algorithm = "fullrank", iter = ITER))
+  capture.output(SW(fitvb1 <- update(fito, algorithm = "meanfield", iter = ITER)))
+  capture.output(SW(fitvb2 <- update(fito, algorithm = "fullrank", iter = ITER)))
   mcmc_only_error(fito)
   mcmc_only_error(fitvb1)
   mcmc_only_error(fitvb2)
@@ -77,7 +77,7 @@ test_that("loo errors if model has weights", {
   SW(
     fit <- stan_glm(mpg ~ wt, data = mtcars,
                     weights = rep_len(c(1,2), nrow(mtcars)),
-                    seed = SEED, refresh = REFRESH, iter = 50)
+                    seed = SEED, refresh = 0, iter = 50)
   )
   expect_error(loo(fit), "not supported")
   expect_error(loo(fit), "'kfold'")
@@ -136,7 +136,8 @@ context("kfold")
 
 test_that("kfold throws error for non mcmc models", {
   SW(
-    fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",seed = SEED)
+    fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
+                     seed = SEED, refresh = 0)
   )
   expect_error(kfold(fito), "MCMC")
 })
@@ -155,7 +156,7 @@ test_that("kfold throws error if folds arg is bad", {
 test_that("kfold throws error if model has weights", {
   SW(
     fit <- stan_glm(mpg ~ wt, data = mtcars,
-                    iter = ITER, chains = CHAINS, refresh = REFRESH,
+                    iter = ITER, chains = CHAINS, refresh = 0,
                     weights = runif(nrow(mtcars), 0.5, 1.5))
   )
   expect_error(kfold(fit), "not currently available for models fit using weights")
@@ -165,20 +166,18 @@ test_that("kfold works on some examples", {
   mtcars2 <- mtcars
   mtcars2$wt[1] <- NA # make sure kfold works if NAs are dropped from original data
   SW(
-    fit_gaus <- stan_glm(mpg ~ wt, data = mtcars2, seed = 12345, refresh = 0,
-                         chains = 1, iter = 100)
+    fit_gaus <- stan_glm(mpg ~ wt, data = mtcars2, refresh = 0,
+                         chains = 1, iter = 200)
   )
   SW(kf <- kfold(fit_gaus, 4))
   SW(kf2 <- kfold(example_model, 2))
 
-  expect_named(attributes(kf), c("names", "class", "K", "name", "discrete", "yhash", "formula"))
+  expect_named(kf, c("estimates", "pointwise", "elpd_kfold", "se_elpd_kfold"))
+  expect_named(kf2, c("estimates", "pointwise", "elpd_kfold", "se_elpd_kfold"))
+  expect_named(attributes(kf), c("names", "class", "K", "model_name", "discrete", "yhash", "formula"))
+  expect_named(attributes(kf2), c("names", "class", "K", "model_name", "discrete", "yhash", "formula"))
   expect_s3_class(kf, c("kfold", "loo"))
-  expect_identical(invisible(print(kf)), kf)
-  expect_output(print(kf), "4-fold cross-validation")
-
   expect_s3_class(kf2, c("kfold", "loo"))
-  expect_identical(invisible(print(kf2)), kf2)
-  expect_output(print(kf2), "2-fold cross-validation")
 
   SW(kf <- kfold(fit_gaus, K = 2, save_fits = TRUE))
 
@@ -188,11 +187,11 @@ test_that("kfold works on some examples", {
   expect_length(kf$fits[[2, "omitted"]], 16)
 })
 
-# compare_models ----------------------------------------------------------
-test_that("compare_models throws correct errors", {
+# loo_compare ----------------------------------------------------------
+test_that("loo_compare throws correct errors", {
   SW(capture.output({
     mtcars$mpg <- as.integer(mtcars$mpg)
-    fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 5, chains = 2, refresh = -1)
+    fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 5, chains = 2, refresh = 0)
     fit2 <- update(fit1, data = mtcars[-1, ])
     fit3 <- update(fit1, formula. = log(mpg) ~ .)
     fit4 <- update(fit1, family = poisson("log"))
@@ -207,84 +206,76 @@ test_that("compare_models throws correct errors", {
   }))
 
 
-  expect_error(compare_models(l1, l2),
-               "Not all models have the same y variable")
-  expect_error(compare_models(l1, l3),
-               "Not all models have the same y variable")
-  expect_error(compare_models(loos = list(l4, l2, l3)),
-               "Not all models have the same y variable")
-  expect_error(compare_models(l1, l4),
+  # this uses loo::loo_compare
+  expect_error(loo_compare(l1, l2),
+               "Not all models have the same number of data points")
+  expect_error(loo_compare(list(l4, l2, l3)),
+               "Not all models have the same number of data points")
+  
+  # using loo_compare.stanreg (can do extra checks)
+  fit1$loo <- l1
+  fit2$loo <- l2
+  fit3$loo <- l3
+  fit4$loo <- l4
+  
+  expect_error(loo_compare(fit1, fit2), "Not all models have the same number of data points")
+  expect_warning(loo_compare(fit1, fit3), "Not all models have the same y variable")
+  expect_error(loo_compare(fit1, fit4),
                "Discrete and continuous observation models can't be compared")
 
 
-  expect_error(compare_models(l1, fit1),
-               "All objects must have class 'loo'")
-  expect_error(compare_models(l1, k1),
-               "Can't mix objects computed using 'loo', 'waic', and 'kfold'.")
-  expect_error(compare_models(k1, w1, k1, w1),
-               "Can't mix objects computed using 'loo', 'waic', and 'kfold'.")
-
-  expect_error(compare_models(l1, loos = list(l2, l3)),
-               "'...' and 'loos' can't both be specified")
-  expect_error(compare_models(l1),
-               "At least two objects are required for model comparison")
+  expect_error(loo_compare(l1, fit1),
+               "All inputs should have class 'loo'")
+  expect_error(loo_compare(l1),
+               "requires at least two models")
 })
 
-test_that("compare_models works", {
+test_that("loo_compare works", {
   suppressWarnings(capture.output({
     mtcars$mpg <- as.integer(mtcars$mpg)
-    fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 40, chains = 2, refresh = -1)
+    fit1 <- stan_glm(mpg ~ wt, data = mtcars, iter = 40, chains = 2, refresh = 0)
     fit2 <- update(fit1, formula. = . ~ . + cyl)
     fit3 <- update(fit2, formula. = . ~ . + gear)
     fit4 <- update(fit1, family = "poisson")
     fit5 <- update(fit1, family = "neg_binomial_2")
-    
-    l1 <- loo(fit1, cores = LOO.CORES)
-    l2 <- loo(fit2, cores = LOO.CORES)
-    l3 <- loo(fit3, cores = LOO.CORES)
-    l4 <- loo(fit4, cores = LOO.CORES)
-    l5 <- loo(fit5, cores = LOO.CORES)
-    
+
+    fit1$loo <- loo(fit1, cores = LOO.CORES)
+    fit2$loo <- loo(fit2, cores = LOO.CORES)
+    fit3$loo <- loo(fit3, cores = LOO.CORES)
+    fit4$loo <- loo(fit4, cores = LOO.CORES)
+    fit5$loo <- loo(fit5, cores = LOO.CORES)
+
     k1 <- kfold(fit1, K = 2)
     k2 <- kfold(fit2, K = 2)
     k3 <- kfold(fit3, K = 3)
     k4 <- kfold(fit4, K = 2)
     k5 <- kfold(fit5, K = 2)
   }))
-  
-  expect_false(attr(l1, "discrete"))
-  expect_false(attr(l2, "discrete"))
-  expect_false(attr(l3, "discrete"))
-  
-  comp1 <- compare_models(l1, l2)
-  comp2 <- compare_models(l1, l2, l3)
-  comp1_detail <- compare_models(l1, l2, detail=TRUE)
-  comp2_detail <- compare_models(l1, l2, l3, detail=TRUE)
-  
-  expect_output(print(comp1_detail), "Model formulas")
-  expect_output(print(comp2_detail), "Model formulas")
-  
-  expect_named(comp1, c("elpd_diff", "se"))
-  expect_true(is.matrix(comp2))
-  expect_equal(ncol(comp2), 7)
+
+  expect_false(attr(fit1$loo, "discrete"))
+  expect_false(attr(fit2$loo, "discrete"))
+  expect_false(attr(fit3$loo, "discrete"))
+  expect_true(attr(fit4$loo, "discrete"))
+  expect_true(attr(fit5$loo, "discrete"))
+
+  comp1 <- loo_compare(fit1, fit2)
+  comp2 <- loo_compare(fit1, fit2, fit3)
   expect_s3_class(comp1, "compare.loo")
   expect_s3_class(comp2, "compare.loo")
-  expect_identical(comp1, compare_models(loos = list(l1, l2)))
-  expect_identical(comp2, compare_models(loos = list(l1, l2, l3)))
+  expect_equal(comp1[, "elpd_diff"], loo_compare(list(fit1$loo, fit2$loo))[, "elpd_diff"])
+  expect_equal(comp2[, "elpd_diff"], loo_compare(list(fit1$loo, fit2$loo, fit3$loo))[, "elpd_diff"])
   
-  comp3 <- compare_models(k1, k2, k3)
-  expect_equal(ncol(comp3), 3)
-  expect_s3_class(comp3, "compare.loo")
+  comp1_detail <- loo_compare(fit1, fit2, detail=TRUE)
+  expect_output(print(comp1_detail), "Model formulas")
   
-  expect_true(attr(l4, "discrete"))
-  expect_true(attr(l5, "discrete"))
-  expect_silent(comp4 <- compare_models(l4, l5))
-  expect_silent(compare_models(loos = list(l4, l5)))
-  expect_s3_class(comp4, "compare.loo")
-  
+  # equivalent to stanreg_list method
+  expect_equivalent(comp2, loo_compare(stanreg_list(fit1, fit2, fit3)))
+
+  # for kfold
+  comp3 <- loo_compare(k1, k2, k3)
   expect_true(attr(k4, "discrete"))
   expect_true(attr(k5, "discrete"))
-  expect_s3_class(compare_models(k4, k5), "compare.loo")
+  expect_s3_class(loo_compare(k4, k5), "compare.loo")
 })
 
 
@@ -294,17 +285,17 @@ context("loo and waic helpers")
 test_that("kfold_and_reloo_data works", {
   f <- rstanarm:::kfold_and_reloo_data
   d <- f(example_model)
-  expect_identical(d, lme4::cbpp)
+  expect_identical(d, lme4::cbpp[, colnames(d)])
 
   # if 'data' arg not originally specified when fitting the model
   y <- rnorm(40)
-  SW(fit <- stan_glm(y ~ 1, iter = ITER, chains = CHAINS, refresh = REFRESH))
+  SW(fit <- stan_glm(y ~ 1, iter = ITER, chains = CHAINS, refresh = 0))
   expect_equivalent(f(fit), model.frame(fit))
 
   # if 'subset' arg specified when fitting the model
   SW(fit2 <- stan_glm(mpg ~ wt, data = mtcars, subset = gear != 5, iter = ITER,
-                      chains = CHAINS, refresh = REFRESH))
-  expect_equivalent(f(fit2), subset(mtcars, gear != 5))
+                      chains = CHAINS, refresh = 0))
+  expect_equivalent(f(fit2), subset(mtcars[mtcars$gear != 5, c("mpg", "wt")]))
 })
 
 test_that(".weighted works", {

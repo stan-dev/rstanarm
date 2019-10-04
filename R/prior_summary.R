@@ -167,7 +167,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
       if (!is.null(x[["prior_intercept"]][[m]]))
         .print_scalar_prior(
           x[["prior_intercept"]][[m]], 
-          txt = paste0(if (M > 1) "\n", "y", m, "|Intercept", if (!sparse) 
+          txt = paste0(if (m > 1) "\n", "y", m, "|Intercept", if (!sparse) 
             " (after predictors centered)"), 
           formatters
         )
@@ -208,7 +208,7 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
       if (!is.null(x[["priorLong_intercept"]][[m]]))
         .print_scalar_prior(
           x[["priorLong_intercept"]][[m]], 
-          txt = paste0(if (M > 1) "\n", "Long", m, "|Intercept", if (!sparse) 
+          txt = paste0(if (m > 1) "\n", "Long", m, "|Intercept", if (!sparse) 
             " (after predictors centered)"), 
           formatters
         )
@@ -331,30 +331,81 @@ used.sparse <- function(x) {
 #   for adjusted scales, for which the second function is used. This is kind of
 #   hacky and should be replaced at some point.
 # 
+
 .print_scalar_prior <- function(p, txt = "Intercept", formatters = list()) {
   stopifnot(length(formatters) == 2)
   .f1 <- formatters[[1]]
   .f2 <- formatters[[2]]
-  cat(paste0("\n", txt, "\n ~"),
-      if (is.na(p$dist)) {
-        "flat"
-      } else if (p$dist == "exponential") {
-        paste0(p$dist,"(rate = ", .f1(p$rate), ")")
-      } else { # normal, student_t, cauchy
-        if (is.null(p$df)) {
-          paste0(p$dist,"(location = ", .f1(p$location), 
-                 ", scale = ", .f1(p$scale),")")
-        } else {
-          paste0(p$dist, "(df = ", .f1(p$df), 
-                 ", location = ", .f1(p$location), 
-                 ", scale = ", .f1(p$scale), ")")
+  
+  .cat_scalar_prior <- function(p, adjusted = FALSE, prepend_chars = "\n ~") {
+    if (adjusted) {
+      p$scale <- p$adjusted_scale
+      p$rate <- 1/p$adjusted_scale
+    }
+    cat(prepend_chars,
+        if (is.na(p$dist)) {
+          "flat"
+        } else if (p$dist == "exponential") {
+          paste0(p$dist,"(rate = ", .f1(p$rate), ")")
+        } else { # normal, student_t, cauchy
+          if (is.null(p$df)) {
+            paste0(p$dist,"(location = ", .f1(p$location), 
+                   ", scale = ", .f1(p$scale),")")
+          } else {
+            paste0(p$dist, "(df = ", .f1(p$df), 
+                   ", location = ", .f1(p$location), 
+                   ", scale = ", .f1(p$scale), ")")
+          }
         }
-      }
-  )
-  if (!is.null(p$adjusted_scale))
-    cat("\n     **adjusted scale =", .f2(p$adjusted_scale), 
-        if (p$dist == "exponential") ("(adjusted rate = 1/adjusted scale)"))
+    )
+  }
+  cat(paste0("\n", txt))
+  if (is.null(p$adjusted_scale)) {
+    .cat_scalar_prior(p, adjusted = FALSE)
+  } else {
+    cat("\n  Specified prior:")
+    .cat_scalar_prior(p, adjusted = FALSE, prepend_chars = "\n    ~")
+    cat("\n  Adjusted prior:")
+    .cat_scalar_prior(p, adjusted = TRUE, prepend_chars =  "\n    ~")
+  }
+  
 }
+
+.print_covariance_prior <- function(p, txt = "Covariance", formatters = list()) {
+  if (p$dist == "decov") {
+    .f1 <- formatters[[1]]
+    p$regularization <- .format_pars(p$regularization, .f1)
+    p$concentration <- .format_pars(p$concentration, .f1)
+    p$shape <- .format_pars(p$shape, .f1)
+    p$scale <- .format_pars(p$scale, .f1)
+    cat(paste0("\n", txt, "\n ~"),
+        paste0(p$dist, "(",  
+               "reg. = ",    .f1(p$regularization),
+               ", conc. = ", .f1(p$concentration), 
+               ", shape = ", .f1(p$shape),
+               ", scale = ", .f1(p$scale), ")")
+    )    
+  } else if (p$dist == "lkj") {
+    .f1 <- formatters[[1]]
+    .f2 <- formatters[[2]]
+    p$regularization <- .format_pars(p$regularization, .f1)
+    p$df <- .format_pars(p$df, .f1)
+    p$scale <- .format_pars(p$scale, .f1)
+    if (!is.null(p$adjusted_scale))
+      p$adjusted_scale <- .format_pars(p$adjusted_scale, .f2)
+    cat(paste0("\n", txt, "\n ~"),
+        paste0(p$dist, "(",  
+               "reg. = ",    .f1(p$regularization),
+               ", df = ",    .f1(p$df), 
+               ", scale = ", .f1(p$scale), ")")
+    )    
+    if (!is.null(p$adjusted_scale))
+      cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
+  }
+}
+
+
+
 .print_vector_prior <- function(p, txt = "Coefficients", formatters = list()) {
   stopifnot(length(formatters) == 2)
   .f1 <- formatters[[1]]
@@ -376,40 +427,40 @@ used.sparse <- function(x) {
     } else if (p$dist %in% c("product_normal"))
       p$df <- .format_pars(p$df, .f1)
   }
-  cat(paste0("\n", txt, "\n ~"),
-      if (is.na(p$dist)) {
-        "flat"
-      } else if (p$dist %in% c("normal", "student_t", "cauchy", 
-                               "laplace", "lasso", "product_normal")) {
-        if (is.null(p$df)) {
-          paste0(p$dist, "(location = ", .f1(p$location), 
-                 ", scale = ", .f1(p$scale), ")")
-        } else {
-          paste0(p$dist, "(df = ", .f1(p$df), 
-                 ", location = ", .f1(p$location), 
-                 ", scale = ", .f1(p$scale),")")
-        }
-      } else if (p$dist %in% c("hs_plus")) {
-        paste0("hs_plus(df1 = ", .f1(p$df1), ", df2 = ", .f1(p$df2), ")")
-      } else if (p$dist %in% c("hs")) {
-        paste0("hs(df = ", .f1(p$df), ")")
-      } else if (p$dist %in% c("R2")) {
-        paste0("R2(location = ", .f1(p$location), ", what = '", p$what, "')")
-      })
   
-  if (!is.null(p$adjusted_scale))
-    cat("\n     **adjusted scale =", .f2(p$adjusted_scale))
-}
-.print_covariance_prior <- function(p, txt = "Covariance", formatters = list()) {
-  .f1 <- formatters[[1]]
-  p$regularization <- .format_pars(p$regularization, .f1)
-  p$concentration <- .format_pars(p$concentration, .f1)
-  p$shape <- .format_pars(p$shape, .f1)
-  p$scale <- .format_pars(p$scale, .f1)
-  cat(paste0("\n", txt, "\n ~"),
-      paste0(p$dist, "(",  
-             "reg. = ", .f1(p$regularization),
-             ", conc. = ", .f1(p$concentration), ", shape = ", .f1(p$shape),
-             ", scale = ", .f1(p$scale), ")")
-  )
+  .cat_vector_prior <- function(p, adjusted = FALSE, prepend_chars = "\n ~") {
+    if (adjusted) {
+      p$scale <- p$adjusted_scale
+    }
+    cat(prepend_chars, 
+        if (is.na(p$dist)) {
+          "flat"
+        } else if (p$dist %in% c("normal", "student_t", "cauchy", 
+                                 "laplace", "lasso", "product_normal")) {
+          if (is.null(p$df)) {
+            paste0(p$dist, "(location = ", .f1(p$location), 
+                   ", scale = ", .f1(p$scale), ")")
+          } else {
+            paste0(p$dist, "(df = ", .f1(p$df), 
+                   ", location = ", .f1(p$location), 
+                   ", scale = ", .f1(p$scale),")")
+          }
+        } else if (p$dist %in% c("hs_plus")) {
+          paste0("hs_plus(df1 = ", .f1(p$df1), ", df2 = ", .f1(p$df2), ")")
+        } else if (p$dist %in% c("hs")) {
+          paste0("hs(df = ", .f1(p$df), ")")
+        } else if (p$dist %in% c("R2")) {
+          paste0("R2(location = ", .f1(p$location), ", what = '", p$what, "')")
+        })
+  }
+  
+  cat(paste0("\n", txt))
+  if (is.null(p$adjusted_scale)) {
+    .cat_vector_prior(p, adjusted = FALSE)
+  } else {
+    cat("\n  Specified prior:")
+    .cat_vector_prior(p, adjusted = FALSE, prepend_chars = "\n    ~")
+    cat("\n  Adjusted prior:")
+    .cat_vector_prior(p, adjusted = TRUE, prepend_chars =  "\n    ~")
+  }
 }

@@ -105,6 +105,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
              table = names(mf), nomatch = 0L)
   mf <- mf[c(1L, m)]
   names(mf)[length(mf)] <- "weights"
+  mf$data <- data
   err <- try(eval(mf$weights, data, enclos = NULL), silent = TRUE)
   if (inherits(err, "try-error")) {
     stop("the 'stratum' argument must be evaluatable solely within 'data'")
@@ -147,7 +148,9 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
   xint <- match("(Intercept)", colnames(X), nomatch = 0L)
   if (xint > 0L) {
     X <- X[, -xint, drop = FALSE]
-    mt <- drop.terms(mt, dropx = xint)
+    # I cannot remember why I was calling drop.terms() to get rid of the intercept
+    # mt <- drop.terms(mt, dropx = xint)
+    attr(mt, "intercept") <- 0L
   }
   f <- binomial(link = "logit")
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, 
@@ -156,6 +159,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
                           prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           group = group, QR = QR, sparse = sparse, ...)
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)  
   f$link <- "clogit"
   f$linkinv <- function(eta, g = group$strata, 
                         successes = aggregate(Y, by = list(g), FUN = sum)$x) {

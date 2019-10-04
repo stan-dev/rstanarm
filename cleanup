@@ -1,5 +1,5 @@
 #!/bin/sh -e
 
 # Note to Windows users: This is not actually platform specific.
-"${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(clean = TRUE)'
+# "${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(clean = FALSE)'
 exit $?

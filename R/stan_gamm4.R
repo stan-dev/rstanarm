@@ -147,7 +147,10 @@ stan_gamm4 <-
                   "+", random[2], collapse = " ")
     glmod <- lme4::glFormula(as.formula(form), data, family = gaussian,
                              subset, weights, na.action,
-                             control = make_glmerControl())
+                             control = make_glmerControl(
+                               ignore_x_scale = prior$autoscale %ORifNULL% FALSE
+                               )
+                             )
     data <- glmod$fr
     weights <- validate_weights(glmod$fr$weights)
   }
@@ -201,6 +204,13 @@ stan_gamm4 <-
   if (any(sapply(S, length) > 1)) S <- unlist(S, recursive = FALSE)
   names(S) <- names(jd$pregam$sp)
   X <- X[,mark, drop = FALSE]
+  
+  for (s in seq_along(S)) {
+    # sometimes elements of S are lists themselves that need to be unpacked 
+    # before passing to stan_glm.fit (https://github.com/stan-dev/rstanarm/issues/362)
+    if (is.list(S[[s]]))
+      S[[s]] <- do.call(cbind, S[[s]])
+  }
   X <- c(list(X), S)
   
   if (is.null(prior)) prior <- list()
@@ -224,6 +234,7 @@ stan_gamm4 <-
                           prior_aux = prior_aux, prior_smooth = prior_smooth,
                           prior_PD = prior_PD, algorithm = algorithm, 
                           adapt_delta = adapt_delta, group = group, QR = QR, ...)
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   if (family$family == "Beta regression") family$family <- "beta"
   X <- do.call(cbind, args = X)
   if (is.null(random)) Z <- Matrix::Matrix(nrow = NROW(y), ncol = 0, sparse = TRUE)

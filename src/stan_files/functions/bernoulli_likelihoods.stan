@@ -119,8 +119,8 @@
       vector[N_g] eta_g = append_row(segment(eta1, pos1, D_g),
                                      segment(eta0, pos0, F_g));
       summands[j] = log_clogit_denom(N_g, D_g, eta_g);
-      pos0 = pos0 + F_g;
-      pos1 = pos1 + D_g;
+      pos0 += F_g;
+      pos1 += D_g;
     }
     target += sum(eta1) - sum(summands);
     return target();

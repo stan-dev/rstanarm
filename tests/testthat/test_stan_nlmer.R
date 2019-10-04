@@ -38,7 +38,7 @@ Orange$circumference <- Orange$circumference / 100
 Orange$age <- Orange$age / 100
 fit <- stan_nlmer(circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree, 
                   data = Orange, prior = NULL, cores = CORES, init_r = 1,
-                  chains = CHAINS, seed = SEED, refresh = REFRESH, QR = TRUE)
+                  chains = CHAINS, seed = SEED, refresh = 0, QR = TRUE)
 startvec <- c(Asym = 200, xmid = 725, scal = 350) / 100
 ml <- nlmer(circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree,
             data = Orange, start = startvec)

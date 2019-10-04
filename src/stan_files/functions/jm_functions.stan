@@ -15,7 +15,7 @@
     else {
       aux = prior_scale .* aux_unscaled;
       if (prior_dist <= 2) // normal or student_t
-        aux = aux + prior_mean;
+        aux += prior_mean;
     }
     return aux;
   }
@@ -139,7 +139,7 @@
             int item_collect;   // subject-specific ranefs to select for current submodel
             item_collect = start_collect + shift + which_b[(j_shift + j)];
             temp[i,mark] = b[item_collect];
-            mark = mark + 1;
+            mark += 1;
           }
         }
       }
@@ -242,22 +242,22 @@
             if ((has_intercept[m] == 1) && (beta_collect == 1)) {
               // collect intercept
               if (has_intercept_nob[m] == 1)
-                coef = coef + gamma_nob[sum(has_intercept_nob[1:m])];
+                coef += gamma_nob[sum(has_intercept_nob[1:m])];
               else if (has_intercept_lob[m] == 1)
-                coef = coef + gamma_lob[sum(has_intercept_lob[1:m])];
+                coef += gamma_lob[sum(has_intercept_lob[1:m])];
               else if (has_intercept_upb[m] == 1)
-                coef = coef + gamma_upb[sum(has_intercept_upb[1:m])];
+                coef += gamma_upb[sum(has_intercept_upb[1:m])];
             }
             else if (has_intercept[m] == 1) {
               // collect fixed effect whilst recognising intercept term
               // isn't in beta and correcting for that in the indexing
-              coef = coef + beta[(beta_collect - 1)];
+              coef += beta[(beta_collect - 1)];
             }
             else
-              coef = coef + beta[beta_collect];
+              coef += beta[beta_collect];
 
             temp[i, mark] = coef;
-            mark = mark + 1;  // move to next shared coefficient for individual i
+            mark += 1;  // move to next shared coefficient for individual i
           }
         }
       }

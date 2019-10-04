@@ -1,3 +1,6 @@
+#ifndef RSTANARM__CSR_MATRIX_TIMES_VECTOR2_HPP
+#define RSTANARM__CSR_MATRIX_TIMES_VECTOR2_HPP
+
 /*
  * This works exactly like csr_matrix_times_vector but faster and less safe
  */
@@ -12,7 +15,6 @@ csr_matrix_times_vector2(const int& m,
                          const std::vector<int>& u,
                          const Eigen::Matrix<T2, Eigen::Dynamic, 1>& b,
                          std::ostream* pstream__) {
-  typedef typename boost::math::tools::promote_args<T1, T2>::type result_t;
   Eigen::Map<const Eigen::SparseMatrix<T1,Eigen::RowMajor> >
     sm(m, n, w.size(), &u[0], &v[0], &w[0]);
   return sm * b;
@@ -49,3 +51,4 @@ csr_matrix_times_vector2(const int& m,
   return out;
 }
 */
+#endif

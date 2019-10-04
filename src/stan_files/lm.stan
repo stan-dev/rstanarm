@@ -87,15 +87,11 @@ transformed parameters {
   }
 }
 model {
-  for (j in 1:J) { // likelihood contribution for each group
-    if (prior_PD == 0) {
-      real dummy; // irrelevant but useful for testing user-defined function
-      real shift;
-      shift = dot_product(xbarR_inv[j], theta[j]);
-      dummy = ll_mvn_ols_qr_lp(theta[j], Rb[j], 
-                               has_intercept == 1 ? alpha[j] + shift : shift,
-                               ybar[j], SSR[j], sigma[j], N[j]);
-    }
+  if (prior_PD == 0) for (j in 1:J) { // likelihood contribution for each group
+    real shift = dot_product(xbarR_inv[j], theta[j]);
+    real dummy = ll_mvn_ols_qr_lp(theta[j], Rb[j], 
+                                  has_intercept == 1 ? alpha[j] + shift : shift,
+                                  ybar[j], SSR[j], sigma[j], N[j]);
     // implicit: u[j] is uniform on the surface of a hypersphere
   }
   if (has_intercept == 1 && prior_dist_for_intercept > 0) 

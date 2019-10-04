@@ -14,32 +14,32 @@
 
     // Linear predictor for submodel 1
     if (M > 0) {
-      vector[yNeta[1]] yEta1; // linear predictor
-      yEta1 = evaluate_eta(yX1, y1_Z1, y1_Z2, y1_Z1_id, y1_Z2_id, yGamma1, yBeta1,
-                           bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[1]);
-      yEta1 = evaluate_mu(yEta1, family[1], link[1]);
+      vector[yNeta[1]] yEta1 = evaluate_mu( // linear predictor
+        evaluate_eta(yX1, y1_Z1, y1_Z2, y1_Z1_id, y1_Z2_id, yGamma1, yBeta1,
+                     bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[1]),
+        family[1], link[1]);
       mean_PPD[1] = mean_PPD_rng(yEta1, yAux1, family[1]);
     }
 
     // Linear predictor for submodel 2
     if (M > 1) {
       vector[yNeta[2]] yEta2;
-      bMat1_colshift = bMat1_colshift + bK1_len[1];
-      bMat2_colshift = bMat2_colshift + bK2_len[1];
-      yEta2 = evaluate_eta(yX2, y2_Z1, y2_Z2, y2_Z1_id, y2_Z2_id, yGamma2, yBeta2,
-                           bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[2]);
-      yEta2 = evaluate_mu(yEta2, family[2], link[2]);
+      bMat1_colshift += bK1_len[1];
+      bMat2_colshift += bK2_len[1];
+      yEta2 = evaluate_mu(evaluate_eta(yX2, y2_Z1, y2_Z2, y2_Z1_id, y2_Z2_id, yGamma2, yBeta2,
+                                       bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[2]), 
+                          family[2], link[2]);
       mean_PPD[2] = mean_PPD_rng(yEta2, yAux2, family[2]);
     }
 
     // Linear predictor for submodel 3
     if (M > 2) {
       vector[yNeta[3]] yEta3;
-      bMat1_colshift = bMat1_colshift + bK1_len[2];
-      bMat2_colshift = bMat2_colshift + bK2_len[2];
-      yEta3 = evaluate_eta(yX3, y3_Z1, y3_Z2, y3_Z1_id, y3_Z2_id, yGamma3, yBeta3,
-                           bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[3]);
-      yEta3 = evaluate_mu(yEta3, family[3], link[3]);
+      bMat1_colshift += bK1_len[2];
+      bMat2_colshift += bK2_len[2];
+      yEta3 = evaluate_mu(evaluate_eta(yX3, y3_Z1, y3_Z2, y3_Z1_id, y3_Z2_id, yGamma3, yBeta3,
+                                       bMat1, bMat2, bMat1_colshift, bMat2_colshift, intercept_type[3]), 
+                          family[3], link[3]);
       mean_PPD[3] = mean_PPD_rng(yEta3, yAux3, family[3]);
     }
   }

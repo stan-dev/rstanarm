@@ -613,13 +613,13 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # - obtaining initial values for joint model parameters
     # - obtaining appropriate scaling for priors on association parameters
     vbdots <- list(...)
-    dropargs <- c("chains", "cores", "iter", "refresh", "test_grad", "control")
+    dropargs <- c("chains", "cores", "iter", "refresh", "thin", "test_grad", "control")
     for (i in dropargs) 
       vbdots[[i]] <- NULL
     vbpars <- pars_to_monitor(standata, is_jm = FALSE)
     vbargs <- c(list(stanmodels$mvmer, pars = vbpars, data = standata, 
                      algorithm = "meanfield"), vbdots)
-    utils::capture.output(init_fit <- do.call(rstan::vb, vbargs))
+    utils::capture.output(init_fit <- suppressWarnings(do.call(rstan::vb, vbargs)))
     init_new_nms <- c(y_intercept_nms, y_beta_nms,
                       if (length(standata$q)) c(paste0("b[", b_nms, "]")),
                       y_aux_nms, paste0("Sigma[", Sigma_nms, "]"),
@@ -862,6 +862,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     if (is_jm) user_priorEvent_aux = e_user_prior_aux_stuff,
     if (is_jm) user_priorEvent_assoc = e_user_prior_assoc_stuff,
     user_prior_covariance = prior_covariance,
+    b_user_prior_stuff = b_user_prior_stuff,
+    b_prior_stuff = b_prior_stuff,
     y_has_intercept = fetch_(y_mod, "x", "has_intercept"),
     y_has_predictors = fetch_(y_mod, "x", "K") > 0,
     if (is_jm) e_has_intercept = standata$e_has_intercept,
@@ -875,7 +877,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     if (is_jm) adjusted_priorEvent_aux_scale = e_prior_aux_stuff$prior_scale,
     if (is_jm) adjusted_priorEvent_assoc_scale = e_prior_assoc_stuff$prior_scale,
     family = family, 
-    if (is_jm) basehaz = basehaz
+    if (is_jm) basehaz = basehaz,
+    stub_for_names = if (is_jm) "Long" else "y"
   )  
   
   #-----------
@@ -889,6 +892,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     cat("Fitting a univariate", if (is_jm) "joint" else "glmer", "model.\n\n")
   if (M  > 1L) 
     cat("Fitting a multivariate", if (is_jm) "joint" else "glmer", "model.\n\n")
+  
   if (algorithm == "sampling") {
     cat("Please note the warmup may be much slower than later iterations!\n")             
     sampling_args <- set_jm_sampling_args(
@@ -907,7 +911,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                          algorithm = algorithm, ...)    
   }
-  check_stanfit(stanfit)
+  check <- check_stanfit(stanfit)
+  if (!isTRUE(check)) return(standata)
 
   # Sigma values in stanmat
   if (prior_covariance$dist == "decov" && standata$len_theta_L)

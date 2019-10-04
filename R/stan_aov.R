@@ -25,9 +25,10 @@
 #' @examples
 #' \donttest{
 #' op <- options(contrasts = c("contr.helmert", "contr.poly"))
-#' stan_aov(yield ~ block + N*P*K, data = npk,
-#'          prior = R2(0.5), seed = 12345) 
+#' fit_aov <- stan_aov(yield ~ block + N*P*K, data = npk,
+#'          prior = R2(0.5), seed = 12345)
 #' options(op)
+#' print(fit_aov)
 #' }
 #'             
 stan_aov <- function(formula, data, projections = FALSE,
@@ -50,7 +51,7 @@ stan_aov <- function(formula, data, projections = FALSE,
                      length(indError)), domain = NA)
     lmcall <- Call <- match.call()
     ## need rstanarm:: for non-standard evaluation
-    lmcall[[1L]] <- quote(rstanarm::stan_lm)
+    lmcall[[1L]] <- quote(stan_lm)
     lmcall$singular.ok <- FALSE
     if (projections) 
       qr <- lmcall$qr <- TRUE

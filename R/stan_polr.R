@@ -127,6 +127,7 @@
 #'  plot(fit)
 #' }
 #'
+#' @importFrom utils packageVersion
 stan_polr <- function(formula, data, weights, ..., subset,
                       na.action = getOption("na.action", "na.omit"),
                       contrasts = NULL, model = TRUE,
@@ -139,20 +140,23 @@ stan_polr <- function(formula, data, weights, ..., subset,
                       adapt_delta = NULL,
                       do_residuals = NULL) {
 
-  data <- validate_data(data)
+  data <- validate_data(data, if_missing = environment(formula))
   algorithm <- match.arg(algorithm)
   if (is.null(do_residuals)) 
     do_residuals <- algorithm == "sampling"
   call <- match.call(expand.dots = TRUE)
   m <- match.call(expand.dots = FALSE)
   method <- match.arg(method)
-  if (is.matrix(eval.parent(m$data)))
+  if (is.matrix(eval.parent(m$data))) {
     m$data <- as.data.frame(data)
+  } else {
+    m$data <- data
+  }
   m$method <- m$model <- m$... <- m$prior <- m$prior_counts <-
     m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- 
     m$do_residuals <- NULL
   m[[1L]] <- quote(stats::model.frame)
-  m$drop.unused.levels <- TRUE
+  m$drop.unused.levels <- FALSE
   m <- eval.parent(m)
   m <- check_constant_vars(m)
   Terms <- attr(m, "terms")
@@ -164,10 +168,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
   if (xint > 0L) {
     x <- x[, -xint, drop = FALSE]
     pc <- pc - 1L
-  } else {
-    stop("Specifying '~0' or '~-1' in the model formula not allowed",
-         " for stan_polr.", call. = FALSE)
-  }
+  } else stop("an intercept is needed and assumed")
   K <- ncol(x)
   wt <- model.weights(m)
   if (!length(wt))
@@ -202,7 +203,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
       do_residuals = do_residuals,
       ...
     )
-
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   inverse_link <- linkinv(method)
 
   if (llev == 2L) { # actually a Bernoulli model
@@ -260,7 +261,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
                call, formula, terms = Terms,
                prior.info = attr(stanfit, "prior.info"),
                algorithm, stan_summary, stanfit, 
-               rstan_version = utils::packageVersion("rstan"), 
+               rstan_version = packageVersion("rstan"), 
                stan_function = "stan_polr")
   structure(out, class = c("stanreg", "polr"))
 }

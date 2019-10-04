@@ -34,7 +34,7 @@ source(test_path("helpers", "expect_gg.R"))
 
 fit <- example_model
 SW(fit2 <- stan_glm(mpg ~ wt + am, data = mtcars, iter = ITER, chains = CHAINS,
-                    seed = SEED, refresh = REFRESH))
+                    seed = SEED, refresh = 0))
 
 
 patt <- "rootogram|_bars|vs_x|grouped$|_data$"
@@ -75,13 +75,13 @@ test_that("pp_check.stanreg creates ggplot object for count & ordinal outcomes",
   SW(fit3 <- stan_glm(counts ~ outcome + treatment, data = d, 
                    family = poisson(link="log"),
                    iter = ITER, chains = CHAINS,
-                   seed = SEED, refresh = REFRESH))
+                   seed = SEED, refresh = 0))
   expect_gg(pp_check(fit3, plotfun = "rootogram"))
   
   SW(fit4 <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
                        prior = R2(0.2, "mean"), init_r = 0.1, 
                        iter = ITER, chains = CHAINS,
-                       seed = SEED, refresh = REFRESH))
+                       seed = SEED, refresh = 0))
   expect_gg(pp_check(fit4, plotfun = "bars"))
   expect_gg(pp_check(fit4, plotfun = "bars_grouped", group = "agegp"))
 })
@@ -99,7 +99,7 @@ test_that("pp_check ok for vb", {
 #   ir2$Species <- factor(ir2$Species)
 #   SW(fit3 <- stan_glm(Species ~ Petal.Length + Petal.Width + Sepal.Length + Sepal.Width,
 #                       data=ir2, family = "binomial", iter = ITER, chains = CHAINS,
-#                       seed = SEED, refresh = REFRESH))
+#                       seed = SEED, refresh = 0))
 #   expect_gg(pp_check(fit3, plotfun = "error_binned"))
 # })
 
@@ -120,7 +120,8 @@ test_that("pp_check throws error if 'group' variable not found", {
                "not found in model frame")
 })
 test_that("pp_check throws error for optimizing", {
-  SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED))
+  SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", 
+                      seed = SEED, refresh = 0))
   expect_error(pp_check(fito), regexp = "algorithm")
 })
 

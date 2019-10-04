@@ -24,6 +24,15 @@
 #' @param N A integer scalar indicating the number of included observations
 #' @param has_intercept A logical scalar indicating whether to add an intercept 
 #'   to the model when estimating it.
+#' @param importance_resampling Logical scalar indicating whether to use 
+#'   importance resampling when approximating the posterior distribution with
+#'   a multivariate normal around the posterior mode, which only applies
+#'   when \code{algorithm} is \code{"optimizing"} but defaults to \code{TRUE}
+#'   in that case
+#' @param keep_every Positive integer, which defaults to 1, but can be higher
+#'   in order to thin the importance sampling realizations and also only
+#'   apples when \code{algorithm} is \code{"optimizing"} but defaults to
+#'   \code{TRUE} in that case
 #' @examples
 #' # create inputs
 #' ols <- lm(mpg ~ wt + qsec + am, data = mtcars, # all row are complete so ...
@@ -41,11 +50,20 @@
 #'                        # the next line is only to make the example go fast
 #'                        chains = 1, iter = 500, seed = 12345)
 #' cbind(lm = b, stan_lm = rstan::get_posterior_mean(post)[13:15,]) # shrunk
+#' 
 stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, ...,
                            prior = R2(stop("'location' must be specified")), 
                            prior_intercept = NULL, prior_PD = FALSE, 
-                           algorithm = c("sampling", "meanfield", "fullrank"),
-                           adapt_delta = NULL) {
+                           algorithm = c("sampling", "meanfield", "fullrank", "optimizing"),
+                           adapt_delta = NULL,
+                           importance_resampling = TRUE,
+                           keep_every = 1) {
+  
+  if (prior_PD && is.null(prior_intercept)) {
+    msg <- "The default flat prior on the intercept is not recommended when 'prior_PD' is TRUE."
+    warning(msg, call. = FALSE, immediate. = TRUE)
+    warning(msg, call. = FALSE, immediate. = FALSE)
+  }
   
   J <- 1L
   N <- array(N, c(J))
@@ -104,7 +122,79 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
   pars <- c(if (has_intercept) "alpha", "beta", "sigma", 
             if (prior_PD == 0) "log_omega", "R2", "mean_PPD")
   algorithm <- match.arg(algorithm)
-  if (algorithm %in% c("meanfield", "fullrank")) {
+  if (algorithm == "optimizing") {
+    optimizing_args <- list(...)
+    if (is.null(optimizing_args$draws)) optimizing_args$draws <- 1000L
+    optimizing_args$object <- stanfit
+    optimizing_args$data <- standata
+    optimizing_args$constrained <- TRUE
+    optimizing_args$importance_resampling <- importance_resampling
+    if (is.null(optimizing_args$tol_rel_grad)) 
+      optimizing_args$tol_rel_grad <- 10000L
+    out <- do.call(optimizing, args = optimizing_args)
+    check <- check_stanfit(out)
+    if (!isTRUE(check)) return(standata)
+    if (K == 1)
+        out$theta_tilde[,'R2[1]'] <- (out$theta_tilde[,'R2[1]']) ^ 2
+    pars_idx <- unlist(sapply(1:length(pars), function(i) {
+      which(grepl(paste('^', pars[i], sep=''), names(out$par)))
+    }))
+    nrows <- dim(out$theta_tilde)[1]
+    out$theta_tilde <- out$theta_tilde[,pars_idx]
+    dim(out$theta_tilde) <- c(nrows, length(pars_idx))
+    new_names <- c(if (has_intercept) "(Intercept)", cn, "sigma", 
+                   if (prior_PD == 0) "log-fit_ratio", 
+                   "R2", "mean_PPD")
+    colnames(out$theta_tilde) <- new_names
+    if (optimizing_args$draws > 0) { # begin: psis diagnostics and importance resampling
+        lr <- out$log_p-out$log_g
+        lr[lr == -Inf] <- -800
+        p <- suppressWarnings(loo::psis(lr, r_eff = 1))
+        p$log_weights <- p$log_weights - log_sum_exp(p$log_weights)
+        theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) {
+          if (all(is.finite(col))) loo::psis(log1p(col ^ 2) / 2 + lr, r_eff = 1)$diagnostics$pareto_k else NaN
+        }))
+        ## todo: change fixed threshold to an option
+        if (any(theta_pareto_k > 0.7, na.rm = TRUE)) {
+            warning("Some Pareto k diagnostic values are too high. Resampling disabled.",
+                    "Decreasing tol_rel_grad may help if optimization has terminated prematurely.", 
+                    " Otherwise consider using sampling instead of optimizing.", call. = FALSE, immediate. = TRUE)
+            importance_resampling <- FALSE
+        } else if (any(theta_pareto_k > 0.5, na.rm = TRUE)) { 
+            warning("Some Pareto k diagnostic values are slightly high.",
+                    " Increasing the number of draws or decreasing tol_rel_grad may help.", 
+                    call. = FALSE, immediate. = TRUE)
+        }
+        out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, n_eff = p$diagnostics$n_eff / keep_every)
+    } else {
+      theta_pareto_k <- rep(NaN, length(new_names))
+      importance_resampling <- FALSE
+    }
+    if (importance_resampling) {  
+      ir_idx <- .sample_indices(exp(p$log_weights), 
+                                n_draws = ceiling(optimizing_args$draws / keep_every))
+      out$theta_tilde <- out$theta_tilde[ir_idx,]
+      out$ir_idx <- ir_idx
+      ## SIR mcse and n_eff
+      w_sir <- as.numeric(table(ir_idx)) / length(ir_idx)
+      mcse <- apply(out$theta_tilde[!duplicated(ir_idx),], 2L, function(col) {
+        if (all(is.finite(col))) sqrt(sum(w_sir ^ 2 * (col-mean(col)) ^ 2)) 
+        else NaN
+      })
+      n_eff <- round(apply(out$theta_tilde[!duplicated(ir_idx),], 2L, var) / (mcse^2), digits = 0)
+    } else {
+      out$ir_idx <- NULL
+      mcse <- rep(NaN, length(theta_pareto_k))
+      n_eff <- rep(NaN, length(theta_pareto_k))
+    }
+    out$diagnostics <- cbind(mcse, theta_pareto_k, n_eff)
+    colnames(out$diagnostics) <- c("mcse", "khat", "n_eff")
+    ## end: psis diagnostics and SIR
+    out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
+                                             chains = 0))
+    prior_info <- summarize_lm_prior(prior, prior_intercept)
+    return(structure(out, prior.info = prior_info))
+  } else if (algorithm %in% c("meanfield", "fullrank")) {
     stanfit <- rstan::vb(stanfit, data = standata, pars = pars,
                          algorithm = algorithm, ...)
   } else {
@@ -116,7 +206,8 @@ stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, 
       init = init_fun, data = standata, pars = pars, show_messages = FALSE)
     stanfit <- do.call(sampling, sampling_args)
   }
-  check_stanfit(stanfit)
+  check <- check_stanfit(stanfit)
+  if (!isTRUE(check)) return(standata)
   if (K == 1)
     stanfit@sim$samples <- lapply(stanfit@sim$samples, FUN = function(x) {
       x$`R2[1]` <- (x$`R2[1]`)^2

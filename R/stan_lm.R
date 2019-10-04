@@ -77,7 +77,7 @@
 #'   \code{"sampling"}). The \code{stan_lm} function has a formula-based
 #'   interface and would usually be called by users but the \code{stan_lm.fit}
 #'   and \code{stan_lm.wfit} functions might be called by other functions that
-#'   parse the data themselves and are analagous to \code{\link[stats]{lm.fit}}
+#'   parse the data themselves and are analogous to \code{\link[stats]{lm.fit}}
 #'   and \code{\link[stats]{lm.wfit}} respectively.
 #'      
 #'   In addition to estimating \code{sigma} --- the standard deviation of the
@@ -93,10 +93,11 @@
 #'   checking convergence because it is reasonably normally distributed
 #'   and a function of all the parameters in the model.
 #'   
-#'   The \code{stan_aov} function is similar to \code{\link[stats]{aov}} and
-#'   has a somewhat customized \code{\link{print}} method but basically just 
-#'   calls \code{stan_lm} with dummy variables to do a Bayesian analysis of
-#'   variance.
+#'   The \code{stan_aov} function is similar to \code{\link[stats]{aov}}, but
+#'   does a Bayesian analysis of variance that is basically equivalent to
+#'   \code{stan_lm} with dummy variables. \code{stan_aov} has a somewhat
+#'   customized \code{\link{print}} method that prints an ANOVA-like table in
+#'   addition to the output printed for \code{stan_lm} models.
 #'   
 #'   
 #' @references 
@@ -133,10 +134,12 @@ stan_lm <- function(formula, data, subset, weights, na.action,
   
   algorithm <- match.arg(algorithm)
   validate_glm_formula(formula)
-  validate_data(data)
+  data <- validate_data(data, if_missing = environment(formula))
+  
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   mf[[1L]] <- as.name("lm")
+  mf$data <- data
   mf$x <- mf$y <- mf$singular.ok <- TRUE
   mf$qr <- FALSE
   mf$prior <- mf$prior_intercept <- mf$prior_PD <- mf$algorithm <- 
@@ -153,9 +156,11 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                           prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           ...)
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   fit <- nlist(stanfit, family = gaussian(), formula, offset, weights = w,
                x = X[,intersect(colnames(X), dimnames(stanfit)[[3]]), drop = FALSE], 
-               y = Y, data = if (missing("data")) environment(formula) else data,
+               y = Y, 
+               data = data,
                prior.info = prior, 
                algorithm, call, terms = mt,
                model = if (model) modelframe else NULL,

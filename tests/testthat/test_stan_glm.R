@@ -31,7 +31,7 @@ source(test_path("helpers", "SW.R"))
 SW(
   fit_gaus <- stan_glm(mpg ~ wt, data = mtcars, 
                        chains = CHAINS, iter = ITER,
-                       seed = SEED, refresh = REFRESH)
+                       seed = SEED, refresh = 0)
 )
 dat <- data.frame(ldose = rep(0:5, 2),
                   sex = factor(rep(c("M", "F"), c(6, 6))))
@@ -40,7 +40,7 @@ SF <- cbind(numdead, numalive = 20-numdead)
 SW(
   fit_binom <- stan_glm(SF ~ sex*ldose, data = dat, family = binomial,
                         chains = CHAINS, iter = ITER, seed = SEED,
-                        refresh = REFRESH)
+                        refresh = 0)
 )
 dead <- rbinom(length(numdead), 1, prob = 0.5)
 SW(fit_binom2 <- update(fit_binom, formula = factor(dead) ~ .))
@@ -48,8 +48,8 @@ SW(fit_binom2 <- update(fit_binom, formula = factor(dead) ~ .))
 d.AD <- data.frame(treatment = gl(3,3), outcome =  gl(3,1,9),
                    counts = c(18,17,15,20,10,20,25,13,12))
 SW(fit_pois <- stan_glm(counts ~ outcome + treatment, data = d.AD,
-                        family = poisson, chains = CHAINS, iter = ITER,
-                        seed = SEED, refresh = REFRESH))
+                        family = poisson, chains = CHAINS, iter = 10 * ITER,
+                        seed = SEED, refresh = 0))
 SW(fit_negbin <- update(fit_pois, family = neg_binomial_2))
 
 clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
@@ -57,7 +57,7 @@ clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
                        lot2 = c(69,35,26,21,18,16,13,12,12))
 SW(fit_gamma <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma,
                          chains = CHAINS, iter = ITER, seed = SEED,
-                         refresh = REFRESH))
+                         refresh = 0))
 SW(fit_igaus <- update(fit_gamma, family = inverse.gaussian))
 
 test_that("loo/waic for stan_glm works", {
@@ -96,56 +96,57 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
   counts <- c(18,17,15,20,10,20,25,13,12)
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)
+  dat <- data.frame(counts, outcome, treatment)
   f <- as.formula(counts ~ outcome + treatment)
   
   # error: glmer syntax
-  expect_error(stan_glm(counts ~ treatment + (1|outcome)), 
+  expect_error(stan_glm(counts ~ treatment + (1|outcome), data = dat), 
                regexp = "model formula not allowed")
   
   # error: empty model
-  expect_error(stan_glm(counts ~ 0), 
+  expect_error(stan_glm(counts ~ 0, data = dat), 
                regexp = "No intercept or predictors specified")
   
   # error: stan_glm.nb with family argument
-  expect_error(stan_glm.nb(f, family = "neg_binomial_2"), 
+  expect_error(stan_glm.nb(f, data = dat, family = "neg_binomial_2"), 
                regexp = "'family' should not be specified.")
   
   # error: prior and prior_intercept not lists
-  expect_error(stan_glm(f, family = "poisson", prior = normal), 
+  expect_error(stan_glm(f, data = dat, family = "poisson", prior = normal), 
                regexp = "should be a named list")
-  expect_error(stan_glm(f, family = "poisson", prior_intercept = normal), 
+  expect_error(stan_glm(f, data = dat, family = "poisson", prior_intercept = normal), 
                regexp = "should be a named list")
   
   # error: QR only with more than 1 predictor
-  expect_error(stan_glm(counts ~ 1, family = "poisson", QR = TRUE), 
+  expect_error(stan_glm(counts ~ 1, data = dat, family = "poisson", QR = TRUE), 
                regexp = "'QR' can only be specified when there are multiple predictors")
   
   # error: QR and sparse
-  expect_error(stan_glm(f, family = "poisson", QR = TRUE, sparse = TRUE), 
+  expect_error(stan_glm(f, data = dat, family = "poisson", QR = TRUE, sparse = TRUE), 
                regexp = "'QR' and 'sparse' cannot both be TRUE")
   
   # require intercept for certain family and link combinations
-  expect_error(stan_glm(counts ~ -1 + outcome + treatment, 
+  expect_error(stan_glm(counts ~ -1 + outcome + treatment, data = dat,
                         family = poisson(link="identity"), seed = SEED), 
                regexp = "model must have an intercept")
-  expect_error(stan_glm(I(counts > 20) ~ -1 + outcome + treatment, 
+  expect_error(stan_glm(I(counts > 20) ~ -1 + outcome + treatment, data = dat,
                         family = binomial(link="log"), seed = SEED), 
                regexp = "model must have an intercept")
   
   # support of outcome variable
-  expect_error(stan_glm(cbind(1:10, runif(10)) ~ 1, family = "binomial"), 
+  expect_error(stan_glm(cbind(1:10, runif(10)) ~ 1, data = dat, family = "binomial"), 
                "outcome values must be counts")
-  expect_error(stan_glm(c(1,2,1,2) ~ 1, family = "binomial"), 
+  expect_error(stan_glm(c(1,2,1,2) ~ 1, data = dat, family = "binomial"), 
                "outcome values must be 0 or 1")
-  expect_error(stan_glm((-1):3 ~ 1, family = "poisson"), 
+  expect_error(stan_glm((-1):3 ~ 1, data = dat, family = "poisson"), 
                "outcome values must be counts")
-  expect_error(stan_glm.nb(runif(3) ~ 1), 
+  expect_error(stan_glm.nb(runif(3) ~ 1, data = dat), 
                "outcome values must be counts")
-  expect_error(stan_glm(0:3 ~ 1, family = "Gamma"), 
+  expect_error(stan_glm(0:3 ~ 1, data = dat, family = "Gamma"), 
                "outcome values must be positive")
-  expect_error(stan_glm(runif(3, -2, -1) ~ 1, family = "inverse.gaussian"), 
+  expect_error(stan_glm(runif(3, -2, -1) ~ 1, data = dat, family = "inverse.gaussian"), 
                "outcome values must be positive")
-  expect_error(stan_glm(cbind(1:10, 1:10) ~ 1, family = "gaussian"), 
+  expect_error(stan_glm(cbind(1:10, 1:10) ~ 1, data = dat, family = "gaussian"), 
                "should not have multiple columns")
   
   # prior_aux can't be NULL if prior_PD is TRUE
@@ -161,7 +162,7 @@ test_that("gaussian returns expected result for trees example", {
     if (links[i] == "inverse") next # unreliable
     fit <- stan_glm(Volume ~ log(Girth) + log(Height), data = trees, 
                     family = gaussian(link = links[i]), algorithm = "optimizing",
-                    prior = NULL, prior_intercept = NULL,
+                    prior = NULL, prior_intercept = NULL, refresh = 0,
                     QR = TRUE, tol_rel_grad = 1e-16, seed = SEED)
     expect_stanreg(fit)
     
@@ -186,18 +187,18 @@ test_that("stan_glm returns expected result for glm poisson example", {
   # example from help("glm")
   for (i in 1:length(links)) {
     fit <- stan_glm(counts ~ outcome + treatment, data = d.AD,
-                    family = poisson(links[i]), 
+                    family = poisson(links[i]), refresh = 0,
                     prior = NULL, prior_intercept = NULL, QR = TRUE,
                     algorithm = "optimizing", tol_rel_grad = 1e-16, seed = SEED)
     expect_stanreg(fit)
     
     ans <- glm(counts ~ outcome + treatment, data = d.AD,
                family = poisson(links[i]), start = coef(fit))
-    if (links[i] == "log") expect_equal(coef(fit), coef(ans), tol = 0.01)
+    if (links[i] == "log") expect_equal(coef(fit), coef(ans), tol = 0.03)
     # if (links[i] == "identity") expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
     if (links[i] == "sqrt") { # this is weird
       if (coef(ans)[1] > 0)
-        expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.04)
+        expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.1)
       else
         expect_equal(-coef(fit)[-1], coef(ans)[-1], tol = 0.04)
     }
@@ -213,11 +214,11 @@ if (require(MASS))
     fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                      family = neg_binomial_2(links[i]), 
                      seed = SEED, chains = 1, iter = 100,
-                     prior_PD = TRUE, QR = TRUE, refresh = 100)
+                     QR = TRUE, refresh = 0)
     fit2 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
                         link = links[i],
                         seed = SEED, chains = 1, iter = 100,
-                        prior_PD = TRUE, QR = TRUE, refresh = 100)
+                        QR = TRUE, refresh = 0)
     expect_stanreg(fit1)
     expect_stanreg(fit2)
     expect_equal(as.matrix(fit1), as.matrix(fit2))
@@ -230,7 +231,7 @@ test_that("stan_glm returns expected result for cars example", {
   # example using cars dataset
   fit <- stan_glm(log(dist) ~ log(speed), data = cars, sparse = TRUE,
                   family = gaussian(link = "identity"), seed  = SEED,
-                  prior = NULL, prior_intercept = NULL,
+                  prior = NULL, prior_intercept = NULL, refresh = 0,
                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
   expect_stanreg(fit)
   
@@ -239,7 +240,7 @@ test_that("stan_glm returns expected result for cars example", {
 })
 test_that("stan_glm returns expected result with no intercept for mtcars example", {
   f <- as.formula(mpg ~ -1 + wt + cyl + disp + am + carb)
-  fit <- stan_glm(f, data = mtcars,
+  fit <- stan_glm(f, data = mtcars, refresh = 0,
                   prior = NULL, prior_intercept = NULL,
                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing",
                   seed  = SEED, sparse = TRUE)
@@ -261,18 +262,20 @@ test_that("stan_glm returns expected result for bernoulli", {
     fam <- binomial(links[i])
     theta <- fam$linkinv(-1 + x %*% b)
     y <- rbinom(length(theta), size = 1, prob = theta)
-  
+    dat <- data.frame(y, x)
     capture.output(
-      fit <- stan_glm(y ~ x, family = fam, seed  = SEED, QR = TRUE,
-                    prior = NULL, prior_intercept = NULL,
+      fit <- stan_glm(y ~ x, data = dat, family = fam, seed  = SEED, QR = TRUE,
+                    prior = NULL, prior_intercept = NULL, refresh = 0,
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     )
     expect_stanreg(fit)
     
     val <- coef(fit)
-    ans <- coef(glm(y ~ x, family = fam, start = val))
-    if (links[i] != "log") expect_equal(val, ans, 0.03, info = links[i])
-    else expect_equal(val[-1], ans[-1], 0.06, info = links[i])
+    if (links[i] != "log") {
+      ans <- coef(glm(y ~ x, family = fam, etastart = theta))
+      expect_equal(val, ans, 0.09, info = links[i])
+    }
+    # else expect_equal(val[-1], ans[-1], 0.06, info = links[i])
   }
 })
 
@@ -283,7 +286,6 @@ test_that("stan_glm returns expected result for binomial example", {
   trials <- rpois(N, lambda = 30)
   trials <<- trials
   X <- cbind(1, matrix(rnorm(N * 3, sd = 0.5), N, 3))
-  X <<- X
   for (i in 1:length(links)) {
     fam <- binomial(links[i])
     if (i == 4) {
@@ -294,37 +296,39 @@ test_that("stan_glm returns expected result for binomial example", {
     else b <- c(0, 0.5, 0.1, -1.0)
     yes <- rbinom(N, size = trials, prob = fam$linkinv(X %*% b))
     y <- cbind(yes, trials - yes)
+    dat <- data.frame(yes, trials, x1 = X[,2], x2 = X[,3], x3 = X[,4])
     capture.output(
-      fit <- stan_glm(y ~ X[,-1], family = fam, seed  = SEED, QR = TRUE,
-                    prior = NULL, prior_intercept = NULL,
-                    tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+      fit <- stan_glm(cbind(yes, trials - yes) ~ x1 + x2 + x3, data = dat, 
+                      family = fam, seed  = SEED, QR = TRUE,
+                      prior = NULL, prior_intercept = NULL, refresh = 0,
+                      tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     )
     expect_stanreg(fit)
     
     val <- coef(fit)
-    ans <- coef(glm(y ~ X[,-1], family = fam, start = val))
-    if (links[i] != "log") expect_equal(val, ans, 0.017, info = links[i])
-    else expect_equal(val[-1], ans[-1], 0.008, info = links[i])
+    ans <- coef(glm(y ~ x1 + x2 + x3, data = dat, family = fam, start = b))
+    if (links[i] != "log") expect_equal(val, ans, 0.02, info = links[i])
+    else expect_equal(val[-1], ans[-1], 0.02, info = links[i])
 
     prop <- yes / trials
+    dat$prop <- prop
     capture.output(
-      fit2 <- stan_glm(prop ~ X[,-1], weights = trials, family = fam, seed  = SEED,
-                     prior = NULL, prior_intercept = NULL,
-                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
+      fit2 <- stan_glm(prop ~ x1 + x2 + x3, data = dat, weights = trials, family = fam, 
+                       seed  = SEED, refresh = 0, prior = NULL, prior_intercept = NULL,
+                       tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
     )
     expect_stanreg(fit2)
     
     val2 <- coef(fit2)
-    if (links[i] != "log") expect_equal(val2, ans, 0.018, info = links[i])
-    else expect_equal(val2[-1], ans[-1], 0.01, info = links[i])
+    if (links[i] != "log") expect_equal(val2, ans, 0.02, info = links[i])
+    else expect_equal(val2[-1], ans[-1], 0.02, info = links[i])
   }
 })
 
 context("stan_glm (other tests)")
 test_that("model with hs prior doesn't error", {
-  expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = hs(4, 2, .5), 
-                         seed = SEED, algorithm = "meanfield", QR = TRUE), 
-                regexp = "Begin stochastic gradient ascent")
+  fit <- stan_glm(mpg ~ ., data = mtcars, prior = hs(4, 2, .5), 
+                         seed = SEED, algorithm = "meanfield", QR = TRUE, refresh = 0)
   expect_output(print(prior_summary(fit)), "~ hs(df = ", fixed = TRUE)
 })
 
@@ -332,37 +336,34 @@ context("stan_glm (other tests)")
 # test_that("model with hs_plus prior doesn't error", { # this works except on 32bit Windows 
 #   expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = hs_plus(4, 1, 2, .5), 
 #                                 seed = SEED, algorithm = "meanfield", QR = TRUE), 
-#                 regexp = "Begin stochastic gradient ascent")
+#                 regexp = "approximate posterior")
 #   expect_output(print(prior_summary(fit)), "~ hs_plus(df1 = ", fixed = TRUE)
 # })
 
 test_that("model with laplace prior doesn't error", {
-  expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = laplace(), 
-                         seed = SEED, algorithm = "meanfield", QR = FALSE), 
-                regexp = "Begin stochastic gradient ascent")
+  fit <- stan_glm(mpg ~ ., data = mtcars, prior = laplace(), 
+                  seed = SEED, algorithm = "meanfield", refresh = 0)
   expect_output(print(prior_summary(fit)), 
                 "~ laplace(", fixed = TRUE)
 })
 
 test_that("model with lasso prior doesn't error", {
-  expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = lasso(), 
-                         seed = SEED, algorithm = "meanfield", QR = FALSE), 
-                regexp = "Begin stochastic gradient ascent")
+  fit <- stan_glm(mpg ~ ., data = mtcars, prior = lasso(), 
+                  seed = SEED, algorithm = "meanfield", refresh = 0)
   expect_output(print(prior_summary(fit)), 
                 "~ lasso(", fixed = TRUE)
 }) 
 
 test_that("model with product_normal prior doesn't error", {
-  expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, 
-                                prior = product_normal(df = 3, scale = 0.5), 
-                                seed = SEED, algorithm = "meanfield", QR = FALSE), 
-                regexp = "Begin stochastic gradient ascent")
+  fit <- stan_glm(mpg ~ ., data = mtcars, 
+                  prior = product_normal(df = 3, scale = 0.5), 
+                  seed = SEED, algorithm = "meanfield", refresh = 0)
   expect_output(print(prior_summary(fit)), "~ product_normal(df = ", fixed = TRUE)
 })
 
 test_that("prior_aux argument is detected properly", {
   fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
-                  refresh = -1, prior_aux = exponential(5), 
+                  refresh = 0, prior_aux = exponential(5), 
                   prior = normal(autoscale=FALSE), 
                   prior_intercept = normal(autoscale=FALSE))
   expect_identical(
@@ -376,12 +377,12 @@ test_that("prior_aux argument is detected properly", {
   expect_output(print(prior_summary(fit)), 
                 "~ exponential(rate = ", fixed = TRUE)
   expect_output(print(prior_summary(fit)), 
-                "**adjusted scale", fixed = TRUE)
+                "Adjusted prior", fixed = TRUE)
 })
 
 test_that("prior_aux can be NULL", {
   fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
-                  refresh = -1, prior_aux = NULL)
+                  refresh = 0, prior_aux = NULL)
   expect_output(print(prior_summary(fit)), 
                 "~ flat", fixed = TRUE)
 })
@@ -400,7 +401,7 @@ test_that("autoscale works (insofar as it's reported by prior_summary)", {
   
   expect_output(
     print(prior_summary(fit2)), 
-    "**adjusted scale", 
+    "Adjusted prior", 
     fixed = TRUE
   )
 })
@@ -444,7 +445,7 @@ test_that("posterior_predict compatible with glms", {
   mtcars2$offs <- runif(nrow(mtcars))
   fit2 <- SW(stan_glm(mpg ~ wt + offset(offs), data = mtcars2,
                       prior_intercept = NULL, prior = NULL, prior_aux = NULL,
-                      iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH))
+                      iter = ITER, chains = CHAINS, seed = SEED, refresh = 0))
   expect_warning(posterior_predict(fit2, newdata = mtcars2[1:5, ]), 
                  "offset")
   check_for_error(fit_gaus, data = mtcars2, offset = mtcars2$offs)

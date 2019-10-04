@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
 # Note to Windows users: This is not actually platform specific.
-"${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(clean = TRUE)'
+# "${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(clean = FALSE)'
 cp -r src/stan_files tests/testthat/stan_files
 cp -r inst/include tests/testthat/include
 exit $?

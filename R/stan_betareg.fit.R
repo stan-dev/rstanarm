@@ -268,7 +268,8 @@ stan_betareg.fit <-
       as.array(as.integer(prior_df)) else integer(0),
     num_normals_z = if (prior_dist_z == 7) 
       as.array(as.integer(prior_df_z)) else integer(0),
-    len_y = nrow(xtemp), SSfun = 0L, input = double(), Dose = double()  
+    len_y = nrow(xtemp), SSfun = 0L, input = double(), Dose = double(),
+    compute_mean_PPD = TRUE
     )
 
   # call stan() to draw from posterior distribution
@@ -305,12 +306,12 @@ stan_betareg.fit <-
   
 
   if (algorithm == "optimizing") {
-    out <-
-      optimizing(stanfit,
-                 data = standata,
-                 draws = 1000,
-                 constrained = TRUE,
-                 ...)
+    optimizing_args <- list(...)
+    if (is.null(optimizing_args$draws)) optimizing_args$draws <- 1000L
+    optimizing_args$object <- stanfit
+    optimizing_args$data <- standata
+    optimizing_args$constrained <- TRUE
+    out <- do.call(optimizing, args = optimizing_args)
     check_stanfit(out)
     out$par <- out$par[!grepl("eta_z", names(out$par))]
     out$theta_tilde <- out$theta_tilde[, !grepl("eta_z", colnames(out$theta_tilde))]
@@ -354,7 +355,8 @@ stan_betareg.fit <-
       if (!QR) 
         recommend_QR_for_vb()
     }
-    check_stanfit(stanfit)
+    check <- check_stanfit(stanfit)
+    if (!isTRUE(check)) return(standata)
     if (QR) {
       if (ncol(xtemp) > 1) {
         thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, 

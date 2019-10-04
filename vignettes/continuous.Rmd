@@ -17,17 +17,13 @@ params:
 ```
 ```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="children/SETTINGS-rstan.txt"}
-```
-```{r, child="children/SETTINGS-loo.txt"}
-```
 
 # Introduction
 
 This vignette explains how to estimate linear and generalized linear models 
 (GLMs) for continuous response variables using the `stan_glm` function in the
-__rstanarm__ package. For GLMs for discrete outcomes see the vigettes for
-binary/binomial and count outcomes.
+__rstanarm__ package. For GLMs for discrete outcomes see the vignettes for
+[binary/binomial](binomial.html) and [count](count.html) outcomes.
 
 ```{r, child="children/four_steps.txt"}
 ```
@@ -86,11 +82,11 @@ $$f\left(\boldsymbol{\beta} | \mathbf{y},\mathbf{X}\right) \propto
   \prod_{i=1}^N {f(y_i|\eta_i)},$$
   
 where $\mathbf{X}$ is the matrix of predictors and $\eta$ the linear predictor. 
-This is posterior distribution that `stan_glm` will draw from when using MCMC.
+This is the posterior distribution that `stan_glm` will draw from when using MCMC.
   
 # Linear Regression Example
 
-The `stan_lm` function, which has its own [vignette](lm.stan), fits regularized linear 
+The `stan_lm` function, which has its own [vignette](lm.html), fits regularized linear
 models using a novel means of specifying priors for the regression coefficients.
 Here we focus using the `stan_glm` function, which can be used to estimate 
 linear models with independent priors on the regression coefficients.
@@ -120,7 +116,7 @@ library(rstanarm)
 data(kidiq)
 post1 <- stan_glm(kid_score ~ mom_hs, data = kidiq, 
                   family = gaussian(link = "identity"), 
-                  chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
+                  seed = 12345)
 post2 <- update(post1, formula = . ~ mom_iq)
 post3 <- update(post1, formula = . ~ mom_hs + mom_iq)
 (post4 <- update(post1, formula = . ~ mom_hs * mom_iq))
@@ -174,7 +170,7 @@ ggplot(kidiq, aes(x = mom_iq, y = kid_score)) +
 
 For the third and fourth models, each of which uses both predictors, we can plot
 the continuous `mom_iq` on the x-axis and use color to indicate which 
-points correspond to the different subpopulatations defined by `mom_hs`. We also 
+points correspond to the different subpopulations defined by `mom_hs`. We also
 now plot two regression lines, one for each subpopulation:
 
 ```{r, continuous-kidiq-plot3}
@@ -211,28 +207,28 @@ in the __loo__ package:
 
 ```{r, continuous-kidiq-loo}
 # Compare them with loo
-loo1 <- loo(post1)
-loo2 <- loo(post2)
-loo3 <- loo(post3)
-loo4 <- loo(post4)
-(comp <- compare_models(loo1, loo2, loo3, loo4))
+loo1 <- loo(post1, cores = 2)
+loo2 <- loo(post2, cores = 2)
+loo3 <- loo(post3, cores = 2)
+loo4 <- loo(post4, cores = 2)
+(comp <- loo_compare(loo1, loo2, loo3, loo4))
 ```
 
 In this case the fourth model is preferred as it has the highest 
-expected log predicted density (`elpd`) or, equivalently, the lowest 
+expected log predicted density (`elpd_loo`) or, equivalently, the lowest
 value of the LOO Information Criterion (`looic`). The fourth model
 is preferred by a lot over the first model
 
 ```{r, continuous-kidiq-loo-2}
-compare_models(loo1, loo4)
+loo_compare(loo1, loo4)
 ```
 
 because the difference in `elpd` is so much larger than the standard error. 
 However, the preference of the fourth model over the others isn't as strong:
 
 ```{r, continuous-kidiq-loo-3}
-compare_models(loo3, loo4)
-compare_models(loo2, loo4)
+loo_compare(loo3, loo4)
+loo_compare(loo2, loo4)
 ```
 
 ## The posterior predictive distribution 
@@ -365,7 +361,7 @@ summary(glm(lot1 ~ log(u), data = clotting, family = Gamma))
 summary(glm(lot2 ~ log(u), data = clotting, family = Gamma))
 ```
 
-To fit the analagous Bayesian models we can simply substitute `stan_glm` for
+To fit the analogous Bayesian models we can simply substitute `stan_glm` for
 `glm` above. However, instead of fitting separate models we can also reshape the
 data slightly and fit a model interacting lot with plasma concentration:
 
@@ -378,7 +374,7 @@ clotting2 <- with(clotting, data.frame(
 
 fit <- stan_glm(clot_time ~ log_plasma * lot_id, data = clotting2, family = Gamma, 
                 prior_intercept = normal(0,1), prior = normal(0,1),
-                chains = CHAINS, cores = CORES, seed = SEED)
+                seed = 12345)
 ```
 
 ```{r}

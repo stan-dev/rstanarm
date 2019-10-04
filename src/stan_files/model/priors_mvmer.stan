@@ -36,8 +36,8 @@
 
   // Log priors, group level terms
   if (prior_dist_for_cov == 1) { // decov
-    decov_lp(z_b, z_T, rho, zeta, tau, b_prior_regularization,
-             delta, b_prior_shape, t, p);
+    real dummy = decov_lp(z_b, z_T, rho, zeta, tau, b_prior_regularization,
+                          delta, b_prior_shape, t, p);
   }
   else if (prior_dist_for_cov == 2) { // lkj
     if (bK1 > 0) {

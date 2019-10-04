@@ -271,7 +271,7 @@ autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL,
                             assoc = NULL, ...) {
   ps <- prior_stuff
   
-  if (!is.null(response) && is.gaussian(family)) { 
+  if (!identical(NULL, response) && is.gaussian(family$family)) { 
     # use response variable for scaling priors
     if (ps$prior_dist > 0L && ps$prior_autoscale) {
       ss <- sd(response)
@@ -279,7 +279,7 @@ autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL,
     }
   }
   
-  if (!is.null(predictors) && !QR) {
+  if (!identical(NULL, predictors) && !QR) {
     # use predictors for scaling priors
     if (ps$prior_dist > 0L && ps$prior_autoscale) {
       ps$prior_scale <- 
@@ -288,14 +288,14 @@ autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL,
     }      
   }
   
-  if (!is.null(assoc)) {
+  if (!identical(NULL, assoc)) {
     # Evaluate mean and SD of each of the association terms that will go into
     # the linear predictor for the event submodel (as implicit "covariates").
     # (NB the approximate association terms are calculated using coefs
     # from the separate longitudinal submodels estimated using glmer).
     # The mean will be used for centering each association term.
     # The SD will be used for autoscaling the prior for each association parameter.
-    if (is.null(family))
+    if (identical(NULL, family))
       stop("'family' cannot be NULL when autoscaling association parameters.")
     assoc_terms <- make_assoc_terms(family = family, assoc = assoc, ...)
     ps$a_xbar <- as.array(apply(assoc_terms, 2L, mean))
@@ -336,6 +336,8 @@ summarize_jm_prior <-
            user_priorEvent_aux = NULL,
            user_priorEvent_assoc = NULL,
            user_prior_covariance = NULL,
+           b_user_prior_stuff = NULL,
+           b_prior_stuff = NULL,
            y_has_intercept = NULL,
            e_has_intercept = NULL,
            y_has_predictors = NULL,
@@ -486,8 +488,31 @@ summarize_jm_prior <-
         ))
     }
     
-    if (length(user_prior_covariance))
-      prior_list$prior_covariance <- user_prior_covariance
+    if (length(user_prior_covariance)) {
+      if (user_prior_covariance$dist == "decov") {
+        prior_list$prior_covariance <- user_prior_covariance
+      } else if (user_prior_covariance$dist == "lkj") {
+        # lkj prior for correlation matrix
+        prior_list$prior_covariance <- user_prior_covariance
+        # half-student_t prior on SD for each ranef (possibly autoscaled)
+        prior_list$prior_covariance$df <- b_user_prior_stuff$prior_df
+        prior_list$prior_covariance$scale <- b_user_prior_stuff$prior_scale
+        adj_scales <- uapply(b_prior_stuff, FUN = uapply, '[[', "prior_scale")
+        if (!all(b_user_prior_stuff$prior_scale == adj_scales)) {
+          prior_list$prior_covariance$adjusted_scale <- adj_scales
+        } else {
+          prior_list$prior_covariance$adjusted_scale <- NULL
+        }
+      } else {
+        prior_list$prior_covariance <- NULL
+      }
+    }
+    
+    if (!stub_for_names == "Long") {
+      nms <- names(prior_list)
+      new_nms <- gsub("Long", "", nms)
+      names(prior_list) <- new_nms
+    }
     
     return(prior_list)
   }
@@ -915,10 +940,10 @@ append_predvars_attribute <- function(terms, formula, data) {
 # @return A reformulated model formula with variables replaced by predvars
 use_predvars <- function(mod, keep_response = TRUE) {
   fm <- formula(mod)
-  ff <- grep("", attr(terms(mod, fixed.only = TRUE), "variables"), value = TRUE)[-1]
-  fr <- grep("", attr(terms(mod, random.only = TRUE), "variables"), value = TRUE)[-1]
-  pf <- grep("", attr(terms(mod, fixed.only = TRUE), "predvars"), value = TRUE)[-1]
-  pr <- grep("", attr(terms(mod, random.only = TRUE), "predvars"), value = TRUE)[-1]
+  ff <- lapply(attr(terms(mod, fixed.only  = TRUE), "variables"), deparse, 500)[-1]
+  fr <- lapply(attr(terms(mod, random.only = TRUE), "variables"), deparse, 500)[-1]
+  pf <- lapply(attr(terms(mod, fixed.only  = TRUE), "predvars"),  deparse, 500)[-1]
+  pr <- lapply(attr(terms(mod, random.only = TRUE), "predvars"),  deparse, 500)[-1]
   if (!identical(c(ff, fr), c(pf, pr))) {
     for (j in 1:length(ff))
       fm <- gsub(ff[[j]], pf[[j]], fm, fixed = TRUE)    

@@ -1,3 +1,32 @@
+# rstanarm 2.19.1
+
+### Bug fixes
+
+* src/Makevars{.win} now uses a more robust way to find StanHeaders
+* `compare_models` is deprecated in favor of `loo_compare`
+* The `kfold` method now has a `cores` argument and parallelizes by fold rather
+than by Markov chain (unless otherwise specified), which should be much more
+efficient when many cores are available.
+* Fixed bug where `ranef()` and `coef()` methods for `glmer`-style models 
+printed the wrong output for certain combinations of varying intercepts
+and slopes.
+
+# rstanarm 2.18.1
+
+### Bug fixes
+
+* `stan_clogit()` now works even when there are no common predictors
+* `prior.info()` works better with models produced by `stan_jm()` and
+  `stan_mvmer()`
+
+### New features and improvements
+
+* `stan_glm()` (only) gets a `mean_PPD` argument that when `FALSE`
+  avoids drawing from the posterior predictive distribution in the
+  Stan code
+* `posterior_linpred()` now works even if the model was estimated with
+  `algorithm = "optimizing"`
+
 # rstanarm 2.17.4
 
 ### Bug fixes
