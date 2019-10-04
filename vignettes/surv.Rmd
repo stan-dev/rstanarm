@@ -28,15 +28,16 @@ h1 { /* Header 1 */
 ```
 ```{r, child="children/SETTINGS-gg.txt"}
 ```
-```{r, child="children/SETTINGS-rstan.txt"}
-```
-```{r, child="children/SETTINGS-loo.txt"}
-```
 
 ```{r setup_jm, include=FALSE, message=FALSE}
 knitr::opts_chunk$set(fig.width=10, fig.height=4)
 library(rstanarm)
 set.seed(989898)
+
+CHAINS <- 1
+CORES  <- 1
+SEED   <- 12345
+ITER   <- 1000
 ```
 
 
@@ -394,12 +395,12 @@ bayesplot::bayesplot_grid(p_exp,
 We can also compare the fit of these models using the `loo` method for `stansurv` objects
 
 ```{r, message=FALSE}
-compare_models(loo(mod1_exp),
-               loo(mod1_weibull),
-               loo(mod1_gompertz),
-               loo(mod1_bspline),
-               loo(mod1_mspline1),
-               loo(mod1_mspline2))
+loo_compare(loo(mod1_exp),
+            loo(mod1_weibull),
+            loo(mod1_gompertz),
+            loo(mod1_bspline),
+            loo(mod1_mspline1),
+            loo(mod1_mspline2))
 ```
 
 where we see that models with a flexible parametric (spline-based) baseline hazard fit the data best followed by the standard parametric (Weibull, Gompertz, exponential) models. Roughly speaking, the B-spline and M-spline models seem to fit the data equally well since the differences in `elpd` or `looic` between the models are very small relative to their standard errors. Moreover, increasing the degrees of freedom for the M-splines from 5 to 10 doesn't seem to improve the fit (that is, the default degrees of freedom `df = 5` seems to provide sufficient flexibility to model the baseline hazard).
@@ -611,7 +612,7 @@ Let's calculate the `loo` for both these models and compare them:
 ```{r frail-compare-1, warning = FALSE, message = FALSE}
 loo_fixed   <- loo(mod_fixed)
 loo_randint <- loo(mod_randint)
-compare_models(loo_fixed, loo_randint)
+loo_compare(loo_fixed, loo_randint)
 ```
 
 We see strong evidence in favour of the model with the site-specific intercepts!
@@ -630,7 +631,7 @@ Let's now compare all three of these models based on `loo`:
 
 ```{r frail-compare-2, warning = FALSE, message = FALSE}
 loo_randtrt <- loo(mod_randtrt)
-compare_models(loo_fixed, loo_randint, loo_randtrt)
+loo_compare(loo_fixed, loo_randint, loo_randtrt)
 ```
 
 It appears that the model with just a site-specific intercept is the best fitting model. It is much better than the model without a site-specific intercept, and slightly better than the model with both a site-specific intercept and a site-specific treatment effect. In other words, including a site-specific intercept appears important, but including a site-specific treatment effect is not. This conclusion is reassuring, because it aligns with the data generating model we used to simulate the data!
