@@ -11,6 +11,8 @@ navbar:
       href: articles/index.html
     - text: "Functions"
       href: reference/index.html
+    - text: "News"
+      href: news/index.html
     - text: "Develop"
       href: dev-notes/index.html
     - text: "Other Packages"
@@ -45,30 +47,38 @@ home:
 articles:
   - title: "Getting Started"
     desc: >
-      The documents below provide a preliminary introduction to rstanarm and discuss the prior distributions available.
+      These vignettes provide a preliminary introduction to rstanarm and 
+      discuss the prior distributions available.
     contents:
     - rstanarm
     - priors
-  - title: "Modeling"
+  - title: "Modeling functions"
     desc: >
-      The documents below provide instructions on how to use the modeling functions in rstanarm.
+      These vignettes provide instructions on how to use the modeling 
+      functions in rstanarm.
     contents:
-    - aov
-    - betareg
     - binomial
-    - continuous
     - count
-    - glmer
-    - pooling
+    - continuous
+    - aov
     - lm
+    - betareg
     - polr
+    - glmer
     - jm
+  - title: "Additional tutorials on specific modeling techniques and applications"
+    desc: >
+      These vignettes provide additional tutorials on using rstanarm 
+      for specific purposes once you are comfortable using the package
+      in general.
+    contents:
     - mrp
+    - pooling
 
 reference:
   - title: "About rstanarm"
     desc: >
-      This page provides a summary of the functionality available in rstanarm.
+      These pages provides a summary of the functionality available in rstanarm.
     contents:
       - rstanarm-package
       - available-models

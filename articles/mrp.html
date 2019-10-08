@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MRP in rstanarm • rstanarm</title>
+<title>MRP with rstanarm • rstanarm</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
 <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="../apple-touch-icon.png">
@@ -16,7 +16,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
-<script src="../pkgdown.js"></script><meta property="og:title" content="MRP in rstanarm">
+<script src="../pkgdown.js"></script><meta property="og:title" content="MRP with rstanarm">
 <meta property="og:description" content="">
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png">
 <meta name="twitter:card" content="summary">
@@ -116,10 +116,10 @@
       </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
-      <h1>MRP in rstanarm</h1>
+      <h1>MRP with rstanarm</h1>
                         <h4 class="author">Lauren Kennedy and Jonah Gabry</h4>
             
-            <h4 class="date">2019-10-04</h4>
+            <h4 class="date">2019-10-08</h4>
       
       
       <div class="hidden name"><code>mrp.Rmd</code></div>
@@ -130,7 +130,7 @@
     
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{MRP in rstanarm}
+%\VignetteIndexEntry{MRP with rstanarm}
 -->
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(rstanarm)</a>
 <a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(ggplot2)</a>
@@ -139,14 +139,15 @@
 <a class="sourceLine" id="cb1-5" data-line-number="5"><span class="co"># options(mc.cores = 4) </span></a></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(dplyr)</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(tidyr)</a></code></pre></div>
-<p>Inference about the population is one the main aims of statistical methodology. Multilevel regression and post-stratification (MRP) <span class="citation">(Little 1993; Lax and Phillips 2009; Park, Gelman, and Bafumi 2004)</span> has been shown to be an effective method of adjusting the sample so that it is representative of the population for a set of key variables. Recent work has demonstrated the effectiveness of MRP when there are a number of suspected interactions between these variables <span class="citation">(Ghitza and Gelman 2013)</span>, replicated by <span class="citation">Lei, Gelman, and Ghitza (2017)</span>. While <span class="citation">Ghitza and Gelman (2013)</span> use approximate marginal maximum likelihood estimates; <span class="citation">Lei, Gelman, and Ghitza (2017)</span> implement a fully Bayesian approach through Stan.</p>
+<p>Inference about the population is one the main aims of statistical methodology. Multilevel regression and post-stratification (MRP) <span class="citation">(Little 1993; Lax and Phillips 2009; Park, Gelman, and Bafumi 2004)</span> has been shown to be an effective method of adjusting the sample to be more representative of the population for a set of key variables. Recent work has demonstrated the effectiveness of MRP when there are a number of suspected interactions between these variables <span class="citation">(Ghitza and Gelman 2013)</span>, replicated by <span class="citation">Lei, Gelman, and Ghitza (2017)</span>. While <span class="citation">Ghitza and Gelman (2013)</span> use approximate marginal maximum likelihood estimates; <span class="citation">Lei, Gelman, and Ghitza (2017)</span> implement a fully Bayesian approach through Stan.</p>
 <p>The <strong>rstanarm</strong> package allows the user to conduct complicated regression analyses in Stan with the simplicity of standard formula notation in R. The purpose of this vignette is to demonstrate the utility of <strong>rstanarm</strong> when conducting MRP analyses. We will not delve into the details of conducting logistic regression with rstanarm as this is already covered in <a href="https://mc-stan.org/rstanarm/articles/">other vignettes</a>.</p>
 <p>Most of the code for data manipulation and plotting is not shown in the text but is available in the R markdown <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/mrp.Rmd">source code on GitHub</a>.</p>
 <div id="the-data" class="section level1">
 <h1 class="hasAnchor">
 <a href="#the-data" class="anchor"></a>The Data</h1>
-<p>Three data sets are simulated by the function <code>simulate_mrp_data()</code>, which is defined in the <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/mrp.Rmd">source code</a> for this R markdown document (and printed in the appendix). The first, <code>sample</code>, contains <span class="math inline">\(n\)</span> observations from the individuals that form our sample (i.e., <span class="math inline">\(n\)</span> rows). For each individual we have their age (recorded as membership within a specific age bracket), ethnicity, income level (recorded as membership within a specific bracket), and male/gender. Participants were randomly sampled from a state. The outcome variable of interest is a binary variable (MRP can also be used with a continuous variable outcome variable). Oftentimes this is the outcome of a two option fixed choice question (for example McCain’s share of two party vote <span class="citation">(Ghitza and Gelman 2013)</span>; support for George W Bush, <span class="citation">(Park, Gelman, and Bafumi 2004)</span>; or support for the death penalty <span class="citation">(Shirley and Gelman 2015)</span>).</p>
-<p>As this is a simple toy example, we will describe the proportion of the population who would choose to adopt a cat over a dog, given the opportunity. We will simulate data using a function that is included in the appendix of this document. This function simulates sample from a much larger population. It returns a list including the sample, population poststratification matrix and the true population preference for cats.</p>
+<p>Three data sets are simulated by the function <code>simulate_mrp_data()</code>, which is defined in the <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/mrp.Rmd">source code</a> for this R markdown document (and printed in the appendix). The first, <code>sample</code>, contains <span class="math inline">\(n\)</span> observations from the individuals that form our sample (i.e., <span class="math inline">\(n\)</span> rows). For each individual we have their age (recorded as membership within a specific age bracket), ethnicity, income level (recorded as membership within a specific bracket), and gender. Participants were randomly sampled from a state.</p>
+<p>MRP is often used for dichotomous fixed choice questions (e.g., McCain’s share of two party vote <span class="citation">(Ghitza and Gelman 2013)</span>; support for George W Bush, <span class="citation">(Park, Gelman, and Bafumi 2004)</span>; or support for the death penalty <span class="citation">(Shirley and Gelman 2015)</span>), so we will use a binary variable as the outcome in this vignette. However, MRP can also be used if there are more than two categories or if the outcome is continuous.</p>
+<p>As this is a simple toy example, we will describe the proportion of the population who would choose to adopt a cat over a dog, given the opportunity. We will simulate data using a function that is included in the appendix of this document. The <code>simulate_mrp_data()</code> function simulates a sample from a much larger population. It returns a list including the sample, population poststratification matrix and the true population preference for cats.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">mrp_sim &lt;-<span class="st"> </span><span class="kw">simulate_mrp_data</span>(<span class="dt">n=</span><span class="dv">1200</span>)</a>
 <a class="sourceLine" id="cb3-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/utils/str.html">str</a></span>(mrp_sim)</a></code></pre></div>
 <pre><code>List of 3
@@ -187,8 +188,9 @@
 1198        0    1   1   1      1    14 1198
 1199        0    0   1   3      1    12 1199
 1200        0    1   3   2      2    12 1200</code></pre>
-<p>The variables describing the individual (age, ethnicity, income level and gender) will be used to match the sample to the population of interest. To do this we will need to form a post-stratification table, which contains the number of people in each possible combination of post-stratification variable. As we have 4 variables with 2 (male), 7 (age), 3 (ethnicity) and 3 (income) levels, there are 2x7x3x3 different levels. Participants are also selected from a state (50), increasing the number of possible levels to <span class="math inline">\(6300\)</span>.</p>
-<p>To make inference about the population, we will also need the proportion of the population in each post stratification cell at the <em>population</em> level. We will use this information to update the estimate of our outcome variable from the sample so that is more representative of the population. This is particularly helpful if there is a belief that the sample has some bias (i.e., a greater proportion of females responded than males), and that bias impacts the outcome variable (i.e, women are more likely to adopt a cat than men). For each possible combination of factors, the post-stratification table shows the proportion/number of the population in that cell (rather than the proportion/number in the sample in the cell). Below we read in the poststrat data our simulated data list.</p>
+<p>The variables describing the individual (age, ethnicity, income level and gender) will be used to match the sample to the population of interest. To do this we will need to form a post-stratification table, which contains the number of people in each possible combination of the post-stratification variables. We have 4 variables with 2 (male), 7 (age), 3 (ethnicity) and 3 (income) levels, so there are 2x7x3x3 different levels. Participants are also selected from a state (50), increasing the number of possible levels to <span class="math inline">\(6300\)</span>.</p>
+<p>To make inference about the population, we will also need the proportion of individuals in each post stratification cell at the <em>population</em> level. We will use this information to update the estimate of our outcome variable from the sample so that is more representative of the population. This is particularly helpful if there is a belief that the sample has some bias (e.g., a greater proportion of females responded than males), and that the bias impacts the outcome variable (e.g., maybe women are more likely to pick a cat than men). For each possible combination of factors, the post-stratification table shows the proportion/number of the population in that cell (rather than the proportion/number in the sample in the cell).</p>
+<p>Below we read in the poststrat data our simulated data list.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1">poststrat &lt;-<span class="st"> </span>mrp_sim[[<span class="st">"poststrat"</span>]]</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/cbind.html">rbind</a></span>(<span class="kw"><a href="https://rdrr.io/r/utils/head.html">head</a></span>(poststrat), <span class="kw"><a href="https://rdrr.io/r/utils/head.html">tail</a></span>(poststrat))</a></code></pre></div>
 <pre><code>     male eth age income state      N
@@ -204,7 +206,7 @@
 6298    1   3   7      3    48  13754
 6299    1   3   7      3    49   9937
 6300    1   3   7      3    50   9646</code></pre>
-<p>One of the benefits of using a simulated data set for this example is that the actual, population level probability of cat preference is known for each post-stratification cell. In real world data analysis, we don’t have this luxury, but we will use it later in this case study to check the predictions of the model. Details regarding the simulation of this data are available in the appendix.</p>
+<p>One of the benefits of using a simulated data set for this example is that the actual population level probability of cat preference is known for each post-stratification cell. In real world data analysis, we don’t have this luxury, but we will use it later in this case study to check the predictions of the model. Details regarding the simulation of this data are available in the appendix.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1">true_popn &lt;-<span class="st"> </span>mrp_sim[[<span class="st">"true_popn"</span>]]</a>
 <a class="sourceLine" id="cb9-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/cbind.html">rbind</a></span>(<span class="kw"><a href="https://rdrr.io/r/utils/head.html">head</a></span>(true_popn), <span class="kw"><a href="https://rdrr.io/r/utils/head.html">tail</a></span>(true_popn))</a></code></pre></div>
 <pre><code>     male eth age income state  cat_pref
@@ -254,19 +256,40 @@
 <p><img src="mrp_files/figure-html/unnamed-chunk-11-1.png" width="60%" style="display: block; margin: auto;"></p>
 </div>
 </div>
-<div id="mrp-in-rstanarm" class="section level1">
+<div id="mrp-with-rstanarm" class="section level1">
 <h1 class="hasAnchor">
-<a href="#mrp-in-rstanarm" class="anchor"></a>MRP in RStanArm</h1>
+<a href="#mrp-with-rstanarm" class="anchor"></a>MRP with rstanarm</h1>
 <p>From visual inspection, it appears that different levels of post-stratification variable have different preferences for cats. Our survey also appears to have sampling bias; indicating that some groups were over/under sampled relative to the population. The net effect of this is that we could not make good population level estimates of cat preference straight from our sample. Our aim is to infer the preference for cats in the <em>population</em> using the post-stratification variables to account for systematic differences between the sample and population. Using rstanarm, this becomes a simple procedure.</p>
-<p>The first step is to use a multi-level generalized logistic regression model to predict preference for cats in the sample given the variables that we wish to post-stratify with. Note that we actually have more rows in the post-stratification matrix than the we have observed units, so there are some cells in the poststrat matrix that we don’t observe. We can use a multi-level model to partially pool information across the different levels within each variable to assist with this. In the model described below, we use a fixed intercept for male, and random intercepts for each of the other factors. This model is included below, with <span class="math inline">\(\theta_{j}\)</span> representing the preference for cats in the poststratification cell <span class="math inline">\(j\)</span>, and <span class="math inline">\(X_j\)</span> representing the predictor male</p>
-<p><span class="math display">\[\theta_j= logit^{-1}(X_{j}\beta)\]</span></p>
-<p>The multi level component part of the model fits for each post-stratification variable (other than male) a variable <span class="math inline">\(\sigma_{S[j]}\)</span> so that we model for each variable an intercept <span class="math inline">\(\alpha_{S[j]}\)</span> but constrain <span class="math inline">\(\alpha_{S[j]}\)</span> so that it is distributed <span class="math inline">\(N(0,\sigma_{S[j]})\)</span>. This is beneficial as it means we share information between the levels of each variable, we can prevent little observed levels from being fit too tightly to the observed values, and for those levels that we don’t observe, we can make a good estimate based on the distribution of levels that we do observe. For more benefits of this type of model, see <span class="citation">Gelman and others (2005)</span>. For simplicity we will use an intercept only model with states, ethnicity, income and age allowed to have different baseline cat preferences, but <span class="citation">Ghitza and Gelman (2013)</span> extend this for other possible models.</p>
-<p><span class="math display">\[\theta_j = logit^{-1}(X_{j}\beta + \alpha_{S[j]}^{S})\]</span></p>
-<p>where:</p>
-<p><span class="math display">\[\alpha_{S[j]}^{S} \sim N(0, \sigma^2_{S[j]})\]</span></p>
-<p>In the following code we predict y (preference for cats) using fixed effects for gender and an interaction between age and gender, which allows the relationship between gender and cat preference to differ with age. We chose to use fixed effects for gender because with two levels it is difficult to fit a varying effect. An alternative would be to use a strong prior as in <span class="citation">Si et al. (2017)</span>. Lastly we include a term that suggests that the intercept might differ by state, ethnicity, age and income. In the appendix a number of different model structures are tabled for ease of use. They are all highly similar to the formulae used by the glmer in the lme4 package.</p>
-<p>Finally we specify the relationship between the predictors and outcome variable, in this case a logit function. The final element of the input specifies the data frame that contains the variables in the formula and manually sets the adapt_delta value.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(fit)</a></code></pre></div>
+<p>The first step is to use a multi-level logistic regression model to predict preference for cats in the sample given the variables that we will use to post-stratify. Note that we actually have more rows in the post-stratification matrix than the we have observed units, so there are some cells in the poststrat matrix that we don’t observe. We can use a multi-level model to partially pool information across the different levels within each variable to assist with this. In the model described below, we use a fixed intercept for gender, and hierarchically modeled varying intercepts for each of the other factors.</p>
+<p>Let <span class="math inline">\(\theta_{j}\)</span> denote the preference for cats in the <span class="math inline">\(j\)</span>th poststratification cell. The non-hierarchical part of the model can be written as</p>
+<p><span class="math display">\[\theta_j= logit^{-1}(X_{j}\beta),\]</span></p>
+<p>where here <span class="math inline">\(X\)</span> only contains an indicator for male or female and an interaction term with age.</p>
+<p>Adding the varying intercepts for the other variables the model becomes</p>
+<p><span class="math display">\[
+\theta_j = logit^{-1}(
+X_{j}\beta 
++ \alpha_{\rm state[j]}^{\rm state}
++ \alpha_{\rm age[j]}^{\rm age}
++ \alpha_{\rm eth[j]}^{\rm eth}
++ \alpha_{\rm inc[j]}^{\rm inc}
+)
+\]</span> with</p>
+<p>$$ <span class="math display">\[\begin{align*}
+\alpha_{\rm state[j]}^{\rm state} &amp; \sim N(0,\sigma^{\rm state}) \\
+\alpha_{\rm age[j]}^{\rm age} &amp; \sim N(0,\sigma^{\rm age})\\
+\alpha_{\rm eth[j]}^{\rm eth} &amp; \sim N(0,\sigma^{\rm eth})\\
+\alpha_{\rm inc[j]}^{\rm inc} &amp;\sim N(0,\sigma^{\rm inc}) \\
+\end{align*}\]</span></p>
+<p>$$</p>
+<p>Each of <span class="math inline">\(\sigma^{\rm state}\)</span>, <span class="math inline">\(\sigma^{\rm age}\)</span>, <span class="math inline">\(\sigma^{\rm eth}\)</span>, and <span class="math inline">\(\sigma^{\rm inc}\)</span> are estimated from the data (in this case using rstanarm’s default priors), which is beneficial as it means we share information between the levels of each variable and we can prevent levels with with less data from being too sensitive to the few observed values. This also helps with the levels we don’t observe at all it will use information from the levels that we do observe. For more on the benefits of this type of model, see <span class="citation">Gelman and others (2005)</span>, and see <span class="citation">Ghitza and Gelman (2013)</span> and <span class="citation">Si et al. (2017)</span> for more complicated extensions that involve deep interactions and structured prior distributions.</p>
+<p>Here is the model specified using the <code><a href="../reference/stan_glmer.html">stan_glmer()</a></code> function in rstanarm, which uses the same formula syntax as the <code>glmer()</code> function from the lme4 package:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1">fit &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_glmer.html">stan_glmer</a></span>(</a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">  cat_pref <span class="op">~</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/factor.html">factor</a></span>(male) <span class="op">+</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/factor.html">factor</a></span>(male) <span class="op">*</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/factor.html">factor</a></span>(age) <span class="op">+</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3"><span class="st">    </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>state) <span class="op">+</span><span class="st"> </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>age) <span class="op">+</span><span class="st"> </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>eth) <span class="op">+</span><span class="st"> </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>income),</a>
+<a class="sourceLine" id="cb12-4" data-line-number="4">  <span class="dt">family =</span> <span class="kw"><a href="https://rdrr.io/r/stats/family.html">binomial</a></span>(<span class="dt">link =</span> <span class="st">"logit"</span>),</a>
+<a class="sourceLine" id="cb12-5" data-line-number="5">  <span class="dt">data =</span> sample</a>
+<a class="sourceLine" id="cb12-6" data-line-number="6">)</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(fit)</a></code></pre></div>
 <pre><code>stan_glmer
  family:       binomial [logit]
  formula:      cat_pref ~ factor(male) + factor(male) * factor(age) + (1 | state) + 
@@ -274,9 +297,9 @@
  observations: 1200
 ------
                            Median MAD_SD
-(Intercept)                 0.9    0.8  
+(Intercept)                 0.9    0.7  
 factor(male)1              -0.5    0.5  
-factor(age)2               -0.3    0.8  
+factor(age)2               -0.2    0.8  
 factor(age)3               -0.5    0.6  
 factor(age)4                0.6    0.6  
 factor(age)5                0.3    0.6  
@@ -284,7 +307,7 @@ factor(age)6                1.0    0.6
 factor(age)7                0.8    0.6  
 factor(male)1:factor(age)2  0.2    1.4  
 factor(male)1:factor(age)3 -0.6    0.7  
-factor(male)1:factor(age)4 -1.0    0.6  
+factor(male)1:factor(age)4 -1.1    0.6  
 factor(male)1:factor(age)5 -0.8    0.6  
 factor(male)1:factor(age)6 -0.4    0.6  
 factor(male)1:factor(age)7 -0.9    0.5  
@@ -292,9 +315,9 @@ factor(male)1:factor(age)7 -0.9    0.5
 Error terms:
  Groups Name        Std.Dev.
  state  (Intercept) 1.10    
- age    (Intercept) 0.71    
- eth    (Intercept) 0.89    
- income (Intercept) 0.75    
+ age    (Intercept) 0.66    
+ eth    (Intercept) 0.88    
+ income (Intercept) 0.76    
 Num. levels: state 50, age 7, eth 3, income 3 
 
 ------
@@ -304,27 +327,27 @@ Num. levels: state 50, age 7, eth 3, income 3
 <div id="population-estimate" class="section level2">
 <h2 class="hasAnchor">
 <a href="#population-estimate" class="anchor"></a>Population Estimate</h2>
-<p>From this we get a summary of the baseline log odds of cat preference at the first element of each factor (i.e., male = 0, age = 1) for each state, plus estimates on variability of the intercept for state, ethnicity, age and income. Whilst this is interesting, currently all we have achieved is a model that predicts cat preference given a number of factor-type predictors in a sample. What we would like to do is estimate cat preference in the population by accounting for differences between our sample and the population. We use the <code><a href="../reference/posterior_linpred.stanreg.html">posterior_linpred()</a></code> function to obtain posterior estimates for cat preference given the proportion of people in the <em>population</em> in each level of the factors included in the model.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1">posterior_prob &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_linpred.stanreg.html">posterior_linpred</a></span>(fit, <span class="dt">transform =</span> <span class="ot">TRUE</span>, <span class="dt">newdata =</span> poststrat)</a>
-<a class="sourceLine" id="cb14-2" data-line-number="2">poststrat_prob &lt;-<span class="st"> </span>posterior_prob <span class="op">%*%</span><span class="st"> </span>poststrat<span class="op">$</span>N <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(poststrat<span class="op">$</span>N)</a>
-<a class="sourceLine" id="cb14-3" data-line-number="3">model_popn_pref &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dt">mean =</span> <span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(poststrat_prob), <span class="dt">sd =</span> <span class="kw"><a href="https://rdrr.io/r/stats/sd.html">sd</a></span>(poststrat_prob))</a>
-<a class="sourceLine" id="cb14-4" data-line-number="4"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(model_popn_pref, <span class="dv">3</span>)</a></code></pre></div>
+<p>From this we get a summary of the baseline log odds of cat preference at the first element of each factor (i.e., male = 0, age = 1) for each state, plus estimates on variability of the intercept for state, ethnicity, age and income. While this is interesting, currently all we have achieved is a model that predicts cat preference given a number of factor-type predictors in a sample. What we would like to do is estimate cat preference in the population by accounting for differences between our sample and the population. We use the <code><a href="../reference/posterior_linpred.stanreg.html">posterior_linpred()</a></code> function to obtain posterior estimates for cat preference given the proportion of people in the <em>population</em> in each level of the factors included in the model.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1">posterior_prob &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_linpred.stanreg.html">posterior_linpred</a></span>(fit, <span class="dt">transform =</span> <span class="ot">TRUE</span>, <span class="dt">newdata =</span> poststrat)</a>
+<a class="sourceLine" id="cb15-2" data-line-number="2">poststrat_prob &lt;-<span class="st"> </span>posterior_prob <span class="op">%*%</span><span class="st"> </span>poststrat<span class="op">$</span>N <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(poststrat<span class="op">$</span>N)</a>
+<a class="sourceLine" id="cb15-3" data-line-number="3">model_popn_pref &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dt">mean =</span> <span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(poststrat_prob), <span class="dt">sd =</span> <span class="kw"><a href="https://rdrr.io/r/stats/sd.html">sd</a></span>(poststrat_prob))</a>
+<a class="sourceLine" id="cb15-4" data-line-number="4"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(model_popn_pref, <span class="dv">3</span>)</a></code></pre></div>
 <pre><code> mean    sd 
 0.567 0.023 </code></pre>
 <p>We can compare this to the estimate we would have made if we had just used the sample:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1">sample_popn_pref &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(sample<span class="op">$</span>cat_pref)</a>
-<a class="sourceLine" id="cb16-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(sample_popn_pref, <span class="dv">3</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1">sample_popn_pref &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(sample<span class="op">$</span>cat_pref)</a>
+<a class="sourceLine" id="cb17-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(sample_popn_pref, <span class="dv">3</span>)</a></code></pre></div>
 <pre><code>[1] 0.681</code></pre>
 <p>We can also add it to the last figure to graphically represent the difference between the sample and population estimate.</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" data-line-number="1">compare2 &lt;-<span class="st"> </span>compare2 <span class="op">+</span></a>
-<a class="sourceLine" id="cb18-2" data-line-number="2"><span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html">geom_hline</a></span>(<span class="dt">yintercept =</span> model_popn_pref[<span class="dv">1</span>], <span class="dt">colour =</span> <span class="st">'#2ca25f'</span>, <span class="dt">size =</span> <span class="dv">1</span>) <span class="op">+</span></a>
-<a class="sourceLine" id="cb18-3" data-line-number="3"><span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_text.html">geom_text</a></span>(<span class="kw"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span>(<span class="dt">x =</span> <span class="fl">5.2</span>, <span class="dt">y =</span> model_popn_pref[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span><span class="fl">.025</span>), <span class="dt">label =</span> <span class="st">"MRP"</span>, <span class="dt">colour =</span> <span class="st">'#2ca25f'</span>)</a>
-<a class="sourceLine" id="cb18-4" data-line-number="4"><span class="kw"><a href="https://mc-stan.org/bayesplot/reference/bayesplot_grid.html">bayesplot_grid</a></span>(compare, compare2, </a>
-<a class="sourceLine" id="cb18-5" data-line-number="5">               <span class="dt">grid_args =</span> <span class="kw"><a href="https://rdrr.io/r/base/list.html">list</a></span>(<span class="dt">nrow =</span> <span class="dv">1</span>, <span class="dt">widths =</span> <span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">8</span>, <span class="dv">1</span>)))</a></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1">compare2 &lt;-<span class="st"> </span>compare2 <span class="op">+</span></a>
+<a class="sourceLine" id="cb19-2" data-line-number="2"><span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html">geom_hline</a></span>(<span class="dt">yintercept =</span> model_popn_pref[<span class="dv">1</span>], <span class="dt">colour =</span> <span class="st">'#2ca25f'</span>, <span class="dt">size =</span> <span class="dv">1</span>) <span class="op">+</span></a>
+<a class="sourceLine" id="cb19-3" data-line-number="3"><span class="st">  </span><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/geom_text.html">geom_text</a></span>(<span class="kw"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span>(<span class="dt">x =</span> <span class="fl">5.2</span>, <span class="dt">y =</span> model_popn_pref[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span><span class="fl">.025</span>), <span class="dt">label =</span> <span class="st">"MRP"</span>, <span class="dt">colour =</span> <span class="st">'#2ca25f'</span>)</a>
+<a class="sourceLine" id="cb19-4" data-line-number="4"><span class="kw"><a href="https://mc-stan.org/bayesplot/reference/bayesplot_grid.html">bayesplot_grid</a></span>(compare, compare2, </a>
+<a class="sourceLine" id="cb19-5" data-line-number="5">               <span class="dt">grid_args =</span> <span class="kw"><a href="https://rdrr.io/r/base/list.html">list</a></span>(<span class="dt">nrow =</span> <span class="dv">1</span>, <span class="dt">widths =</span> <span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">8</span>, <span class="dv">1</span>)))</a></code></pre></div>
 <p><img src="mrp_files/figure-html/unnamed-chunk-16-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>As this is simulated data, we can look directly at the preference for cats that we simulated from to consider how good our estimate is.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1">true_popn_pref &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(true_popn<span class="op">$</span>cat_pref <span class="op">*</span><span class="st"> </span>poststrat<span class="op">$</span>N) <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(poststrat<span class="op">$</span>N)</a>
-<a class="sourceLine" id="cb19-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(true_popn_pref, <span class="dv">3</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" data-line-number="1">true_popn_pref &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(true_popn<span class="op">$</span>cat_pref <span class="op">*</span><span class="st"> </span>poststrat<span class="op">$</span>N) <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(poststrat<span class="op">$</span>N)</a>
+<a class="sourceLine" id="cb20-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(true_popn_pref, <span class="dv">3</span>)</a></code></pre></div>
 <pre><code>[1] 0.561</code></pre>
 <p>Which we will also add to the figure. <img src="mrp_files/figure-html/unnamed-chunk-18-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>Our MRP estimate is barely off, while our sample estimate is off by more than 10 percentage points. This indicates that using MRP helps to make estimates for the population from our sample that are more accurate.</p>
@@ -334,101 +357,101 @@ Num. levels: state 50, age 7, eth 3, income 3
 <a href="#estimates-for-states" class="anchor"></a>Estimates for states</h2>
 <p>One of the nice benefits of using MRP to make inference about the population is that we can change the population of interest. In the previous paragraph we inferred the preference for cats in the whole population. We can also infer the preference for cats in a single state. In the following code we post-stratify for each state in turn. Note that we can reuse the predictive model from the previous step and update for different population demographics. This is particularly useful for complicated cases or large data sets where the model takes some time to fit.</p>
 <p>As before, first we use the proportion of the population in each combination of the post-stratification groups to estimate the proportion of people who preferred cats in the population, only in this case the population of interest is the state.</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1">state_df &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(</a>
-<a class="sourceLine" id="cb21-2" data-line-number="2">  <span class="dt">State =</span> <span class="dv">1</span><span class="op">:</span><span class="dv">50</span>,</a>
-<a class="sourceLine" id="cb21-3" data-line-number="3">  <span class="dt">model_state_sd =</span> <span class="kw"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">50</span>),</a>
-<a class="sourceLine" id="cb21-4" data-line-number="4">  <span class="dt">model_state_pref =</span> <span class="kw"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">50</span>),</a>
-<a class="sourceLine" id="cb21-5" data-line-number="5">  <span class="dt">sample_state_pref =</span> <span class="kw"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">50</span>),</a>
-<a class="sourceLine" id="cb21-6" data-line-number="6">  <span class="dt">true_state_pref =</span> <span class="kw"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">50</span>),</a>
-<a class="sourceLine" id="cb21-7" data-line-number="7">  <span class="dt">N =</span> <span class="kw"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">50</span>)</a>
-<a class="sourceLine" id="cb21-8" data-line-number="8">)</a>
-<a class="sourceLine" id="cb21-9" data-line-number="9"></a>
-<a class="sourceLine" id="cb21-10" data-line-number="10"><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://rdrr.io/r/base/length.html">length</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/levels.html">levels</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/factor.html">as.factor</a></span>(poststrat<span class="op">$</span>state)))) {</a>
-<a class="sourceLine" id="cb21-11" data-line-number="11">  poststrat_state &lt;-<span class="st"> </span>poststrat[poststrat<span class="op">$</span>state <span class="op">==</span><span class="st"> </span>i, ]</a>
-<a class="sourceLine" id="cb21-12" data-line-number="12">    posterior_prob_state &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_linpred.stanreg.html">posterior_linpred</a></span>(</a>
-<a class="sourceLine" id="cb21-13" data-line-number="13">    fit,</a>
-<a class="sourceLine" id="cb21-14" data-line-number="14">    <span class="dt">transform =</span> <span class="ot">TRUE</span>,</a>
-<a class="sourceLine" id="cb21-15" data-line-number="15">    <span class="dt">draws =</span> <span class="dv">1000</span>,</a>
-<a class="sourceLine" id="cb21-16" data-line-number="16">    <span class="dt">newdata =</span> <span class="kw"><a href="https://rdrr.io/r/base/as.data.frame.html">as.data.frame</a></span>(poststrat_state)</a>
-<a class="sourceLine" id="cb21-17" data-line-number="17">  )</a>
-<a class="sourceLine" id="cb21-18" data-line-number="18">  poststrat_prob_state &lt;-<span class="st"> </span>(posterior_prob_state <span class="op">%*%</span><span class="st"> </span>poststrat_state<span class="op">$</span>N) <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(poststrat_state<span class="op">$</span>N)</a>
-<a class="sourceLine" id="cb21-19" data-line-number="19">  <span class="co">#This is the estimate for popn in state:</span></a>
-<a class="sourceLine" id="cb21-20" data-line-number="20">  state_df<span class="op">$</span>model_state_pref[i] &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(poststrat_prob_state), <span class="dv">4</span>)</a>
-<a class="sourceLine" id="cb21-21" data-line-number="21">  state_df<span class="op">$</span>model_state_sd[i] &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="kw"><a href="https://rdrr.io/r/stats/sd.html">sd</a></span>(poststrat_prob_state), <span class="dv">4</span>)</a>
-<a class="sourceLine" id="cb21-22" data-line-number="22">  <span class="co">#This is the estimate for sample</span></a>
-<a class="sourceLine" id="cb21-23" data-line-number="23">  state_df<span class="op">$</span>sample_state_pref[i] &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(sample<span class="op">$</span>cat_pref[sample<span class="op">$</span>state <span class="op">==</span><span class="st"> </span>i]), <span class="dv">4</span>)</a>
-<a class="sourceLine" id="cb21-24" data-line-number="24">  <span class="co">#And what is the actual popn?</span></a>
-<a class="sourceLine" id="cb21-25" data-line-number="25">  state_df<span class="op">$</span>true_state_pref[i] &lt;-</a>
-<a class="sourceLine" id="cb21-26" data-line-number="26"><span class="st">    </span><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(true_popn<span class="op">$</span>cat_pref[true_popn<span class="op">$</span>state <span class="op">==</span><span class="st"> </span>i] <span class="op">*</span><span class="st"> </span>poststrat_state<span class="op">$</span>N) <span class="op">/</span></a>
-<a class="sourceLine" id="cb21-27" data-line-number="27"><span class="st">            </span><span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(poststrat_state<span class="op">$</span>N), <span class="dt">digits =</span> <span class="dv">4</span>)</a>
-<a class="sourceLine" id="cb21-28" data-line-number="28">  state_df<span class="op">$</span>N[i] &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/length.html">length</a></span>(sample<span class="op">$</span>cat_pref[sample<span class="op">$</span>state <span class="op">==</span><span class="st"> </span>i])</a>
-<a class="sourceLine" id="cb21-29" data-line-number="29">}</a>
-<a class="sourceLine" id="cb21-30" data-line-number="30"></a>
-<a class="sourceLine" id="cb21-31" data-line-number="31">state_df[<span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">1</span>,<span class="dv">3</span><span class="op">:</span><span class="dv">6</span>)]</a></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" data-line-number="1">state_df &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(</a>
+<a class="sourceLine" id="cb22-2" data-line-number="2">  <span class="dt">State =</span> <span class="dv">1</span><span class="op">:</span><span class="dv">50</span>,</a>
+<a class="sourceLine" id="cb22-3" data-line-number="3">  <span class="dt">model_state_sd =</span> <span class="kw"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">50</span>),</a>
+<a class="sourceLine" id="cb22-4" data-line-number="4">  <span class="dt">model_state_pref =</span> <span class="kw"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">50</span>),</a>
+<a class="sourceLine" id="cb22-5" data-line-number="5">  <span class="dt">sample_state_pref =</span> <span class="kw"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">50</span>),</a>
+<a class="sourceLine" id="cb22-6" data-line-number="6">  <span class="dt">true_state_pref =</span> <span class="kw"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">50</span>),</a>
+<a class="sourceLine" id="cb22-7" data-line-number="7">  <span class="dt">N =</span> <span class="kw"><a href="https://rdrr.io/r/base/rep.html">rep</a></span>(<span class="op">-</span><span class="dv">1</span>, <span class="dv">50</span>)</a>
+<a class="sourceLine" id="cb22-8" data-line-number="8">)</a>
+<a class="sourceLine" id="cb22-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb22-10" data-line-number="10"><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://rdrr.io/r/base/length.html">length</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/levels.html">levels</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/factor.html">as.factor</a></span>(poststrat<span class="op">$</span>state)))) {</a>
+<a class="sourceLine" id="cb22-11" data-line-number="11">  poststrat_state &lt;-<span class="st"> </span>poststrat[poststrat<span class="op">$</span>state <span class="op">==</span><span class="st"> </span>i, ]</a>
+<a class="sourceLine" id="cb22-12" data-line-number="12">    posterior_prob_state &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_linpred.stanreg.html">posterior_linpred</a></span>(</a>
+<a class="sourceLine" id="cb22-13" data-line-number="13">    fit,</a>
+<a class="sourceLine" id="cb22-14" data-line-number="14">    <span class="dt">transform =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb22-15" data-line-number="15">    <span class="dt">draws =</span> <span class="dv">1000</span>,</a>
+<a class="sourceLine" id="cb22-16" data-line-number="16">    <span class="dt">newdata =</span> <span class="kw"><a href="https://rdrr.io/r/base/as.data.frame.html">as.data.frame</a></span>(poststrat_state)</a>
+<a class="sourceLine" id="cb22-17" data-line-number="17">  )</a>
+<a class="sourceLine" id="cb22-18" data-line-number="18">  poststrat_prob_state &lt;-<span class="st"> </span>(posterior_prob_state <span class="op">%*%</span><span class="st"> </span>poststrat_state<span class="op">$</span>N) <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(poststrat_state<span class="op">$</span>N)</a>
+<a class="sourceLine" id="cb22-19" data-line-number="19">  <span class="co">#This is the estimate for popn in state:</span></a>
+<a class="sourceLine" id="cb22-20" data-line-number="20">  state_df<span class="op">$</span>model_state_pref[i] &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(poststrat_prob_state), <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb22-21" data-line-number="21">  state_df<span class="op">$</span>model_state_sd[i] &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="kw"><a href="https://rdrr.io/r/stats/sd.html">sd</a></span>(poststrat_prob_state), <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb22-22" data-line-number="22">  <span class="co">#This is the estimate for sample</span></a>
+<a class="sourceLine" id="cb22-23" data-line-number="23">  state_df<span class="op">$</span>sample_state_pref[i] &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(sample<span class="op">$</span>cat_pref[sample<span class="op">$</span>state <span class="op">==</span><span class="st"> </span>i]), <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb22-24" data-line-number="24">  <span class="co">#And what is the actual popn?</span></a>
+<a class="sourceLine" id="cb22-25" data-line-number="25">  state_df<span class="op">$</span>true_state_pref[i] &lt;-</a>
+<a class="sourceLine" id="cb22-26" data-line-number="26"><span class="st">    </span><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(true_popn<span class="op">$</span>cat_pref[true_popn<span class="op">$</span>state <span class="op">==</span><span class="st"> </span>i] <span class="op">*</span><span class="st"> </span>poststrat_state<span class="op">$</span>N) <span class="op">/</span></a>
+<a class="sourceLine" id="cb22-27" data-line-number="27"><span class="st">            </span><span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(poststrat_state<span class="op">$</span>N), <span class="dt">digits =</span> <span class="dv">4</span>)</a>
+<a class="sourceLine" id="cb22-28" data-line-number="28">  state_df<span class="op">$</span>N[i] &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/length.html">length</a></span>(sample<span class="op">$</span>cat_pref[sample<span class="op">$</span>state <span class="op">==</span><span class="st"> </span>i])</a>
+<a class="sourceLine" id="cb22-29" data-line-number="29">}</a>
+<a class="sourceLine" id="cb22-30" data-line-number="30"></a>
+<a class="sourceLine" id="cb22-31" data-line-number="31">state_df[<span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">1</span>,<span class="dv">3</span><span class="op">:</span><span class="dv">6</span>)]</a></code></pre></div>
 <pre><code>   State model_state_pref sample_state_pref true_state_pref  N
-1      1           0.4959            0.5000          0.5966  2
-2      2           0.6683            0.8571          0.5315  7
-3      3           0.4443            0.5385          0.3803 13
-4      4           0.7613            0.8846          0.6590 26
-5      5           0.4223            0.5200          0.4439 50
-6      6           0.6856            0.8947          0.6982 19
-7      7           0.7125            0.8250          0.6386 40
-8      8           0.6987            0.9167          0.7850 12
-9      9           0.7171            0.8571          0.6788 14
-10    10           0.6188            0.7727          0.5966 44
-11    11           0.7325            0.8824          0.7850 17
-12    12           0.3847            0.4737          0.4012 57
-13    13           0.7220            1.0000          0.7690  5
-14    14           0.6056            0.6818          0.5966 22
-15    15           0.1999            0.2000          0.1181 15
-16    16           0.3859            0.4706          0.3599 34
-17    17           0.2147            0.1538          0.2169 13
-18    18           0.3492            0.0000          0.2169  2
-19    19           0.4698            0.6000          0.4656  5
-20    20           0.7913            0.8974          0.7850 39
-21    21           0.3802            0.5250          0.3599 40
-22    22           0.7582            0.9167          0.8755 12
-23    23           0.5997            0.7333          0.5751 30
-24    24           0.6355            1.0000          0.7690  2
-25    25           0.7370            0.8261          0.8002 23
-26    26           0.7653            0.8704          0.7524 54
-27    27           0.2564            0.3500          0.2657 20
-28    28           0.5737            0.6667          0.4656  3
-29    29           0.5337            0.6757          0.5095 37
-30    30           0.5182            0.5946          0.5315 37
-31    31           0.6004            0.7143          0.7350  7
-32    32           0.4193            0.5000          0.3399 42
-33    33           0.6074            0.7353          0.6178 68
-34    34           0.5791            0.7200          0.4656 25
-35    35           0.5926            0.7200          0.6590 25
-36    36           0.5296            0.6250          0.5751  8
-37    37           0.6972            0.8571          0.8855  7
-38    38           0.2930            0.3750          0.3205 48
-39    39           0.7233            0.8824          0.8533 17
-40    40           0.3213            0.3684          0.2657 19
-41    41           0.7684            0.9286          0.6982 14
-42    42           0.6752            0.8235          0.5751 34
-43    43           0.5335            0.6667          0.5315  6
-44    44           0.6577            0.8000          0.4439 15
-45    45           0.6668            0.8077          0.5315 26
-46    46           0.6514            0.7750          0.6788 40
-47    47           0.7275            0.8621          0.8002 29
-48    48           0.5087            0.6545          0.4224 55
-49    49           0.2331            0.2500          0.2487  8
-50    50           0.8174            1.0000          0.8146 13</code></pre>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" data-line-number="1">state_df<span class="op">$</span>State &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/factor.html">factor</a></span>(state_df<span class="op">$</span>State, <span class="dt">levels =</span> <span class="kw"><a href="https://rdrr.io/r/base/levels.html">levels</a></span>(sample<span class="op">$</span>state))</a></code></pre></div>
+1      1           0.4989            0.5000          0.5966  2
+2      2           0.6573            0.8571          0.5315  7
+3      3           0.4478            0.5385          0.3803 13
+4      4           0.7630            0.8846          0.6590 26
+5      5           0.4237            0.5200          0.4439 50
+6      6           0.6875            0.8947          0.6982 19
+7      7           0.7110            0.8250          0.6386 40
+8      8           0.7013            0.9167          0.7850 12
+9      9           0.7133            0.8571          0.6788 14
+10    10           0.6160            0.7727          0.5966 44
+11    11           0.7320            0.8824          0.7850 17
+12    12           0.3869            0.4737          0.4012 57
+13    13           0.7156            1.0000          0.7690  5
+14    14           0.6084            0.6818          0.5966 22
+15    15           0.2034            0.2000          0.1181 15
+16    16           0.3888            0.4706          0.3599 34
+17    17           0.2167            0.1538          0.2169 13
+18    18           0.3464            0.0000          0.2169  2
+19    19           0.4730            0.6000          0.4656  5
+20    20           0.7951            0.8974          0.7850 39
+21    21           0.3817            0.5250          0.3599 40
+22    22           0.7580            0.9167          0.8755 12
+23    23           0.5993            0.7333          0.5751 30
+24    24           0.6292            1.0000          0.7690  2
+25    25           0.7384            0.8261          0.8002 23
+26    26           0.7599            0.8704          0.7524 54
+27    27           0.2618            0.3500          0.2657 20
+28    28           0.5729            0.6667          0.4656  3
+29    29           0.5352            0.6757          0.5095 37
+30    30           0.5172            0.5946          0.5315 37
+31    31           0.5998            0.7143          0.7350  7
+32    32           0.4148            0.5000          0.3399 42
+33    33           0.6077            0.7353          0.6178 68
+34    34           0.5802            0.7200          0.4656 25
+35    35           0.5968            0.7200          0.6590 25
+36    36           0.5332            0.6250          0.5751  8
+37    37           0.6973            0.8571          0.8855  7
+38    38           0.2878            0.3750          0.3205 48
+39    39           0.7243            0.8824          0.8533 17
+40    40           0.3244            0.3684          0.2657 19
+41    41           0.7649            0.9286          0.6982 14
+42    42           0.6764            0.8235          0.5751 34
+43    43           0.5361            0.6667          0.5315  6
+44    44           0.6523            0.8000          0.4439 15
+45    45           0.6631            0.8077          0.5315 26
+46    46           0.6452            0.7750          0.6788 40
+47    47           0.7229            0.8621          0.8002 29
+48    48           0.5088            0.6545          0.4224 55
+49    49           0.2375            0.2500          0.2487  8
+50    50           0.8152            1.0000          0.8146 13</code></pre>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" data-line-number="1">state_df<span class="op">$</span>State &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/factor.html">factor</a></span>(state_df<span class="op">$</span>State, <span class="dt">levels =</span> <span class="kw"><a href="https://rdrr.io/r/base/levels.html">levels</a></span>(sample<span class="op">$</span>state))</a></code></pre></div>
 <p>Here we similar findings to when we considered the population as whole. While estimates for cat preference (in percent) using the sample are off by</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="dv">100</span> <span class="op">*</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(</a>
-<a class="sourceLine" id="cb24-2" data-line-number="2">  <span class="dt">mean =</span> <span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span>(state_df<span class="op">$</span>sample_state_pref<span class="op">-</span>state_df<span class="op">$</span>true_state_pref), <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</a>
-<a class="sourceLine" id="cb24-3" data-line-number="3">  <span class="dt">max =</span> <span class="kw"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span>(state_df<span class="op">$</span>sample_state_pref<span class="op">-</span>state_df<span class="op">$</span>true_state_pref), <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)</a>
-<a class="sourceLine" id="cb24-4" data-line-number="4">))</a></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="dv">100</span> <span class="op">*</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(</a>
+<a class="sourceLine" id="cb25-2" data-line-number="2">  <span class="dt">mean =</span> <span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span>(state_df<span class="op">$</span>sample_state_pref<span class="op">-</span>state_df<span class="op">$</span>true_state_pref), <span class="dt">na.rm =</span> <span class="ot">TRUE</span>),</a>
+<a class="sourceLine" id="cb25-3" data-line-number="3">  <span class="dt">max =</span> <span class="kw"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span>(state_df<span class="op">$</span>sample_state_pref<span class="op">-</span>state_df<span class="op">$</span>true_state_pref), <span class="dt">na.rm =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb25-4" data-line-number="4">))</a></code></pre></div>
 <pre><code>mean  max 
   14   36 </code></pre>
 <p>the MRP based estimates are much closer to the actual percentage,</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="dv">100</span> <span class="op">*</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(</a>
-<a class="sourceLine" id="cb26-2" data-line-number="2">  <span class="dt">mean =</span> <span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span>(state_df<span class="op">$</span>model_state_pref<span class="op">-</span>state_df<span class="op">$</span>true_state_pref)),</a>
-<a class="sourceLine" id="cb26-3" data-line-number="3">  <span class="dt">max =</span> <span class="kw"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span>(state_df<span class="op">$</span>model_state_pref<span class="op">-</span>state_df<span class="op">$</span>true_state_pref))</a>
-<a class="sourceLine" id="cb26-4" data-line-number="4">))</a></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="dv">100</span> <span class="op">*</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(</a>
+<a class="sourceLine" id="cb27-2" data-line-number="2">  <span class="dt">mean =</span> <span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span>(state_df<span class="op">$</span>model_state_pref<span class="op">-</span>state_df<span class="op">$</span>true_state_pref)),</a>
+<a class="sourceLine" id="cb27-3" data-line-number="3">  <span class="dt">max =</span> <span class="kw"><a href="https://rdrr.io/r/base/Extremes.html">max</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/MathFun.html">abs</a></span>(state_df<span class="op">$</span>model_state_pref<span class="op">-</span>state_df<span class="op">$</span>true_state_pref))</a>
+<a class="sourceLine" id="cb27-4" data-line-number="4">))</a></code></pre></div>
 <pre><code>mean  max 
    6   21 </code></pre>
 <p>and especially when the sample size for that population is relatively small. This is easier to see graphically, so we will continue to add additional layers to the previous figure. Here we add model estimates,represented by triangles, and the true population cat preference, represented as transparent circles.</p>
@@ -442,11 +465,11 @@ Num. levels: state 50, age 7, eth 3, income 3
 <h2 class="hasAnchor">
 <a href="#alternate-methods-of-modelling" class="anchor"></a>Alternate methods of modelling</h2>
 <p>Previously we used a binary outcome variable. An alternative form of this model is to aggregate the data to the poststrat cell level and model the number of successes (or endorsement of cat preference in this case) out of the total number of people in that cell. To do this we need to create two n x 1 outcome variables, <code>N_cat_pref</code> (number in cell who prefer cats) and <code>N</code> (number in the poststrat cell).</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="co"># not evaluated to avoid dependency on tidyverse</span></a>
-<a class="sourceLine" id="cb28-2" data-line-number="2">sample_alt &lt;-<span class="st"> </span>sample <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb28-3" data-line-number="3"><span class="st">  </span><span class="kw"><a href="https://dplyr.tidyverse.org/reference/group_by.html">group_by</a></span>(male, age, income, state, eth) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb28-4" data-line-number="4"><span class="st">  </span><span class="kw"><a href="https://dplyr.tidyverse.org/reference/summarise.html">summarise</a></span>(<span class="dt">N_cat_pref =</span> <span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(cat_pref), <span class="dt">N =</span> <span class="kw"><a href="https://dplyr.tidyverse.org/reference/n.html">n</a></span>()) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb28-5" data-line-number="5"><span class="st">  </span><span class="kw"><a href="https://dplyr.tidyverse.org/reference/group_by.html">ungroup</a></span>()</a></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co"># not evaluated to avoid dependency on tidyverse</span></a>
+<a class="sourceLine" id="cb29-2" data-line-number="2">sample_alt &lt;-<span class="st"> </span>sample <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb29-3" data-line-number="3"><span class="st">  </span><span class="kw"><a href="https://dplyr.tidyverse.org/reference/group_by.html">group_by</a></span>(male, age, income, state, eth) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb29-4" data-line-number="4"><span class="st">  </span><span class="kw"><a href="https://dplyr.tidyverse.org/reference/summarise.html">summarise</a></span>(<span class="dt">N_cat_pref =</span> <span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(cat_pref), <span class="dt">N =</span> <span class="kw"><a href="https://dplyr.tidyverse.org/reference/n.html">n</a></span>()) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb29-5" data-line-number="5"><span class="st">  </span><span class="kw"><a href="https://dplyr.tidyverse.org/reference/group_by.html">ungroup</a></span>()</a></code></pre></div>
 <!-- ```{r, include=FALSE, eval=FALSE} -->
 <!-- # not evaluated to avoid dependency on tidyverse -->
 <!-- sample_alt <- sample %>% -->
@@ -456,14 +479,14 @@ Num. levels: state 50, age 7, eth 3, income 3
 <!-- save(sample_alt, file = "mrp-files/sample_alt.rda", version = 2) -->
 <!-- ``` -->
 <p>We then can use these two outcome variables to model the data using the binomial distribution.</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" data-line-number="1">fit2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_glmer.html">stan_glmer</a></span>(</a>
-<a class="sourceLine" id="cb29-2" data-line-number="2">  <span class="kw"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span>(N_cat_pref, N <span class="op">-</span><span class="st"> </span>N_cat_pref) <span class="op">~</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/factor.html">factor</a></span>(male) <span class="op">+</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/factor.html">factor</a></span>(male) <span class="op">*</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/factor.html">factor</a></span>(age) <span class="op">+</span><span class="st"> </span></a>
-<a class="sourceLine" id="cb29-3" data-line-number="3"><span class="st">    </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>state) <span class="op">+</span><span class="st"> </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>age) <span class="op">+</span><span class="st"> </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>eth) <span class="op">+</span><span class="st"> </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>income),</a>
-<a class="sourceLine" id="cb29-4" data-line-number="4">  <span class="dt">family =</span> <span class="kw"><a href="https://rdrr.io/r/stats/family.html">binomial</a></span>(<span class="st">"logit"</span>),</a>
-<a class="sourceLine" id="cb29-5" data-line-number="5">  <span class="dt">data =</span> sample_alt,</a>
-<a class="sourceLine" id="cb29-6" data-line-number="6">  <span class="dt">refresh =</span> <span class="dv">0</span></a>
-<a class="sourceLine" id="cb29-7" data-line-number="7">)</a></code></pre></div>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(fit2)</a></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" data-line-number="1">fit2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_glmer.html">stan_glmer</a></span>(</a>
+<a class="sourceLine" id="cb30-2" data-line-number="2">  <span class="kw"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span>(N_cat_pref, N <span class="op">-</span><span class="st"> </span>N_cat_pref) <span class="op">~</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/factor.html">factor</a></span>(male) <span class="op">+</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/factor.html">factor</a></span>(male) <span class="op">*</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/factor.html">factor</a></span>(age) <span class="op">+</span><span class="st"> </span></a>
+<a class="sourceLine" id="cb30-3" data-line-number="3"><span class="st">    </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>state) <span class="op">+</span><span class="st"> </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>age) <span class="op">+</span><span class="st"> </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>eth) <span class="op">+</span><span class="st"> </span>(<span class="dv">1</span> <span class="op">|</span><span class="st"> </span>income),</a>
+<a class="sourceLine" id="cb30-4" data-line-number="4">  <span class="dt">family =</span> <span class="kw"><a href="https://rdrr.io/r/stats/family.html">binomial</a></span>(<span class="st">"logit"</span>),</a>
+<a class="sourceLine" id="cb30-5" data-line-number="5">  <span class="dt">data =</span> sample_alt,</a>
+<a class="sourceLine" id="cb30-6" data-line-number="6">  <span class="dt">refresh =</span> <span class="dv">0</span></a>
+<a class="sourceLine" id="cb30-7" data-line-number="7">)</a></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(fit2)</a></code></pre></div>
 <pre><code>stan_glmer
  family:       binomial [logit]
  formula:      cbind(N_cat_pref, N - N_cat_pref) ~ factor(male) + factor(male) * 
@@ -474,49 +497,52 @@ Num. levels: state 50, age 7, eth 3, income 3
                            Median MAD_SD
 (Intercept)                 0.9    0.7  
 factor(male)1              -0.5    0.5  
-factor(age)2               -0.2    0.8  
+factor(age)2               -0.3    0.8  
 factor(age)3               -0.5    0.6  
 factor(age)4                0.6    0.6  
 factor(age)5                0.3    0.6  
-factor(age)6                0.9    0.6  
-factor(age)7                0.7    0.6  
-factor(male)1:factor(age)2  0.2    1.3  
+factor(age)6                1.0    0.6  
+factor(age)7                0.8    0.6  
+factor(male)1:factor(age)2  0.3    1.3  
 factor(male)1:factor(age)3 -0.6    0.7  
 factor(male)1:factor(age)4 -1.1    0.6  
-factor(male)1:factor(age)5 -0.9    0.6  
+factor(male)1:factor(age)5 -0.8    0.6  
 factor(male)1:factor(age)6 -0.4    0.6  
-factor(male)1:factor(age)7 -1.0    0.6  
+factor(male)1:factor(age)7 -1.0    0.5  
 
 Error terms:
  Groups Name        Std.Dev.
- state  (Intercept) 1.10    
- age    (Intercept) 0.69    
- eth    (Intercept) 0.87    
- income (Intercept) 0.74    
+ state  (Intercept) 1.11    
+ age    (Intercept) 0.66    
+ eth    (Intercept) 0.88    
+ income (Intercept) 0.75    
 Num. levels: state 50, age 7, eth 3, income 3 
 
 ------
 * For help interpreting the printed output see ?print.stanreg
 * For info on the priors used see ?prior_summary.stanreg</code></pre>
 <p>Like before, we can use the <code><a href="../reference/posterior_linpred.stanreg.html">posterior_linpred()</a></code> function to obtain an estimate of the preference for cats in the population.</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb32-1" data-line-number="1">posterior_prob_alt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_linpred.stanreg.html">posterior_linpred</a></span>(fit2, <span class="dt">transform =</span> <span class="ot">TRUE</span>, <span class="dt">newdata =</span> poststrat)</a>
-<a class="sourceLine" id="cb32-2" data-line-number="2">poststrat_prob_alt &lt;-<span class="st"> </span>posterior_prob_alt <span class="op">%*%</span><span class="st"> </span>poststrat<span class="op">$</span>N <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(poststrat<span class="op">$</span>N)</a>
-<a class="sourceLine" id="cb32-3" data-line-number="3">model_popn_pref_alt &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dt">mean =</span> <span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(poststrat_prob_alt), <span class="dt">sd =</span> <span class="kw"><a href="https://rdrr.io/r/stats/sd.html">sd</a></span>(poststrat_prob_alt))</a>
-<a class="sourceLine" id="cb32-4" data-line-number="4"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(model_popn_pref_alt, <span class="dv">3</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb33-1" data-line-number="1">posterior_prob_alt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/posterior_linpred.stanreg.html">posterior_linpred</a></span>(fit2, <span class="dt">transform =</span> <span class="ot">TRUE</span>, <span class="dt">newdata =</span> poststrat)</a>
+<a class="sourceLine" id="cb33-2" data-line-number="2">poststrat_prob_alt &lt;-<span class="st"> </span>posterior_prob_alt <span class="op">%*%</span><span class="st"> </span>poststrat<span class="op">$</span>N <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/sum.html">sum</a></span>(poststrat<span class="op">$</span>N)</a>
+<a class="sourceLine" id="cb33-3" data-line-number="3">model_popn_pref_alt &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dt">mean =</span> <span class="kw"><a href="https://rdrr.io/r/base/mean.html">mean</a></span>(poststrat_prob_alt), <span class="dt">sd =</span> <span class="kw"><a href="https://rdrr.io/r/stats/sd.html">sd</a></span>(poststrat_prob_alt))</a>
+<a class="sourceLine" id="cb33-4" data-line-number="4"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(model_popn_pref_alt, <span class="dv">3</span>)</a></code></pre></div>
 <pre><code> mean    sd 
-0.566 0.023 </code></pre>
+0.567 0.024 </code></pre>
 <p>As we should, we get the same answer as when we fit the model using the binary outcome. The two ways are equivalent, so we can use whichever form is most convenient for the data at hand. More details on these two forms of binomial models are available <a href="https://mc-stan.org/rstanarm/articles/binomial.html">here</a>.</p>
 </div>
-<div id="examples-of-other-formulas" class="section level2">
-<h2 class="hasAnchor">
-<a href="#examples-of-other-formulas" class="anchor"></a>Examples of other formulas</h2>
+</div>
+<div id="appendix" class="section level1">
+<h1 class="hasAnchor">
+<a href="#appendix" class="anchor"></a>Appendix</h1>
+<div id="examples-of-other-formulas" class="section level3">
+<h3 class="hasAnchor">
+<a href="#examples-of-other-formulas" class="anchor"></a>Examples of other formulas</h3>
 <p>The formulas for fitting so-called “mixed-effects” models in <strong>rstanarm</strong> are the same as those in the <strong>lme4</strong> package. A table of examples can be found in Table 2 of the vignette for the <strong>lme4</strong> package, available <a href="https://CRAN.R-project.org/package=lme4/vignettes/lmer.pdf">here</a>.</p>
 </div>
-</div>
-<div id="appendix-code-to-simulate-the-data" class="section level1">
-<h1 class="hasAnchor">
-<a href="#appendix-code-to-simulate-the-data" class="anchor"></a>Appendix: Code to simulate the data</h1>
-<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(simulate_mrp_data)</a></code></pre></div>
+<div id="code-to-simulate-the-data" class="section level3">
+<h3 class="hasAnchor">
+<a href="#code-to-simulate-the-data" class="anchor"></a>Code to simulate the data</h3>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb35-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(simulate_mrp_data)</a></code></pre></div>
 <pre><code>function(n) {
   J &lt;- c(2, 3, 7, 3, 50) # male or not, eth, age, income level, state
   poststrat &lt;- as.data.frame(array(NA, c(prod(J), length(J)+1))) # Columns of post-strat matrix, plus one for size
@@ -618,6 +644,7 @@ Num. levels: state 50, age 7, eth 3, income 3
   )
 }</code></pre>
 </div>
+</div>
 <div id="references" class="section level1">
 <h1 class="hasAnchor">
 <a href="#references" class="anchor"></a>References</h1>
@@ -670,7 +697,7 @@ Num. levels: state 50, age 7, eth 3, income 3
       </ul>
 </li>
       <li>
-<a href="#mrp-in-rstanarm">MRP in RStanArm</a><ul class="nav nav-pills nav-stacked">
+<a href="#mrp-with-rstanarm">MRP with rstanarm</a><ul class="nav nav-pills nav-stacked">
 <li><a href="#population-estimate">Population Estimate</a></li>
       <li><a href="#estimates-for-states">Estimates for states</a></li>
       </ul>
@@ -678,10 +705,9 @@ Num. levels: state 50, age 7, eth 3, income 3
       <li>
 <a href="#other-formats">Other formats</a><ul class="nav nav-pills nav-stacked">
 <li><a href="#alternate-methods-of-modelling">Alternate methods of modelling</a></li>
-      <li><a href="#examples-of-other-formulas">Examples of other formulas</a></li>
       </ul>
 </li>
-      <li><a href="#appendix-code-to-simulate-the-data">Appendix: Code to simulate the data</a></li>
+      <li><a href="#appendix">Appendix</a></li>
       <li><a href="#references">References</a></li>
       </ul>
 </div>
