@@ -59,9 +59,9 @@
 #'   
 #' @examples
 #' \donttest{
-#' fit1 <- stan_glm(mpg ~ wt, data = mtcars)
-#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars)
-#' fit3 <- stan_glm(mpg ~ disp * as.factor(cyl), data = mtcars)
+#' fit1 <- stan_glm(mpg ~ wt, data = mtcars, refresh = 0)
+#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, refresh = 0)
+#' fit3 <- stan_glm(mpg ~ disp * as.factor(cyl), data = mtcars, refresh = 0)
 #'
 #' # 10-fold cross-validation
 #' # (if possible also specify the 'cores' argument to use multiple cores)
@@ -73,7 +73,7 @@
 #' # stratifying by a grouping variable
 #' # (note: might get some divergences warnings with this model but 
 #' # this is just intended as a quick example of how to code this)
-#' fit4 <- stan_lmer(mpg ~ disp + (1|cyl), data = mtcars)
+#' fit4 <- stan_lmer(mpg ~ disp + (1|cyl), data = mtcars, refresh = 0)
 #' table(mtcars$cyl)
 #' folds_cyl <- loo::kfold_split_stratified(K = 3, x = mtcars$cyl)
 #' table(cyl = mtcars$cyl, fold = folds_cyl)

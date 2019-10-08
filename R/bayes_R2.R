@@ -21,7 +21,13 @@
 #' \href{https://avehtari.github.io/bayes_R2/bayes_R2.html}{Notebook})
 #' 
 #' @examples
-#' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars, QR = TRUE, chains = 2)
+#' fit <- stan_glm(
+#'   mpg ~ wt + cyl, 
+#'   data = mtcars, 
+#'   QR = TRUE, 
+#'   chains = 2, 
+#'   refresh = 0
+#' )
 #' rsq <- bayes_R2(fit)
 #' print(median(rsq))
 #' hist(rsq)

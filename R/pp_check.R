@@ -83,8 +83,13 @@
 #' }
 #' 
 #' @examples 
-#' fit <- stan_glmer(mpg ~ wt + am + (1|cyl), data = mtcars, 
-#'                   iter = 400, chains = 2) # just to keep example quick
+#' fit <- stan_glmer(
+#'   mpg ~ wt + am + (1|cyl), 
+#'   data = mtcars, 
+#'   iter = 400, # iter and chains small just to keep example quick
+#'   chains = 2, 
+#'   refresh = 0
+#' ) 
 #' 
 #' # Compare distribution of y to distributions of multiple yrep datasets
 #' pp_check(fit)
@@ -133,7 +138,8 @@
 #'   
 #' # Example of a PPC for ordinal models (stan_polr)
 #' fit2 <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
-#'                   prior = R2(0.2, "mean"), init_r = 0.1)
+#'                   prior = R2(0.2, "mean"), init_r = 0.1, 
+#'                   refresh = 0)
 #' pp_check(fit2, plotfun = "bars", nreps = 500, prob = 0.5)
 #' pp_check(fit2, plotfun = "bars_grouped", group = esoph$agegp, 
 #'          nreps = 500, prob = 0.5)

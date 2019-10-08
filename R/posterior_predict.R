@@ -106,13 +106,23 @@
 #' counts <- c(18,17,15,20,10,20,25,13,12)
 #' outcome <- gl(3,1,9)
 #' treatment <- gl(3,3)
-#' fit3 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
-#'                 prior = normal(0, 1), prior_intercept = normal(0, 5))
+#' dat <- data.frame(counts, treatment, outcome)
+#' fit3 <- stan_glm(
+#'   counts ~ outcome + treatment, 
+#'   data = dat,
+#'   family = poisson(link="log"),
+#'   prior = normal(0, 1, autoscale = FALSE), 
+#'   prior_intercept = normal(0, 5, autoscale = FALSE),
+#'   refresh = 0
+#' )
 #' nd <- data.frame(treatment = factor(rep(1,3)), outcome = factor(1:3))
 #' ytilde <- posterior_predict(fit3, nd, draws = 500)
 #' print(dim(ytilde))  # 500 by 3 matrix (draws by nrow(nd))
-#' ytilde <- data.frame(count = c(ytilde),
-#'                      outcome = rep(nd$outcome, each = 500))
+#' 
+#' ytilde <- data.frame(
+#'   count = c(ytilde),
+#'   outcome = rep(nd$outcome, each = 500)
+#' )
 #' ggplot2::ggplot(ytilde, ggplot2::aes(x=outcome, y=count)) +
 #'   ggplot2::geom_boxplot() +
 #'   ggplot2::ylab("predicted count")
@@ -134,7 +144,7 @@
 #' # Using fun argument to transform predictions
 #' mtcars2 <- mtcars
 #' mtcars2$log_mpg <- log(mtcars2$mpg)
-#' fit <- stan_glm(log_mpg ~ wt, data = mtcars2)
+#' fit <- stan_glm(log_mpg ~ wt, data = mtcars2, refresh = 0)
 #' ytilde <- posterior_predict(fit, fun = exp)
 #' }
 #'
