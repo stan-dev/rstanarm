@@ -93,6 +93,9 @@ proceed when the data is too large to fit in memory." />
   <a href="../reference/index.html">Functions</a>
 </li>
 <li>
+  <a href="../news/index.html">News</a>
+</li>
+<li>
   <a href="../dev-notes/index.html">Develop</a>
 </li>
 <li class="dropdown">
@@ -179,8 +182,7 @@ proceed when the data is too large to fit in memory.</p>
   <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/stop.html'>stop</a></span>(<span class='st'>"'location' must be specified"</span>)),
   <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>,
   <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>, <span class='st'>"optimizing"</span>), <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>tol_rel_grad</span> <span class='kw'>=</span> <span class='fl'>10000</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='fl'>1000</span>, <span class='kw'>importance_resampling</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>keep_every</span> <span class='kw'>=</span> <span class='fl'>1</span>)</pre>
+  <span class='kw'>importance_resampling</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>keep_every</span> <span class='kw'>=</span> <span class='fl'>1</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -345,8 +347,8 @@ apples when <code>algorithm</code> is <code>"optimizing"</code> but defaults to
                        <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 1.7e-05 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
+#&gt; Chain 1: Gradient evaluation took 2.9e-05 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.29 seconds.
 #&gt; Chain 1: Adjust your expectations accordingly!
 #&gt; Chain 1: 
 #&gt; Chain 1: 
@@ -363,9 +365,9 @@ apples when <code>algorithm</code> is <code>"optimizing"</code> but defaults to
 #&gt; Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 0.883213 seconds (Warm-up)
-#&gt; Chain 1:                0.435296 seconds (Sampling)
-#&gt; Chain 1:                1.31851 seconds (Total)
+#&gt; Chain 1:  Elapsed Time: 0.850651 seconds (Warm-up)
+#&gt; Chain 1:                0.473913 seconds (Sampling)
+#&gt; Chain 1:                1.32456 seconds (Total)
 #&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>

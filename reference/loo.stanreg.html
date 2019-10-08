@@ -101,6 +101,9 @@ Note: these functions are not guaranteed to work
   <a href="../reference/index.html">Functions</a>
 </li>
 <li>
+  <a href="../news/index.html">News</a>
+</li>
+<li>
   <a href="../dev-notes/index.html">Develop</a>
 </li>
 <li class="dropdown">
@@ -372,221 +375,25 @@ the output.</p></td>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='co'># \donttest{</span>
-<span class='no'>fit1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
-#&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 2.8e-05 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.28 seconds.
-#&gt; Chain 1: Adjust your expectations accordingly!
-#&gt; Chain 1: 
-#&gt; Chain 1: 
-#&gt; Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 1: Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 1: Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 1: Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 1: Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 1: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 1: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 1: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 1: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 0.05192 seconds (Warm-up)
-#&gt; Chain 1:                0.041279 seconds (Sampling)
-#&gt; Chain 1:                0.093199 seconds (Total)
-#&gt; Chain 1: 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
-#&gt; Chain 2: 
-#&gt; Chain 2: Gradient evaluation took 1e-05 seconds
-#&gt; Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
-#&gt; Chain 2: Adjust your expectations accordingly!
-#&gt; Chain 2: 
-#&gt; Chain 2: 
-#&gt; Chain 2: Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 2: Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 2: Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 2: Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 2: Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 2: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 2: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 2: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 2: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt; Chain 2: 
-#&gt; Chain 2:  Elapsed Time: 0.044646 seconds (Warm-up)
-#&gt; Chain 2:                0.041634 seconds (Sampling)
-#&gt; Chain 2:                0.08628 seconds (Total)
-#&gt; Chain 2: 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
-#&gt; Chain 3: 
-#&gt; Chain 3: Gradient evaluation took 1e-05 seconds
-#&gt; Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
-#&gt; Chain 3: Adjust your expectations accordingly!
-#&gt; Chain 3: 
-#&gt; Chain 3: 
-#&gt; Chain 3: Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 3: Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 3: Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 3: Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 3: Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 3: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 3: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 3: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 3: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 3: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt; Chain 3: 
-#&gt; Chain 3:  Elapsed Time: 0.051114 seconds (Warm-up)
-#&gt; Chain 3:                0.053632 seconds (Sampling)
-#&gt; Chain 3:                0.104746 seconds (Total)
-#&gt; Chain 3: 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
-#&gt; Chain 4: 
-#&gt; Chain 4: Gradient evaluation took 1.2e-05 seconds
-#&gt; Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
-#&gt; Chain 4: Adjust your expectations accordingly!
-#&gt; Chain 4: 
-#&gt; Chain 4: 
-#&gt; Chain 4: Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 4: Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 4: Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 4: Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 4: Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 4: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 4: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 4: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 4: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 4: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt; Chain 4: 
-#&gt; Chain 4:  Elapsed Time: 0.053053 seconds (Warm-up)
-#&gt; Chain 4:                0.043889 seconds (Sampling)
-#&gt; Chain 4:                0.096942 seconds (Total)
-#&gt; Chain 4: </div><div class='input'><span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span> + <span class='no'>cyl</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
-#&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 2e-05 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
-#&gt; Chain 1: Adjust your expectations accordingly!
-#&gt; Chain 1: 
-#&gt; Chain 1: 
-#&gt; Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 1: Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 1: Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 1: Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 1: Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 1: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 1: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 1: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 1: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 0.094361 seconds (Warm-up)
-#&gt; Chain 1:                0.07429 seconds (Sampling)
-#&gt; Chain 1:                0.168651 seconds (Total)
-#&gt; Chain 1: 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
-#&gt; Chain 2: 
-#&gt; Chain 2: Gradient evaluation took 1.5e-05 seconds
-#&gt; Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.
-#&gt; Chain 2: Adjust your expectations accordingly!
-#&gt; Chain 2: 
-#&gt; Chain 2: 
-#&gt; Chain 2: Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 2: Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 2: Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 2: Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 2: Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 2: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 2: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 2: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 2: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt; Chain 2: 
-#&gt; Chain 2:  Elapsed Time: 0.079578 seconds (Warm-up)
-#&gt; Chain 2:                0.070519 seconds (Sampling)
-#&gt; Chain 2:                0.150097 seconds (Total)
-#&gt; Chain 2: 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
-#&gt; Chain 3: 
-#&gt; Chain 3: Gradient evaluation took 1e-05 seconds
-#&gt; Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
-#&gt; Chain 3: Adjust your expectations accordingly!
-#&gt; Chain 3: 
-#&gt; Chain 3: 
-#&gt; Chain 3: Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 3: Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 3: Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 3: Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 3: Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 3: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 3: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 3: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 3: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 3: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt; Chain 3: 
-#&gt; Chain 3:  Elapsed Time: 0.073432 seconds (Warm-up)
-#&gt; Chain 3:                0.064711 seconds (Sampling)
-#&gt; Chain 3:                0.138143 seconds (Total)
-#&gt; Chain 3: 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
-#&gt; Chain 4: 
-#&gt; Chain 4: Gradient evaluation took 1e-05 seconds
-#&gt; Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
-#&gt; Chain 4: Adjust your expectations accordingly!
-#&gt; Chain 4: 
-#&gt; Chain 4: 
-#&gt; Chain 4: Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 4: Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 4: Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 4: Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 4: Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 4: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 4: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 4: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 4: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 4: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt; Chain 4: 
-#&gt; Chain 4:  Elapsed Time: 0.077673 seconds (Warm-up)
-#&gt; Chain 4:                0.084984 seconds (Sampling)
-#&gt; Chain 4:                0.162657 seconds (Total)
-#&gt; Chain 4: </div><div class='input'>
+<span class='no'>fit1</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>refresh</span> <span class='kw'>=</span> <span class='fl'>0</span>)
+<span class='no'>fit2</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span> + <span class='no'>cyl</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>refresh</span> <span class='kw'>=</span> <span class='fl'>0</span>)
+
 <span class='co'># (for bigger models use as many cores as possible)</span>
 <span class='no'>loo1</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>)
 <span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>loo1</span>)</div><div class='output co'>#&gt; 
 #&gt; Computed from 4000 by 32 log-likelihood matrix
 #&gt; 
 #&gt;          Estimate  SE
-#&gt; elpd_loo    -83.5 4.3
-#&gt; p_loo         3.3 1.2
-#&gt; looic       167.1 8.6
+#&gt; elpd_loo    -83.4 4.3
+#&gt; p_loo         3.2 1.2
+#&gt; looic       166.9 8.6
 #&gt; ------
 #&gt; Monte Carlo SE of elpd_loo is 0.1.
 #&gt; 
 #&gt; Pareto k diagnostic values:
 #&gt;                          Count Pct.    Min. n_eff
-#&gt; (-Inf, 0.5]   (good)     31    96.9%   917       
-#&gt;  (0.5, 0.7]   (ok)        1     3.1%   737       
+#&gt; (-Inf, 0.5]   (good)     31    96.9%   801       
+#&gt;  (0.5, 0.7]   (ok)        1     3.1%   594       
 #&gt;    (0.7, 1]   (bad)       0     0.0%   &lt;NA&gt;      
 #&gt;    (1, Inf)   (very bad)  0     0.0%   &lt;NA&gt;      
 #&gt; 
@@ -596,9 +403,9 @@ the output.</p></td>
 #&gt; Computed from 4000 by 32 log-likelihood matrix
 #&gt; 
 #&gt;          Estimate  SE
-#&gt; elpd_loo    -78.5 4.6
+#&gt; elpd_loo    -78.5 4.5
 #&gt; p_loo         4.0 1.2
-#&gt; looic       157.0 9.2
+#&gt; looic       157.0 9.1
 #&gt; ------
 #&gt; Monte Carlo SE of elpd_loo is 0.1.
 #&gt; 
@@ -608,9 +415,9 @@ the output.</p></td>
 <span class='co'># as individual arguments or as a list of loo objects</span>
 <span class='fu'>loo_compare</span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>)</div><div class='output co'>#&gt;      elpd_diff se_diff
 #&gt; fit2  0.0       0.0   
-#&gt; fit1 -5.0       2.8   </div><div class='input'><span class='fu'>loo_compare</span>(<span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>))</div><div class='output co'>#&gt;      elpd_diff se_diff
+#&gt; fit1 -4.9       2.7   </div><div class='input'><span class='fu'>loo_compare</span>(<span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>))</div><div class='output co'>#&gt;      elpd_diff se_diff
 #&gt; fit2  0.0       0.0   
-#&gt; fit1 -5.0       2.8   </div><div class='input'>
+#&gt; fit1 -4.9       2.7   </div><div class='input'>
 <span class='co'># if the fitted model objects contain a loo object in the component "loo"</span>
 <span class='co'># then the model objects can be passed directly or as a stanreg_list</span>
 <span class='no'>fit1</span>$<span class='no'>loo</span> <span class='kw'>&lt;-</span> <span class='no'>loo1</span>
@@ -618,7 +425,7 @@ the output.</p></td>
 <span class='fu'>loo_compare</span>(<span class='no'>fit1</span>, <span class='no'>fit2</span>)</div><div class='output co'>#&gt; Model comparison based on LOO-CV: 
 #&gt;      elpd_diff se_diff
 #&gt; fit2  0.0       0.0   
-#&gt; fit1 -5.0       2.8   </div><div class='input'>
+#&gt; fit1 -4.9       2.7   </div><div class='input'>
 <span class='co'># if the fitted model objects contain a loo object _and_ a waic or kfold</span>
 <span class='co'># object, then the criterion argument determines which of them the comparison</span>
 <span class='co'># is based on </span>
@@ -627,119 +434,21 @@ the output.</p></td>
 #&gt; <span class='warning'>3 (9.4%) p_waic estimates greater than 0.4. We recommend trying loo instead.</span></div><div class='input'><span class='fu'>loo_compare</span>(<span class='no'>fit1</span>, <span class='no'>fit2</span>, <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='st'>"waic"</span>)</div><div class='output co'>#&gt; Model comparison based on WAIC: 
 #&gt;      elpd_diff se_diff
 #&gt; fit2  0.0       0.0   
-#&gt; fit1 -5.1       2.8   </div><div class='input'>
+#&gt; fit1 -4.9       2.7   </div><div class='input'>
 <span class='co'># the models can also be combined into a stanreg_list object, and more </span>
 <span class='co'># informative model names can be provided to use when printing</span>
 <span class='no'>model_list</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stanreg_list.html'>stanreg_list</a></span>(<span class='no'>fit1</span>, <span class='no'>fit2</span>, <span class='kw'>model_names</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Fewer predictors"</span>, <span class='st'>"More predictors"</span>))
 <span class='fu'>loo_compare</span>(<span class='no'>model_list</span>)</div><div class='output co'>#&gt; Model comparison based on LOO-CV: 
 #&gt;                  elpd_diff se_diff
 #&gt; More predictors   0.0       0.0   
-#&gt; Fewer predictors -5.0       2.8   </div><div class='input'>
-<span class='no'>fit3</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>disp</span> * <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>as.factor</a></span>(<span class='no'>cyl</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>)</div><div class='output co'>#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
-#&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 3.5e-05 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.35 seconds.
-#&gt; Chain 1: Adjust your expectations accordingly!
-#&gt; Chain 1: 
-#&gt; Chain 1: 
-#&gt; Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 1: Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 1: Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 1: Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 1: Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 1: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 1: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 1: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 1: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 0.635367 seconds (Warm-up)
-#&gt; Chain 1:                0.559509 seconds (Sampling)
-#&gt; Chain 1:                1.19488 seconds (Total)
-#&gt; Chain 1: 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
-#&gt; Chain 2: 
-#&gt; Chain 2: Gradient evaluation took 1.2e-05 seconds
-#&gt; Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
-#&gt; Chain 2: Adjust your expectations accordingly!
-#&gt; Chain 2: 
-#&gt; Chain 2: 
-#&gt; Chain 2: Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 2: Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 2: Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 2: Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 2: Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 2: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 2: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 2: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 2: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 2: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt; Chain 2: 
-#&gt; Chain 2:  Elapsed Time: 0.439024 seconds (Warm-up)
-#&gt; Chain 2:                0.486257 seconds (Sampling)
-#&gt; Chain 2:                0.925281 seconds (Total)
-#&gt; Chain 2: 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
-#&gt; Chain 3: 
-#&gt; Chain 3: Gradient evaluation took 1.1e-05 seconds
-#&gt; Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.11 seconds.
-#&gt; Chain 3: Adjust your expectations accordingly!
-#&gt; Chain 3: 
-#&gt; Chain 3: 
-#&gt; Chain 3: Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 3: Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 3: Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 3: Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 3: Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 3: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 3: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 3: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 3: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 3: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt; Chain 3: 
-#&gt; Chain 3:  Elapsed Time: 0.489345 seconds (Warm-up)
-#&gt; Chain 3:                0.426638 seconds (Sampling)
-#&gt; Chain 3:                0.915983 seconds (Total)
-#&gt; Chain 3: 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
-#&gt; Chain 4: 
-#&gt; Chain 4: Gradient evaluation took 1.1e-05 seconds
-#&gt; Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.11 seconds.
-#&gt; Chain 4: Adjust your expectations accordingly!
-#&gt; Chain 4: 
-#&gt; Chain 4: 
-#&gt; Chain 4: Iteration:    1 / 2000 [  0%]  (Warmup)
-#&gt; Chain 4: Iteration:  200 / 2000 [ 10%]  (Warmup)
-#&gt; Chain 4: Iteration:  400 / 2000 [ 20%]  (Warmup)
-#&gt; Chain 4: Iteration:  600 / 2000 [ 30%]  (Warmup)
-#&gt; Chain 4: Iteration:  800 / 2000 [ 40%]  (Warmup)
-#&gt; Chain 4: Iteration: 1000 / 2000 [ 50%]  (Warmup)
-#&gt; Chain 4: Iteration: 1001 / 2000 [ 50%]  (Sampling)
-#&gt; Chain 4: Iteration: 1200 / 2000 [ 60%]  (Sampling)
-#&gt; Chain 4: Iteration: 1400 / 2000 [ 70%]  (Sampling)
-#&gt; Chain 4: Iteration: 1600 / 2000 [ 80%]  (Sampling)
-#&gt; Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
-#&gt; Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
-#&gt; Chain 4: 
-#&gt; Chain 4:  Elapsed Time: 0.446585 seconds (Warm-up)
-#&gt; Chain 4:                0.38534 seconds (Sampling)
-#&gt; Chain 4:                0.831925 seconds (Total)
-#&gt; Chain 4: </div><div class='input'><span class='no'>loo3</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit3</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='fl'>0.7</span>)</div><div class='output co'>#&gt; <span class='message'>1 problematic observation(s) found.</span>
+#&gt; Fewer predictors -4.9       2.7   </div><div class='input'>
+<span class='no'>fit3</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>disp</span> * <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>as.factor</a></span>(<span class='no'>cyl</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>refresh</span> <span class='kw'>=</span> <span class='fl'>0</span>)
+<span class='no'>loo3</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit3</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='fl'>0.7</span>)</div><div class='output co'>#&gt; <span class='message'>1 problematic observation(s) found.</span>
 #&gt; <span class='message'>Model will be refit 1 times.</span></div><div class='output co'>#&gt; <span class='message'></span>
 #&gt; <span class='message'>Fitting model 1 out of 1 (leaving out observation 4)</span></div><div class='input'><span class='fu'>loo_compare</span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>, <span class='no'>loo3</span>)</div><div class='output co'>#&gt;      elpd_diff se_diff
 #&gt; fit3  0.0       0.0   
-#&gt; fit2 -0.5       4.1   
-#&gt; fit1 -5.6       5.1   </div><div class='input'>
+#&gt; fit2 -0.5       3.9   
+#&gt; fit1 -5.4       5.0   </div><div class='input'>
 <span class='co'># setting detail=TRUE will also print model formulas if used with</span>
 <span class='co'># loo_compare.stanreg or loo_compare.stanreg_list</span>
 <span class='no'>fit3</span>$<span class='no'>loo</span> <span class='kw'>&lt;-</span> <span class='no'>loo3</span>
@@ -752,8 +461,8 @@ the output.</p></td>
 #&gt; Model comparison based on LOO-CV: 
 #&gt;      elpd_diff se_diff
 #&gt; fit3  0.0       0.0   
-#&gt; fit2 -0.5       4.1   
-#&gt; fit1 -5.6       5.1   </div><div class='input'>
+#&gt; fit2 -0.5       3.9   
+#&gt; fit1 -5.4       5.0   </div><div class='input'>
 <span class='co'># Computing model weights</span>
 <span class='co'>#</span>
 <span class='co'># if the objects in model_list already have 'loo' components then those</span>
@@ -763,26 +472,26 @@ the output.</p></td>
 #&gt; ------
 #&gt;      weight
 #&gt; fit1 0.000 
-#&gt; fit2 0.514 
-#&gt; fit3 0.486 </div><div class='input'><span class='fu'>loo_model_weights</span>(<span class='no'>model_list</span>,  <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"pseudobma"</span>)</div><div class='output co'>#&gt; Method: pseudo-BMA+ with Bayesian bootstrap
+#&gt; fit2 0.511 
+#&gt; fit3 0.489 </div><div class='input'><span class='fu'>loo_model_weights</span>(<span class='no'>model_list</span>,  <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"pseudobma"</span>)</div><div class='output co'>#&gt; Method: pseudo-BMA+ with Bayesian bootstrap
 #&gt; ------
 #&gt;      weight
-#&gt; fit1 0.035 
-#&gt; fit2 0.452 
-#&gt; fit3 0.512 </div><div class='input'><span class='fu'>loo_model_weights</span>(<span class='no'>model_list</span>,  <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"pseudobma"</span>, <span class='kw'>BB</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</div><div class='output co'>#&gt; Method: pseudo-BMA
+#&gt; fit1 0.036 
+#&gt; fit2 0.440 
+#&gt; fit3 0.524 </div><div class='input'><span class='fu'>loo_model_weights</span>(<span class='no'>model_list</span>,  <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"pseudobma"</span>, <span class='kw'>BB</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</div><div class='output co'>#&gt; Method: pseudo-BMA
 #&gt; ------
 #&gt;      weight
-#&gt; fit1 0.002 
-#&gt; fit2 0.369 
-#&gt; fit3 0.629 </div><div class='input'>
+#&gt; fit1 0.003 
+#&gt; fit2 0.377 
+#&gt; fit3 0.621 </div><div class='input'>
 <span class='co'># you can also pass precomputed loo objects directly to loo_model_weights</span>
 <span class='no'>loo_list</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='kw'>A</span> <span class='kw'>=</span> <span class='no'>loo1</span>, <span class='kw'>B</span> <span class='kw'>=</span> <span class='no'>loo2</span>, <span class='kw'>C</span> <span class='kw'>=</span> <span class='no'>loo3</span>) <span class='co'># names optional (affects printing)</span>
 <span class='fu'>loo_model_weights</span>(<span class='no'>loo_list</span>)</div><div class='output co'>#&gt; Method: stacking
 #&gt; ------
 #&gt;   weight
 #&gt; A 0.000 
-#&gt; B 0.514 
-#&gt; C 0.486 </div><div class='input'># }
+#&gt; B 0.511 
+#&gt; C 0.489 </div><div class='input'># }
 
 </div></pre>
   </div>

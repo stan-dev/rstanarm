@@ -95,6 +95,9 @@ of individuals." />
   <a href="../reference/index.html">Functions</a>
 </li>
 <li>
+  <a href="../news/index.html">News</a>
+</li>
+<li>
   <a href="../dev-notes/index.html">Develop</a>
 </li>
 <li class="dropdown">
@@ -242,119 +245,22 @@ of <code>newdataLong</code> and <code>newdataEvent</code> for <code><a href='pos
     <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>poisson</a></span>(<span class='kw'>link</span> <span class='kw'>=</span> <span class='st'>"log"</span>),
     <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>2.5</span>),
     <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='fl'>0</span>, <span class='fl'>10</span>),
-    <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span> <span class='co'># to speed up example</span>
- )</div><div class='output co'>#&gt; 
-#&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 1).
-#&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 0.000543 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 5.43 seconds.
-#&gt; Chain 1: Adjust your expectations accordingly!
-#&gt; Chain 1: 
-#&gt; Chain 1: 
-#&gt; Chain 1: Iteration:   1 / 500 [  0%]  (Warmup)
-#&gt; Chain 1: Iteration:  50 / 500 [ 10%]  (Warmup)
-#&gt; Chain 1: Iteration: 100 / 500 [ 20%]  (Warmup)
-#&gt; Chain 1: Iteration: 150 / 500 [ 30%]  (Warmup)
-#&gt; Chain 1: Iteration: 200 / 500 [ 40%]  (Warmup)
-#&gt; Chain 1: Iteration: 250 / 500 [ 50%]  (Warmup)
-#&gt; Chain 1: Iteration: 251 / 500 [ 50%]  (Sampling)
-#&gt; Chain 1: Iteration: 300 / 500 [ 60%]  (Sampling)
-#&gt; Chain 1: Iteration: 350 / 500 [ 70%]  (Sampling)
-#&gt; Chain 1: Iteration: 400 / 500 [ 80%]  (Sampling)
-#&gt; Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
-#&gt; Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
-#&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 0.058837 seconds (Warm-up)
-#&gt; Chain 1:                0.055905 seconds (Sampling)
-#&gt; Chain 1:                0.114742 seconds (Total)
-#&gt; Chain 1: 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
-#&gt; Chain 2: 
-#&gt; Chain 2: Gradient evaluation took 4.8e-05 seconds
-#&gt; Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.48 seconds.
-#&gt; Chain 2: Adjust your expectations accordingly!
-#&gt; Chain 2: 
-#&gt; Chain 2: 
-#&gt; Chain 2: Iteration:   1 / 500 [  0%]  (Warmup)
-#&gt; Chain 2: Iteration:  50 / 500 [ 10%]  (Warmup)
-#&gt; Chain 2: Iteration: 100 / 500 [ 20%]  (Warmup)
-#&gt; Chain 2: Iteration: 150 / 500 [ 30%]  (Warmup)
-#&gt; Chain 2: Iteration: 200 / 500 [ 40%]  (Warmup)
-#&gt; Chain 2: Iteration: 250 / 500 [ 50%]  (Warmup)
-#&gt; Chain 2: Iteration: 251 / 500 [ 50%]  (Sampling)
-#&gt; Chain 2: Iteration: 300 / 500 [ 60%]  (Sampling)
-#&gt; Chain 2: Iteration: 350 / 500 [ 70%]  (Sampling)
-#&gt; Chain 2: Iteration: 400 / 500 [ 80%]  (Sampling)
-#&gt; Chain 2: Iteration: 450 / 500 [ 90%]  (Sampling)
-#&gt; Chain 2: Iteration: 500 / 500 [100%]  (Sampling)
-#&gt; Chain 2: 
-#&gt; Chain 2:  Elapsed Time: 0.073209 seconds (Warm-up)
-#&gt; Chain 2:                0.050707 seconds (Sampling)
-#&gt; Chain 2:                0.123916 seconds (Total)
-#&gt; Chain 2: 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 3).
-#&gt; Chain 3: 
-#&gt; Chain 3: Gradient evaluation took 2.2e-05 seconds
-#&gt; Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
-#&gt; Chain 3: Adjust your expectations accordingly!
-#&gt; Chain 3: 
-#&gt; Chain 3: 
-#&gt; Chain 3: Iteration:   1 / 500 [  0%]  (Warmup)
-#&gt; Chain 3: Iteration:  50 / 500 [ 10%]  (Warmup)
-#&gt; Chain 3: Iteration: 100 / 500 [ 20%]  (Warmup)
-#&gt; Chain 3: Iteration: 150 / 500 [ 30%]  (Warmup)
-#&gt; Chain 3: Iteration: 200 / 500 [ 40%]  (Warmup)
-#&gt; Chain 3: Iteration: 250 / 500 [ 50%]  (Warmup)
-#&gt; Chain 3: Iteration: 251 / 500 [ 50%]  (Sampling)
-#&gt; Chain 3: Iteration: 300 / 500 [ 60%]  (Sampling)
-#&gt; Chain 3: Iteration: 350 / 500 [ 70%]  (Sampling)
-#&gt; Chain 3: Iteration: 400 / 500 [ 80%]  (Sampling)
-#&gt; Chain 3: Iteration: 450 / 500 [ 90%]  (Sampling)
-#&gt; Chain 3: Iteration: 500 / 500 [100%]  (Sampling)
-#&gt; Chain 3: 
-#&gt; Chain 3:  Elapsed Time: 0.074383 seconds (Warm-up)
-#&gt; Chain 3:                0.055129 seconds (Sampling)
-#&gt; Chain 3:                0.129512 seconds (Total)
-#&gt; Chain 3: 
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'count' NOW (CHAIN 4).
-#&gt; Chain 4: 
-#&gt; Chain 4: Gradient evaluation took 2.2e-05 seconds
-#&gt; Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
-#&gt; Chain 4: Adjust your expectations accordingly!
-#&gt; Chain 4: 
-#&gt; Chain 4: 
-#&gt; Chain 4: Iteration:   1 / 500 [  0%]  (Warmup)
-#&gt; Chain 4: Iteration:  50 / 500 [ 10%]  (Warmup)
-#&gt; Chain 4: Iteration: 100 / 500 [ 20%]  (Warmup)
-#&gt; Chain 4: Iteration: 150 / 500 [ 30%]  (Warmup)
-#&gt; Chain 4: Iteration: 200 / 500 [ 40%]  (Warmup)
-#&gt; Chain 4: Iteration: 250 / 500 [ 50%]  (Warmup)
-#&gt; Chain 4: Iteration: 251 / 500 [ 50%]  (Sampling)
-#&gt; Chain 4: Iteration: 300 / 500 [ 60%]  (Sampling)
-#&gt; Chain 4: Iteration: 350 / 500 [ 70%]  (Sampling)
-#&gt; Chain 4: Iteration: 400 / 500 [ 80%]  (Sampling)
-#&gt; Chain 4: Iteration: 450 / 500 [ 90%]  (Sampling)
-#&gt; Chain 4: Iteration: 500 / 500 [100%]  (Sampling)
-#&gt; Chain 4: 
-#&gt; Chain 4:  Elapsed Time: 0.069043 seconds (Warm-up)
-#&gt; Chain 4:                0.052829 seconds (Sampling)
-#&gt; Chain 4:                0.121872 seconds (Total)
-#&gt; Chain 4: </div><div class='input'> <span class='no'>ll</span> <span class='kw'>&lt;-</span> <span class='fu'>log_lik</span>(<span class='no'>fit</span>)
+    <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='co'># just to speed up example,</span>
+    <span class='kw'>refresh</span> <span class='kw'>=</span> <span class='fl'>0</span>
+ )
+ <span class='no'>ll</span> <span class='kw'>&lt;-</span> <span class='fu'>log_lik</span>(<span class='no'>fit</span>)
  <span class='fu'><a href='https://rdrr.io/r/base/dim.html'>dim</a></span>(<span class='no'>ll</span>)</div><div class='output co'>#&gt; [1] 1000  262</div><div class='input'> <span class='fu'><a href='https://rdrr.io/r/base/all.equal.html'>all.equal</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>ncol</a></span>(<span class='no'>ll</span>), <span class='fu'><a href='https://rdrr.io/r/stats/nobs.html'>nobs</a></span>(<span class='no'>fit</span>))</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'>
  <span class='co'># using newdata argument</span>
  <span class='no'>nd</span> <span class='kw'>&lt;-</span> <span class='no'>roaches</span>[<span class='fl'>1</span>:<span class='fl'>2</span>, ]
  <span class='no'>nd</span>$<span class='no'>treatment</span>[<span class='fl'>1</span>:<span class='fl'>2</span>] <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>1</span>)
  <span class='no'>ll2</span> <span class='kw'>&lt;-</span> <span class='fu'>log_lik</span>(<span class='no'>fit</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='no'>nd</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0</span>, <span class='fl'>0</span>))
  <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span>(<span class='no'>ll2</span>)</div><div class='output co'>#&gt;              1         2
-#&gt; [1,] -6.255097 -3.412702
-#&gt; [2,] -7.737476 -3.424247
-#&gt; [3,] -7.917865 -3.354705
-#&gt; [4,] -5.889206 -3.520899
-#&gt; [5,] -7.015027 -3.388696
-#&gt; [6,] -6.285681 -3.578398</div><div class='input'> <span class='fu'><a href='https://rdrr.io/r/base/dim.html'>dim</a></span>(<span class='no'>ll2</span>)</div><div class='output co'>#&gt; [1] 1000    2</div><div class='input'> <span class='fu'><a href='https://rdrr.io/r/base/all.equal.html'>all.equal</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>ncol</a></span>(<span class='no'>ll2</span>), <span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='no'>nd</span>))</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'># }
+#&gt; [1,] -6.061540 -3.551122
+#&gt; [2,] -6.610912 -3.464246
+#&gt; [3,] -6.758801 -3.451172
+#&gt; [4,] -7.539161 -3.679149
+#&gt; [5,] -7.019705 -3.436025
+#&gt; [6,] -6.974776 -3.436261</div><div class='input'> <span class='fu'><a href='https://rdrr.io/r/base/dim.html'>dim</a></span>(<span class='no'>ll2</span>)</div><div class='output co'>#&gt; [1] 1000    2</div><div class='input'> <span class='fu'><a href='https://rdrr.io/r/base/all.equal.html'>all.equal</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>ncol</a></span>(<span class='no'>ll2</span>), <span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='no'>nd</span>))</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'># }
 
 </div></pre>
   </div>

@@ -97,6 +97,9 @@ the coefficients." />
   <a href="../reference/index.html">Functions</a>
 </li>
 <li>
+  <a href="../news/index.html">News</a>
+</li>
+<li>
   <a href="../dev-notes/index.html">Develop</a>
 </li>
 <li class="dropdown">
@@ -351,8 +354,8 @@ normally-distributed errors but specifies different priors.</p></div>
          <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fl'>0.5</span>), <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 1.8e-05 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.18 seconds.
+#&gt; Chain 1: Gradient evaluation took 2.4e-05 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
 #&gt; Chain 1: Adjust your expectations accordingly!
 #&gt; Chain 1: 
 #&gt; Chain 1: 
@@ -369,9 +372,9 @@ normally-distributed errors but specifies different priors.</p></div>
 #&gt; Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 0.209044 seconds (Warm-up)
-#&gt; Chain 1:                0.099516 seconds (Sampling)
-#&gt; Chain 1:                0.30856 seconds (Total)
+#&gt; Chain 1:  Elapsed Time: 0.180854 seconds (Warm-up)
+#&gt; Chain 1:                0.096668 seconds (Sampling)
+#&gt; Chain 1:                0.277522 seconds (Total)
 #&gt; Chain 1: 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 2).
@@ -394,9 +397,9 @@ normally-distributed errors but specifies different priors.</p></div>
 #&gt; Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; Chain 2: 
-#&gt; Chain 2:  Elapsed Time: 0.1493 seconds (Warm-up)
-#&gt; Chain 2:                0.11055 seconds (Sampling)
-#&gt; Chain 2:                0.25985 seconds (Total)
+#&gt; Chain 2:  Elapsed Time: 0.147892 seconds (Warm-up)
+#&gt; Chain 2:                0.109623 seconds (Sampling)
+#&gt; Chain 2:                0.257515 seconds (Total)
 #&gt; Chain 2: 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 3).
@@ -419,9 +422,9 @@ normally-distributed errors but specifies different priors.</p></div>
 #&gt; Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; Chain 3: 
-#&gt; Chain 3:  Elapsed Time: 0.159864 seconds (Warm-up)
-#&gt; Chain 3:                0.132953 seconds (Sampling)
-#&gt; Chain 3:                0.292817 seconds (Total)
+#&gt; Chain 3:  Elapsed Time: 0.156569 seconds (Warm-up)
+#&gt; Chain 3:                0.132974 seconds (Sampling)
+#&gt; Chain 3:                0.289543 seconds (Total)
 #&gt; Chain 3: 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 4).
@@ -444,9 +447,9 @@ normally-distributed errors but specifies different priors.</p></div>
 #&gt; Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; Chain 4: 
-#&gt; Chain 4:  Elapsed Time: 0.178864 seconds (Warm-up)
-#&gt; Chain 4:                0.248686 seconds (Sampling)
-#&gt; Chain 4:                0.42755 seconds (Total)
+#&gt; Chain 4:  Elapsed Time: 0.159664 seconds (Warm-up)
+#&gt; Chain 4:                0.220511 seconds (Sampling)
+#&gt; Chain 4:                0.380175 seconds (Total)
 #&gt; Chain 4: </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/options.html'>options</a></span>(<span class='no'>op</span>)
 <span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>fit_aov</span>)</div><div class='output co'>#&gt; stan_aov
 #&gt;  family:       gaussian [identity]
@@ -490,31 +493,7 @@ normally-distributed errors but specifies different priors.</p></div>
 
 (<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_lm</span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span> + <span class='no'>qsec</span> + <span class='no'>am</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fl'>0.75</span>),
                 <span class='co'># the next line is only to make the example go fast enough</span>
-                <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>))</div><div class='output co'>#&gt; 
-#&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
-#&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 1.7e-05 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
-#&gt; Chain 1: Adjust your expectations accordingly!
-#&gt; Chain 1: 
-#&gt; Chain 1: 
-#&gt; Chain 1: Iteration:   1 / 500 [  0%]  (Warmup)
-#&gt; Chain 1: Iteration:  50 / 500 [ 10%]  (Warmup)
-#&gt; Chain 1: Iteration: 100 / 500 [ 20%]  (Warmup)
-#&gt; Chain 1: Iteration: 150 / 500 [ 30%]  (Warmup)
-#&gt; Chain 1: Iteration: 200 / 500 [ 40%]  (Warmup)
-#&gt; Chain 1: Iteration: 250 / 500 [ 50%]  (Warmup)
-#&gt; Chain 1: Iteration: 251 / 500 [ 50%]  (Sampling)
-#&gt; Chain 1: Iteration: 300 / 500 [ 60%]  (Sampling)
-#&gt; Chain 1: Iteration: 350 / 500 [ 70%]  (Sampling)
-#&gt; Chain 1: Iteration: 400 / 500 [ 80%]  (Sampling)
-#&gt; Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
-#&gt; Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
-#&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 1.41829 seconds (Warm-up)
-#&gt; Chain 1:                0.377647 seconds (Sampling)
-#&gt; Chain 1:                1.79594 seconds (Total)
-#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.99 may help. See</span>
+                <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>refresh</span> <span class='kw'>=</span> <span class='fl'>0</span>))</div><div class='output co'>#&gt; <span class='warning'>Warning: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.99 may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; stan_lm
