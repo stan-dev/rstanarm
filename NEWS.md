@@ -1,4 +1,4 @@
-# rstanarm 2.19.1
+# rstanarm 2.19.2
 
 ### Bug fixes
 
