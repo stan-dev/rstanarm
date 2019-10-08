@@ -383,7 +383,8 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #'   iter = 1000,
 #'   # this combo of prior and adapt_delta should lead to some divergences
 #'   prior = hs(),
-#'   adapt_delta = 0.9
+#'   adapt_delta = 0.9,
+#'   refresh = 0
 #' )
 #' 
 #' pairs(fit, pars = c("wt", "sigma", "log-posterior"))

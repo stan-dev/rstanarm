@@ -121,8 +121,8 @@
 #'
 #' @examples
 #' \donttest{
-#' fit1 <- stan_glm(mpg ~ wt, data = mtcars)
-#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars)
+#' fit1 <- stan_glm(mpg ~ wt, data = mtcars, refresh = 0)
+#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, refresh = 0)
 #'
 #' # (for bigger models use as many cores as possible)
 #' loo1 <- loo(fit1, cores = 2)
@@ -153,7 +153,7 @@
 #' model_list <- stanreg_list(fit1, fit2, model_names = c("Fewer predictors", "More predictors"))
 #' loo_compare(model_list)
 #'
-#' fit3 <- stan_glm(mpg ~ disp * as.factor(cyl), data = mtcars)
+#' fit3 <- stan_glm(mpg ~ disp * as.factor(cyl), data = mtcars, refresh = 0)
 #' loo3 <- loo(fit3, cores = 2, k_threshold = 0.7)
 #' loo_compare(loo1, loo2, loo3)
 #'
