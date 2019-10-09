@@ -169,20 +169,22 @@
 <h3 class="hasAnchor">
 <a href="#bug-fixes" class="anchor"></a>Bug fixes</h3>
 <ul>
-<li>src/Makevars{.win} now uses a more robust way to find StanHeaders</li>
-<li>
-<code><a href="../reference/loo.stanreg.html">compare_models()</a></code> is deprecated in favor of <code><a href="../reference/loo.stanreg.html">loo_compare()</a></code>
-</li>
-<li>Fixed bug where <code><a href="../reference/stanreg-methods.html">ranef()</a></code> and <code><a href="https://rdrr.io/r/stats/coef.html">coef()</a></code> methods for <code>glmer</code>-style models printed the wrong output for certain combinations of varying intercepts and slopes.</li>
+<li><p>src/Makevars{.win} now uses a more robust way to find StanHeaders</p></li>
+<li><p><code><a href="../reference/loo.stanreg.html">compare_models()</a></code> is deprecated in favor of <code><a href="../reference/loo.stanreg.html">loo_compare()</a></code>.</p></li>
+<li><p>Fixed bug where <code><a href="../reference/stanreg-methods.html">ranef()</a></code> and <code><a href="https://rdrr.io/r/stats/coef.html">coef()</a></code> methods for <code>glmer</code>-style models printed the wrong output for certain combinations of varying intercepts and slopes.</p></li>
+<li><p>Fixed bug in <code><a href="../reference/bayes_R2.stanreg.html">bayes_R2()</a></code> for bernoulli models (thanks to <a href='https://github.com/mcol'>@mcol</a>).</p></li>
+<li><p><code><a href="../reference/bayes_R2.stanreg.html">loo_R2()</a></code> can now be called on the same fitted model object multiple times with identical (not just up to rng noise) results (thanks to <a href='https://github.com/mcol'>@mcol</a>).</p></li>
 </ul>
 </div>
 <div id="new-features-and-improvements" class="section level3">
 <h3 class="hasAnchor">
 <a href="#new-features-and-improvements" class="anchor"></a>New features and improvements</h3>
 <ul>
-<li><p>New vignette on doing MRP using rstanarm (thanks to Lauren Kennedy).</p></li>
+<li><p>New vignette on doing MRP using rstanarm (thanks to <a href='https://github.com/lauken13'>@lauken13</a>).</p></li>
+<li><p>4x speedup for most GLMs (<code><a href="../reference/stan_glm.html">stan_glm()</a></code>) and GAMs (<code><a href="../reference/stan_gamm4.html">stan_gamm4()</a></code> without <code>random</code> argument). This comes from using Stan’s new compound <code>_glm</code> functions (<code>normal_id_glm</code>, <code>bernoulli_logit_glm</code>, <code>poisson_log_glm</code>, <code>neg_binomial_2_log_glm</code>) under the hood whenever possible.</p></li>
 <li><p>The <code><a href="../reference/kfold.stanreg.html">kfold()</a></code> method now has a <code>cores</code> argument and parallelizes by fold rather than by Markov chain (unless otherwise specified), which should be much more efficient when many cores are available.</p></li>
-<li><p>When possible rstanarm now uses Stan’s new <code>_glm</code> functions (<code>normal_id_glm</code>, <code>bernoulli_logit_glm</code>, <code>poisson_log_glm</code>, <code>neg_binomial_2_log_glm</code>) under the hood to get a speed boost. Currently this isn’t possible for multilevel models but will be implemented in the future.</p></li>
+<li><p>For <code><a href="../reference/stan_glm.html">stan_glm()</a></code> with <code>algorithm='optimizing'</code>, Pareto smoothed importance sampling (<a href="https://arxiv.org/abs/1507.02646">arxiv.org/abs/1507.02646</a>, <a href="https://mc-stan.org/loo/reference/psis.html">mc-stan.org/loo/reference/psis.html</a>) is now used to diagnose and improve inference (see <a href="https://avehtari.github.io/RAOS-Examples/BigData/bigdata.html" class="uri">https://avehtari.github.io/RAOS-Examples/BigData/bigdata.html</a>). This also now means that we can use PSIS-LOO also when <code>algorithm='optimizing'</code>.</p></li>
+<li><p>For <code><a href="../reference/stan_glm.html">stan_glm()</a></code> the <code>"meanfield"</code> and <code>"fullrank"</code> ADVI algorithms also include the PSIS diagnostics and adjustments, but so far we have not seen any example where these would be better than optimzation or MCMC.</p></li>
 </ul>
 </div>
 </div>
