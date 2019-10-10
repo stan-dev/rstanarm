@@ -4,11 +4,12 @@
 
 * src/Makevars{.win} now uses a more robust way to find StanHeaders
 
-* `compare_models()` is deprecated in favor of `loo_compare()`.
-
 * Fixed bug where `ranef()` and `coef()` methods for `glmer`-style models 
 printed the wrong output for certain combinations of varying intercepts
 and slopes.
+
+* Fixed a bug where `posterior_predict()` failed for `stan_glmer()` models 
+estimated with `family = mgcv::betar`.
 
 * Fixed bug in `bayes_R2()` for bernoulli models. (Thanks to @mcol)
 
@@ -24,6 +25,9 @@ with identical (not just up to rng noise) results. (Thanks to @mcol)
 (`normal_id_glm`, `bernoulli_logit_glm`, `poisson_log_glm`,
 `neg_binomial_2_log_glm`) under the hood whenever possible. (Thanks 
 to @avehtari and @VMatthijs)
+
+* `compare_models()` is deprecated in favor of `loo_compare()` to keep up 
+with the loo package ([loo::loo_compare()](http://mc-stan.org/loo/reference/loo_compare))
 
 * The `kfold()` method now has a `cores` argument and parallelizes by fold
 rather than by Markov chain (unless otherwise specified), which should be much
