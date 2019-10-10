@@ -76,7 +76,7 @@ transformed data {
   int<lower=0> failures[clogit ? J : 0];
   int<lower=0> observations[clogit ? J : 0];
 
-  int can_do_bernoullilogitglm = K != 0 && // remove after rstan includes this Stan bugfix: https://github.com/stan-dev/math/issues/1398
+  int can_do_bernoullilogitglm = K != 0 &&  // remove K!=0 after rstan includes this Stan bugfix: https://github.com/stan-dev/math/issues/1398
                                  link == 1 && clogit == 0 && has_offset == 0 && 
                                  prior_PD == 0 && dense_X == 1 && has_weights == 0 && t == 0;
   matrix[can_do_bernoullilogitglm ? NN : 0, can_do_bernoullilogitglm ? K + K_smooth : 0] XS;

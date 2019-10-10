@@ -26,7 +26,7 @@ transformed data{
   real poisson_max = pow(2.0, 30.0);
   int<lower=1> V[special_case ? t : 0, N] = make_V(N, special_case ? t : 0, v);
   
-  int can_do_countlogglm = K != 0 && // remove after rstan includes this Stan bugfix: https://github.com/stan-dev/math/issues/1398
+  int can_do_countlogglm = K != 0 &&  // remove K!=0 after rstan includes this Stan bugfix: https://github.com/stan-dev/math/issues/1398
                            link == 1 && prior_PD == 0 && 
                            dense_X == 1 && has_weights == 0 && t == 0; 
   matrix[can_do_countlogglm ? N : 0, can_do_countlogglm ? K + K_smooth : 0] XS;
