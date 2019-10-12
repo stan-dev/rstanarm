@@ -3,9 +3,10 @@ PKG_CPPFLAGS = -I"../inst/include" -I"$(STANHEADERS_SRC)" -DBOOST_DISABLE_ASSERT
 CXX_STD = CXX14
 SOURCES = $(wildcard stan_files/*.stan)
 OBJECTS = $(SOURCES:.stan=.o) init.o
+CLANG_DIR = $(shell "$(R_HOME)/bin$(R_ARCH_BIN)/Rscript" -e "message()" -e "cat(tail(grep('clang[456789]', list.dirs(path = '/usr/local', recursive = FALSE), value = TRUE), 1))" -e "message()")/
 
 all: $(SHLIB)
-		@if test -e "/usr/bin/install_name_tool" && test -e "/usr/local/clang4/lib/libc++.1.dylib" && test -e "/usr/lib/libc++.1.dylib"; then /usr/bin/install_name_tool -change /usr/local/clang4/lib/libc++.1.dylib /usr/lib/libc++.1.dylib $(SHLIB); fi
+		@if test -e "/usr/bin/install_name_tool" && test -e "$(CLANG_DIR)lib/libc++.1.dylib" && test -e "/usr/lib/libc++.1.dylib"; then /usr/bin/install_name_tool -change $(CLANG_DIR)lib/libc++.1.dylib /usr/lib/libc++.1.dylib $(SHLIB); fi
 
 clean:
 		rm -rf stan_files/*.o
