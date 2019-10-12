@@ -74,9 +74,10 @@ transformed data {
                    prior_PD == 0 && dense_X && N > 2 && len_y >= (has_intercept + K + K_smooth);
   vector[can_do_OLS ? has_intercept + K + K_smooth : 0] OLS;
   matrix[can_do_OLS ? has_intercept + K + K_smooth : 0, can_do_OLS ? has_intercept + K + K_smooth : 0] XtX;
-  int can_do_normalidglm = can_do_OLS == 0 && family == 1 && link == 1 && SSfun == 0 && has_offset == 0 &&
-                           t == 0 && prior_PD == 0 && dense_X &&
-	                   len_y < (has_intercept + K + K_smooth);
+  int can_do_normalidglm = K != 0 &&  // remove K!=0 after rstan includes this Stan bugfix: https://github.com/stan-dev/math/issues/1398 
+                           can_do_OLS == 0 && family == 1 && link == 1 && 
+                           SSfun == 0 && has_offset == 0 && dense_X && prior_PD == 0 && 
+                           t == 0 && len_y < (has_intercept + K + K_smooth);
   matrix[can_do_normalidglm ? N : 0, can_do_normalidglm ? K + K_smooth : 0] XS;
   real SSR = not_a_number();
   // defines hs, len_z_T, len_var_group, delta, is_continuous, pos
