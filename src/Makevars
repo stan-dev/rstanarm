@@ -7,7 +7,7 @@ OBJECTS = $(SOURCES:.stan=.o) init.o
 CLANG_DIR = $(shell "$(R_HOME)/bin$(R_ARCH_BIN)/Rscript" -e "message()" -e "cat(tail(grep('clang[456789]', list.dirs(path = '/usr/local', recursive = FALSE), value = TRUE), 1))" -e "message()")/
 
 
-#all: $(SHLIB)
+all: $(SHLIB)
 #		@if test -e "/usr/bin/install_name_tool" && test -e "$(CLANG_DIR)lib/libc++.1.dylib" && test -e "$(R_HOME)/lib/libc++.1.dylib"; then /usr/bin/install_name_tool -change $(CLANG_DIR)lib/libc++.1.dylib $(R_HOME)/lib/libc++.1.dylib $(SHLIB); fi
 
 clean:
