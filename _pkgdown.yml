@@ -47,6 +47,8 @@ home:
   links:
   - text: Ask a question
     href: https://discourse.mc-stan.org/
+  - text: Browse source code
+    href: https://github.com/stan-dev/rstanarm
 
 articles:
   - title: "Getting Started"
