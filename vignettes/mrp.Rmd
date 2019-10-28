@@ -860,6 +860,9 @@ Table 2 of the vignette for the **lme4** package, available
 
 ### Code to simulate the data
 
+Here is the source code for the `simulate_mrp_function()`, which is based off 
+of some code provided by Aki Vehtari.
+
 ```{r}
 print(simulate_mrp_data)
 ```
