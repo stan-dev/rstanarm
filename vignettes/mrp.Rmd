@@ -85,7 +85,7 @@ simulate_mrp_data <- function(n) {
   # Now let's adjust for the probability of response
   p_response_baseline <- 0.01
   p_response_male <- c(2, 0.8) / 2.8
-  p_response_eth <- c(1, 1.2, 2.5) / 3.7
+  p_response_eth <- c(1, 1.2, 2.5) / 4.7
   p_response_age <- c(1, 0.4, 1, 1.5,  3, 5, 7) / 18.9
   p_response_inc <- c(1, 0.9, 0.8) / 2.7
   p_response_state <- rbeta(50, 1, 1)
