@@ -26,7 +26,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                         dataEvent = NULL, time_var, id_var,  family = gaussian, 
                         assoc = "etavalue", lag_assoc = 0, grp_assoc, 
                         epsilon = 1E-5, basehaz = c("bs", "weibull", "piecewise"), 
-                        basehaz_ops, qnodes = 15, init = "prefit", weights,					          
+                        basehaz_ops, qnodes = 15, init = "prefit", weights,		
+                        offset = NULL, scale_assoc = NULL,
                         priorLong = normal(), priorLong_intercept = normal(), 
                         priorLong_aux = cauchy(0, 5), priorEvent = normal(), 
                         priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
@@ -103,7 +104,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   #--------------------------
   
   # Info for separate longitudinal submodels
-  y_mod <- xapply(formulaLong, dataLong, family, FUN = handle_y_mod)
+  y_mod <- xapply(formulaLong, dataLong, family, FUN = handle_y_mod,
+                  args = list('offset'=offset))
   
   # Construct single cnms list for all longitudinal submodels
   y_cnms  <- fetch(y_mod, "z", "group_cnms")
@@ -193,6 +195,14 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     weights = as.array(numeric(0)), # not yet implemented
     prior_PD = as.integer(prior_PD)
   )  
+  
+  # Offset
+  Y_offset <- fetch(y_mod, "offset", pad_length = 3)
+  standata$has_offset <- has_offset <-
+    fetch_array(y_mod, "has_offset", pad_length = 3)
+  standata$y1_offset <- if (has_offset[1]) Y_offset[[1]] else as.array(integer(0))  
+  standata$y2_offset <- if (has_offset[2]) Y_offset[[2]] else as.array(integer(0))  
+  standata$y3_offset <- if (has_offset[3]) Y_offset[[3]] else as.array(integer(0)) 
   
   # Dimensions
   standata$has_aux <- 
@@ -778,18 +788,25 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
             Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
             Z2_tmp_id <- as.array(integer(0))
           }
+          if (!is.null(scale_assoc)) {
+            y_offset_tmp <- rep(0, length(tmp_stuff$offset)) + log(scale_assoc)
+          } else {
+            y_offset_tmp <- rep(0, length(tmp_stuff$offset))
+          }
         } else {
           X_tmp  <- matrix(0,0,standata$yK[m])
           Z1_tmp <- matrix(0,standata$bK1_len[m],0) 
           Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
           Z1_tmp_id <- as.array(integer(0)) 
           Z2_tmp_id <- as.array(integer(0)) 
+          y_offset_tmp <- as.array(integer(0))
         }
         standata[[paste0("y", m, "_xq_", i)]] <- X_tmp
         standata[[paste0("y", m, "_z1q_", i)]] <- Z1_tmp
         standata[[paste0("y", m, "_z2q_", i)]] <- Z2_tmp
         standata[[paste0("y", m, "_z1q_id_", i)]] <- Z1_tmp_id
         standata[[paste0("y", m, "_z2q_id_", i)]] <- Z2_tmp_id
+        standata[[paste0("y", m, "_offset_", i)]] <- y_offset_tmp
       }
     }
   

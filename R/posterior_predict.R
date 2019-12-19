@@ -162,8 +162,6 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     stanmat <- dots[["stanmat"]] # possibly incl. new b pars (dynamic preds)
     if (is.null(m)) 
       STOP_arg_required_for_stanmvreg(m)
-    if (!is.null(offset))
-      stop2("'offset' cannot be specified for stanmvreg objects.")
   } else {
     m <- NULL
     stanmat <- NULL
@@ -244,7 +242,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
 #' @template args-m
 #' 
 posterior_predict.stanmvreg <- function(object, m = 1, newdata = NULL, draws = NULL,
-                                        re.form = NULL, fun = NULL, seed = NULL, ...) {
+                                        re.form = NULL, fun = NULL, seed = NULL,
+                                        offset = NULL, ...) {
   validate_stanmvreg_object(object)
   dots <- list(...)
   if ("newdataLong" %in% names(dots))
@@ -253,7 +252,7 @@ posterior_predict.stanmvreg <- function(object, m = 1, newdata = NULL, draws = N
     stop2("'newdataEvent' should not be specified for posterior_predict.")
   out <- posterior_predict.stanreg(object, newdata = newdata, draws = draws,
                                    re.form = re.form, fun = fun, seed = seed,
-                                   offset = NULL, m = m, ...)
+                                   offset = offset, m = m, ...)
   out
 }  
   

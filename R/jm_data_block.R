@@ -576,7 +576,7 @@ rename_t_and_cauchy <- function(prior_stuff, has) {
 #     intercept required for the glmer submodel.
 #   has_aux: logical specifying whether the glmer submodel 
 #     requires an auxiliary parameter.
-handle_y_mod <- function(formula, data, family) {
+handle_y_mod <- function(formula, data, family, offset=NULL) {
   mf <- stats::model.frame(lme4::subbars(formula), data)
   if (!length(formula) == 3L)
     stop2("An outcome variable must be specified.")
@@ -605,8 +605,16 @@ handle_y_mod <- function(formula, data, family) {
   has_aux <- check_for_aux(family)
   family <- append_mvmer_famlink(family, is_bernoulli)
   
+  # Offset
+  if (is.null(offset))
+    offset <- model.offset(mf)
+  else
+    validate_offset(offset, y$y)
+  
+  has_offset <- as.numeric(!is.null(offset))
+  
   nlist(y, x, z, reTrms, model_frame = mf, formula, terms, 
-        family, intercept_type, has_aux)
+        family, intercept_type, has_aux, offset, has_offset)
 }
 
 # Return the response vector for passing to Stan
@@ -1685,6 +1693,9 @@ handle_assocmod <- function(data, assoc, y_mod, grp_stuff, ids, times,
   form_new <- reformulate(rhs, response = NULL)
   df <- get_all_vars(form_new, data)
   df <- df[complete.cases(df), , drop = FALSE]
+  
+  if (!is.null(y_mod$offset))
+    df$offset <- y_mod$offset
 
   # Declare df as a data.table for merging with quadrature points
   dt <- prepare_data_table(df, id_var = id_var, time_var = time_var, 
