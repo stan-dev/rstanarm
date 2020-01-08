@@ -39,6 +39,7 @@
 #'   when specifying the random-effects parts of the formula, and neither
 #'   are nested grouping factors (e.g. \code{(1 | g1/g2))} or 
 #'   \code{(1 | g1:g2)}, where \code{g1}, \code{g2} are grouping factors. 
+#'   Offset terms can also be included in the model formula.
 #'   For a multivariate joint model (i.e. more than one longitudinal marker) 
 #'   this should be a list of such formula objects, with each element
 #'   of the list providing the formula for one of the longitudinal submodels.
@@ -140,6 +141,10 @@
 #' @param epsilon The half-width of the central difference used to numerically
 #'   calculate the derivate when the \code{"etaslope"} association structure 
 #'   is used.   
+#' @param scale_assoc A numeric value specifying an optional multiplicative scaling 
+#'   parameter for the association structure. For a multivariate joint model, 
+#'   scaling parameters must be specified for each longitudinal submodel using a 
+#'   list of numeric values.
 #' @param qnodes The number of nodes to use for the Gauss-Kronrod quadrature
 #'   that is used to evaluate the cumulative hazard in the likelihood function. 
 #'   Options are 15 (the default), 11 or 7.
@@ -522,8 +527,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                     id_var, family = gaussian, assoc = "etavalue", 
                     lag_assoc = 0, grp_assoc, epsilon = 1E-5,
                     basehaz = c("bs", "weibull", "piecewise"), basehaz_ops, 
-                    offset = NULL, scale_assoc = NULL,
-                    qnodes = 15, init = "prefit", weights,	
+                    qnodes = 15, init = "prefit", weights, scale_assoc = NULL,	
                     priorLong = normal(), priorLong_intercept = normal(), 
                     priorLong_aux = cauchy(0, 5), priorEvent = normal(), 
                     priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
@@ -594,8 +598,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                          time_var = time_var, id_var = id_var, family = family,
                          assoc = assoc, lag_assoc = lag_assoc, grp_assoc = grp_assoc, 
                          epsilon = epsilon, basehaz = basehaz, basehaz_ops = basehaz_ops, 
-                         offset = offset, scale_assoc = scale_assoc,
-                         qnodes = qnodes, init = init, weights = weights, 
+                         qnodes = qnodes, init = init, weights = weights, scale_assoc = scale_assoc,
                          priorLong = priorLong, 
                          priorLong_intercept = priorLong_intercept, 
                          priorLong_aux = priorLong_aux, 

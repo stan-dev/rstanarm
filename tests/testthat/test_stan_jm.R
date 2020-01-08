@@ -84,6 +84,15 @@ jm2 <- stan_jm(
 
 test_that("formula argument works", {
   expect_identical(as.matrix(jm1), as.matrix(update(jm1, formulaLong. = list(fmLong1)))) # fm as list
+  
+  # Longitudiinal model without offset
+  expect_null(jm1$glmod$Long1$offset)
+  
+  # Longitudinal model with offset 
+  fmLong1_offset <- logBili ~ year + (year | id) + offset(log(ypois))
+  jm_offset <- update(jm1, formulaLong. = fmLong1_offset)
+  expect_equal(jm_offset$glmod$Long1$offset, log(pbcLong$ypois))
+  expect_equal(jm_offset$glmod$Long1$has_offset, 1)
 })
 
 test_that("data argument works", {
@@ -285,6 +294,18 @@ test_that("weights argument works", {
   #expect_error(update(jm1, weights = wts4), "weights supplied must be numeric")
   #expect_error(update(jm1, weights = wts5), "weights supplied must be numeric")
   #expect_error(update(jm1, weights = wts6), "Negative weights are not allowed")
+  
+})
+
+test_that("scale_assoc argument works", {
+  
+  # Univariate joint model
+  expect_output(update(jm1, scale_assoc = NULL))
+  expect_output(update(jm1, scale_assoc = 10))
+  
+  # Multivariate joint model
+  expect_error(update(jm2, scale_assoc = 10), "'scale_assoc' must be specified for each longitudinal submodel")
+  expect_output(update(jm2, scale_assoc = list(0.5, 10)))
   
 })
 

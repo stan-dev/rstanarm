@@ -576,7 +576,7 @@ rename_t_and_cauchy <- function(prior_stuff, has) {
 #     intercept required for the glmer submodel.
 #   has_aux: logical specifying whether the glmer submodel 
 #     requires an auxiliary parameter.
-handle_y_mod <- function(formula, data, family, offset=NULL) {
+handle_y_mod <- function(formula, data, family) {
   mf <- stats::model.frame(lme4::subbars(formula), data)
   if (!length(formula) == 3L)
     stop2("An outcome variable must be specified.")
@@ -606,11 +606,7 @@ handle_y_mod <- function(formula, data, family, offset=NULL) {
   family <- append_mvmer_famlink(family, is_bernoulli)
   
   # Offset
-  if (is.null(offset))
-    offset <- model.offset(mf)
-  else
-    validate_offset(offset, y$y)
-  
+  offset <- model.offset(mf)
   has_offset <- as.numeric(!is.null(offset))
   
   nlist(y, x, z, reTrms, model_frame = mf, formula, terms, 

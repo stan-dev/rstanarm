@@ -26,8 +26,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
                         dataEvent = NULL, time_var, id_var,  family = gaussian, 
                         assoc = "etavalue", lag_assoc = 0, grp_assoc, 
                         epsilon = 1E-5, basehaz = c("bs", "weibull", "piecewise"), 
-                        basehaz_ops, qnodes = 15, init = "prefit", weights,		
-                        offset = NULL, scale_assoc = NULL,
+                        basehaz_ops, qnodes = 15, init = "prefit", weights, scale_assoc = NULL,
                         priorLong = normal(), priorLong_intercept = normal(), 
                         priorLong_aux = cauchy(0, 5), priorEvent = normal(), 
                         priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
@@ -94,6 +93,11 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   # Observation weights
   has_weights <- !is.null(weights)
   
+  # Association scaling parameter
+  scale_assoc <- if (is.null(scale_assoc)) rep(1, M) else validate_arg(scale_assoc, 'numeric')
+  if (length(scale_assoc) < M)
+    stop("'scale_assoc' must be specified for each longitudinal submodel.")
+  
   # Priors
   priorLong <- broadcast_prior(priorLong, M)
   priorLong_intercept <- broadcast_prior(priorLong_intercept, M)
@@ -104,8 +108,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   #--------------------------
   
   # Info for separate longitudinal submodels
-  y_mod <- xapply(formulaLong, dataLong, family, FUN = handle_y_mod,
-                  args = list('offset'=offset))
+  y_mod <- xapply(formulaLong, dataLong, family, FUN = handle_y_mod)
   
   # Construct single cnms list for all longitudinal submodels
   y_cnms  <- fetch(y_mod, "z", "group_cnms")
@@ -788,11 +791,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
             Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
             Z2_tmp_id <- as.array(integer(0))
           }
-          if (!is.null(scale_assoc)) {
-            y_offset_tmp <- rep(0, length(tmp_stuff$offset)) + log(scale_assoc)
-          } else {
-            y_offset_tmp <- rep(0, length(tmp_stuff$offset))
-          }
+          y_offset_tmp <- rep(0, length(tmp_stuff$offset)) + log(scale_assoc[[m]])
         } else {
           X_tmp  <- matrix(0,0,standata$yK[m])
           Z1_tmp <- matrix(0,standata$bK1_len[m],0) 
