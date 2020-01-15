@@ -39,12 +39,11 @@ test_that("posterior_predict errors if not a stanreg object", {
   expect_error(posterior_predict(example_model$stanfit), "no applicable method")
   expect_error(posterior_predict(summary(example_model)), "no applicable method")
 })
-test_that("posterior_predict errors if model fit using optimization", {
+test_that("posterior_predict does not error if model fit using optimization", {
   fit1 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", 
                    seed = SEED, refresh = 0)
-  expect_error(posterior_predict(fit1), regexp = "optimizing")
-  # What does this work for posterior_linpred() but not posterior_predict()?
-  # expect_error(posterior_linpred(fit1), regexp = "optimizing")
+  expect_silent(posterior_predict(fit1))
+  expect_silent(posterior_linpred(fit1))
 })
 test_that("posterior_predict errors if NAs in newdata", {
   nd <- model.frame(example_model)

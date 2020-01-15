@@ -70,7 +70,7 @@ capture.output(
 att_names <- function(object) {
   nms <- names(object)
   att_nms <- names(attributes(object))
-  att_nms2 <- lapply(object, function(x) names(attributes(x)))
+  att_nms2 <- lapply(object, function(x) sort(names(attributes(x))))
   c(nms, att_nms, att_nms2)
 }
 check_att_names <- function(x,y) {
@@ -168,7 +168,7 @@ test_that("posterior_interval returns correct structure", {
   
   expect_error(posterior_interval(stan_glm1, type = "HPD"),
                regexp = "only option for 'type' is 'central'")
-  expect_error(posterior_interval(stan_glm_opt1), regexp = "not available")
+  expect_identical(colnames(posterior_interval(stan_glm_opt1)), c("5%", "95%"))
   expect_error(posterior_interval(lm(mpg ~ wt, data = mtcars)),
                regexp = "should be a matrix")
 
@@ -183,8 +183,8 @@ test_that("posterior_interval returns correct structure", {
 
 # log_lik -----------------------------------------------------------------
 test_that("log_lik method works", {
-  expect_error(log_lik(stan_glm_opt1))
-  expect_error(log_lik(stan_glm_vb1))
+  expect_silent(log_lik(stan_glm_opt1))
+  expect_silent(log_lik(stan_glm_vb1))
   expect_silent(log_lik(stan_glm1))
 
   expect_silent(log_lik(stan_polr1))
@@ -795,10 +795,10 @@ test_that("predictive_interval stanreg and ppd methods return the same thing", {
 
 # stanreg lists -----------------------------------------------------------
 test_that("stan*_list functions throw proper errors", {
-  expect_error(stanreg_list(), "At least one model")
-  expect_error(stanreg_list(stan_glm1, glm1), "must be stanreg objects")
-  expect_error(stanmvreg_list(stan_glm1, glm1), "must be stanmvreg objects")
-  expect_error(stanjm_list(stan_glm1, glm1), "must be stanjm objects")
+  expect_error(stanreg_list(), ">= 1 is not TRUE")
+  expect_error(stanreg_list(stan_glm1, glm1), "For stanreg_list")
+  expect_error(stanmvreg_list(stan_glm1, glm1), "For stanmvreg_list")
+  expect_error(stanjm_list(stan_glm1, glm1), "For stanjm_list")
 })
 
 test_that("stanreg_list works", {
