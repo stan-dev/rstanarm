@@ -223,6 +223,7 @@ p_approx <- mean(abs(theta) < 250)
 print(paste("Pr(-250 < theta < 250) =", round(p_approx, 2)))
 
 d <- data.frame(theta, clr = abs(theta) > 250)
+library(ggplot2)
 ggplot(d, aes(x = theta, fill = clr)) + 
   geom_histogram(binwidth = 5, show.legend = FALSE) + 
   scale_y_continuous(name = "", labels = NULL, expand = c(0,0)) + 

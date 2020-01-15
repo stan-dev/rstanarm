@@ -443,7 +443,7 @@ stan_glm.fit <-
     }
     standata$y <- y
     standata$weights <- weights
-    standata$offset <- offset
+    standata$offset_ <- offset
     standata$K_smooth <- ncol(S)
     standata$S <- S
     standata$smooth_map <- smooth_map
