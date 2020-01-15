@@ -193,7 +193,7 @@
     if (link == 1) return exp(eta);         // log
     else if (link == 2) return eta;         // identity
     else if (link == 3) return square(eta); // sqrt
-    else reject("Invalid link");
+    else reject("Invalid link")
     return eta; // never reached
   }
   

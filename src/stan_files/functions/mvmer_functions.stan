@@ -19,10 +19,16 @@
   * @return A real, corresponding to the lower bound
   */
   real lb(int intercept_type) {
-    return intercept_type == 2 ? 0 : negative_infinity();
+    real lb;
+    if (intercept_type == 2) lb = 0;
+    else lb = negative_infinity();
+    return lb;
   }
   real ub(int intercept_type) {
-    return intercept_type == 3 ? 0 : positive_infinity();
+    real ub;
+    if (intercept_type == 3) ub = 0;
+    else ub = positive_infinity();
+    return ub;
   }
 
   /**
@@ -329,16 +335,16 @@
   *
   * @param gamma Real, the intercept parameter
   * @param dist Integer, the type of prior distribution
-  * @param mean_ Real, mean of prior distribution
+  * @param mean Real, mean of prior distribution
   * @param scale Real, scale for the prior distribution
   * @param df Real, df for the prior distribution
   * @return nothing
   */
-  void gamma_lp(real gamma, int dist, real mean_, real scale, real df) {
+  void gamma_lp(real gamma, int dist, real mean, real scale, real df) {
     if (dist == 1)  // normal
-      target += normal_lpdf(gamma | mean_, scale);
+      target += normal_lpdf(gamma | mean, scale);
     else if (dist == 2)  // student_t
-      target += student_t_lpdf(gamma | df, mean_, scale);
+      target += student_t_lpdf(gamma | df, mean, scale);
     /* else dist is 0 and nothing is added */
   }
 
@@ -419,6 +425,5 @@
           mean_PPD += normal_rng(gamma_temp, sqrt(gamma_temp));
       }
     }
-    mean_PPD /= N;
-    return mean_PPD;
+    return mean_PPD / N;
   }
