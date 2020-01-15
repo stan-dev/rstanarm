@@ -6,8 +6,6 @@ output:
   html_vignette:
     toc: yes
     toc_depth: 3
-params:
-  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -19,7 +17,7 @@ opts_chunk$set(
   comment=NA, 
   message = FALSE, 
   warning = FALSE, 
-  eval = params$EVAL,
+  eval = identical(Sys.getenv("NOT_CRAN"), "true"),
   dev = "png",
   dpi = 150,
   fig.asp = 0.618,
