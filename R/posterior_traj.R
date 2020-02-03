@@ -283,6 +283,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
   id_var    <- object$id_var
   time_var  <- object$time_var
   grp_stuff <- object$grp_stuff[[m]]
+  glmod     <- object$glmod[[m]]
   if (!is.null(seed)) 
     set.seed(seed)
   if (missing(ids)) 
@@ -397,7 +398,8 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
     }
   }
     
-  ytilde <- posterior_predict(object, newdata = newX, m = m, stanmat = stanmat, ...)
+  newOffset <- model.offset(model.frame(terms(glmod), newX))
+  ytilde <- posterior_predict(object, newdata = newX, m = m, stanmat = stanmat, offset = newOffset, ...)
   if (return_matrix) {
     attr(ytilde, "mu") <- NULL # remove attribute mu
     return(ytilde) # return S * N matrix, instead of data frame 
