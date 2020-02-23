@@ -513,7 +513,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
             last_time = last_time, ids = id_list, draws = draws, seed = seed, 
             offset = offset)
   if (dynamic && !is.null(newdataEvent)) {
-    out <- structure(out, b_new = b_new, acceptance_rate = acceptance_rate)
+    out <- structure(out, surv = surv, b_new = b_new, acceptance_rate = acceptance_rate)
   }
   out
 }
