@@ -2,7 +2,7 @@ Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
 Version: 2.19.3
-Date: 2020-01-21
+Date: 2020-02-10
 Encoding: UTF-8
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
@@ -60,8 +60,8 @@ Suggests:
     rmarkdown,
     roxygen2,
     testthat (>= 1.0.2)
-LinkingTo: StanHeaders (>= 2.19.0), rstan (>= 2.19.1), BH (>= 1.66.0), Rcpp (>=
-    0.12.0), RcppEigen (>= 0.3.3.3.0), RcppParallel
+LinkingTo: StanHeaders (>= 2.19.0), rstan (>= 2.19.1), BH (>= 1.72.0-2), Rcpp (>=
+    0.12.0), RcppEigen (>= 0.3.3.3.0)
 SystemRequirements: GNU make, pandoc (>= 1.12.3), pandoc-citeproc
 VignetteBuilder: knitr
 LazyData: true
