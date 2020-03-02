@@ -13,10 +13,8 @@ bibliography: mrp-files/mrp.bib
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(collapse = TRUE)
-library(rstan)
 library(rstanarm)
 library(dplyr)
-rstan_options(auto_write = TRUE)
 ```
 
 ## Abstract
@@ -27,9 +25,7 @@ useful given its ability to quantify domain-specific business knowledge and
 hypotheses through the use of prior distributions. Instead of using p-values and
 confidence intervals, we are able to perform inference with _probability_
 intervals estimated from posterior predictions. In addition to the results being
-highly interpretable, this approach allows us to quantify business risk. The
-code associated with this case study is available on GitHub:
-https://github.com/imadmali/ab-testing.
+highly interpretable, this approach allows us to quantify business risk.
 
 ## Introduction
 
@@ -88,11 +84,11 @@ experiment <- data.frame(y = y,
 experiment
 ```
 
-In order to determine if there is a difference between the groups we need to define a model that predicts the outcome for each group. The data has been generated from the normal distribution so it is appropriate to specify a normal likelihood. Since we are _modeling_ the outcome we can include other variables, such as the high consumer indicator `hc`. Traditional hypothesis testing methods are focused on comparing the outcome of two groups. Here we model the outcome before comparing the groups. This allows us to include additional information in the model which will enable us to perform more granular inferences.
+In order to determine if there is a difference between the groups we need to define a model that predicts the outcome for each group. The data has been generated from the normal distribution so it is appropriate to specify a normal likelihood. (Often we do not know how the data is generated and have to make an assumption about which distribution is used to model the likelihood.) Since we are _modeling_ the outcome we can include other variables, such as the high consumer indicator `hc`. Traditional hypothesis testing methods are focused on comparing the outcome of two groups. Here we model the outcome before comparing the groups. This allows us to include additional information in the model which will enable us to perform more granular inferences.
 
 Next we need to specify prior distributions on each of these parameters. This is where the domain-specific expert can provide valuable input. For example, they may believe that (due to poor sampling) the sampled average of daily streaming hours is too low for each group. In such a situation a prior can be applied to coerce the estimated average closer to the value they feel is more appropriate and representative of the population.
 
-Putting these pieces together gives us the model below. $y$ is the outcome (average streaming hours) and $sigma$ is the associated standard deviation. $\mu$ is the parameter associated with the variable $group$ which defines group membership, and $\beta$ is the parameter associated with the the high consumer indicator. One limitation of this approach is that $\sigma$ does not vary among groups. However, it is sufficient to assume that the outcome of both groups has the same standard deviation. (In order to allow the standard deviation to vary among groups the model would have to be fit in [**rstan**](https://mc-stan.org/rstan/), which would require defining the model in a Stan file.)
+Putting these pieces together gives us the model below. $y$ is the outcome (average streaming hours) and $sigma$ is the residual standard deviation (i.e. the standard deviation of $y$ conditional on the parameters and the data). $\mu$ is the parameter associated with the variable $group$ which defines group membership, and $\beta$ is the parameter associated with the the high consumer indicator. One limitation of this approach is that $\sigma$ does not vary among groups. However, it is sufficient to assume that the outcome of both groups has the same standard deviation. (In order to allow the standard deviation to vary among groups the model would have to be fit in [**rstan**](https://mc-stan.org/rstan/), which would require defining the model in a Stan file.)
 
 $$
 \begin{align*}
