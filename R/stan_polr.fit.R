@@ -101,7 +101,7 @@ stan_polr.fit <- function(x, y, wt = NULL, offset = NULL,
   K <- ncol(X)
   X <- array(X, dim = c(1L, N, K))
   standata <- nlist(J, N, K, X, xbar, y, prior_PD, link, 
-                    has_weights, weights, has_offset, offset_ = offset,
+                    has_weights, wt, has_offset, offset_ = offset,
                     prior_dist, regularization, prior_counts,
                     is_skewed, shape, rate,
                     # the rest of these are not actually used
