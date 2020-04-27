@@ -147,7 +147,7 @@ stan_glm.fit <-
   prior_intercept_stuff <- handle_glm_prior(
     prior_intercept,
     nvars = 1,
-    default_scale = 10,
+    default_scale = 2.5,
     link = family$link,
     ok_dists = ok_intercept_dists
   )
