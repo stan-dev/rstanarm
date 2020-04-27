@@ -569,6 +569,9 @@ default_prior_intercept = function() {
   out$default <- TRUE
   out
 }
+
+#' @rdname priors
+#' @export
 default_prior_coef = function() {
   out <- normal(0, 2.5, autoscale=TRUE)
   out$default <- TRUE
