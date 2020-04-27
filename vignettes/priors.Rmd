@@ -114,7 +114,7 @@ scales actually used were
 `r fr2(priors$prior$adjusted_scale[2])`. 
 
 * __Intercept__: For the intercept, the default prior is normal with mean $0$ 
-and standard deviation $10$, but in this case the standard deviation was 
+and standard deviation $2.5$, but in this case the standard deviation was 
 adjusted to `r fr2(priors$prior_intercept$adjusted_scale[1])`. There is also a
 note in parentheses informing you that the prior applies to the intercept after
 all predictors have been centered (a similar note can be found in the
@@ -136,7 +136,7 @@ disable it if desired.
 ### Automatic prior scale adjustments
 
 For distributions that take an `autoscale` argument (see `help("priors")` for a
-list), if `autoscale` is left at `TRUE` (the default) then, in certain cases,
+list), if `autoscale` is set to `TRUE` then, in certain cases,
 the prior scales will be adjusted internally by __rstanarm__.
 
 First, if the _outcome_ $y$ is Gaussian, the prior scales for the intercept,
@@ -162,16 +162,17 @@ for many models.
 
 ### Disabling prior scale adjustments
 
-To disable automatic rescaling simply set the `autoscale` argument to to
-`FALSE`. For example:
+To disable automatic rescaling simply specify a prior other than the default. 
+**rstanarm** used to require you to also explicitly set the `autoscale` argument to to `FALSE`, but now autoscaling only happens for the default priors and manually
+specified priors do not autoscale by default unless `autoscale` is set to `TRUE`. For example:
 
 ```{r, no-autoscale, results="hide", eval = TRUE}
 test_no_autoscale <-
   update(
     default_prior_test,
-    prior = normal(0, 5, autoscale = FALSE),
-    prior_intercept = student_t(4, 0, 10, autoscale = FALSE),
-    prior_aux = cauchy(0, 3, autoscale = FALSE)
+    prior = normal(0, 5),
+    prior_intercept = student_t(4, 0, 10),
+    prior_aux = cauchy(0, 3)
   )
 ```
 
@@ -182,9 +183,6 @@ We can verify that the prior scales weren't adjusted by checking
 prior_summary(test_no_autoscale)
 ```
 
-Disabling prior scale adjustments is usually unnecessary but is useful for when 
-more informative prior information is available. There is an example of
-specifying an informative prior later in this vignette.
 
 <br>
 
@@ -302,7 +300,7 @@ becomes increasingly important.
 If the variables `y`, `x1`, and `x2` are in the data frame `dat` then this
 model can be specified as
 ```{r, eval=FALSE}
-my_prior <- normal(location = c(-10, 0), scale = c(5, 2), autoscale = FALSE)
+my_prior <- normal(location = c(-10, 0), scale = c(5, 2))
 stan_glm(y ~ x1 + x2, data = dat, prior = my_prior)
 ```
 We left the priors for the intercept and error standard deviation at their 

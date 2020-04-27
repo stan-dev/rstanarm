@@ -91,7 +91,7 @@
 #'             
 #' @importFrom lme4 findbars
 stan_clogit <- function(formula, data, subset, na.action = NULL, ..., 
-                        strata, prior = normal(), 
+                        strata, prior = normal(autoscale=TRUE), 
                         prior_covariance = decov(), prior_PD = FALSE, 
                         algorithm = c("sampling", "optimizing", 
                                       "meanfield", "fullrank"),

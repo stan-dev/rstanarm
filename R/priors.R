@@ -72,7 +72,7 @@
 #'   or equal to two, the mode of this Beta distribution does not exist
 #'   and an error will prompt the user to specify another choice for
 #'   \code{what}.
-#' @param autoscale A logical scalar, defaulting to \code{TRUE}. If \code{TRUE} 
+#' @param autoscale If \code{TRUE} 
 #'   then the scales of the priors on the intercept and regression coefficients 
 #'   may be additionally modified internally by \pkg{rstanarm} in the following 
 #'   cases. First, for Gaussian models only, the prior scales for the intercept, 
@@ -104,12 +104,11 @@
 #'   approaches the normal distribution and if the degrees of freedom are one,
 #'   then the Student t distribution is the Cauchy distribution.
 #'   
-#'   If \code{scale} is not specified it will default to \eqn{10} for the
-#'   intercept and \eqn{2.5} for the other coefficients, unless the probit link
-#'   function is used, in which case these defaults are scaled by a factor of 
-#'   \code{dnorm(0)/dlogis(0)}, which is roughly \eqn{1.6}.
+#'   If \code{scale} is not specified it will default to \eqn{2.5}, unless the
+#'   probit link function is used, in which case these defaults are scaled by a
+#'   factor of \code{dnorm(0)/dlogis(0)}, which is roughly \eqn{1.6}.
 #'   
-#'   If the \code{autoscale} argument is \code{TRUE} (the default), then the 
+#'   If the \code{autoscale} argument is \code{TRUE}, then the 
 #'   scales will be further adjusted as described above in the documentation of 
 #'   the \code{autoscale} argument in the \strong{Arguments} section.
 #' }
@@ -174,7 +173,7 @@
 #'   
 #'   It is also common in supervised learning to standardize the predictors 
 #'   before training the model. We do not recommend doing so. Instead, it is
-#'   better to specify \code{autoscale = TRUE} (the default value), which 
+#'   better to specify \code{autoscale = TRUE}, which 
 #'   will adjust the scales of the priors according to the dispersion in the
 #'   variables. See the documentation of the \code{autoscale} argument above 
 #'   and also the \code{\link{prior_summary}} page for more information.
@@ -436,14 +435,14 @@ NULL
 
 #' @rdname priors
 #' @export
-normal <- function(location = 0, scale = NULL, autoscale = TRUE) {
+normal <- function(location = 0, scale = NULL, autoscale = FALSE) {
   validate_parameter_value(scale)
   nlist(dist = "normal", df = NA, location, scale, autoscale)
 }
 
 #' @rdname priors
 #' @export
-student_t <- function(df = 1, location = 0, scale = NULL, autoscale = TRUE) {
+student_t <- function(df = 1, location = 0, scale = NULL, autoscale = FALSE) {
   validate_parameter_value(scale)
   validate_parameter_value(df)
   nlist(dist = "t", df, location, scale, autoscale)
@@ -451,7 +450,7 @@ student_t <- function(df = 1, location = 0, scale = NULL, autoscale = TRUE) {
 
 #' @rdname priors
 #' @export
-cauchy <- function(location = 0, scale = NULL, autoscale = TRUE) {
+cauchy <- function(location = 0, scale = NULL, autoscale = FALSE) {
   student_t(df = 1, location = location, scale = scale, autoscale)
 }
 
@@ -485,13 +484,13 @@ hs_plus <- function(df1 = 1, df2 = 1, global_df = 1, global_scale = 0.01,
 
 #' @rdname priors
 #' @export
-laplace <- function(location = 0, scale = NULL, autoscale = TRUE) {
+laplace <- function(location = 0, scale = NULL, autoscale = FALSE) {
   nlist(dist = "laplace", df = NA, location, scale, autoscale)
 }
 
 #' @rdname priors
 #' @export
-lasso <- function(df = 1, location = 0, scale = NULL, autoscale = TRUE) {
+lasso <- function(df = 1, location = 0, scale = NULL, autoscale = FALSE) {
   nlist(dist = "lasso", df, location, scale, autoscale)
 }
 
@@ -510,7 +509,7 @@ product_normal <- function(df = 2, location = 0, scale = 1) {
 #'   \code{1}. For the exponential distribution, the rate parameter is the
 #'   \emph{reciprocal} of the mean.
 #' 
-exponential <- function(rate = 1, autoscale = TRUE) {
+exponential <- function(rate = 1, autoscale = FALSE) {
   stopifnot(length(rate) == 1)
   validate_parameter_value(rate)
   nlist(dist = "exponential", 
