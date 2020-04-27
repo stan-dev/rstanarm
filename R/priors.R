@@ -561,7 +561,19 @@ R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
   list(dist = "R2", location = location, what = what, df = 0, scale = 0)
 }
 
-
+#' @rdname priors
+#' @export
+default_prior_intercept = function() {
+  out <- normal(0, 2.5, autoscale=TRUE)
+  out$location <- NULL # not determined yet
+  out$default <- TRUE
+  out
+}
+default_prior_coef = function() {
+  out <- normal(0, 2.5, autoscale=TRUE)
+  out$default <- TRUE
+  out
+}
 
 
 # internal ----------------------------------------------------------------

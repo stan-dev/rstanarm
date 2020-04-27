@@ -41,8 +41,8 @@ stan_glm.fit <-
            offset = rep(0, NROW(y)), 
            family = gaussian(),
            ...,
-           prior = normal(autoscale=TRUE),
-           prior_intercept = normal(autoscale=TRUE),
+           prior = default_prior_coef(),
+           prior_intercept = default_prior_intercept(),
            prior_aux = exponential(autoscale=TRUE),
            prior_smooth = exponential(autoscale = FALSE),
            prior_ops = NULL,
@@ -132,6 +132,14 @@ stan_glm.fit <-
   ok_aux_dists <- c(ok_dists[1:3], exponential = "exponential")
   
   # prior distributions
+  if (isTRUE(prior_intercept$default)) {
+    m_y <- 0
+    if (family$family == "gaussian" && family$link == "identity") {
+      if (!is.null(y)) m_y <- mean(y) # y can be NULL if prior_PD=TRUE
+    }
+    prior_intercept$location <- m_y
+  }
+  
   prior_stuff <- handle_glm_prior(
     prior,
     nvars,
