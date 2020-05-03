@@ -743,6 +743,9 @@ check_stanfit <- function(x) {
 #   otherwise if_missing is returned.
 #
 drop_redundant_dims <- function(data) {
+  if(inherits(data, "data.table")) {
+    return(data)
+  }
   drop_dim <- sapply(data, function(v) is.matrix(v) && NCOL(v) == 1)
   data[, drop_dim] <- lapply(data[, drop_dim, drop=FALSE], drop)
   return(data)
