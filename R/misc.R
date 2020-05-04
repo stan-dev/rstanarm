@@ -743,9 +743,6 @@ check_stanfit <- function(x) {
 #   otherwise if_missing is returned.
 #
 drop_redundant_dims <- function(data) {
-  if(inherits(data, "data.table")) {
-    return(data)
-  }
   drop_dim <- sapply(data, function(v) is.matrix(v) && NCOL(v) == 1)
   data[, drop_dim] <- lapply(data[, drop_dim, drop=FALSE], drop)
   return(data)
@@ -758,6 +755,9 @@ validate_data <- function(data, if_missing = NULL) {
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
   }
+  
+  # drop other classes (e.g. 'tbl_df', 'tbl', 'data.table')
+  data <- as.data.frame(data)
   
   drop_redundant_dims(data)
 }
