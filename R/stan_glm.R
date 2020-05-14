@@ -179,7 +179,7 @@
 #'   Days ~ Sex/(Age + Eth*Lrn), 
 #'   data = MASS::quine, 
 #'   link = "log", 
-#'   prior_aux = exponential(1.5),
+#'   prior_aux = exponential(1.5, autoscale=TRUE),
 #'   chains = 2, iter = 200, # for speed of example only
 #'   refresh = 0
 #' ) 
@@ -207,8 +207,8 @@ stan_glm <-
            y = TRUE,
            contrasts = NULL,
            ...,
-           prior = default_prior_coef(),
-           prior_intercept = default_prior_intercept(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
            prior_aux = exponential(autoscale=TRUE),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
@@ -319,8 +319,8 @@ stan_glm.nb <-
            contrasts = NULL,
            link = "log",
            ...,
-           prior = default_prior_coef(),
-           prior_intercept = default_prior_intercept(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
            prior_aux = exponential(autoscale=TRUE),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),

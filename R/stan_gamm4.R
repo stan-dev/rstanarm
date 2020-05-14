@@ -110,7 +110,7 @@
 #' dat$y <- dat$y + model.matrix(~ fac - 1) %*% rnorm(20) * .5
 #'
 #' br <- stan_gamm4(y ~ s(x0) + x1 + s(x2), data = dat, random = ~ (1 | fac), 
-#'                  chains = 1, iter = 200) # for example speed
+#'                  chains = 1, iter = 500) # for example speed
 #' print(br)
 #' plot_nonlinear(br)
 #' plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
@@ -127,8 +127,8 @@ stan_gamm4 <-
            knots = NULL,
            drop.unused.levels = TRUE,
            ...,
-           prior = default_prior_coef(),
-           prior_intercept = default_prior_intercept(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
            prior_smooth = exponential(autoscale = FALSE),
            prior_aux = exponential(autoscale=TRUE),
            prior_covariance = decov(),

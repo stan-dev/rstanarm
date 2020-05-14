@@ -563,18 +563,25 @@ R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
 
 #' @rdname priors
 #' @export
-default_prior_intercept = function() {
-  out <- normal(0, 2.5, autoscale=TRUE)
+#' @param family Not currently used.
+default_prior_intercept = function(family) {
+  # family arg not used, but we can use in the future to do different things
+  # based on family if necessary
+  out <- normal(0, 2.5, autoscale = TRUE)
   out$location <- NULL # not determined yet
   out$default <- TRUE
+  out$version <- utils::packageVersion("rstanarm")
   out
 }
 
 #' @rdname priors
 #' @export
-default_prior_coef = function() {
-  out <- normal(0, 2.5, autoscale=TRUE)
+default_prior_coef = function(family) {
+  # family arg not used, but we can use in the future to do different things
+  # based on family if necessary
+  out <- normal(0, 2.5, autoscale = TRUE)
   out$default <- TRUE
+  out$version <- utils::packageVersion("rstanarm")
   out
 }
 
