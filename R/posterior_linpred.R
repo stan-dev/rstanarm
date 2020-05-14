@@ -44,12 +44,13 @@
 #'   matrix of simulations from the posterior distribution of the (possibly
 #'   transformed) linear predictor. The exception is if the argument \code{XZ}
 #'   is set to \code{TRUE} (see the \code{XZ} argument description above).
-#'   The \code{posterior_linpred} function returns the posterior distribution
-#'   of the linear predictor, while the \code{posterior_epred} function
-#'   returns the posterior distribution of the conditional expectation. In
-#'   the special case of a Gaussian likelihood with an identity link function,
-#'   these two concepts are the same. The \code{posterior_epred} function is
-#'   a less noisy way obtain averages over the output of 
+#'   
+#' @details The \code{posterior_linpred} function returns the posterior
+#'   distribution of the linear predictor, while the \code{posterior_epred}
+#'   function returns the posterior distribution of the conditional expectation.
+#'   In the special case of a Gaussian likelihood with an identity link
+#'   function, these two concepts are the same. The \code{posterior_epred}
+#'   function is a less noisy way obtain averages over the output of
 #'   \code{\link{posterior_predict}}.
 #'   
 #' @note For models estimated with \code{\link{stan_clogit}}, the number of 
@@ -128,6 +129,7 @@ posterior_linpred.stanreg <-
     return(g(eta))
   }
 
+#' @rdname posterior_linpred.stanreg
 #' @export
 posterior_epred <-
   function(object,
