@@ -131,7 +131,7 @@ posterior_linpred.stanreg <-
 
 #' @rdname posterior_linpred.stanreg
 #' @export
-posterior_epred <-
+posterior_epred.stanreg <-
   function(object,
            newdata = NULL,
            draws = NULL,

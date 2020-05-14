@@ -42,7 +42,7 @@ Imports:
     Matrix (>= 1.2-13),
     nlme (>= 3.1-124),
     rstan (>= 2.19.1),
-    rstantools (>= 2.0.0),
+    rstantools (>= 2.0.0.9000),
     shinystan (>= 2.3.0),
     stats,
     survival (>= 2.40.1),
