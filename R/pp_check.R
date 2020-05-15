@@ -207,7 +207,7 @@ is_binomial_ppc <- function(object, ...) {
            ...) {
     y <- get_y(object, ...)
     if (binned_resid_plot) {
-      yrep <- posterior_linpred(object, transform = TRUE, ...)
+      yrep <- posterior_epred(object, ...)
       yrep <- yrep[1:nreps, , drop = FALSE]
     } else {
       yrep <- posterior_predict(object, draws = nreps, seed = seed, ...)
