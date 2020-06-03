@@ -219,11 +219,8 @@ Once **rstan** is successfully installed, you can install **rstanarm** from
 GitHub using the **devtools** package by executing the following in R:
 
 ```r
-if (!require(devtools)) {
-  install.packages("devtools")
-  library(devtools)
-}
-install_github("stan-dev/rstanarm", build_vignettes = FALSE)
+# install.packages("devtools")
+devtools::install_github("stan-dev/rstanarm", build_vignettes = FALSE)
 ```
 
 You can switch `build_vignettes` to `TRUE` but it takes a lot longer to install and the 
