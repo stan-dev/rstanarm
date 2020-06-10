@@ -708,6 +708,10 @@ kfold_and_reloo_data <- function(x) {
   } else {
     # already a data frame
     all_vars <- all.vars(formula(x))
+    if (isTRUE(x$stan_function == "stan_gamm4")) {
+      # see https://github.com/stan-dev/rstanarm/issues/435
+      all_vars <- c(all_vars, all.vars(getCall(x)[["random"]]))
+    }
     if ("." %in% all_vars) {
       all_vars <- seq_len(ncol(d))
     }

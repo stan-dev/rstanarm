@@ -1,8 +1,9 @@
-[<img src="https://raw.githubusercontent.com/stan-dev/logos/master/logo_tm.png" width=100 alt="Stan Logo"/>](https://mc-stan.org)
+# rstanarm <img src="man/figures/stanlogo.png" align="right" width="120" />
 
-# rstanarm 
-
-[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm?color=blue)](http://cran.r-project.org/package=rstanarm)[![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=blue)](http://cran.rstudio.com/package=rstanarm)
+<!-- badges: start -->
+[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm?color=blue)](http://cran.r-project.org/package=rstanarm)
+[![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=blue)](http://cran.rstudio.com/package=rstanarm)
+<!-- badges: end -->
 
 ### Bayesian applied regression modeling (arm) via Stan
 
@@ -218,11 +219,8 @@ Once **rstan** is successfully installed, you can install **rstanarm** from
 GitHub using the **devtools** package by executing the following in R:
 
 ```r
-if (!require(devtools)) {
-  install.packages("devtools")
-  library(devtools)
-}
-install_github("stan-dev/rstanarm", build_vignettes = FALSE)
+# install.packages("devtools")
+devtools::install_github("stan-dev/rstanarm", build_vignettes = FALSE)
 ```
 
 You can switch `build_vignettes` to `TRUE` but it takes a lot longer to install and the 
