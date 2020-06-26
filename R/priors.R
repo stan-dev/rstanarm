@@ -25,7 +25,7 @@
 #'   
 #'   The default priors used in the various \pkg{rstanarm} modeling functions
 #'   are intended to be \emph{weakly informative} in that they provide moderate
-#'   regularlization and help stabilize computation. For many applications the
+#'   regularization and help stabilize computation. For many applications the
 #'   defaults will perform well, but prudent use of more informative priors is
 #'   encouraged. Uniform prior distributions are possible (e.g. by setting
 #'   \code{\link{stan_glm}}'s \code{prior} argument to \code{NULL}) but, unless
@@ -36,10 +36,11 @@
 #'   More information on priors is available in the vignette
 #'   \href{http://mc-stan.org/rstanarm/articles/priors.html}{\emph{Prior
 #'   Distributions for rstanarm Models}} as well as the vignettes for the
-#'   various modeling functions. In particular, for details on the 
-#'   priors used for multilevel models see the vignette
+#'   various modeling functions. For details on the 
+#'   priors used for multilevel models in particular see the vignette
 #'   \href{http://mc-stan.org/rstanarm/articles/glmer.html}{\emph{Estimating
-#'   Generalized (Non-)Linear Models with Group-Specific Terms with rstanarm}}.
+#'   Generalized (Non-)Linear Models with Group-Specific Terms with rstanarm}}
+#'   and also the \strong{Covariance matrices} section lower down on this page.
 #'   
 #' 
 #' @param location Prior location. In most cases, this is the prior mean, but
@@ -72,18 +73,18 @@
 #'   or equal to two, the mode of this Beta distribution does not exist
 #'   and an error will prompt the user to specify another choice for
 #'   \code{what}.
-#' @param autoscale If \code{TRUE} 
-#'   then the scales of the priors on the intercept and regression coefficients 
-#'   may be additionally modified internally by \pkg{rstanarm} in the following 
-#'   cases. First, for Gaussian models only, the prior scales for the intercept, 
-#'   coefficients, and the auxiliary parameter \code{sigma} (error standard 
-#'   deviation) are multiplied by \code{sd(y)}. Additionally --- not only for 
-#'   Gaussian models --- if the \code{QR} argument to the model fitting function
-#'   (e.g. \code{stan_glm}) is \code{FALSE} then: for a predictor with only one 
-#'   value nothing is changed; for a predictor \code{x} with exactly two unique 
-#'   values, we take the user-specified (or default) scale(s) for the selected 
-#'   priors and divide by the range of \code{x}; for a predictor \code{x} with 
-#'   more than two unique values, we divide the prior scale(s) by \code{sd(x)}.
+#' @param autoscale If \code{TRUE} then the scales of the priors on the
+#'   intercept and regression coefficients may be additionally modified
+#'   internally by \pkg{rstanarm} in the following cases. First, for Gaussian
+#'   models only, the prior scales for the intercept, coefficients, and the
+#'   auxiliary parameter \code{sigma} (error standard deviation) are multiplied
+#'   by \code{sd(y)}. Additionally --- not only for Gaussian models --- if the
+#'   \code{QR} argument to the model fitting function (e.g. \code{stan_glm}) is
+#'   \code{FALSE} then we also divide the prior scale(s) by \code{sd(x)}.
+#'   Prior autoscaling is also discussed in the vignette 
+#'   \href{http://mc-stan.org/rstanarm/articles/priors.html}{\emph{Prior
+#'   Distributions for rstanarm Models}}
+#'   
 #'   
 #' @details The details depend on the family of the prior being used:
 #' \subsection{Student t family}{
