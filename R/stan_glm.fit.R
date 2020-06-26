@@ -258,9 +258,9 @@ stan_glm.fit <-
                           apply(xtemp, 2L, FUN = function(x) {
                             num.categories <- length(unique(x))
                             x.scale <- 1
-                            if (num.categories == 2) {
-                              x.scale <- diff(range(x))
-                            } else if (num.categories > 2) {
+                            if (num.categories == 1) {
+                              x.scale <- 1
+                            } else {
                               x.scale <- sd(x)
                             }
                             return(x.scale)
