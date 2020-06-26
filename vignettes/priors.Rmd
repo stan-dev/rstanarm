@@ -15,6 +15,23 @@ output:
 ```{r, child="children/SETTINGS-gg.txt"}
 ```
 
+# July 2020 Update
+
+As of July 2020 there are a few changes to prior distributions: 
+
+* Except for in default priors, `autoscale` now defaults to `FALSE`. This means
+that when specifying custom priors you no longer need to manually set
+`autoscale=FALSE` every time you use a distribution.
+
+* There are minor changes to the default priors on the intercept and
+(non-hierarchical) regression coefficients. See **Default priors and scale
+adjustments** below.
+
+We recommend the new book 
+[Regression and Other Stories](https://avehtari.github.io/ROS-Examples/), 
+which discusses the background behind the default priors in **rstanarm** and 
+also provides examples of specifying non-default priors.
+
 # Introduction
 
 This vignette provides an overview of how the specification of prior 
@@ -55,8 +72,8 @@ additional arguments specific only to those models:
 <br> 
 
 To specify these arguments the user provides a call to one of the various
-available functions for specifying priors (e.g., `prior = normal(0, 1)`, `prior = cauchy(c(0, 1), c(1, 2.5))`). The
-documentation for these functions can be found at `help("priors")`. The
+available functions for specifying priors (e.g., `prior = normal(0, 1)`, `prior = cauchy(c(0, 1), c(1, 2.5))`). 
+The documentation for these functions can be found at `help("priors")`. The
 __rstanarm__ documentation and the other [vignettes](index.html) provide many
 examples of using these arguments to specify priors and the documentation for
 these arguments on the help pages for the various __rstanarm__ modeling 
@@ -133,7 +150,7 @@ The next two subsections describe how the rescaling works and how to easily
 disable it if desired.
 
 
-### Default prior scale adjustments
+### Default priors and scale adjustments
 
 Automatic scale adjustments happen in two cases: 
 

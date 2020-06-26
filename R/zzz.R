@@ -21,18 +21,11 @@
 } # nocov end
 
 .onAttach <- function(...) {
-  rstanarmLib <- dirname(system.file(package = "rstanarm"))
-  pkgdesc <- suppressWarnings(utils::packageDescription("rstanarm", lib.loc = rstanarmLib))
-  if (length(pkgdesc) > 1) {
-    builddate <- gsub(';.*$', '', pkgdesc$Packaged)
-    packageStartupMessage(paste("rstanarm (Version ", pkgdesc$Version, ", packaged: ", builddate, ")", sep = ""))
-  }
-  packageStartupMessage("- Do not expect the default priors to remain the same in future rstanarm versions.")
-  packageStartupMessage("Thus, R scripts should specify priors explicitly, even if they are just the defaults.")
+  ver <- utils::packageVersion("rstanarm")
+  packageStartupMessage("This is rstanarm version ", ver)
+  packageStartupMessage("- See mc-stan.org/rstanarm/articles/priors for changes to default priors!")
+  packageStartupMessage("- Default priors may change so it is safest to explicitly specify priors, even if just the defaults.")
   packageStartupMessage("- For execution on a local, multicore CPU with excess RAM we recommend calling")
-  packageStartupMessage("options(mc.cores = parallel::detectCores())")
-  packageStartupMessage("- bayesplot theme set to bayesplot::theme_default()")
-  packageStartupMessage("   * Does _not_ affect other ggplot2 plots")
-  packageStartupMessage("   * See ?bayesplot_theme_set for details on theme setting")
+  packageStartupMessage("  options(mc.cores = parallel::detectCores())")
 }
 

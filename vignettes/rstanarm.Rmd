@@ -149,8 +149,8 @@ library(rstanarm)
 womensrole_bglm_1 <- stan_glm(cbind(agree, disagree) ~ education + gender,
                               data = womensrole,
                               family = binomial(link = "logit"), 
-                              prior = student_t(df = 7), 
-                              prior_intercept = student_t(df = 7),
+                              prior = student_t(df = 7, 0, 5), 
+                              prior_intercept = student_t(df = 7, 0, 5),
                               cores = 2, seed = 12345)
 womensrole_bglm_1
 ```
