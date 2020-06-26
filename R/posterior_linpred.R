@@ -113,9 +113,10 @@ posterior_linpred.stanreg <-
       colnames(eta) <- rownames(newdata)
     }
 
-    if (isTRUE(transform))
-      message("transform = TRUE is somewhat deprecated so you should",
-              "call posterior_epred, which provides equivalent functionality")
+    if (isTRUE(transform)) {
+      message("transform = TRUE is somewhat deprecated. ",
+              "Please call posterior_epred(), which provides equivalent functionality.")
+    }
     
     if (!transform || is.nlmer(object)) {
       return(eta)
