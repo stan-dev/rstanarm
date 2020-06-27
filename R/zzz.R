@@ -15,16 +15,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-.onLoad <- function(libname, pkgname) { # nocov start
+.onLoad <- function(libname, pkgname) {
   modules <- paste0("stan_fit4", names(stanmodels), "_mod")
   for (m in modules) loadModule(m, what = TRUE)
-} # nocov end
+}
 
 .onAttach <- function(...) {
   ver <- utils::packageVersion("rstanarm")
   packageStartupMessage("This is rstanarm version ", ver)
-  packageStartupMessage("- See mc-stan.org/rstanarm/articles/priors for changes to default priors!")
-  packageStartupMessage("- Default priors may change so it is safest to explicitly specify priors, even if just the defaults.")
+  packageStartupMessage("- See https://mc-stan.org/rstanarm/articles/priors for changes to default priors!")
+  packageStartupMessage("- Default priors may change, so it's safest to specify priors, even if equivalent to the defaults.")
   packageStartupMessage("- For execution on a local, multicore CPU with excess RAM we recommend calling")
   packageStartupMessage("  options(mc.cores = parallel::detectCores())")
 }
