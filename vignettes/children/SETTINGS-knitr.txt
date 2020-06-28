@@ -4,7 +4,7 @@ opts_chunk$set(
   comment=NA, 
   message = FALSE, 
   warning = FALSE, 
-  eval = params$EVAL,
+  eval = identical(Sys.getenv("NOT_CRAN"), "true"),
   dev = "png",
   dpi = 150,
   fig.asp = 0.618,

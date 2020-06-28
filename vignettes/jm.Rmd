@@ -6,8 +6,6 @@ output:
   html_vignette:
     toc: true
     number_sections: false
-params:
-  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 ---
 
 <!--

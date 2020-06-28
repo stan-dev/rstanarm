@@ -756,6 +756,9 @@ validate_data <- function(data, if_missing = NULL) {
     stop("'data' must be a data frame.", call. = FALSE)
   }
   
+  # drop other classes (e.g. 'tbl_df', 'tbl', 'data.table')
+  data <- as.data.frame(data)
+  
   drop_redundant_dims(data)
 }
 

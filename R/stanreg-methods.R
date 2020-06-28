@@ -267,14 +267,15 @@ ranef_template <- function(object) {
     new_formula <- as.formula(paste(new_formula_lhs, "~", new_formula_rhs))
   }
   
-  if (stan_fun != "stan_nlmer" && is.gaussian(object$family$family)) {
+  if (stan_fun != "stan_nlmer" && 
+      (is.gaussian(object$family$family) || is.beta(object$family$family))) {
     stan_fun <- "stan_lmer"
   }
   lme4_fun <- switch(
     stan_fun,
     "stan_lmer" = "lmer",
     "stan_nlmer" = "nlmer",
-    "glmer" # for stan_glmer, stan_glmer.nb, stan_gamm4 (unless gaussian)
+    "glmer" # for stan_glmer, stan_glmer.nb, stan_gamm4 (unless gaussian or beta)
   )
   cntrl_args <- list(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 1))
   if (lme4_fun != "nlmer") { # nlmerControl doesn't allow these

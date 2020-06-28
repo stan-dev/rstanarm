@@ -118,8 +118,7 @@
 #' @examples
 #' (fit <- stan_lm(mpg ~ wt + qsec + am, data = mtcars, prior = R2(0.75), 
 #'                 # the next line is only to make the example go fast enough
-#'                 chains = 1, iter = 500, seed = 12345, refresh = 0))
-#' plot(fit, prob = 0.8)
+#'                 chains = 1, iter = 300, seed = 12345, refresh = 0))
 #' plot(fit, "hist", pars = c("wt", "am", "qsec", "sigma"), 
 #'      transformations = list(sigma = "log"))
 #' 

@@ -159,7 +159,7 @@
 #'   lot1 ~ log_u, 
 #'   data = clotting, 
 #'   family = Gamma(link="log"),
-#'   iter = 500 # for speed of example only,
+#'   iter = 500, # for speed of example only
 #'   refresh = 0
 #'  ) 
 #' print(fit4, digits = 2)

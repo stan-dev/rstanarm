@@ -5,8 +5,6 @@ date: "`r Sys.Date()`"
 output: 
   html_vignette: 
     toc: yes
-params:
-  EVAL: !r TRUE
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -85,17 +83,17 @@ function. For specifying priors, the `stan_glm` function accepts the arguments
 `prior_intercept`, `prior`, and `prior_aux`. To use the default priors we just 
 leave those arguments at their defaults (i.e., we don't specify them):
 
-```{r, default-prior-1, results="hide"}
+```{r, default-prior-1, results="hide", eval = TRUE}
 library("rstanarm")
 default_prior_test <- stan_glm(mpg ~ wt + am, data = mtcars, chains = 1)
 ```
 
 The `prior_summary` function provides a concise summary of the priors used: 
 
-```{r, default-prior-summary}
+```{r, default-prior-summary, eval = TRUE}
 prior_summary(default_prior_test)
 ```
-```{r, echo=FALSE}
+```{r, echo=FALSE, eval = TRUE}
 priors <- prior_summary(default_prior_test)
 fr2 <- function(x) format(round(x, 2), nsmall = 2)
 ```
@@ -167,7 +165,7 @@ for many models.
 To disable automatic rescaling simply set the `autoscale` argument to to
 `FALSE`. For example:
 
-```{r, no-autoscale, results="hide"}
+```{r, no-autoscale, results="hide", eval = TRUE}
 test_no_autoscale <-
   update(
     default_prior_test,
@@ -180,7 +178,7 @@ test_no_autoscale <-
 We can verify that the prior scales weren't adjusted by checking
 `prior_summary`:
 
-```{r, no-autoscale-prior-summary}
+```{r, no-autoscale-prior-summary, eval = TRUE}
 prior_summary(test_no_autoscale)
 ```
 
@@ -212,19 +210,20 @@ implies some strange prior beliefs. For example, you believe a priori that
 $P(|\theta| < 250) < P(|\theta| > 250)$, 
 which can easily be verified by doing the calculation with the normal CDF
 
-```{r}
+```{r, eval = TRUE}
 p <- 1 - 2 * pnorm(-250, mean = 0, sd = 500)
 print(paste("Pr(-250 < theta < 250) =", round(p, 2)))
 ```
 
 or via approximation with Monte Carlo draws:
 
-```{r, fig.cap="_There is much more probability mass outside the interval (-250, 250)._"}
+```{r, fig.cap="_There is much more probability mass outside the interval (-250, 250)._", eval = TRUE}
 theta <- rnorm(1e5, mean = 0, sd = 500)
 p_approx <- mean(abs(theta) < 250)
 print(paste("Pr(-250 < theta < 250) =", round(p_approx, 2)))
 
 d <- data.frame(theta, clr = abs(theta) > 250)
+library(ggplot2)
 ggplot(d, aes(x = theta, fill = clr)) + 
   geom_histogram(binwidth = 5, show.legend = FALSE) + 
   scale_y_continuous(name = "", labels = NULL, expand = c(0,0)) + 
@@ -258,10 +257,10 @@ __rstanarm__ will use flat priors if `NULL` is specified rather than a
 distribution. For example, to use a flat prior on regression coefficients you
 would specify `prior=NULL`:
 
-```{r, flat-prior-1, echo=FALSE, results="hide"}
+```{r, flat-prior-1, echo=FALSE, results="hide", eval = TRUE}
 flat_prior_test <- stan_glm(mpg ~ wt, data = mtcars, prior = NULL, iter = 10, chains = 1)
 ```
-```{r, flat-prior-2, eval=FALSE}
+```{r, flat-prior-2, eval=FALSE, eval = TRUE}
 flat_prior_test <- stan_glm(mpg ~ wt, data = mtcars, prior = NULL)
 ```
 
@@ -271,7 +270,7 @@ coefficient on the `wt` variable will have a flat prior. To double check that
 indeed a flat prior was used for the coefficient on `wt` we can call
 `prior_summary`:
 
-```{r, flat-prior-summary}
+```{r, flat-prior-summary, eval = TRUE}
 prior_summary(flat_prior_test)
 ```
 

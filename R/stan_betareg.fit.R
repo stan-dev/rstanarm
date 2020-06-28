@@ -237,7 +237,7 @@ stan_betareg.fit <-
     prior_df_for_smooth = array(NA_real_, dim = 0), K_smooth = 0L,
     S = matrix(NA_real_, nrow(xtemp), ncol = 0L), smooth_map = integer(),
     has_weights = length(weights) > 0, weights = weights,
-    has_offset = length(offset) > 0, offset = offset,
+    has_offset = length(offset) > 0, offset_ = offset,
     t = 0L, 
     p = integer(), 
     l = integer(), 
