@@ -50,7 +50,7 @@
 #'   function returns the posterior distribution of the conditional expectation.
 #'   In the special case of a Gaussian likelihood with an identity link
 #'   function, these two concepts are the same. The \code{posterior_epred}
-#'   function is a less noisy way obtain averages over the output of
+#'   function is a less noisy way to obtain expectations over the output of
 #'   \code{\link{posterior_predict}}.
 #'   
 #' @note For models estimated with \code{\link{stan_clogit}}, the number of 
