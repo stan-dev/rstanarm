@@ -238,10 +238,11 @@ for many models.
 ### Disabling prior scale adjustments
 
 To disable automatic rescaling simply specify a prior other than the default.
-**rstanarm** used to require you to also explicitly set the `autoscale` argument
-to `FALSE`, but now autoscaling only happens for the default priors, and
-manually specified priors do not autoscale by default unless `autoscale` is set
-to `TRUE`. For example:
+**rstanarm** versions up to and including version `2.19.3` used to require you
+to explicitly set the `autoscale` argument to `FALSE`, but now autoscaling only
+happens by default for the default priors. To use autoscaling with manually
+specified priors you have to set `autoscale = TRUE`. For example, this prior
+specification will not include any autoscaling:
 
 ```{r, no-autoscale, results="hide", eval = TRUE}
 test_no_autoscale <-
