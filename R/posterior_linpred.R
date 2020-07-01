@@ -17,10 +17,10 @@
 
 #' Posterior distribution of the (possibly transformed) linear predictor
 #'
-#' Extract the posterior draws of the linear predictor, possibly transformed by 
-#' the inverse-link function. This function is occasionally useful, but it 
-#' should be used sparingly. Inference and model checking should generally be 
-#' carried out using the posterior predictive distribution (i.e., using 
+#' Extract the posterior draws of the linear predictor, possibly transformed by
+#' the inverse-link function. This function is occasionally useful, but it
+#' should be used sparingly: inference and model checking should generally be
+#' carried out using the posterior predictive distribution (i.e., using
 #' \code{\link{posterior_predict}}).
 #'
 #' @aliases posterior_linpred posterior_epred
@@ -29,10 +29,10 @@
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
 #' @param transform Should the linear predictor be transformed using the
-#'   inverse-link function? The default is \code{FALSE}, in which case the
-#'   untransformed linear predictor is returned. The non-default behavior
-#'   of \code{TRUE} is somewhat deprecated since \code{posterior_epred}
-#'   should be called instead.
+#'   inverse-link function? The default is \code{FALSE}. This argument is still
+#'   allowed but not recommended because the \code{posterior_epred} function now
+#'   provides the equivalent of \code{posterior_linpred(..., transform=TRUE)}.
+#'   See \strong{Examples}.
 #' @param newdata,draws,re.form,offset Same as for \code{\link{posterior_predict}}.
 #' @param XZ If \code{TRUE} then instead of computing the linear predictor the 
 #'   design matrix \code{X} (or \code{cbind(X,Z)} for models with group-specific
@@ -73,7 +73,8 @@
 #' colMeans(linpred)
 #' 
 #' # probabilities
-#' probs <- posterior_epred(example_model)
+#' # same as posterior_linpred(example_model, transform = TRUE)
+#' probs <- posterior_epred(example_model) 
 #' colMeans(probs)
 #' 
 #' # not conditioning on any group-level parameters
@@ -114,8 +115,10 @@ posterior_linpred.stanreg <-
     }
 
     if (isTRUE(transform)) {
-      message("transform = TRUE is somewhat deprecated. ",
-              "Please call posterior_epred(), which provides equivalent functionality.")
+      message(
+        "Instead of posterior_linpred(..., transform=TRUE) please call posterior_epred(), ",
+        "which provides equivalent functionality."
+      )
     }
     
     if (!transform || is.nlmer(object)) {
