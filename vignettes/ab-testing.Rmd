@@ -253,11 +253,11 @@ If we compute the $90\%$ predictive interval then we can say that $90\%$ of the
 posterior predictions for that group lie between that interval. In order for us
 to evaluate whether the two groups are different enough we can compute the
 [overlap coefficient](https://en.wikipedia.org/wiki/Overlap_coefficient), which
-describes how much of the prediction intervals in each of the two groups overlap
-as a proportion. For example, suppose there is a $15\%$ overlap between the
-$90\%$ prediction intervals in each of the two groups. This allows us to say,
-given that we are $90\%$ certain about where the predictions lie, there's a
-$15\%$ chance that the two groups are similar.
+describes the overlap of the prediction intervals for each group as a
+proportion. For example, suppose there is a $15\%$ overlap between the $90\%$
+prediction intervals in each of the two groups. This allows us to say, given
+that we are $90\%$ certain about where the predictions lie, there's a $15\%$
+chance that the two groups are similar.
 
 <!-- I think it would be helpful to compare looking at differences in predictions to looking at differences in the _parameters_. Most people will think the natural thing to do is to compare the posterior distributions of the parameters (which isn't _horrible_), but I prefer the approach you're using of comparing predictions. I just think it's necessary to compare/distinguish between them. -->
 
