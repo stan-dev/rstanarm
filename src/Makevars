@@ -3,7 +3,7 @@ PKG_CPPFLAGS = -I"../inst/include" -I"$(STANHEADERS_SRC)" -DBOOST_DISABLE_ASSERT
 PKG_CXXFLAGS = `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "RcppParallel::CxxFlags()"` `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "StanHeaders:::CxxFlags()"`
 SHLIB_LDFLAGS = $(SHLIB_CXXLDFLAGS)
 SHLIB_LD = $(SHLIB_CXXLD)
-PKG_LIBS = `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "RcppParallel::RcppParallelLibs()"` `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "StanHeaders:::LdFlags()"`
+PKG_LIBS = `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "RcppParallel::RcppParallelLibs()"` -ltbb -ltbbmalloc
 
 CXX_STD = CXX14
 SOURCES = $(wildcard stan_files/*.stan)
