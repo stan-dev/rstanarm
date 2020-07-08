@@ -371,7 +371,8 @@ clotting2 <- with(clotting, data.frame(
 ))
 
 fit <- stan_glm(clot_time ~ log_plasma * lot_id, data = clotting2, family = Gamma, 
-                prior_intercept = normal(0,1), prior = normal(0,1),
+                prior_intercept = normal(0, 1, autoscale = TRUE), 
+                prior = normal(0, 1, autoscale = TRUE),
                 seed = 12345)
 ```
 

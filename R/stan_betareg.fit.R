@@ -26,11 +26,11 @@ stan_betareg.fit <-
            offset = rep(0, NROW(x)),
            link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
            link.phi = NULL, ...,
-           prior = normal(), 
-           prior_intercept = normal(),
-           prior_z = normal(), 
-           prior_intercept_z = normal(),
-           prior_phi = exponential(),
+           prior = normal(autoscale=TRUE), 
+           prior_intercept = normal(autoscale=TRUE),
+           prior_z = normal(autoscale=TRUE), 
+           prior_intercept_z = normal(autoscale=TRUE),
+           prior_phi = exponential(autoscale=TRUE),
            prior_PD = FALSE, 
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            adapt_delta = NULL, 
@@ -101,7 +101,7 @@ stan_betareg.fit <-
     assign(i, prior_stuff[[i]])
   
   prior_intercept_stuff <- handle_glm_prior(prior_intercept, nvars = 1, 
-                                            default_scale = 10, link = link,
+                                            default_scale = 2.5, link = link,
                                             ok_dists = ok_intercept_dists)
   names(prior_intercept_stuff) <- paste0(names(prior_intercept_stuff), 
                                          "_for_intercept")
@@ -115,7 +115,7 @@ stan_betareg.fit <-
     assign(paste0(i,"_z"), prior_stuff_z[[i]])
   
   prior_intercept_stuff_z <- handle_glm_prior(prior_intercept_z, nvars = 1, 
-                                              link = link.phi, default_scale = 10,
+                                              link = link.phi, default_scale = 2.5,
                                               ok_dists = ok_intercept_dists)
   names(prior_intercept_stuff_z) <- paste0(names(prior_intercept_stuff_z), 
                                            "_for_intercept")

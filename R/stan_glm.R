@@ -138,7 +138,7 @@
 #'   counts ~ outcome + treatment, 
 #'   data = count_data, 
 #'   family = poisson(link="log"),
-#'   prior = normal(0, 2, autoscale = FALSE),
+#'   prior = normal(0, 2),
 #'   refresh = 0,
 #'   # for speed of example only
 #'   chains = 2, iter = 250 
@@ -179,7 +179,7 @@
 #'   Days ~ Sex/(Age + Eth*Lrn), 
 #'   data = MASS::quine, 
 #'   link = "log", 
-#'   prior_aux = exponential(1.5),
+#'   prior_aux = exponential(1.5, autoscale=TRUE),
 #'   chains = 2, iter = 200, # for speed of example only
 #'   refresh = 0
 #' ) 
@@ -207,9 +207,9 @@ stan_glm <-
            y = TRUE,
            contrasts = NULL,
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
-           prior_aux = exponential(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
+           prior_aux = exponential(autoscale=TRUE),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            mean_PPD = algorithm != "optimizing",
@@ -319,9 +319,9 @@ stan_glm.nb <-
            contrasts = NULL,
            link = "log",
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
-           prior_aux = exponential(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
+           prior_aux = exponential(autoscale=TRUE),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            mean_PPD = algorithm != "optimizing",

@@ -15,6 +15,23 @@ output:
 ```{r, child="children/SETTINGS-gg.txt"}
 ```
 
+# July 2020 Update
+
+As of July 2020 there are a few changes to prior distributions: 
+
+* Except for in default priors, `autoscale` now defaults to `FALSE`. This means
+that when specifying custom priors you no longer need to manually set
+`autoscale=FALSE` every time you use a distribution.
+
+* There are minor changes to the default priors on the intercept and
+(non-hierarchical) regression coefficients. See **Default priors and scale
+adjustments** below.
+
+We recommend the new book 
+[Regression and Other Stories](https://avehtari.github.io/ROS-Examples/), 
+which discusses the background behind the default priors in **rstanarm** and 
+also provides examples of specifying non-default priors.
+
 # Introduction
 
 This vignette provides an overview of how the specification of prior 
@@ -55,8 +72,8 @@ additional arguments specific only to those models:
 <br> 
 
 To specify these arguments the user provides a call to one of the various
-available functions for specifying priors (e.g., `prior = normal(0, 1)`, `prior = cauchy(c(0, 1), c(1, 2.5))`). The
-documentation for these functions can be found at `help("priors")`. The
+available functions for specifying priors (e.g., `prior = normal(0, 1)`, `prior = cauchy(c(0, 1), c(1, 2.5))`). 
+The documentation for these functions can be found at `help("priors")`. The
 __rstanarm__ documentation and the other [vignettes](index.html) provide many
 examples of using these arguments to specify priors and the documentation for
 these arguments on the help pages for the various __rstanarm__ modeling 
@@ -114,7 +131,7 @@ scales actually used were
 `r fr2(priors$prior$adjusted_scale[2])`. 
 
 * __Intercept__: For the intercept, the default prior is normal with mean $0$ 
-and standard deviation $10$, but in this case the standard deviation was 
+and standard deviation $2.5$, but in this case the standard deviation was 
 adjusted to `r fr2(priors$prior_intercept$adjusted_scale[1])`. There is also a
 note in parentheses informing you that the prior applies to the intercept after
 all predictors have been centered (a similar note can be found in the
@@ -133,25 +150,82 @@ The next two subsections describe how the rescaling works and how to easily
 disable it if desired.
 
 
-### Automatic prior scale adjustments
+### Default priors and scale adjustments
 
-For distributions that take an `autoscale` argument (see `help("priors")` for a
-list), if `autoscale` is left at `TRUE` (the default) then, in certain cases,
-the prior scales will be adjusted internally by __rstanarm__.
+Automatic scale adjustments happen in two cases: 
 
-First, if the _outcome_ $y$ is Gaussian, the prior scales for the intercept,
-coefficients, and error standard deviation are multiplied by a factor of
-$\mathrm{sd}(y)$.
+1. When the default priors are used.
+2. When the user sets `autoscale=TRUE` when specifying their own prior (e.g., `normal(0, 3, autoscale=TRUE)`). See `help("priors")` for a list of distributions to see which have an `autoscale` argument.
 
-Additionally (not only for Gaussian models), if the `QR` argument to the model
-fitting function (e.g. `stan_glm`) is `FALSE` (the default) then:
+Here we describe how the default priors work for the intercept, regression
+coefficients, and (if applicable) auxiliary parameters. Autoscaling when not
+using default priors works analogously (if `autoscale=TRUE`).
 
-* For a predictor $x$ with only one value nothing is changed.
-* For a predictor $x$ with exactly two unique values, we take the
-user-specified (or default) scale(s) for the selected priors and divide by the
-range of $x$.
-* For a predictor $x$ with more than two unique values, we divide the prior 
-scale(s) by $\mathrm{sd}(x)$.
+Assume we have outcome $y$ and predictors $x_1,\ldots,x_k$ and our model has linear 
+predictor 
+
+$$
+\alpha + \beta_1 x_1 + \dots + \beta_K x_K.
+$$
+
+#### Regression coefficients 
+
+The default prior on regression coefficients $\beta_k$ is
+
+$$
+\beta_k \sim \mathsf{Normal}(0, \, 2.5 \cdot s_y/s_x)
+$$
+where $s_x = \text{sd}(x)$ and 
+$$ 
+s_y =
+\begin{cases}
+\text{sd}(y) & \text{if } \:\: {\tt family=gaussian(link)}, \\
+1 & \text{otherwise}.
+\end{cases}
+$$
+
+
+This corresponds to `prior = normal(0, 2.5, autoscale = TRUE)` in **rstanarm** code. 
+
+
+#### Intercept 
+
+The intercept is assigned a prior indirectly. The `prior_intercept` argument
+refers to the intercept after all predictors have been centered (internally by
+**rstanarm**). That is, instead of placing the prior on the expected value of
+$y$ when $x=0$, we place a prior on the expected value of $y$ when 
+$x = \bar{x}$. The default prior for this centered intercept, say $\alpha_c$, is
+
+$$
+\alpha_c \sim \mathsf{Normal}(m_y, \, 2.5 \cdot s_y)
+$$
+where 
+
+$$
+m_y =
+\begin{cases}
+\bar{y} & \text{if } \:\: {\tt family=gaussian(link="identity")}, \\
+0 & \text{otherwise}
+\end{cases}
+$$
+and $s_y$ is the same as above (either 1 or $\text{sd(y)}$).
+
+#### Auxiliary parameters
+
+The default prior on the auxiliary parameter (residual standard deviation for
+Gaussian, shape for gamma, reciprocal dispersion for negative binomial, etc.) is
+an exponential distribution with rate $1/s_y$
+
+
+$$
+\text{aux} \sim \mathsf{Exponential}(1/s_y)
+$$
+where $s_y$ is the same as above (either 1 or $\text{sd(y)}$). 
+
+This corresponds to `prior_aux = exponential(1, autoscale=TRUE)` in **rstanarm**
+code.
+
+#### Note on data-based priors
 
 Because the scaling is based on the scales of the predictors (and possibly the
 outcome) these are technically data-dependent priors. However, since these
@@ -160,18 +234,23 @@ information used is weak and mainly takes into account the order of magnitude of
 the variables. This enables __rstanarm__ to offer defaults that are reasonable 
 for many models.
 
+
 ### Disabling prior scale adjustments
 
-To disable automatic rescaling simply set the `autoscale` argument to to
-`FALSE`. For example:
+To disable automatic rescaling simply specify a prior other than the default.
+**rstanarm** versions up to and including version `2.19.3` used to require you
+to explicitly set the `autoscale` argument to `FALSE`, but now autoscaling only
+happens by default for the default priors. To use autoscaling with manually
+specified priors you have to set `autoscale = TRUE`. For example, this prior
+specification will not include any autoscaling:
 
 ```{r, no-autoscale, results="hide", eval = TRUE}
 test_no_autoscale <-
   update(
     default_prior_test,
-    prior = normal(0, 5, autoscale = FALSE),
-    prior_intercept = student_t(4, 0, 10, autoscale = FALSE),
-    prior_aux = cauchy(0, 3, autoscale = FALSE)
+    prior = normal(0, 5),
+    prior_intercept = student_t(4, 0, 10),
+    prior_aux = cauchy(0, 3)
   )
 ```
 
@@ -182,9 +261,6 @@ We can verify that the prior scales weren't adjusted by checking
 prior_summary(test_no_autoscale)
 ```
 
-Disabling prior scale adjustments is usually unnecessary but is useful for when 
-more informative prior information is available. There is an example of
-specifying an informative prior later in this vignette.
 
 <br>
 
@@ -302,7 +378,7 @@ becomes increasingly important.
 If the variables `y`, `x1`, and `x2` are in the data frame `dat` then this
 model can be specified as
 ```{r, eval=FALSE}
-my_prior <- normal(location = c(-10, 0), scale = c(5, 2), autoscale = FALSE)
+my_prior <- normal(location = c(-10, 0), scale = c(5, 2))
 stan_glm(y ~ x1 + x2, data = dat, prior = my_prior)
 ```
 We left the priors for the intercept and error standard deviation at their 

@@ -112,8 +112,8 @@ glm1 <- glm(y ~ roach1 + treatment + senior, offset = log(exposure2),
 # Estimate Bayesian version with stan_glm
 stan_glm1 <- stan_glm(y ~ roach1 + treatment + senior, offset = log(exposure2),
                       data = roaches, family = poisson, 
-                      prior = normal(0, 2.5, autoscale=FALSE), 
-                      prior_intercept = normal(0, 5, autoscale=FALSE),
+                      prior = normal(0, 2.5), 
+                      prior_intercept = normal(0, 5),
                       seed = 12345)
 ```
 
