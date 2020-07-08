@@ -247,8 +247,8 @@ test_that("predition with family mgcv::betar doesn't error", {
   test_data <- data.frame(y = c(0.1, 0.3), x = c(TRUE, FALSE))
   fit <- SW(stan_glmer(y ~ (1|x), family=mgcv::betar(link="logit"), 
                        data=test_data,  seed = 101, iter = 200, chains = 1, refresh = 0))
-  expect_silent(posterior_linpred(res, newdata=test_data))
-  expect_silent(posterior_predict(res, newdata=test_data))
+  expect_silent(posterior_linpred(fit, newdata=test_data))
+  expect_silent(posterior_predict(fit, newdata=test_data))
 })
 
 # compare to lme4 ---------------------------------------------------------

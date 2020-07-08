@@ -60,7 +60,7 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
   ols <- if (length(w) == 0) lm.fit(x, y) else lm.wfit(x, y, w)
   b <- coef(ols)
   NAs <- is.na(b)
-  if (any(NAs) && !singular.ok) {
+  if (any(NAs) && singular.ok) {
     x <- x[,!NAs, drop = FALSE]
     xbar <- xbar[!NAs]
     ols <- lsfit(x, y, w, intercept = FALSE)
