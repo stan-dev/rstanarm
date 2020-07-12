@@ -409,6 +409,8 @@
 #' 
 #' @examples
 #' \donttest{
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
+#' 
 #' #####
 #' # Univariate joint model, with association structure based on the 
 #' # current value of the linear predictor
@@ -516,6 +518,7 @@
 #'         family = list(binomial, gaussian),
 #'         time_var = "year", 
 #'         chains = 1, cores = 1, seed = 12345, iter = 1000)
+#' }
 #' }
 #' 
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 

@@ -30,7 +30,8 @@
 #'   to set that equal to the number of chains being executed.
 #'   
 #' @examples
-#'   set.seed(123)
+#'   # set.seed(123)
+#'   if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386")
 #'   example_jm <- 
 #'      stan_jm(formulaLong = logBili ~ year + (1 | id), 
 #'              dataLong = pbcLong[1:101,],
