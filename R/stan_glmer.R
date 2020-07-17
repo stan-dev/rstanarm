@@ -52,8 +52,8 @@
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
 #'   specified.
 #' @param ... For \code{stan_glmer}, further arguments passed to 
-#'   \code{\link[rstan]{sampling}} (e.g. \code{iter}, \code{chains}, 
-#'   \code{cores}, etc.) or to \code{\link[rstan]{vb}} (if \code{algorithm} is 
+#'   \code{\link[rstan:stanmodel-method-sampling]{sampling}} (e.g. \code{iter}, \code{chains}, 
+#'   \code{cores}, etc.) or to \code{\link[rstan:stanmodel-method-vb]{vb}} (if \code{algorithm} is 
 #'   \code{"meanfield"} or \code{"fullrank"}). For \code{stan_lmer} and 
 #'   \code{stan_glmer.nb}, \code{...} should also contain all relevant arguments
 #'   to pass to \code{stan_glmer} (except \code{family}).

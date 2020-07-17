@@ -52,7 +52,7 @@
 #' }
 #' \item{\code{confint}}{
 #' For models fit using optimization, confidence intervals are returned via a 
-#' call to \code{\link[stats]{confint.default}}. If \code{algorithm} is 
+#' call to \code{\link[stats:confint]{confint.default}}. If \code{algorithm} is 
 #' \code{"sampling"}, \code{"meanfield"}, or \code{"fullrank"}, the
 #' \code{confint} will throw an error because the
 #' \code{\link{posterior_interval}} function should be used to compute Bayesian 
@@ -396,7 +396,7 @@ family.stanreg <- function(object, ...) object$family
 #' @keywords internal
 #' @export
 #' @param formula,... See \code{\link[stats]{model.frame}}.
-#' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
+#' @param fixed.only See \code{\link[lme4:merMod-class]{model.frame.merMod}}.
 #' 
 model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
   if (is.mer(formula)) {

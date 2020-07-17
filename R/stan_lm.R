@@ -44,7 +44,7 @@
 #' @template args-algorithm
 #' @template args-adapt_delta
 #'
-#' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified.
+#' @param w Same as in \code{lm.wfit} but rarely specified.
 #' @param prior Must be a call to \code{\link{R2}} with its 
 #'   \code{location} argument specified or \code{NULL}, which would
 #'   indicate a standard uniform prior for the \eqn{R^2}.
@@ -77,8 +77,8 @@
 #'   \code{"sampling"}). The \code{stan_lm} function has a formula-based
 #'   interface and would usually be called by users but the \code{stan_lm.fit}
 #'   and \code{stan_lm.wfit} functions might be called by other functions that
-#'   parse the data themselves and are analogous to \code{\link[stats]{lm.fit}}
-#'   and \code{\link[stats]{lm.wfit}} respectively.
+#'   parse the data themselves and are analogous to \code{lm.fit}
+#'   and \code{lm.wfit} respectively.
 #'      
 #'   In addition to estimating \code{sigma} --- the standard deviation of the
 #'   normally-distributed errors --- this model estimates a positive parameter

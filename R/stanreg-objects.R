@@ -161,7 +161,7 @@
 #' }
 #' 
 #' @note The \code{\link{stan_biglm}} function is an exception. It returns a 
-#'   \link[rstan]{stanfit} object rather than a stanreg object.
+#'   \link[rstan:stanfit-class]{stanfit} object rather than a stanreg object.
 #'
 #' @seealso \code{\link{stanreg-methods}}, \code{\link{stanmvreg-methods}}
 #'   
