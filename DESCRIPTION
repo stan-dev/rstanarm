@@ -59,6 +59,7 @@ Suggests:
     mgcv (>= 1.8-13),
     rmarkdown,
     roxygen2,
+    StanHeaders (>= 2.21.0),
     testthat (>= 1.0.2)
 LinkingTo: StanHeaders (>= 2.21.0), rstan (>= 2.21.1), BH (>= 1.72.0-2), Rcpp (>=
     0.12.0), RcppEigen (>= 0.3.3.3.0), RcppParallel (>= 5.0.1)

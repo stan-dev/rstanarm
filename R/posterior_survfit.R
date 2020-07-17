@@ -552,7 +552,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   (often known as a credible interval); or \code{"none"} for no interval 
 #'   limits.
 #' @param ... Optional arguments passed to 
-#'   \code{\link[ggplot2]{geom_line}} and used to control features
+#'   \code{\link[ggplot2:geom_path]{geom_line}} and used to control features
 #'   of the plotted survival function.
 #'      
 #' @return The plot method returns a \code{ggplot} object, also of class

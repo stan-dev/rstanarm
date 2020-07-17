@@ -4,11 +4,11 @@
 #'   controls \code{"sigma"}, the error 
 #'   standard deviation. For negative binomial models \code{prior_aux} controls 
 #'   \code{"reciprocal_dispersion"}, which is similar to the 
-#'   \code{"size"} parameter of \code{\link[stats]{rnbinom}}:
+#'   \code{"size"} parameter of \code{\link[stats:NegBinomial]{rnbinom}}:
 #'   smaller values of \code{"reciprocal_dispersion"} correspond to 
 #'   greater dispersion. For gamma models \code{prior_aux} sets the prior on 
 #'   to the \code{"shape"} parameter (see e.g., 
-#'   \code{\link[stats]{rgamma}}), and for inverse-Gaussian models it is the 
+#'   \code{\link[stats:GammaDist]{rgamma}}), and for inverse-Gaussian models it is the 
 #'   so-called \code{"lambda"} parameter (which is essentially the reciprocal of
 #'   a scale parameter). Binomial and Poisson models do not have auxiliary 
 #'   parameters.

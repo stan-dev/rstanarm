@@ -44,7 +44,7 @@
 #'   draws is the size of the posterior sample.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to use.
 #' @param ... Optional arguments passed to 
-#'   \code{\link[ggplot2]{geom_line}} and used to control features
+#'   \code{\link[ggplot2:geom_path]{geom_line}} and used to control features
 #'   of the plotted trajectory.
 #' 
 #' @return A ggplot object that can be further customized using the

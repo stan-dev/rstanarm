@@ -45,9 +45,9 @@
 #'   \code{loo}, \code{kfold}) are not guaranteed to work properly.
 #' @param subset,weights,na.action Same as \code{\link[stats]{glm}}, 
 #'   but rarely specified.
-#' @param ... Further arguments passed to \code{\link[rstan]{sampling}} (e.g. 
+#' @param ... Further arguments passed to \code{\link[rstan:stanmodel-method-sampling]{sampling}} (e.g. 
 #'   \code{iter}, \code{chains}, \code{cores}, etc.) or to
-#'   \code{\link[rstan]{vb}} (if \code{algorithm} is \code{"meanfield"} or
+#'   \code{\link[rstan:stanmodel-method-vb]{vb}} (if \code{algorithm} is \code{"meanfield"} or
 #'   \code{"fullrank"}).
 #' @param prior_covariance Cannot be \code{NULL}; see \code{\link{decov}} for
 #'   more information about the default arguments.
@@ -90,7 +90,7 @@
 #'   (credible intervals) rather than confidence intervals and the inner line
 #'   is the posterior median of the function rather than the function implied
 #'   by a point estimate. To change the colors used in the plot see 
-#'   \code{\link[bayesplot]{color_scheme_set}}.
+#'   \code{\link[bayesplot:bayesplot-colors]{color_scheme_set}}.
 #'   
 #' @references 
 #' Crainiceanu, C., Ruppert D., and Wand, M. (2005). Bayesian analysis for 
