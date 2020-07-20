@@ -1,3 +1,27 @@
+# rstanarm 2.21.1
+
+* Consistent with [Regression and Other Stories](https://statmodeling.stat.columbia.edu/2020/07/08/regression-and-other-stories-is-available/)
+
+### Backwards incompatible changes
+
+* `autoscale` argument to various prior functions not defaults to `FALSE`, although 
+  by default `normal` is now called with `autoscale = TRUE` in `stan_glm`, `stan_glmer`, etc.
+* The default prior on the intercept is different than it was in rstanarm <= 2.19.3
+  for `stan_glm`, `stan_glmer`, etc.
+* `stan_jm` is not available for 32bit Windows
+
+### New functions
+
+* `posterior_epred` returns the posterior distribution of the conditional expectation,
+  which is previously accomplished via `posterior_linpred` with `transform = TRUE`
+* `predict` produces predictions in more cases where it previously threw errors
+
+### Bug fixes
+
+* `singular.ok` now rules out singular design matrices in `stan_lm`
+* `newdata` now works when the family was `mgcv::betar`
+* now works better with `data.table`s
+
 # rstanarm 2.19.3
 
 ### Bug fixes
