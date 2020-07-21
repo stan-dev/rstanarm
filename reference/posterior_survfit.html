@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -71,7 +75,6 @@ of the fixed effect covariates then this is possible -- such predictions
 are sometimes referred to as standardised survival probabilties -- see the 
 standardise argument below." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -89,7 +92,7 @@ standardise argument below." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -103,17 +106,26 @@ standardise argument below." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -129,6 +141,9 @@ standardise argument below." />
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -142,6 +157,9 @@ standardise argument below." />
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -182,7 +200,7 @@ standardise argument below." />
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Estimate subject-specific or standardised survival probabilities</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/posterior_survfit.R'><code>R/posterior_survfit.R</code></a></small>
     <div class="hidden name"><code>posterior_survfit.Rd</code></div>
     </div>
 
@@ -216,11 +234,24 @@ are sometimes referred to as standardised survival probabilties -- see the
 <code>standardise</code> argument below.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>posterior_survfit</span>(<span class='no'>object</span>, <span class='kw'>newdataLong</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>newdataEvent</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>extrapolate</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>control</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(), <span class='kw'>condition</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>last_time</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='no'>ids</span>, <span class='kw'>times</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>standardise</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>dynamic</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>1.5</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>seed</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>posterior_survfit</span>(
+  <span class='no'>object</span>,
+  <span class='kw'>newdataLong</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>newdataEvent</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>extrapolate</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>control</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(),
+  <span class='kw'>condition</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>last_time</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.95</span>,
+  <span class='no'>ids</span>,
+  <span class='kw'>times</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>standardise</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>dynamic</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>1.5</span>,
+  <span class='kw'>draws</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>seed</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='no'>...</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -260,7 +291,7 @@ the <code>control</code> argument.</p></td>
       <th>control</th>
       <td><p>A named list with parameters controlling extrapolation 
   of the estimated survival function when <code>extrapolate = TRUE</code>. The list
-  can contain one or more of the following named elements: <br /></p><dl class='dl-horizontal'>
+  can contain one or more of the following named elements: <br /></p><dl'>
     <dt><code>epoints</code></dt><dd><p>a positive integer specifying the number of  
     discrete time points at which to calculate the forecasted survival 
     probabilities. The default is 10.</p></dd>
@@ -445,7 +476,7 @@ size of the posterior sample if that is less than 200.</p></td>
   <span class='no'>ps1</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_survfit</span>(<span class='no'>example_jm</span>, <span class='kw'>ids</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>7</span>,<span class='fl'>13</span>,<span class='fl'>15</span>))
   <span class='co'># We can plot the estimated survival probabilities using the</span>
   <span class='co'># associated plot function</span>
-  <span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>ps1</span>)</div><div class='img'><img src='posterior_survfit-1.png' alt='' width='700' height='433' /></div><div class='input'>
+  <span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>ps1</span>)</div><div class='img'><img src='posterior_survfit-1.png' alt='' width='700' height='433' /></div><div class='input'>
   <span class='co'># If we wanted to estimate the survival probabilities for the</span>
   <span class='co'># same three individuals as the previous example, but this time</span>
   <span class='co'># we won't condition on them having survived up until their </span>
@@ -472,16 +503,16 @@ size of the posterior sample if that is less than 200.</p></td>
     <span class='kw'>last_time</span> <span class='kw'>=</span> <span class='st'>"futimeYears"</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; Drawing new random effects for 2 individuals. Monitoring progress:
 #&gt;   |                                                                              |                                                                      |   0%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================================================| 100%</div><div class='input'>  <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span>(<span class='no'>ps3</span>)</div><div class='output co'>#&gt;   id   year survpred  ci_lb  ci_ub
 #&gt; 1  1 1.0951   1.0000 1.0000 1.0000
-#&gt; 2  1 2.0278   0.6722 0.0050 0.9390
-#&gt; 3  1 2.9604   0.4392 0.0000 0.8625
-#&gt; 4  1 3.8930   0.2299 0.0000 0.8076
-#&gt; 5  1 4.8257   0.0832 0.0000 0.7324
-#&gt; 6  1 5.7583   0.0139 0.0000 0.5019</div><div class='input'>  <span class='co'># We can then compare the estimated random effects for these </span>
+#&gt; 2  1 2.0278   0.4827 0.0013 0.9483
+#&gt; 3  1 2.9604   0.2179 0.0000 0.8575
+#&gt; 4  1 3.8930   0.0697 0.0000 0.6929
+#&gt; 5  1 4.8257   0.0054 0.0000 0.4532
+#&gt; 6  1 5.7583   0.0002 0.0000 0.2547</div><div class='input'>  <span class='co'># We can then compare the estimated random effects for these </span>
   <span class='co'># individuals based on the fitted model and the Monte Carlo scheme</span>
   <span class='fu'><a href='stanreg-methods.html'>ranef</a></span>(<span class='no'>example_jm</span>)$<span class='no'>Long1</span>$<span class='no'>id</span>[<span class='fl'>1</span>:<span class='fl'>2</span>,,<span class='kw'>drop</span><span class='kw'>=</span><span class='fl'>FALSE</span>] <span class='co'># from fitted model</span></div><div class='output co'>#&gt;   (Intercept)
-#&gt; 1   2.2616267
-#&gt; 2  -0.4335783</div><div class='input'>  <span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colMeans</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/attr.html'>attr</a></span>(<span class='no'>ps3</span>, <span class='st'>"b_new"</span>))                <span class='co'># from Monte Carlo scheme</span></div><div class='output co'>#&gt; b[Long1|(Intercept) id:1] b[Long1|(Intercept) id:2] 
-#&gt;                 2.1001187                -0.4161391 </div><div class='input'>
+#&gt; 1   2.0591942
+#&gt; 2  -0.6024433</div><div class='input'>  <span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colMeans</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/attr.html'>attr</a></span>(<span class='no'>ps3</span>, <span class='st'>"b_new"</span>))                <span class='co'># from Monte Carlo scheme</span></div><div class='output co'>#&gt; b[Long1|(Intercept) id:1] b[Long1|(Intercept) id:2] 
+#&gt;                 2.0256299                -0.6795806 </div><div class='input'>
   <span class='co'># Lastly, if we wanted to obtain "standardised" survival probabilities, </span>
   <span class='co'># (by averaging over the observed distribution of the fixed effect </span>
   <span class='co'># covariates, as well as averaging over the estimated random effects</span>
@@ -490,21 +521,14 @@ size of the posterior sample if that is less than 200.</p></td>
   <span class='co'># standardised survival curve.</span>
   <span class='no'>ps4</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_survfit</span>(<span class='no'>example_jm</span>, <span class='kw'>standardise</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
                            <span class='kw'>times</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>extrapolate</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
-  <span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>ps4</span>)</div><div class='img'><img src='posterior_survfit-2.png' alt='' width='700' height='433' /></div><div class='input'># }
+  <span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>ps4</span>)</div><div class='img'><img src='posterior_survfit-2.png' alt='' width='700' height='433' /></div><div class='input'># }
  
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#note">Note</a></li>
-      <li><a href="#references">References</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -515,7 +539,7 @@ size of the posterior sample if that is less than 200.</p></td>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

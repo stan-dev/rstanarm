@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -47,7 +51,6 @@
 Bayesian inference for ordinal (or binary) regression models under a
 proportional odds assumption." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -65,7 +68,7 @@ proportional odds assumption." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -79,17 +82,26 @@ proportional odds assumption." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -105,6 +117,9 @@ proportional odds assumption." />
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -118,6 +133,9 @@ proportional odds assumption." />
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -158,7 +176,7 @@ proportional odds assumption." />
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Bayesian ordinal regression models via Stan</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/stan_polr.R'><code>R/stan_polr.R</code></a>, <a href='https://github.com/stan-dev/rstanarm/blob/master/R/stan_polr.fit.R'><code>R/stan_polr.fit.R</code></a></small>
     <div class="hidden name"><code>stan_polr.Rd</code></div>
     </div>
 
@@ -168,20 +186,42 @@ Bayesian inference for ordinal (or binary) regression models under a
 proportional odds assumption.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>stan_polr</span>(<span class='no'>formula</span>, <span class='no'>data</span>, <span class='no'>weights</span>, <span class='no'>...</span>, <span class='no'>subset</span>,
-  <span class='kw'>na.action</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"na.action"</span>, <span class='st'>"na.omit"</span>), <span class='kw'>contrasts</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>model</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"logistic"</span>, <span class='st'>"probit"</span>, <span class='st'>"loglog"</span>, <span class='st'>"cloglog"</span>,
-  <span class='st'>"cauchit"</span>), <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/stop.html'>stop</a></span>(<span class='st'>"'location' must be specified"</span>)),
-  <span class='kw'>prior_counts</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>dirichlet</a></span>(<span class='fl'>1</span>), <span class='kw'>shape</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>rate</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
-  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>do_residuals</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
-
-<span class='fu'>stan_polr.fit</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='kw'>wt</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>method</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"logistic"</span>,
-  <span class='st'>"probit"</span>, <span class='st'>"loglog"</span>, <span class='st'>"cloglog"</span>, <span class='st'>"cauchit"</span>), <span class='no'>...</span>,
+    <pre class="usage"><span class='fu'>stan_polr</span>(
+  <span class='no'>formula</span>,
+  <span class='no'>data</span>,
+  <span class='no'>weights</span>,
+  <span class='no'>...</span>,
+  <span class='no'>subset</span>,
+  <span class='kw'>na.action</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"na.action"</span>, <span class='st'>"na.omit"</span>),
+  <span class='kw'>contrasts</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>model</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>method</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"logistic"</span>, <span class='st'>"probit"</span>, <span class='st'>"loglog"</span>, <span class='st'>"cloglog"</span>, <span class='st'>"cauchit"</span>),
   <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/stop.html'>stop</a></span>(<span class='st'>"'location' must be specified"</span>)),
-  <span class='kw'>prior_counts</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>dirichlet</a></span>(<span class='fl'>1</span>), <span class='kw'>shape</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>rate</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
-  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>do_residuals</span> <span class='kw'>=</span> <span class='no'>algorithm</span> <span class='kw'>==</span> <span class='st'>"sampling"</span>)</pre>
+  <span class='kw'>prior_counts</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>dirichlet</a></span>(<span class='fl'>1</span>),
+  <span class='kw'>shape</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>rate</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
+  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>do_residuals</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
+)
+
+<span class='fu'>stan_polr.fit</span>(
+  <span class='no'>x</span>,
+  <span class='no'>y</span>,
+  <span class='kw'>wt</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>method</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"logistic"</span>, <span class='st'>"probit"</span>, <span class='st'>"loglog"</span>, <span class='st'>"cloglog"</span>, <span class='st'>"cauchit"</span>),
+  <span class='no'>...</span>,
+  <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/stop.html'>stop</a></span>(<span class='st'>"'location' must be specified"</span>)),
+  <span class='kw'>prior_counts</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>dirichlet</a></span>(<span class='fl'>1</span>),
+  <span class='kw'>shape</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>rate</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
+  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>do_residuals</span> <span class='kw'>=</span> <span class='no'>algorithm</span> <span class='kw'>==</span> <span class='st'>"sampling"</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -202,11 +242,12 @@ rarely specified.</p></td>
     <tr>
       <th>...</th>
       <td><p>Further arguments passed to the function in the <span class="pkg">rstan</span> 
-package (<code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-sampling.html'>sampling</a></code>, <code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-vb.html'>vb</a></code>, or 
-<code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-optimizing.html'>optimizing</a></code>), corresponding to the estimation method 
-named by <code>algorithm</code>. For example, if <code>algorithm</code> is
-<code>"sampling"</code> it is possibly to specify <code>iter</code>, <code>chains</code>,
-<code>cores</code>, <code>refresh</code>, etc.</p></td>
+package (<code>sampling</code>, 
+<code>vb</code>, or 
+<code>optimizing</code>), 
+corresponding to the estimation method named by <code>algorithm</code>. For example, 
+if <code>algorithm</code> is <code>"sampling"</code> it is possibly to specify <code>iter</code>, 
+<code>chains</code>, <code>cores</code>, <code>refresh</code>, etc.</p></td>
     </tr>
     <tr>
       <th>method</th>
@@ -357,7 +398,7 @@ for <code>stan_polr</code>.</p>
           <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fl'>0.2</span>, <span class='st'>"mean"</span>), <span class='kw'>init_r</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>,
           <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"fullrank"</span>) <span class='co'># for speed only</span>
  <span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>fit</span>)
- <span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>)
+ <span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>)
 }</div><div class='output co'>#&gt; Chain 1: ------------------------------------------------------------
 #&gt; Chain 1: EXPERIMENTAL ALGORITHM:
 #&gt; Chain 1:   This procedure has not been thoroughly tested and may be unstable
@@ -366,8 +407,8 @@ for <code>stan_polr</code>.</p>
 #&gt; Chain 1: 
 #&gt; Chain 1: 
 #&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 5.2e-05 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.52 seconds.
+#&gt; Chain 1: Gradient evaluation took 4.8e-05 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.48 seconds.
 #&gt; Chain 1: Adjust your expectations accordingly!
 #&gt; Chain 1: 
 #&gt; Chain 1: 
@@ -381,13 +422,11 @@ for <code>stan_polr</code>.</p>
 #&gt; Chain 1: 
 #&gt; Chain 1: Begin stochastic gradient ascent.
 #&gt; Chain 1:   iter             ELBO   delta_ELBO_mean   delta_ELBO_med   notes 
-#&gt; Chain 1:    100         -131.242             1.000            1.000
-#&gt; Chain 1:    200         -128.791             0.510            1.000
-#&gt; Chain 1:    300         -129.287             0.341            0.019
-#&gt; Chain 1:    400         -127.812             0.259            0.019
-#&gt; Chain 1:    500         -127.539             0.207            0.012
-#&gt; Chain 1:    600         -127.677             0.173            0.012
-#&gt; Chain 1:    700         -127.825             0.148            0.004   MEDIAN ELBO CONVERGED
+#&gt; Chain 1:    100         -131.324             1.000            1.000
+#&gt; Chain 1:    200         -128.970             0.509            1.000
+#&gt; Chain 1:    300         -128.146             0.342            0.018
+#&gt; Chain 1:    400         -127.573             0.257            0.018
+#&gt; Chain 1:    500         -127.682             0.206            0.006   MEDIAN ELBO CONVERGED
 #&gt; Chain 1: 
 #&gt; Chain 1: Drawing a sample of size 1000 from the approximate posterior... 
 #&gt; Chain 1: COMPLETED.
@@ -397,34 +436,27 @@ for <code>stan_polr</code>.</p>
 #&gt;  observations: 88
 #&gt; ------
 #&gt;         Median MAD_SD
-#&gt; agegp.L -0.2    0.3  
-#&gt; agegp.Q -0.1    0.2  
-#&gt; agegp.C  0.0    0.3  
+#&gt; agegp.L -0.2    0.2  
+#&gt; agegp.Q -0.1    0.3  
+#&gt; agegp.C -0.1    0.3  
 #&gt; agegp^4  0.0    0.2  
 #&gt; agegp^5  0.0    0.2  
 #&gt; 
 #&gt; Cutpoints:
 #&gt;                Median MAD_SD
-#&gt; 0-9g/day|10-19 -0.6    0.2  
-#&gt; 10-19|20-29     0.1    0.1  
-#&gt; 20-29|30+       0.7    0.2  
+#&gt; 0-9g/day|10-19 -0.5    0.1  
+#&gt; 10-19|20-29     0.2    0.2  
+#&gt; 20-29|30+       0.8    0.2  
 #&gt; 
 #&gt; ------
 #&gt; * For help interpreting the printed output see ?print.stanreg
 #&gt; * For info on the priors used see ?prior_summary.stanreg</div><div class='img'><img src='stan_polr-1.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#details">Details</a></li>
-      <li><a href="#references">References</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -435,7 +467,7 @@ for <code>stan_polr</code>.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

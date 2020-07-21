@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -50,7 +54,6 @@ intervals. These intervals are often referred to as credible
 intervals, but we use the term uncertainty intervals to highlight the
 fact that wider intervals correspond to greater uncertainty." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -68,7 +71,7 @@ fact that wider intervals correspond to greater uncertainty." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -82,17 +85,26 @@ fact that wider intervals correspond to greater uncertainty." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -108,6 +120,9 @@ fact that wider intervals correspond to greater uncertainty." />
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -121,6 +136,9 @@ fact that wider intervals correspond to greater uncertainty." />
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -161,7 +179,7 @@ fact that wider intervals correspond to greater uncertainty." />
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Posterior uncertainty intervals</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/posterior_interval.R'><code>R/posterior_interval.R</code></a></small>
     <div class="hidden name"><code>posterior_interval.stanreg.Rd</code></div>
     </div>
 
@@ -175,8 +193,14 @@ fact that wider intervals correspond to greater uncertainty.</p>
     </div>
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
-<span class='fu'>posterior_interval</span>(<span class='no'>object</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.9</span>,
-  <span class='kw'>type</span> <span class='kw'>=</span> <span class='st'>"central"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
+<span class='fu'>posterior_interval</span>(
+  <span class='no'>object</span>,
+  <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.9</span>,
+  <span class='kw'>type</span> <span class='kw'>=</span> <span class='st'>"central"</span>,
+  <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='no'>...</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -275,57 +299,50 @@ be used to compute traditional confidence intervals.</p>
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> (!<span class='fu'><a href='https://rdrr.io/r/base/exists.html'>exists</a></span>(<span class='st'>"example_model"</span>)) <span class='fu'><a href='https://rdrr.io/r/utils/example.html'>example</a></span>(<span class='no'>example_model</span>)
 <span class='fu'>posterior_interval</span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt;                                              5%         95%
-#&gt; (Intercept)                         -2.49326034 -0.64201590
-#&gt; size                                -0.03656146  0.04962907
-#&gt; period2                             -1.45977734 -0.49955853
-#&gt; period3                             -1.65973576 -0.64287240
-#&gt; period4                             -2.32546453 -0.88573521
-#&gt; b[(Intercept) herd:1]               -0.11885304  1.38578822
-#&gt; b[(Intercept) herd:2]               -1.09692347  0.29535522
-#&gt; b[(Intercept) herd:3]               -0.20347330  0.97578670
-#&gt; b[(Intercept) herd:4]               -0.71854035  0.82246033
-#&gt; b[(Intercept) herd:5]               -0.95172375  0.46994989
-#&gt; b[(Intercept) herd:6]               -1.24069174  0.18041030
-#&gt; b[(Intercept) herd:7]                0.21313477  1.67658585
-#&gt; b[(Intercept) herd:8]               -0.21274454  1.33064728
-#&gt; b[(Intercept) herd:9]               -1.28535183  0.65730302
-#&gt; b[(Intercept) herd:10]              -1.41763887  0.05399449
-#&gt; b[(Intercept) herd:11]              -0.80030769  0.45538854
-#&gt; b[(Intercept) herd:12]              -0.93237032  0.78268547
-#&gt; b[(Intercept) herd:13]              -1.67912384 -0.10693664
-#&gt; b[(Intercept) herd:14]               0.29472735  1.79099139
-#&gt; b[(Intercept) herd:15]              -1.40974543  0.06309448
-#&gt; Sigma[herd:(Intercept),(Intercept)]  0.18609018  1.15908365</div><div class='input'><span class='fu'>posterior_interval</span>(<span class='no'>example_model</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"herd"</span>)</div><div class='output co'>#&gt;                                             5%         95%
-#&gt; b[(Intercept) herd:1]               -0.1188530  1.38578822
-#&gt; b[(Intercept) herd:2]               -1.0969235  0.29535522
-#&gt; b[(Intercept) herd:3]               -0.2034733  0.97578670
-#&gt; b[(Intercept) herd:4]               -0.7185403  0.82246033
-#&gt; b[(Intercept) herd:5]               -0.9517237  0.46994989
-#&gt; b[(Intercept) herd:6]               -1.2406917  0.18041030
-#&gt; b[(Intercept) herd:7]                0.2131348  1.67658585
-#&gt; b[(Intercept) herd:8]               -0.2127445  1.33064728
-#&gt; b[(Intercept) herd:9]               -1.2853518  0.65730302
-#&gt; b[(Intercept) herd:10]              -1.4176389  0.05399449
-#&gt; b[(Intercept) herd:11]              -0.8003077  0.45538854
-#&gt; b[(Intercept) herd:12]              -0.9323703  0.78268547
-#&gt; b[(Intercept) herd:13]              -1.6791238 -0.10693664
-#&gt; b[(Intercept) herd:14]               0.2947273  1.79099139
-#&gt; b[(Intercept) herd:15]              -1.4097454  0.06309448
-#&gt; Sigma[herd:(Intercept),(Intercept)]  0.1860902  1.15908365</div><div class='input'><span class='fu'>posterior_interval</span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"period2"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><div class='output co'>#&gt;               25%        75%
-#&gt; period2 -1.170427 -0.7774787</div><div class='input'>
+#&gt; (Intercept)                         -2.59472475 -0.56472995
+#&gt; size                                -0.03758437  0.05511800
+#&gt; period2                             -1.51086772 -0.49391962
+#&gt; period3                             -1.68368649 -0.57603566
+#&gt; period4                             -2.34343433 -0.81656578
+#&gt; b[(Intercept) herd:1]               -0.10871636  1.36553510
+#&gt; b[(Intercept) herd:2]               -1.13228236  0.25217690
+#&gt; b[(Intercept) herd:3]               -0.25389656  0.95170947
+#&gt; b[(Intercept) herd:4]               -0.76451729  0.79075936
+#&gt; b[(Intercept) herd:5]               -1.00407491  0.36829229
+#&gt; b[(Intercept) herd:6]               -1.29552185  0.14812840
+#&gt; b[(Intercept) herd:7]                0.23210268  1.64672542
+#&gt; b[(Intercept) herd:8]               -0.27072642  1.32170444
+#&gt; b[(Intercept) herd:9]               -1.17709208  0.50611154
+#&gt; b[(Intercept) herd:10]              -1.50949796  0.04327035
+#&gt; b[(Intercept) herd:11]              -0.89616785  0.45605482
+#&gt; b[(Intercept) herd:12]              -1.03193902  0.73101931
+#&gt; b[(Intercept) herd:13]              -1.72415678 -0.14623533
+#&gt; b[(Intercept) herd:14]               0.28089602  1.78939275
+#&gt; b[(Intercept) herd:15]              -1.51555017  0.07615731
+#&gt; Sigma[herd:(Intercept),(Intercept)]  0.19221825  1.30638469</div><div class='input'><span class='fu'>posterior_interval</span>(<span class='no'>example_model</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"herd"</span>)</div><div class='output co'>#&gt;                                             5%         95%
+#&gt; b[(Intercept) herd:1]               -0.1087164  1.36553510
+#&gt; b[(Intercept) herd:2]               -1.1322824  0.25217690
+#&gt; b[(Intercept) herd:3]               -0.2538966  0.95170947
+#&gt; b[(Intercept) herd:4]               -0.7645173  0.79075936
+#&gt; b[(Intercept) herd:5]               -1.0040749  0.36829229
+#&gt; b[(Intercept) herd:6]               -1.2955218  0.14812840
+#&gt; b[(Intercept) herd:7]                0.2321027  1.64672542
+#&gt; b[(Intercept) herd:8]               -0.2707264  1.32170444
+#&gt; b[(Intercept) herd:9]               -1.1770921  0.50611154
+#&gt; b[(Intercept) herd:10]              -1.5094980  0.04327035
+#&gt; b[(Intercept) herd:11]              -0.8961679  0.45605482
+#&gt; b[(Intercept) herd:12]              -1.0319390  0.73101931
+#&gt; b[(Intercept) herd:13]              -1.7241568 -0.14623533
+#&gt; b[(Intercept) herd:14]               0.2808960  1.78939275
+#&gt; b[(Intercept) herd:15]              -1.5155502  0.07615731
+#&gt; Sigma[herd:(Intercept),(Intercept)]  0.1922183  1.30638469</div><div class='input'><span class='fu'>posterior_interval</span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"period2"</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>)</div><div class='output co'>#&gt;               25%        75%
+#&gt; period2 -1.172102 -0.7788668</div><div class='input'>
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#details">Details</a></li>
-      <li><a href="#references">References</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -336,7 +353,7 @@ be used to compute traditional confidence intervals.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

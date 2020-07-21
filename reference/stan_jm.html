@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -47,7 +51,6 @@
 Fits a shared parameter joint model for longitudinal and time-to-event 
 (e.g. survival) data under a Bayesian framework using Stan." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -65,7 +68,7 @@ Fits a shared parameter joint model for longitudinal and time-to-event
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -79,17 +82,26 @@ Fits a shared parameter joint model for longitudinal and time-to-event
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -105,6 +117,9 @@ Fits a shared parameter joint model for longitudinal and time-to-event
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -118,6 +133,9 @@ Fits a shared parameter joint model for longitudinal and time-to-event
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -158,7 +176,7 @@ Fits a shared parameter joint model for longitudinal and time-to-event
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Bayesian joint longitudinal and time-to-event models via Stan</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/stan_jm.R'><code>R/stan_jm.R</code></a></small>
     <div class="hidden name"><code>stan_jm.Rd</code></div>
     </div>
 
@@ -168,17 +186,39 @@ Fits a shared parameter joint model for longitudinal and time-to-event
 (e.g. survival) data under a Bayesian framework using Stan.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>stan_jm</span>(<span class='no'>formulaLong</span>, <span class='no'>dataLong</span>, <span class='no'>formulaEvent</span>, <span class='no'>dataEvent</span>, <span class='no'>time_var</span>, <span class='no'>id_var</span>,
-  <span class='kw'>family</span> <span class='kw'>=</span> <span class='no'>gaussian</span>, <span class='kw'>assoc</span> <span class='kw'>=</span> <span class='st'>"etavalue"</span>, <span class='kw'>lag_assoc</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='no'>grp_assoc</span>,
-  <span class='kw'>epsilon</span> <span class='kw'>=</span> <span class='fl'>1e-05</span>, <span class='kw'>basehaz</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"bs"</span>, <span class='st'>"weibull"</span>, <span class='st'>"piecewise"</span>),
-  <span class='no'>basehaz_ops</span>, <span class='kw'>qnodes</span> <span class='kw'>=</span> <span class='fl'>15</span>, <span class='kw'>init</span> <span class='kw'>=</span> <span class='st'>"prefit"</span>, <span class='no'>weights</span>,
-  <span class='kw'>priorLong</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>priorLong_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(),
-  <span class='kw'>priorLong_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>cauchy</a></span>(<span class='fl'>0</span>, <span class='fl'>5</span>), <span class='kw'>priorEvent</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(),
-  <span class='kw'>priorEvent_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>priorEvent_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>cauchy</a></span>(),
-  <span class='kw'>priorEvent_assoc</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>lkj</a></span>(),
-  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
-  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>max_treedepth</span> <span class='kw'>=</span> <span class='fl'>10L</span>, <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>sparse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>stan_jm</span>(
+  <span class='no'>formulaLong</span>,
+  <span class='no'>dataLong</span>,
+  <span class='no'>formulaEvent</span>,
+  <span class='no'>dataEvent</span>,
+  <span class='no'>time_var</span>,
+  <span class='no'>id_var</span>,
+  <span class='kw'>family</span> <span class='kw'>=</span> <span class='no'>gaussian</span>,
+  <span class='kw'>assoc</span> <span class='kw'>=</span> <span class='st'>"etavalue"</span>,
+  <span class='kw'>lag_assoc</span> <span class='kw'>=</span> <span class='fl'>0</span>,
+  <span class='no'>grp_assoc</span>,
+  <span class='kw'>epsilon</span> <span class='kw'>=</span> <span class='fl'>1e-05</span>,
+  <span class='kw'>basehaz</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"bs"</span>, <span class='st'>"weibull"</span>, <span class='st'>"piecewise"</span>),
+  <span class='no'>basehaz_ops</span>,
+  <span class='kw'>qnodes</span> <span class='kw'>=</span> <span class='fl'>15</span>,
+  <span class='kw'>init</span> <span class='kw'>=</span> <span class='st'>"prefit"</span>,
+  <span class='no'>weights</span>,
+  <span class='kw'>priorLong</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>priorLong_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>priorLong_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>cauchy</a></span>(<span class='fl'>0</span>, <span class='fl'>5</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>priorEvent</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>priorEvent_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>priorEvent_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>cauchy</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>priorEvent_assoc</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>lkj</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
+  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>max_treedepth</span> <span class='kw'>=</span> <span class='fl'>10L</span>,
+  <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>sparse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='no'>...</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -314,7 +354,7 @@ models estimated using a piecewise constant baseline hazard).</p></td>
     <tr>
       <th>basehaz_ops</th>
       <td><p>A named list specifying options related to the baseline
-hazard. Currently this can include: <br /></p><dl class='dl-horizontal'>
+hazard. Currently this can include: <br /></p><dl'>
   <dt><code>df</code></dt><dd><p>A positive integer specifying the degrees of freedom 
   for the B-splines if <code>basehaz = "bs"</code>, or the number of
   intervals used for the piecewise constant baseline hazard if 
@@ -519,11 +559,12 @@ the code run faster and can consume much less RAM.</p></td>
     <tr>
       <th>...</th>
       <td><p>Further arguments passed to the function in the <span class="pkg">rstan</span> 
-package (<code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-sampling.html'>sampling</a></code>, <code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-vb.html'>vb</a></code>, or 
-<code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-optimizing.html'>optimizing</a></code>), corresponding to the estimation method 
-named by <code>algorithm</code>. For example, if <code>algorithm</code> is
-<code>"sampling"</code> it is possibly to specify <code>iter</code>, <code>chains</code>,
-<code>cores</code>, <code>refresh</code>, etc.</p></td>
+package (<code>sampling</code>, 
+<code>vb</code>, or 
+<code>optimizing</code>), 
+corresponding to the estimation method named by <code>algorithm</code>. For example, 
+if <code>algorithm</code> is <code>"sampling"</code> it is possibly to specify <code>iter</code>, 
+<code>chains</code>, <code>cores</code>, <code>refresh</code>, etc.</p></td>
     </tr>
     </table>
 
@@ -679,6 +720,8 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='co'># \donttest{</span>
+<span class='kw'>if</span> (<span class='no'>.Platform</span>$<span class='no'>OS.type</span> <span class='kw'>!=</span> <span class='st'>"windows"</span> <span class='kw'>||</span> <span class='no'>.Platform</span>$<span class='no'>r_arch</span> <span class='kw'>!=</span><span class='st'>"i386"</span>) {
+
 <span class='co'>#####</span>
 <span class='co'># Univariate joint model, with association structure based on the </span>
 <span class='co'># current value of the linear predictor</span>
@@ -688,164 +731,10 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
               <span class='kw'>dataEvent</span> <span class='kw'>=</span> <span class='no'>pbcSurv</span>,
               <span class='kw'>time_var</span> <span class='kw'>=</span> <span class='st'>"year"</span>,
               <span class='co'># this next line is only to keep the example small in size!</span>
-              <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>1000</span>)</div><div class='output co'>#&gt; Fitting a univariate joint model.
-#&gt; 
-#&gt; Please note the warmup may be much slower than later iterations!
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
-#&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 0.00022 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.2 seconds.
-#&gt; Chain 1: Adjust your expectations accordingly!
-#&gt; Chain 1: 
-#&gt; Chain 1: 
-#&gt; Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
-#&gt; Chain 1: Iteration: 100 / 1000 [ 10%]  (Warmup)
-#&gt; Chain 1: Iteration: 200 / 1000 [ 20%]  (Warmup)
-#&gt; Chain 1: Iteration: 300 / 1000 [ 30%]  (Warmup)
-#&gt; Chain 1: Iteration: 400 / 1000 [ 40%]  (Warmup)
-#&gt; Chain 1: Iteration: 500 / 1000 [ 50%]  (Warmup)
-#&gt; Chain 1: Iteration: 501 / 1000 [ 50%]  (Sampling)
-#&gt; Chain 1: Iteration: 600 / 1000 [ 60%]  (Sampling)
-#&gt; Chain 1: Iteration: 700 / 1000 [ 70%]  (Sampling)
-#&gt; Chain 1: Iteration: 800 / 1000 [ 80%]  (Sampling)
-#&gt; Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
-#&gt; Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
-#&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 4.04823 seconds (Warm-up)
-#&gt; Chain 1:                3.30822 seconds (Sampling)
-#&gt; Chain 1:                7.35645 seconds (Total)
-#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
-#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>f1</span>)</div><div class='output co'>#&gt; stan_jm
-#&gt;  formula (Long1): logBili ~ year + (1 | id)
-#&gt;  family  (Long1): gaussian [identity]
-#&gt;  formula (Event): Surv(futimeYears, death) ~ sex + trt
-#&gt;  baseline hazard: bs
-#&gt;  assoc:           etavalue (Long1)
-#&gt; ------
-#&gt; 
-#&gt; Longitudinal submodel: logBili
-#&gt;             Median MAD_SD
-#&gt; (Intercept) 0.761  0.226 
-#&gt; year        0.092  0.008 
-#&gt; sigma       0.508  0.019 
-#&gt; 
-#&gt; Event submodel:
-#&gt;                 Median MAD_SD exp(Median)
-#&gt; (Intercept)     -3.113  0.641  0.044     
-#&gt; sexf            -0.289  0.587  0.749     
-#&gt; trt             -0.707  0.442  0.493     
-#&gt; Long1|etavalue   1.470  0.276  4.349     
-#&gt; b-splines-coef1 -1.478  1.048     NA     
-#&gt; b-splines-coef2  0.177  0.896     NA     
-#&gt; b-splines-coef3 -1.643  1.102     NA     
-#&gt; b-splines-coef4  0.689  1.513     NA     
-#&gt; b-splines-coef5 -0.115  1.641     NA     
-#&gt; b-splines-coef6 -0.355  1.572     NA     
-#&gt; 
-#&gt; Group-level error terms:
-#&gt;  Groups Name              Std.Dev.
-#&gt;  id     Long1|(Intercept) 1.357   
-#&gt; Num. levels: id 40 
-#&gt; 
-#&gt; Sample avg. posterior predictive distribution 
-#&gt; of longitudinal outcomes:
-#&gt;                Median MAD_SD
-#&gt; Long1|mean_PPD 0.587  0.041 
-#&gt; 
-#&gt; ------
-#&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>f1</span>)</div><div class='output co'>#&gt; 
-#&gt; Model Info:
-#&gt; 
-#&gt;  function:        stan_jm
-#&gt;  formula (Long1): logBili ~ year + (1 | id)
-#&gt;  family  (Long1): gaussian [identity]
-#&gt;  formula (Event): Surv(futimeYears, death) ~ sex + trt
-#&gt;  baseline hazard: bs
-#&gt;  assoc:           etavalue (Long1)
-#&gt;  algorithm:       sampling
-#&gt;  priors:          see help('prior_summary')
-#&gt;  sample:          500 (posterior sample size)
-#&gt;  num obs:         304 (Long1)
-#&gt;  num subjects:    40
-#&gt;  num events:      29 (72.5%)
-#&gt;  groups:          id (40)
-#&gt;  runtime:         0.2 mins
-#&gt; 
-#&gt; Estimates:
-#&gt;                                                 mean     sd       2.5%  
-#&gt; Long1|(Intercept)                                0.761    0.215    0.360
-#&gt; Long1|year                                       0.092    0.010    0.074
-#&gt; Long1|sigma                                      0.509    0.022    0.468
-#&gt; Long1|mean_PPD                                   0.585    0.042    0.510
-#&gt; Event|(Intercept)                               -3.132    0.634   -4.465
-#&gt; Event|sexf                                      -0.263    0.625   -1.426
-#&gt; Event|trt                                       -0.730    0.445   -1.650
-#&gt; Event|b-splines-coef1                           -1.518    1.062   -3.562
-#&gt; Event|b-splines-coef2                            0.180    0.870   -1.490
-#&gt; Event|b-splines-coef3                           -1.681    1.159   -4.063
-#&gt; Event|b-splines-coef4                            0.681    1.545   -2.323
-#&gt; Event|b-splines-coef5                           -0.221    1.662   -3.501
-#&gt; Event|b-splines-coef6                           -0.657    1.744   -5.015
-#&gt; Assoc|Long1|etavalue                             1.471    0.290    0.932
-#&gt; Sigma[id:Long1|(Intercept),Long1|(Intercept)]    1.840    0.447    1.173
-#&gt; log-posterior                                 -377.677    6.539 -391.463
-#&gt;                                                 25%      50%      75%   
-#&gt; Long1|(Intercept)                                0.608    0.761    0.913
-#&gt; Long1|year                                       0.087    0.092    0.098
-#&gt; Long1|sigma                                      0.494    0.508    0.520
-#&gt; Long1|mean_PPD                                   0.557    0.587    0.610
-#&gt; Event|(Intercept)                               -3.550   -3.113   -2.697
-#&gt; Event|sexf                                      -0.676   -0.289    0.123
-#&gt; Event|trt                                       -1.006   -0.707   -0.420
-#&gt; Event|b-splines-coef1                           -2.211   -1.478   -0.787
-#&gt; Event|b-splines-coef2                           -0.412    0.177    0.793
-#&gt; Event|b-splines-coef3                           -2.428   -1.643   -0.924
-#&gt; Event|b-splines-coef4                           -0.324    0.689    1.718
-#&gt; Event|b-splines-coef5                           -1.278   -0.115    0.905
-#&gt; Event|b-splines-coef6                           -1.700   -0.355    0.544
-#&gt; Assoc|Long1|etavalue                             1.273    1.470    1.646
-#&gt; Sigma[id:Long1|(Intercept),Long1|(Intercept)]    1.526    1.787    2.128
-#&gt; log-posterior                                 -382.596 -377.552 -372.856
-#&gt;                                                 97.5% 
-#&gt; Long1|(Intercept)                                1.186
-#&gt; Long1|year                                       0.114
-#&gt; Long1|sigma                                      0.555
-#&gt; Long1|mean_PPD                                   0.673
-#&gt; Event|(Intercept)                               -2.030
-#&gt; Event|sexf                                       1.039
-#&gt; Event|trt                                        0.040
-#&gt; Event|b-splines-coef1                            0.313
-#&gt; Event|b-splines-coef2                            1.898
-#&gt; Event|b-splines-coef3                            0.702
-#&gt; Event|b-splines-coef4                            3.623
-#&gt; Event|b-splines-coef5                            2.909
-#&gt; Event|b-splines-coef6                            2.042
-#&gt; Assoc|Long1|etavalue                             2.040
-#&gt; Sigma[id:Long1|(Intercept),Long1|(Intercept)]    2.882
-#&gt; log-posterior                                 -365.759
-#&gt; 
-#&gt; Diagnostics:
-#&gt;                                               mcse  Rhat  n_eff
-#&gt; Long1|(Intercept)                             0.028 1.041  61  
-#&gt; Long1|year                                    0.000 0.999 690  
-#&gt; Long1|sigma                                   0.001 0.999 380  
-#&gt; Long1|mean_PPD                                0.002 1.003 510  
-#&gt; Event|(Intercept)                             0.031 1.003 423  
-#&gt; Event|sexf                                    0.030 0.999 445  
-#&gt; Event|trt                                     0.022 1.000 419  
-#&gt; Event|b-splines-coef1                         0.065 1.000 271  
-#&gt; Event|b-splines-coef2                         0.044 0.998 383  
-#&gt; Event|b-splines-coef3                         0.083 0.998 194  
-#&gt; Event|b-splines-coef4                         0.118 0.998 172  
-#&gt; Event|b-splines-coef5                         0.120 0.999 191  
-#&gt; Event|b-splines-coef6                         0.143 0.998 148  
-#&gt; Assoc|Long1|etavalue                          0.016 1.004 310  
-#&gt; Sigma[id:Long1|(Intercept),Long1|(Intercept)] 0.064 1.000  49  
-#&gt; log-posterior                                 0.942 1.003  48  
-#&gt; 
-#&gt; For each parameter, mcse is Monte Carlo standard error, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence Rhat=1).</div><div class='input'>
+              <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>1000</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>f1</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>f1</span>)
+
 <span class='co'>#####</span>
 <span class='co'># Univariate joint model, with association structure based on the </span>
 <span class='co'># current value and slope of the linear predictor</span>
@@ -855,78 +744,9 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
               <span class='kw'>dataEvent</span> <span class='kw'>=</span> <span class='no'>pbcSurv</span>,
               <span class='kw'>assoc</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"etavalue"</span>, <span class='st'>"etaslope"</span>),
               <span class='kw'>time_var</span> <span class='kw'>=</span> <span class='st'>"year"</span>,
-              <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>1000</span>)</div><div class='output co'>#&gt; Fitting a univariate joint model.
-#&gt; 
-#&gt; Please note the warmup may be much slower than later iterations!
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
-#&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 0.000484 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 4.84 seconds.
-#&gt; Chain 1: Adjust your expectations accordingly!
-#&gt; Chain 1: 
-#&gt; Chain 1: 
-#&gt; Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
-#&gt; Chain 1: Iteration: 100 / 1000 [ 10%]  (Warmup)
-#&gt; Chain 1: Iteration: 200 / 1000 [ 20%]  (Warmup)
-#&gt; Chain 1: Iteration: 300 / 1000 [ 30%]  (Warmup)
-#&gt; Chain 1: Iteration: 400 / 1000 [ 40%]  (Warmup)
-#&gt; Chain 1: Iteration: 500 / 1000 [ 50%]  (Warmup)
-#&gt; Chain 1: Iteration: 501 / 1000 [ 50%]  (Sampling)
-#&gt; Chain 1: Iteration: 600 / 1000 [ 60%]  (Sampling)
-#&gt; Chain 1: Iteration: 700 / 1000 [ 70%]  (Sampling)
-#&gt; Chain 1: Iteration: 800 / 1000 [ 80%]  (Sampling)
-#&gt; Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
-#&gt; Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
-#&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 24.1637 seconds (Warm-up)
-#&gt; Chain 1:                17.3128 seconds (Sampling)
-#&gt; Chain 1:                41.4765 seconds (Total)
-#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
-#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
-#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>f2</span>)</div><div class='output co'>#&gt; stan_jm
-#&gt;  formula (Long1): logBili ~ year + (year | id)
-#&gt;  family  (Long1): gaussian [identity]
-#&gt;  formula (Event): Surv(futimeYears, death) ~ sex + trt
-#&gt;  baseline hazard: bs
-#&gt;  assoc:           etavalue (Long1), etaslope (Long1)
-#&gt; ------
-#&gt; 
-#&gt; Longitudinal submodel: logBili
-#&gt;             Median MAD_SD
-#&gt; (Intercept) 0.641  0.207 
-#&gt; year        0.266  0.056 
-#&gt; sigma       0.356  0.017 
-#&gt; 
-#&gt; Event submodel:
-#&gt;                 Median    MAD_SD    exp(Median)
-#&gt; (Intercept)        -3.474     0.802     0.031  
-#&gt; sexf               -0.367     0.685     0.693  
-#&gt; trt                -0.996     0.603     0.369  
-#&gt; Long1|etavalue      0.795     0.419     2.215  
-#&gt; Long1|etaslope     10.027     4.991 22623.479  
-#&gt; b-splines-coef1    -5.896     3.690        NA  
-#&gt; b-splines-coef2    -2.390     2.167        NA  
-#&gt; b-splines-coef3    -2.991     1.471        NA  
-#&gt; b-splines-coef4    -0.416     1.812        NA  
-#&gt; b-splines-coef5     0.111     1.790        NA  
-#&gt; b-splines-coef6    -0.469     1.906        NA  
-#&gt; 
-#&gt; Group-level error terms:
-#&gt;  Groups Name              Std.Dev. Corr
-#&gt;  id     Long1|(Intercept) 1.2396       
-#&gt;         Long1|year        0.2465   0.70
-#&gt; Num. levels: id 40 
-#&gt; 
-#&gt; Sample avg. posterior predictive distribution 
-#&gt; of longitudinal outcomes:
-#&gt;                Median MAD_SD
-#&gt; Long1|mean_PPD 0.588  0.029 
-#&gt; 
-#&gt; ------
-#&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'>
+              <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>1000</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>f2</span>)
+
 <span class='co'>#####</span>
 <span class='co'># Univariate joint model, with association structure based on the </span>
 <span class='co'># lagged value of the linear predictor, where the lag is 2 time </span>
@@ -937,74 +757,9 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
               <span class='kw'>dataEvent</span> <span class='kw'>=</span> <span class='no'>pbcSurv</span>,
               <span class='kw'>time_var</span> <span class='kw'>=</span> <span class='st'>"year"</span>,
               <span class='kw'>assoc</span> <span class='kw'>=</span> <span class='st'>"etavalue"</span>, <span class='kw'>lag_assoc</span> <span class='kw'>=</span> <span class='fl'>2</span>,
-              <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>1000</span>)</div><div class='output co'>#&gt; Fitting a univariate joint model.
-#&gt; 
-#&gt; Please note the warmup may be much slower than later iterations!
-#&gt; 
-#&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
-#&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 0.000169 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.69 seconds.
-#&gt; Chain 1: Adjust your expectations accordingly!
-#&gt; Chain 1: 
-#&gt; Chain 1: 
-#&gt; Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
-#&gt; Chain 1: Iteration: 100 / 1000 [ 10%]  (Warmup)
-#&gt; Chain 1: Iteration: 200 / 1000 [ 20%]  (Warmup)
-#&gt; Chain 1: Iteration: 300 / 1000 [ 30%]  (Warmup)
-#&gt; Chain 1: Iteration: 400 / 1000 [ 40%]  (Warmup)
-#&gt; Chain 1: Iteration: 500 / 1000 [ 50%]  (Warmup)
-#&gt; Chain 1: Iteration: 501 / 1000 [ 50%]  (Sampling)
-#&gt; Chain 1: Iteration: 600 / 1000 [ 60%]  (Sampling)
-#&gt; Chain 1: Iteration: 700 / 1000 [ 70%]  (Sampling)
-#&gt; Chain 1: Iteration: 800 / 1000 [ 80%]  (Sampling)
-#&gt; Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
-#&gt; Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
-#&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 4.4689 seconds (Warm-up)
-#&gt; Chain 1:                2.84732 seconds (Sampling)
-#&gt; Chain 1:                7.31622 seconds (Total)
-#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
-#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>f3</span>)</div><div class='output co'>#&gt; stan_jm
-#&gt;  formula (Long1): logBili ~ year + (1 | id)
-#&gt;  family  (Long1): gaussian [identity]
-#&gt;  formula (Event): Surv(futimeYears, death) ~ sex + trt
-#&gt;  baseline hazard: bs
-#&gt;  assoc:           etavalue (Long1)
-#&gt; ------
-#&gt; 
-#&gt; Longitudinal submodel: logBili
-#&gt;             Median MAD_SD
-#&gt; (Intercept) 0.820  0.229 
-#&gt; year        0.092  0.009 
-#&gt; sigma       0.508  0.024 
-#&gt; 
-#&gt; Event submodel:
-#&gt;                 Median MAD_SD exp(Median)
-#&gt; (Intercept)     -3.020  0.637  0.049     
-#&gt; sexf            -0.264  0.640  0.768     
-#&gt; trt             -0.654  0.437  0.520     
-#&gt; Long1|etavalue   1.420  0.267  4.136     
-#&gt; b-splines-coef1 -1.385  1.080     NA     
-#&gt; b-splines-coef2  0.122  0.885     NA     
-#&gt; b-splines-coef3 -1.380  1.029     NA     
-#&gt; b-splines-coef4  0.804  1.561     NA     
-#&gt; b-splines-coef5  0.005  1.749     NA     
-#&gt; b-splines-coef6 -0.392  1.601     NA     
-#&gt; 
-#&gt; Group-level error terms:
-#&gt;  Groups Name              Std.Dev.
-#&gt;  id     Long1|(Intercept) 1.297   
-#&gt; Num. levels: id 40 
-#&gt; 
-#&gt; Sample avg. posterior predictive distribution 
-#&gt; of longitudinal outcomes:
-#&gt;                Median MAD_SD
-#&gt; Long1|mean_PPD 0.588  0.042 
-#&gt; 
-#&gt; ------
-#&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'>
+              <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>1000</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>f3</span>)
+
 <span class='co'>#####</span>
 <span class='co'># Univariate joint model, where the association structure includes </span>
 <span class='co'># interactions with observed data. Here we specify that we want to use </span>
@@ -1020,7 +775,272 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
               <span class='kw'>dataEvent</span> <span class='kw'>=</span> <span class='no'>pbcSurv</span>,
               <span class='kw'>time_var</span> <span class='kw'>=</span> <span class='st'>"year"</span>,
               <span class='kw'>assoc</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"etavalue"</span>, <span class='st'>"etavalue_data(~ trt)"</span>),
-              <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>1000</span>)</div><div class='output co'>#&gt; Fitting a univariate joint model.
+              <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>1000</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>f4</span>)
+
+<span class='co'>######</span>
+<span class='co'># Multivariate joint model, with association structure based </span>
+<span class='co'># on the current value and slope of the linear predictor in the </span>
+<span class='co'># first longitudinal submodel and the area under the marker </span>
+<span class='co'># trajectory for the second longitudinal submodel</span>
+<span class='no'>mv1</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_jm</span>(
+        <span class='kw'>formulaLong</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(
+          <span class='no'>logBili</span> ~ <span class='no'>year</span> + (<span class='fl'>1</span> <span class='kw'>|</span> <span class='no'>id</span>),
+          <span class='no'>albumin</span> ~ <span class='no'>sex</span> + <span class='no'>year</span> + (<span class='no'>year</span> <span class='kw'>|</span> <span class='no'>id</span>)),
+        <span class='kw'>dataLong</span> <span class='kw'>=</span> <span class='no'>pbcLong</span>,
+        <span class='kw'>formulaEvent</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/pkg/survival/man/Surv.html'>Surv</a></span>(<span class='no'>futimeYears</span>, <span class='no'>death</span>) ~ <span class='no'>sex</span> + <span class='no'>trt</span>,
+        <span class='kw'>dataEvent</span> <span class='kw'>=</span> <span class='no'>pbcSurv</span>,
+        <span class='kw'>assoc</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"etavalue"</span>, <span class='st'>"etaslope"</span>), <span class='st'>"etaauc"</span>),
+        <span class='kw'>time_var</span> <span class='kw'>=</span> <span class='st'>"year"</span>,
+        <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>100</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>mv1</span>)
+
+<span class='co'>#####</span>
+<span class='co'># Multivariate joint model, where the association structure is formed by </span>
+<span class='co'># including the expected value of each longitudinal marker (logBili and </span>
+<span class='co'># albumin) in the linear predictor of the event submodel, as well as their </span>
+<span class='co'># interaction effect (i.e. the interaction between the two "etavalue" terms). </span>
+<span class='co'># Note that whether such an association structure based on a marker by </span>
+<span class='co'># marker interaction term makes sense will depend on the context of your </span>
+<span class='co'># application -- here we just show it for demostration purposes).</span>
+<span class='no'>mv2</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_jm</span>(
+        <span class='kw'>formulaLong</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(
+          <span class='no'>logBili</span> ~ <span class='no'>year</span> + (<span class='fl'>1</span> <span class='kw'>|</span> <span class='no'>id</span>),
+          <span class='no'>albumin</span> ~ <span class='no'>sex</span> + <span class='no'>year</span> + (<span class='no'>year</span> <span class='kw'>|</span> <span class='no'>id</span>)),
+        <span class='kw'>dataLong</span> <span class='kw'>=</span> <span class='no'>pbcLong</span>,
+        <span class='kw'>formulaEvent</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/pkg/survival/man/Surv.html'>Surv</a></span>(<span class='no'>futimeYears</span>, <span class='no'>death</span>) ~ <span class='no'>sex</span> + <span class='no'>trt</span>,
+        <span class='kw'>dataEvent</span> <span class='kw'>=</span> <span class='no'>pbcSurv</span>,
+        <span class='kw'>assoc</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"etavalue"</span>, <span class='st'>"etavalue_etavalue(2)"</span>), <span class='st'>"etavalue"</span>),
+        <span class='kw'>time_var</span> <span class='kw'>=</span> <span class='st'>"year"</span>,
+        <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>100</span>)
+
+<span class='co'>#####</span>
+<span class='co'># Multivariate joint model, with one bernoulli marker and one</span>
+<span class='co'># Gaussian marker. We will artificially create the bernoulli</span>
+<span class='co'># marker by dichotomising log serum bilirubin</span>
+<span class='no'>pbcLong</span>$<span class='no'>ybern</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/integer.html'>as.integer</a></span>(<span class='no'>pbcLong</span>$<span class='no'>logBili</span> <span class='kw'>&gt;=</span> <span class='fu'><a href='https://rdrr.io/r/base/mean.html'>mean</a></span>(<span class='no'>pbcLong</span>$<span class='no'>logBili</span>))
+<span class='no'>mv3</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_jm</span>(
+        <span class='kw'>formulaLong</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(
+          <span class='no'>ybern</span> ~ <span class='no'>year</span> + (<span class='fl'>1</span> <span class='kw'>|</span> <span class='no'>id</span>),
+          <span class='no'>albumin</span> ~ <span class='no'>sex</span> + <span class='no'>year</span> + (<span class='no'>year</span> <span class='kw'>|</span> <span class='no'>id</span>)),
+        <span class='kw'>dataLong</span> <span class='kw'>=</span> <span class='no'>pbcLong</span>,
+        <span class='kw'>formulaEvent</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/pkg/survival/man/Surv.html'>Surv</a></span>(<span class='no'>futimeYears</span>, <span class='no'>death</span>) ~ <span class='no'>sex</span> + <span class='no'>trt</span>,
+        <span class='kw'>dataEvent</span> <span class='kw'>=</span> <span class='no'>pbcSurv</span>,
+        <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='no'>binomial</span>, <span class='no'>gaussian</span>),
+        <span class='kw'>time_var</span> <span class='kw'>=</span> <span class='st'>"year"</span>,
+        <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>1000</span>)
+}</div><div class='output co'>#&gt; Fitting a univariate joint model.
+#&gt; 
+#&gt; Please note the warmup may be much slower than later iterations!
+#&gt; 
+#&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
+#&gt; Chain 1: 
+#&gt; Chain 1: Gradient evaluation took 0.000255 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.55 seconds.
+#&gt; Chain 1: Adjust your expectations accordingly!
+#&gt; Chain 1: 
+#&gt; Chain 1: 
+#&gt; Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
+#&gt; Chain 1: Iteration: 100 / 1000 [ 10%]  (Warmup)
+#&gt; Chain 1: Iteration: 200 / 1000 [ 20%]  (Warmup)
+#&gt; Chain 1: Iteration: 300 / 1000 [ 30%]  (Warmup)
+#&gt; Chain 1: Iteration: 400 / 1000 [ 40%]  (Warmup)
+#&gt; Chain 1: Iteration: 500 / 1000 [ 50%]  (Warmup)
+#&gt; Chain 1: Iteration: 501 / 1000 [ 50%]  (Sampling)
+#&gt; Chain 1: Iteration: 600 / 1000 [ 60%]  (Sampling)
+#&gt; Chain 1: Iteration: 700 / 1000 [ 70%]  (Sampling)
+#&gt; Chain 1: Iteration: 800 / 1000 [ 80%]  (Sampling)
+#&gt; Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
+#&gt; Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
+#&gt; Chain 1: 
+#&gt; Chain 1:  Elapsed Time: 4.85136 seconds (Warm-up)
+#&gt; Chain 1:                3.04527 seconds (Sampling)
+#&gt; Chain 1:                7.89663 seconds (Total)
+#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: The largest R-hat is 1.05, indicating chains have not mixed.</span>
+#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#r-hat</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='output co'>#&gt; stan_jm
+#&gt;  formula (Long1): logBili ~ year + (1 | id)
+#&gt;  family  (Long1): gaussian [identity]
+#&gt;  formula (Event): Surv(futimeYears, death) ~ sex + trt
+#&gt;  baseline hazard: bs
+#&gt;  assoc:           etavalue (Long1)
+#&gt; ------
+#&gt; 
+#&gt; Longitudinal submodel: logBili
+#&gt;             Median MAD_SD
+#&gt; (Intercept) 0.838  0.213 
+#&gt; year        0.092  0.010 
+#&gt; sigma       0.509  0.021 
+#&gt; 
+#&gt; Event submodel:
+#&gt;                 Median MAD_SD exp(Median)
+#&gt; (Intercept)     -2.991  0.649  0.050     
+#&gt; sexf            -0.397  0.609  0.672     
+#&gt; trt             -0.746  0.477  0.474     
+#&gt; Long1|etavalue   1.425  0.269  4.158     
+#&gt; b-splines-coef1 -1.238  0.975     NA     
+#&gt; b-splines-coef2  0.087  0.885     NA     
+#&gt; b-splines-coef3 -1.544  1.270     NA     
+#&gt; b-splines-coef4  0.513  1.510     NA     
+#&gt; b-splines-coef5 -0.097  1.768     NA     
+#&gt; b-splines-coef6 -0.457  1.657     NA     
+#&gt; 
+#&gt; Group-level error terms:
+#&gt;  Groups Name              Std.Dev.
+#&gt;  id     Long1|(Intercept) 1.364   
+#&gt; Num. levels: id 40 
+#&gt; 
+#&gt; Sample avg. posterior predictive distribution 
+#&gt; of longitudinal outcomes:
+#&gt;                Median MAD_SD
+#&gt; Long1|mean_PPD 0.584  0.042 
+#&gt; 
+#&gt; ------
+#&gt; For info on the priors used see help('prior_summary.stanreg').Fitting a univariate joint model.
+#&gt; 
+#&gt; Please note the warmup may be much slower than later iterations!
+#&gt; 
+#&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
+#&gt; Chain 1: 
+#&gt; Chain 1: Gradient evaluation took 0.000346 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.46 seconds.
+#&gt; Chain 1: Adjust your expectations accordingly!
+#&gt; Chain 1: 
+#&gt; Chain 1: 
+#&gt; Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
+#&gt; Chain 1: Iteration: 100 / 1000 [ 10%]  (Warmup)
+#&gt; Chain 1: Iteration: 200 / 1000 [ 20%]  (Warmup)
+#&gt; Chain 1: Iteration: 300 / 1000 [ 30%]  (Warmup)
+#&gt; Chain 1: Iteration: 400 / 1000 [ 40%]  (Warmup)
+#&gt; Chain 1: Iteration: 500 / 1000 [ 50%]  (Warmup)
+#&gt; Chain 1: Iteration: 501 / 1000 [ 50%]  (Sampling)
+#&gt; Chain 1: Iteration: 600 / 1000 [ 60%]  (Sampling)
+#&gt; Chain 1: Iteration: 700 / 1000 [ 70%]  (Sampling)
+#&gt; Chain 1: Iteration: 800 / 1000 [ 80%]  (Sampling)
+#&gt; Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
+#&gt; Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
+#&gt; Chain 1: 
+#&gt; Chain 1:  Elapsed Time: 26.3729 seconds (Warm-up)
+#&gt; Chain 1:                16.4721 seconds (Sampling)
+#&gt; Chain 1:                42.845 seconds (Total)
+#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: The largest R-hat is 1.05, indicating chains have not mixed.</span>
+#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#r-hat</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; stan_jm
+#&gt;  formula (Long1): logBili ~ year + (year | id)
+#&gt;  family  (Long1): gaussian [identity]
+#&gt;  formula (Event): Surv(futimeYears, death) ~ sex + trt
+#&gt;  baseline hazard: bs
+#&gt;  assoc:           etavalue (Long1), etaslope (Long1)
+#&gt; ------
+#&gt; 
+#&gt; Longitudinal submodel: logBili
+#&gt;             Median MAD_SD
+#&gt; (Intercept) 0.683  0.190 
+#&gt; year        0.272  0.053 
+#&gt; sigma       0.356  0.016 
+#&gt; 
+#&gt; Event submodel:
+#&gt;                 Median    MAD_SD    exp(Median)
+#&gt; (Intercept)        -3.407     0.818     0.033  
+#&gt; sexf               -0.383     0.675     0.682  
+#&gt; trt                -1.015     0.563     0.362  
+#&gt; Long1|etavalue      0.771     0.427     2.163  
+#&gt; Long1|etaslope     10.463     5.376 35012.688  
+#&gt; b-splines-coef1    -6.099     4.257        NA  
+#&gt; b-splines-coef2    -2.506     2.159        NA  
+#&gt; b-splines-coef3    -3.166     1.613        NA  
+#&gt; b-splines-coef4    -0.316     1.740        NA  
+#&gt; b-splines-coef5     0.218     1.757        NA  
+#&gt; b-splines-coef6    -0.527     1.696        NA  
+#&gt; 
+#&gt; Group-level error terms:
+#&gt;  Groups Name              Std.Dev. Corr
+#&gt;  id     Long1|(Intercept) 1.2680       
+#&gt;         Long1|year        0.2507   0.69
+#&gt; Num. levels: id 40 
+#&gt; 
+#&gt; Sample avg. posterior predictive distribution 
+#&gt; of longitudinal outcomes:
+#&gt;                Median MAD_SD
+#&gt; Long1|mean_PPD 0.586  0.028 
+#&gt; 
+#&gt; ------
+#&gt; For info on the priors used see help('prior_summary.stanreg').Fitting a univariate joint model.
+#&gt; 
+#&gt; Please note the warmup may be much slower than later iterations!
+#&gt; 
+#&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
+#&gt; Chain 1: 
+#&gt; Chain 1: Gradient evaluation took 0.000192 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.92 seconds.
+#&gt; Chain 1: Adjust your expectations accordingly!
+#&gt; Chain 1: 
+#&gt; Chain 1: 
+#&gt; Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
+#&gt; Chain 1: Iteration: 100 / 1000 [ 10%]  (Warmup)
+#&gt; Chain 1: Iteration: 200 / 1000 [ 20%]  (Warmup)
+#&gt; Chain 1: Iteration: 300 / 1000 [ 30%]  (Warmup)
+#&gt; Chain 1: Iteration: 400 / 1000 [ 40%]  (Warmup)
+#&gt; Chain 1: Iteration: 500 / 1000 [ 50%]  (Warmup)
+#&gt; Chain 1: Iteration: 501 / 1000 [ 50%]  (Sampling)
+#&gt; Chain 1: Iteration: 600 / 1000 [ 60%]  (Sampling)
+#&gt; Chain 1: Iteration: 700 / 1000 [ 70%]  (Sampling)
+#&gt; Chain 1: Iteration: 800 / 1000 [ 80%]  (Sampling)
+#&gt; Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
+#&gt; Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
+#&gt; Chain 1: 
+#&gt; Chain 1:  Elapsed Time: 4.21702 seconds (Warm-up)
+#&gt; Chain 1:                2.5458 seconds (Sampling)
+#&gt; Chain 1:                6.76282 seconds (Total)
+#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='output co'>#&gt; stan_jm
+#&gt;  formula (Long1): logBili ~ year + (1 | id)
+#&gt;  family  (Long1): gaussian [identity]
+#&gt;  formula (Event): Surv(futimeYears, death) ~ sex + trt
+#&gt;  baseline hazard: bs
+#&gt;  assoc:           etavalue (Long1)
+#&gt; ------
+#&gt; 
+#&gt; Longitudinal submodel: logBili
+#&gt;             Median MAD_SD
+#&gt; (Intercept) 0.772  0.246 
+#&gt; year        0.091  0.010 
+#&gt; sigma       0.508  0.022 
+#&gt; 
+#&gt; Event submodel:
+#&gt;                 Median MAD_SD exp(Median)
+#&gt; (Intercept)     -2.974  0.585  0.051     
+#&gt; sexf            -0.312  0.589  0.732     
+#&gt; trt             -0.651  0.423  0.521     
+#&gt; Long1|etavalue   1.432  0.267  4.185     
+#&gt; b-splines-coef1 -1.474  1.132     NA     
+#&gt; b-splines-coef2  0.174  0.881     NA     
+#&gt; b-splines-coef3 -1.298  1.121     NA     
+#&gt; b-splines-coef4  0.591  1.493     NA     
+#&gt; b-splines-coef5  0.183  1.664     NA     
+#&gt; b-splines-coef6 -0.432  1.818     NA     
+#&gt; 
+#&gt; Group-level error terms:
+#&gt;  Groups Name              Std.Dev.
+#&gt;  id     Long1|(Intercept) 1.319   
+#&gt; Num. levels: id 40 
+#&gt; 
+#&gt; Sample avg. posterior predictive distribution 
+#&gt; of longitudinal outcomes:
+#&gt;                Median MAD_SD
+#&gt; Long1|mean_PPD 0.585  0.041 
+#&gt; 
+#&gt; ------
+#&gt; For info on the priors used see help('prior_summary.stanreg').Fitting a univariate joint model.
 #&gt; 
 #&gt; Please note the warmup may be much slower than later iterations!
 #&gt; 
@@ -1044,14 +1064,14 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 5.73309 seconds (Warm-up)
-#&gt; Chain 1:                3.76447 seconds (Sampling)
-#&gt; Chain 1:                9.49756 seconds (Total)
+#&gt; Chain 1:  Elapsed Time: 6.07398 seconds (Warm-up)
+#&gt; Chain 1:                3.02875 seconds (Sampling)
+#&gt; Chain 1:                9.10273 seconds (Total)
 #&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>f4</span>)</div><div class='output co'>#&gt; stan_jm
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='output co'>#&gt; stan_jm
 #&gt;  formula (Long1): logBili ~ year + (1 | id)
 #&gt;  family  (Long1): gaussian [identity]
 #&gt;  formula (Event): Surv(futimeYears, death) ~ sex + trt
@@ -1061,51 +1081,36 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; 
 #&gt; Longitudinal submodel: logBili
 #&gt;             Median MAD_SD
-#&gt; (Intercept) 0.797  0.184 
+#&gt; (Intercept) 0.793  0.222 
 #&gt; year        0.092  0.010 
-#&gt; sigma       0.509  0.020 
+#&gt; sigma       0.507  0.025 
 #&gt; 
 #&gt; Event submodel:
 #&gt;                    Median MAD_SD exp(Median)
-#&gt; (Intercept)        -3.194  0.712  0.041     
-#&gt; sexf               -0.352  0.596  0.704     
-#&gt; trt                -0.282  0.780  0.754     
-#&gt; Long1|etavalue      1.537  0.332  4.652     
-#&gt; Long1|etavalue:trt -0.291  0.516  0.748     
-#&gt; b-splines-coef1    -1.582  1.129     NA     
-#&gt; b-splines-coef2     0.192  0.936     NA     
-#&gt; b-splines-coef3    -1.840  1.223     NA     
-#&gt; b-splines-coef4     0.944  1.671     NA     
-#&gt; b-splines-coef5    -0.315  1.623     NA     
-#&gt; b-splines-coef6    -0.254  1.479     NA     
+#&gt; (Intercept)        -3.144  0.607  0.043     
+#&gt; sexf               -0.391  0.555  0.676     
+#&gt; trt                -0.329  0.908  0.720     
+#&gt; Long1|etavalue      1.540  0.345  4.667     
+#&gt; Long1|etavalue:trt -0.224  0.562  0.799     
+#&gt; b-splines-coef1    -1.407  1.081     NA     
+#&gt; b-splines-coef2     0.111  0.803     NA     
+#&gt; b-splines-coef3    -1.725  1.129     NA     
+#&gt; b-splines-coef4     0.754  1.491     NA     
+#&gt; b-splines-coef5    -0.221  1.498     NA     
+#&gt; b-splines-coef6    -0.282  1.595     NA     
 #&gt; 
 #&gt; Group-level error terms:
 #&gt;  Groups Name              Std.Dev.
-#&gt;  id     Long1|(Intercept) 1.315   
+#&gt;  id     Long1|(Intercept) 1.298   
 #&gt; Num. levels: id 40 
 #&gt; 
 #&gt; Sample avg. posterior predictive distribution 
 #&gt; of longitudinal outcomes:
 #&gt;                Median MAD_SD
-#&gt; Long1|mean_PPD 0.586  0.039 
+#&gt; Long1|mean_PPD 0.586  0.040 
 #&gt; 
 #&gt; ------
-#&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'>
-<span class='co'>######</span>
-<span class='co'># Multivariate joint model, with association structure based </span>
-<span class='co'># on the current value and slope of the linear predictor in the </span>
-<span class='co'># first longitudinal submodel and the area under the marker </span>
-<span class='co'># trajectory for the second longitudinal submodel</span>
-<span class='no'>mv1</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_jm</span>(
-        <span class='kw'>formulaLong</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(
-          <span class='no'>logBili</span> ~ <span class='no'>year</span> + (<span class='fl'>1</span> <span class='kw'>|</span> <span class='no'>id</span>),
-          <span class='no'>albumin</span> ~ <span class='no'>sex</span> + <span class='no'>year</span> + (<span class='no'>year</span> <span class='kw'>|</span> <span class='no'>id</span>)),
-        <span class='kw'>dataLong</span> <span class='kw'>=</span> <span class='no'>pbcLong</span>,
-        <span class='kw'>formulaEvent</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/pkg/survival/man/Surv.html'>Surv</a></span>(<span class='no'>futimeYears</span>, <span class='no'>death</span>) ~ <span class='no'>sex</span> + <span class='no'>trt</span>,
-        <span class='kw'>dataEvent</span> <span class='kw'>=</span> <span class='no'>pbcSurv</span>,
-        <span class='kw'>assoc</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"etavalue"</span>, <span class='st'>"etaslope"</span>), <span class='st'>"etaauc"</span>),
-        <span class='kw'>time_var</span> <span class='kw'>=</span> <span class='st'>"year"</span>,
-        <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>100</span>)</div><div class='output co'>#&gt; Fitting a multivariate joint model.
+#&gt; For info on the priors used see help('prior_summary.stanreg').Fitting a multivariate joint model.
 #&gt; 
 #&gt; Please note the warmup may be much slower than later iterations!
 #&gt; 
@@ -1114,8 +1119,8 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Chain 1:   Log probability evaluates to log(0), i.e. negative infinity.
 #&gt; Chain 1:   Stan can't start sampling from this initial value.
 #&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 0.002653 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 26.53 seconds.
+#&gt; Chain 1: Gradient evaluation took 0.003503 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 35.03 seconds.
 #&gt; Chain 1: Adjust your expectations accordingly!
 #&gt; Chain 1: 
 #&gt; Chain 1: 
@@ -1140,9 +1145,9 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Chain 1: Iteration: 90 / 100 [ 90%]  (Sampling)
 #&gt; Chain 1: Iteration: 100 / 100 [100%]  (Sampling)
 #&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 35.3599 seconds (Warm-up)
-#&gt; Chain 1:                39.2907 seconds (Sampling)
-#&gt; Chain 1:                74.6505 seconds (Total)
+#&gt; Chain 1:  Elapsed Time: 39.8348 seconds (Warm-up)
+#&gt; Chain 1:                43.8592 seconds (Sampling)
+#&gt; Chain 1:                83.694 seconds (Total)
 #&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 30 divergent transitions after warmup. Increasing adapt_delta above 0.85 may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: There were 20 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='output co'>#&gt; <span class='warning'>Warning: The largest R-hat is 2.12, indicating chains have not mixed.</span>
@@ -1151,7 +1156,7 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Markov chains did not converge! Do not analyze results!</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>mv1</span>)</div><div class='output co'>#&gt; stan_jm
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Markov chains did not converge! Do not analyze results!</span></div><div class='output co'>#&gt; stan_jm
 #&gt;  formula (Long1): logBili ~ year + (1 | id)
 #&gt;  family  (Long1): gaussian [identity]
 #&gt;  formula (Long2): albumin ~ sex + year + (year | id)
@@ -1203,32 +1208,14 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Long2|mean_PPD 3.142  0.014 
 #&gt; 
 #&gt; ------
-#&gt; For info on the priors used see help('prior_summary.stanreg').</div><div class='input'>
-<span class='co'>#####</span>
-<span class='co'># Multivariate joint model, where the association structure is formed by </span>
-<span class='co'># including the expected value of each longitudinal marker (logBili and </span>
-<span class='co'># albumin) in the linear predictor of the event submodel, as well as their </span>
-<span class='co'># interaction effect (i.e. the interaction between the two "etavalue" terms). </span>
-<span class='co'># Note that whether such an association structure based on a marker by </span>
-<span class='co'># marker interaction term makes sense will depend on the context of your </span>
-<span class='co'># application -- here we just show it for demostration purposes).</span>
-<span class='no'>mv2</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_jm</span>(
-        <span class='kw'>formulaLong</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(
-          <span class='no'>logBili</span> ~ <span class='no'>year</span> + (<span class='fl'>1</span> <span class='kw'>|</span> <span class='no'>id</span>),
-          <span class='no'>albumin</span> ~ <span class='no'>sex</span> + <span class='no'>year</span> + (<span class='no'>year</span> <span class='kw'>|</span> <span class='no'>id</span>)),
-        <span class='kw'>dataLong</span> <span class='kw'>=</span> <span class='no'>pbcLong</span>,
-        <span class='kw'>formulaEvent</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/pkg/survival/man/Surv.html'>Surv</a></span>(<span class='no'>futimeYears</span>, <span class='no'>death</span>) ~ <span class='no'>sex</span> + <span class='no'>trt</span>,
-        <span class='kw'>dataEvent</span> <span class='kw'>=</span> <span class='no'>pbcSurv</span>,
-        <span class='kw'>assoc</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"etavalue"</span>, <span class='st'>"etavalue_etavalue(2)"</span>), <span class='st'>"etavalue"</span>),
-        <span class='kw'>time_var</span> <span class='kw'>=</span> <span class='st'>"year"</span>,
-        <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>100</span>)</div><div class='output co'>#&gt; Fitting a multivariate joint model.
+#&gt; For info on the priors used see help('prior_summary.stanreg').Fitting a multivariate joint model.
 #&gt; 
 #&gt; Please note the warmup may be much slower than later iterations!
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 0.000897 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 8.97 seconds.
+#&gt; Chain 1: Gradient evaluation took 0.000441 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 4.41 seconds.
 #&gt; Chain 1: Adjust your expectations accordingly!
 #&gt; Chain 1: 
 #&gt; Chain 1: 
@@ -1253,38 +1240,24 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Chain 1: Iteration: 90 / 100 [ 90%]  (Sampling)
 #&gt; Chain 1: Iteration: 100 / 100 [100%]  (Sampling)
 #&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 4.23735 seconds (Warm-up)
-#&gt; Chain 1:                10.6457 seconds (Sampling)
-#&gt; Chain 1:                14.883 seconds (Total)
-#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: The largest R-hat is 1.22, indicating chains have not mixed.</span>
+#&gt; Chain 1:  Elapsed Time: 5.3195 seconds (Warm-up)
+#&gt; Chain 1:                14.0857 seconds (Sampling)
+#&gt; Chain 1:                19.4052 seconds (Total)
+#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 7 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='output co'>#&gt; <span class='warning'>Warning: The largest R-hat is 1.3, indicating chains have not mixed.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#r-hat</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Markov chains did not converge! Do not analyze results!</span></div><div class='input'>
-<span class='co'>#####</span>
-<span class='co'># Multivariate joint model, with one bernoulli marker and one</span>
-<span class='co'># Gaussian marker. We will artificially create the bernoulli</span>
-<span class='co'># marker by dichotomising log serum bilirubin</span>
-<span class='no'>pbcLong</span>$<span class='no'>ybern</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/integer.html'>as.integer</a></span>(<span class='no'>pbcLong</span>$<span class='no'>logBili</span> <span class='kw'>&gt;=</span> <span class='fu'><a href='https://rdrr.io/r/base/mean.html'>mean</a></span>(<span class='no'>pbcLong</span>$<span class='no'>logBili</span>))
-<span class='no'>mv3</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_jm</span>(
-        <span class='kw'>formulaLong</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(
-          <span class='no'>ybern</span> ~ <span class='no'>year</span> + (<span class='fl'>1</span> <span class='kw'>|</span> <span class='no'>id</span>),
-          <span class='no'>albumin</span> ~ <span class='no'>sex</span> + <span class='no'>year</span> + (<span class='no'>year</span> <span class='kw'>|</span> <span class='no'>id</span>)),
-        <span class='kw'>dataLong</span> <span class='kw'>=</span> <span class='no'>pbcLong</span>,
-        <span class='kw'>formulaEvent</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/pkg/survival/man/Surv.html'>Surv</a></span>(<span class='no'>futimeYears</span>, <span class='no'>death</span>) ~ <span class='no'>sex</span> + <span class='no'>trt</span>,
-        <span class='kw'>dataEvent</span> <span class='kw'>=</span> <span class='no'>pbcSurv</span>,
-        <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='no'>binomial</span>, <span class='no'>gaussian</span>),
-        <span class='kw'>time_var</span> <span class='kw'>=</span> <span class='st'>"year"</span>,
-        <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>1000</span>)</div><div class='output co'>#&gt; Fitting a multivariate joint model.
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Markov chains did not converge! Do not analyze results!</span></div><div class='output co'>#&gt; Fitting a multivariate joint model.
 #&gt; 
 #&gt; Please note the warmup may be much slower than later iterations!
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 0.000317 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.17 seconds.
+#&gt; Chain 1: Gradient evaluation took 0.000351 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.51 seconds.
 #&gt; Chain 1: Adjust your expectations accordingly!
 #&gt; Chain 1: 
 #&gt; Chain 1: 
@@ -1301,27 +1274,19 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 20.422 seconds (Warm-up)
-#&gt; Chain 1:                9.43069 seconds (Sampling)
-#&gt; Chain 1:                29.8527 seconds (Total)
+#&gt; Chain 1:  Elapsed Time: 23.3267 seconds (Warm-up)
+#&gt; Chain 1:                10.9445 seconds (Sampling)
+#&gt; Chain 1:                34.2712 seconds (Total)
 #&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
-#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='input'># }
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='input'># }
 
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#details">Details</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -1332,7 +1297,7 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -44,7 +48,6 @@
 
 <meta property="og:title" content="Changelog" />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -62,7 +65,7 @@
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-news">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -76,13 +79,19 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
@@ -105,6 +114,9 @@
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -118,6 +130,9 @@
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -157,17 +172,29 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-      <h1>Changelog <small></small></h1>
-      
+      <h1 data-toc-skip>Changelog <small></small></h1>
+      <small>Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
-    <div id="rstanarm-2-19-2" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-19-2" class="anchor"></a>rstanarm 2.19.2<small> 2019-10-03 </small>
+    <div id="rstanarm-2193" class="section level1">
+<h1 class="page-header" data-toc-text="2.19.3">
+<a href="#rstanarm-2193" class="anchor"></a>rstanarm 2.19.3<small> 2020-02-11 </small>
 </h1>
 <div id="bug-fixes" class="section level3">
 <h3 class="hasAnchor">
 <a href="#bug-fixes" class="anchor"></a>Bug fixes</h3>
+<ul>
+<li>Allow the vignettes to knit on platforms that do not support version 2 of RMarkdown</li>
+</ul>
+</div>
+</div>
+    <div id="rstanarm-2192" class="section level1">
+<h1 class="page-header" data-toc-text="2.19.2">
+<a href="#rstanarm-2192" class="anchor"></a>rstanarm 2.19.2<small> 2019-10-03 </small>
+</h1>
+<div id="bug-fixes-1" class="section level3">
+<h3 class="hasAnchor">
+<a href="#bug-fixes-1" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p>src/Makevars{.win} now uses a more robust way to find StanHeaders</p></li>
 <li><p>Fixed bug where <code><a href="../reference/stanreg-methods.html">ranef()</a></code> and <code><a href="https://rdrr.io/r/stats/coef.html">coef()</a></code> methods for <code>glmer</code>-style models printed the wrong output for certain combinations of varying intercepts and slopes.</p></li>
@@ -189,13 +216,13 @@
 </ul>
 </div>
 </div>
-    <div id="rstanarm-2-18-1" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-18-1" class="anchor"></a>rstanarm 2.18.1<small> 2018-10-21 </small>
+    <div id="rstanarm-2181" class="section level1">
+<h1 class="page-header" data-toc-text="2.18.1">
+<a href="#rstanarm-2181" class="anchor"></a>rstanarm 2.18.1<small> 2018-10-21 </small>
 </h1>
-<div id="bug-fixes-1" class="section level3">
+<div id="bug-fixes-2" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-1" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-2" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>
 <code><a href="../reference/stan_clogit.html">stan_clogit()</a></code> now works even when there are no common predictors</li>
@@ -216,13 +243,13 @@
 </ul>
 </div>
 </div>
-    <div id="rstanarm-2-17-4" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-17-4" class="anchor"></a>rstanarm 2.17.4<small> 2018-04-13 </small>
+    <div id="rstanarm-2174" class="section level1">
+<h1 class="page-header" data-toc-text="2.17.4">
+<a href="#rstanarm-2174" class="anchor"></a>rstanarm 2.17.4<small> 2018-04-13 </small>
 </h1>
-<div id="bug-fixes-2" class="section level3">
+<div id="bug-fixes-3" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-2" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-3" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>
 <code><a href="../reference/stan_jm.html">stan_jm()</a></code> and <code><a href="../reference/stan_mvmer.html">stan_mvmer()</a></code> now correctly include the intercept in the longitudinal submodel</li>
@@ -240,20 +267,20 @@
 </ul>
 </div>
 </div>
-    <div id="rstanarm-2-17-3" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-17-3" class="anchor"></a>rstanarm 2.17.3<small> 2018-02-18 </small>
+    <div id="rstanarm-2173" class="section level1">
+<h1 class="page-header" data-toc-text="2.17.3">
+<a href="#rstanarm-2173" class="anchor"></a>rstanarm 2.17.3<small> 2018-02-18 </small>
 </h1>
 <p>Minor release for build fixes for Solaris and avoiding a test failure</p>
 </div>
-    <div id="rstanarm-2-17-2" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-17-2" class="anchor"></a>rstanarm 2.17.2<small> 2017-12-21 </small>
+    <div id="rstanarm-2172" class="section level1">
+<h1 class="page-header" data-toc-text="2.17.2">
+<a href="#rstanarm-2172" class="anchor"></a>rstanarm 2.17.2<small> 2017-12-21 </small>
 </h1>
 <p>Lots of good stuff in this release.</p>
-<div id="bug-fixes-3" class="section level3">
+<div id="bug-fixes-4" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-3" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-4" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>
 <code><a href="../reference/stan_polr.html">stan_polr()</a></code> and <code><a href="../reference/stan_lm.html">stan_lm()</a></code> handle the <code>K = 1</code> case better</li>
@@ -276,20 +303,20 @@
 <a href="#big-new-features" class="anchor"></a>Big new features</h3>
 <ul>
 <li><p><code><a href="../reference/stan_jm.html">stan_jm()</a></code> and <code><a href="../reference/stan_mvmer.html">stan_mvmer()</a></code> contributed by Sam Brilleman</p></li>
-<li><p><code><a href="../reference/bayes_R2.stanreg.html">bayes_R2()</a></code> method to calculate a quantity similar to $R^2$</p></li>
+<li><p><code><a href="../reference/bayes_R2.stanreg.html">bayes_R2()</a></code> method to calculate a quantity similar to <span class="math inline"><em>R</em><sup>2</sup></span></p></li>
 <li><p><code><a href="../reference/stan_nlmer.html">stan_nlmer()</a></code>, which is similar to <code><a href="https://rdrr.io/pkg/lme4/man/nlmer.html">lme4::nlmer</a></code> but watch out for multimodal posterior distributions</p></li>
 <li><p><code><a href="../reference/stan_clogit.html">stan_clogit()</a></code>, which is similar to <code><a href="https://rdrr.io/pkg/survival/man/clogit.html">survival::clogit</a></code> but accepts lme4-style group-specific terms</p></li>
 <li><p>The <code><a href="https://rdrr.io/pkg/mgcv/man/Beta.html">mgcv::betar</a></code> family is supported for the lme4-like modeling functions, allowing for beta regressions with lme4-style group terms and / or smooth nonlinear functions of predictors</p></li>
 </ul>
 </div>
 </div>
-    <div id="rstanarm-2-15-3" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-15-3" class="anchor"></a>rstanarm 2.15.3<small> 2017-04-29 </small>
+    <div id="rstanarm-2153" class="section level1">
+<h1 class="page-header" data-toc-text="2.15.3">
+<a href="#rstanarm-2153" class="anchor"></a>rstanarm 2.15.3<small> 2017-04-29 </small>
 </h1>
-<div id="bug-fixes-4" class="section level3">
+<div id="bug-fixes-5" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-4" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-5" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p>Fix to <code><a href="../reference/stan_glmer.html">stan_glmer()</a></code> Bernoulli models with multiple group-specific intercept terms that could result in draws from the wrong posterior distribution</p></li>
 <li><p>Fix bug with contrasts in <code><a href="../reference/stan_lm.html">stan_aov()</a></code> (thanks to Henrik Singmann)</p></li>
@@ -297,19 +324,19 @@
 </ul>
 </div>
 </div>
-    <div id="rstanarm-2-15-1" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-15-1" class="anchor"></a>rstanarm 2.15.1<small> Unreleased </small>
+    <div id="rstanarm-2151" class="section level1">
+<h1 class="page-header" data-toc-text="2.15.1">
+<a href="#rstanarm-2151" class="anchor"></a>rstanarm 2.15.1<small> Unreleased </small>
 </h1>
 <p>Minor release with only changes to allow tests to pass on CRAN</p>
 </div>
-    <div id="rstanrm-2-14-2" class="section level1">
-<h1 class="page-header">
-<a href="#rstanrm-2-14-2" class="anchor"></a>rstanrm 2.14.2<small> Unreleased </small>
+    <div id="rstanrm-2142" class="section level1">
+<h1 class="page-header" data-toc-text="2.14.2">
+<a href="#rstanrm-2142" class="anchor"></a>rstanrm 2.14.2<small> Unreleased </small>
 </h1>
-<div id="bug-fixes-5" class="section level3">
+<div id="bug-fixes-6" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-5" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-6" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p>Fix for intercept with identity or square root link functions for the auxiliary parameter of a beta regression</p></li>
 <li><p>Fix for special case where only the intercepts vary by group and a non-default prior is specified for their standard deviation</p></li>
@@ -327,13 +354,13 @@
 </ul>
 </div>
 </div>
-    <div id="rstanarm-2-14-1" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-14-1" class="anchor"></a>rstanarm 2.14.1<small> 2017-01-17 </small>
+    <div id="rstanarm-2141" class="section level1">
+<h1 class="page-header" data-toc-text="2.14.1">
+<a href="#rstanarm-2141" class="anchor"></a>rstanarm 2.14.1<small> 2017-01-17 </small>
 </h1>
-<div id="bug-fixes-6" class="section level3">
+<div id="bug-fixes-7" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-6" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-7" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p><code><a href="../reference/stanreg-methods.html">VarCorr()</a></code> could return duplicates in cases where a <code>stan_{g}lmer</code> model used grouping factor level names with spaces</p></li>
 <li><p><code>The pairs()</code> function now works with group-specific parameters</p></li>
@@ -362,13 +389,13 @@
 </ul>
 </div>
 </div>
-    <div id="rstanarm-2-13-1" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-13-1" class="anchor"></a>rstanarm 2.13.1<small> 2016-11-20 </small>
+    <div id="rstanarm-2131" class="section level1">
+<h1 class="page-header" data-toc-text="2.13.1">
+<a href="#rstanarm-2131" class="anchor"></a>rstanarm 2.13.1<small> 2016-11-20 </small>
 </h1>
-<div id="bug-fixes-7" class="section level3">
+<div id="bug-fixes-8" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-7" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-8" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>Fix bug in <code>reloo()</code> if data was not specified</li>
 <li>Fix bug in <code><a href="../reference/pp_validate.html">pp_validate()</a></code> that was only introduced on GitHub</li>
@@ -386,13 +413,13 @@
 </ul>
 </div>
 </div>
-    <div id="rstanarm-2-12-1" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-12-1" class="anchor"></a>rstanarm 2.12.1<small> 2016-09-13 </small>
+    <div id="rstanarm-2121" class="section level1">
+<h1 class="page-header" data-toc-text="2.12.1">
+<a href="#rstanarm-2121" class="anchor"></a>rstanarm 2.12.1<small> 2016-09-13 </small>
 </h1>
-<div id="bug-fixes-8" class="section level3">
+<div id="bug-fixes-9" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-8" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-9" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p>Fix for bad bug in <code><a href="../reference/posterior_predict.stanreg.html">posterior_predict()</a></code> when factor labels have spaces in lme4-style models</p></li>
 <li><p>Fix when weights are used in Poisson models</p></li>
@@ -407,13 +434,13 @@
 </ul>
 </div>
 </div>
-    <div id="rstanarm-2-11-1" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-11-1" class="anchor"></a>rstanarm 2.11.1<small> 2016-07-29 </small>
+    <div id="rstanarm-2111" class="section level1">
+<h1 class="page-header" data-toc-text="2.11.1">
+<a href="#rstanarm-2111" class="anchor"></a>rstanarm 2.11.1<small> 2016-07-29 </small>
 </h1>
-<div id="bug-fixes-9" class="section level3">
+<div id="bug-fixes-10" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-9" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-10" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>Requiring manually specifying offsets when model has an offset and newdata is not NULL</li>
 </ul>
@@ -427,13 +454,13 @@
 </ul>
 </div>
 </div>
-    <div id="rstanarm-2-10-1" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-10-1" class="anchor"></a>rstanarm 2.10.1<small> 2016-06-25 </small>
+    <div id="rstanarm-2101" class="section level1">
+<h1 class="page-header" data-toc-text="2.10.1">
+<a href="#rstanarm-2101" class="anchor"></a>rstanarm 2.10.1<small> 2016-06-25 </small>
 </h1>
-<div id="bug-fixes-10" class="section level3">
+<div id="bug-fixes-11" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-10" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-11" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>Works with devtools now</li>
 </ul>
@@ -447,13 +474,13 @@
 <li><p>Ability to use sparse X matrices (slowly) for many models if memory is an issue</p></li>
 </ul>
 </div>
-<div id="rstanarm-2-9-0-4" class="section level3">
+<div id="rstanarm-290-4" class="section level3">
 <h3 class="hasAnchor">
-<a href="#rstanarm-2-9-0-4" class="anchor"></a>rstanarm 2.9.0-4</h3>
+<a href="#rstanarm-290-4" class="anchor"></a>rstanarm 2.9.0-4</h3>
 </div>
-<div id="bug-fixes-11" class="section level3">
+<div id="bug-fixes-12" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-11" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-12" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p><code><a href="../reference/posterior_predict.stanreg.html">posterior_predict()</a></code> with newdata now works correctly for ordinal models</p></li>
 <li><p><code><a href="../reference/stan_lm.html">stan_lm()</a></code> now works when intercept is omitted</p></li>
@@ -472,13 +499,13 @@
 </ul>
 </div>
 </div>
-    <div id="rstanarm-2-9-0-3" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-9-0-3" class="anchor"></a>rstanarm 2.9.0-3<small> 2016-02-13 </small>
+    <div id="rstanarm-290-3" class="section level1">
+<h1 class="page-header" data-toc-text="2.9.0-3">
+<a href="#rstanarm-290-3" class="anchor"></a>rstanarm 2.9.0-3<small> 2016-02-13 </small>
 </h1>
-<div id="bug-fixes-12" class="section level3">
+<div id="bug-fixes-13" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-12" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-13" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p>Fix problem with models that had group-specific coefficients, which were mislabled. Although the parameters were estimated correctly, users of previous versions of rstanarm should run such models again to obtain correct summaries and posterior predictions. Thanks to someone named Luke for pointing this problem out on stan-users.</p></li>
 <li><p>Vignettes now view correctly on the CRAN webiste thanks to Yihui Xie</p></li>
@@ -498,35 +525,18 @@
 </ul>
 </div>
 </div>
-    <div id="rstanarm-2-9-0-1" class="section level1">
-<h1 class="page-header">
-<a href="#rstanarm-2-9-0-1" class="anchor"></a>rstanarm 2.9.0-1<small> 2016-01-09 </small>
+    <div id="rstanarm-290-1" class="section level1">
+<h1 class="page-header" data-toc-text="2.9.0-1">
+<a href="#rstanarm-290-1" class="anchor"></a>rstanarm 2.9.0-1<small> 2016-01-09 </small>
 </h1>
 <p>Initial CRAN release</p>
 </div>
   </div>
 
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <div id="tocnav">
-      <h2>Contents</h2>
-      <ul class="nav nav-pills nav-stacked">
-        <li><a href="#rstanarm-2-19-2">2.19.2</a></li>
-        <li><a href="#rstanarm-2-18-1">2.18.1</a></li>
-        <li><a href="#rstanarm-2-17-4">2.17.4</a></li>
-        <li><a href="#rstanarm-2-17-3">2.17.3</a></li>
-        <li><a href="#rstanarm-2-17-2">2.17.2</a></li>
-        <li><a href="#rstanarm-2-15-3">2.15.3</a></li>
-        <li><a href="#rstanarm-2-15-1">2.15.1</a></li>
-        <li><a href="#rstanrm-2-14-2">2.14.2</a></li>
-        <li><a href="#rstanarm-2-14-1">2.14.1</a></li>
-        <li><a href="#rstanarm-2-13-1">2.13.1</a></li>
-        <li><a href="#rstanarm-2-12-1">2.12.1</a></li>
-        <li><a href="#rstanarm-2-11-1">2.11.1</a></li>
-        <li><a href="#rstanarm-2-10-1">2.10.1</a></li>
-        <li><a href="#rstanarm-2-9-0-3">2.9.0-3</a></li>
-        <li><a href="#rstanarm-2-9-0-1">2.9.0-1</a></li>
-      </ul>
-    </div>
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 
 </div>
@@ -538,7 +548,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

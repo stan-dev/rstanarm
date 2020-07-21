@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -48,7 +52,6 @@
 group-specific parameters) based on draws from the posterior predictive 
 distribution." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -66,7 +69,7 @@ distribution." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -80,17 +83,26 @@ distribution." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -106,6 +118,9 @@ distribution." />
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -119,6 +134,9 @@ distribution." />
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -159,7 +177,7 @@ distribution." />
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Estimate the subject-specific or marginal longitudinal trajectory</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/posterior_traj.R'><code>R/posterior_traj.R</code></a></small>
     <div class="hidden name"><code>posterior_traj.Rd</code></div>
     </div>
 
@@ -170,11 +188,25 @@ group-specific parameters) based on draws from the posterior predictive
 distribution.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>posterior_traj</span>(<span class='no'>object</span>, <span class='kw'>m</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>newdataLong</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>newdataEvent</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>interpolate</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>extrapolate</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>control</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(), <span class='kw'>last_time</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.95</span>, <span class='no'>ids</span>,
-  <span class='kw'>dynamic</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>1.5</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>return_matrix</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>posterior_traj</span>(
+  <span class='no'>object</span>,
+  <span class='kw'>m</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>newdataLong</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>newdataEvent</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>interpolate</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>extrapolate</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>control</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(),
+  <span class='kw'>last_time</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.95</span>,
+  <span class='no'>ids</span>,
+  <span class='kw'>dynamic</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>1.5</span>,
+  <span class='kw'>draws</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>seed</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>return_matrix</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='no'>...</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -237,7 +269,7 @@ the <code>control</code> argument.</p></td>
       <td><p>A named list with parameters controlling the interpolation or
 extrapolation of the estimated longitudinal trajectory when either 
 <code>interpolate = TRUE</code> or <code>extrapolate = TRUE</code>. The 
-list can contain one or more of the following named elements: <br /></p><dl class='dl-horizontal'>
+list can contain one or more of the following named elements: <br /></p><dl'>
   <dt><code>ipoints</code></dt><dd><p>a positive integer specifying the number of discrete 
   time points at which to calculate the estimated longitudinal response for
   <code>interpolate = TRUE</code>. These time points are evenly spaced starting at 
@@ -394,13 +426,13 @@ of individuals, via the <code>ids</code> argument.</p>
   <span class='co'># Obtain subject-specific predictions for all individuals </span>
   <span class='co'># in the estimation dataset</span>
   <span class='no'>pt1</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_traj</span>(<span class='no'>example_jm</span>, <span class='kw'>interpolate</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>extrapolate</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
-  <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span>(<span class='no'>pt1</span>)</div><div class='output co'>#&gt;   id      year       yfit       ci_lb     ci_ub      pi_lb     pi_ub
-#&gt; 1  1 0.0000000 2.68620221  2.19320877 3.2371470  1.4365940 3.3177621
-#&gt; 2  1 0.5256674 2.78312787  2.27952973 3.3216686  1.7692732 3.7737357
-#&gt; 3  2 0.0000000 0.02480774 -0.25916816 0.3043092 -0.8280629 0.7496248
-#&gt; 4  2 0.4982888 0.10696957 -0.16416789 0.3795271 -0.8114762 0.9966733
-#&gt; 5  2 0.9993155 0.19559890 -0.06926991 0.4643243 -0.6233480 0.9442173
-#&gt; 6  2 2.1026694 0.38920147  0.12630574 0.6551239 -0.4128825 1.3105297</div><div class='input'>
+  <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span>(<span class='no'>pt1</span>)</div><div class='output co'>#&gt;   id      year       yfit       ci_lb     ci_ub      pi_lb    pi_ub
+#&gt; 1  1 0.0000000 2.69984909  2.25764936 3.2239869  1.6413644 3.577369
+#&gt; 2  1 0.5256674 2.79254601  2.34119466 3.3084102  1.8686028 3.786467
+#&gt; 3  2 0.0000000 0.06099148 -0.28755884 0.3632144 -0.7153253 1.142746
+#&gt; 4  2 0.4982888 0.14683570 -0.19678502 0.4418192 -0.6692718 1.090876
+#&gt; 5  2 0.9993155 0.23240127 -0.10551244 0.5220164 -0.8086935 0.891891
+#&gt; 6  2 2.1026694 0.41666914  0.09548675 0.7127605 -0.4392688 1.196561</div><div class='input'>
   <span class='co'># Obtain subject-specific predictions only for a few selected individuals</span>
   <span class='no'>pt2</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_traj</span>(<span class='no'>example_jm</span>, <span class='kw'>ids</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>,<span class='fl'>3</span>,<span class='fl'>8</span>))
 
@@ -411,13 +443,13 @@ of individuals, via the <code>ids</code> argument.</p>
   <span class='co'># for the first three individuals. Interpolation and extrapolation is </span>
   <span class='co'># carried out by default.</span>
   <span class='no'>pt3</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_traj</span>(<span class='no'>example_jm</span>)
-  <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span>(<span class='no'>pt3</span>) <span class='co'># predictions at additional time points compared with pt1 </span></div><div class='output co'>#&gt;   id year        yfit      ci_lb      ci_ub      pi_lb      pi_ub
-#&gt; 1  1    0  2.68620221  2.1932088  3.2371470  1.9526328 3.47588044
-#&gt; 2  2    0  0.02480774 -0.2591682  0.3043092 -0.9708662 0.80860444
-#&gt; 3  3    0  0.22538994 -0.2320678  0.6153165 -0.5175158 0.83682084
-#&gt; 4  4    0  0.66050694  0.3737195  0.9023272 -0.2557029 1.53623152
-#&gt; 5  5    0  1.18540039  0.8889675  1.4551646  0.4616505 2.00122647
-#&gt; 6  6    0 -0.69315104 -1.0978009 -0.3324331 -1.5065026 0.05979111</div><div class='input'>  <span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>pt3</span>, <span class='kw'>ids</span> <span class='kw'>=</span> <span class='fl'>1</span>:<span class='fl'>3</span>)</div><div class='img'><img src='posterior_traj-1.png' alt='' width='700' height='433' /></div><div class='input'>
+  <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span>(<span class='no'>pt3</span>) <span class='co'># predictions at additional time points compared with pt1 </span></div><div class='output co'>#&gt;   id year        yfit      ci_lb      ci_ub      pi_lb       pi_ub
+#&gt; 1  1    0  2.69984909  2.2576494  3.2239869  1.8820139  4.15414861
+#&gt; 2  2    0  0.06099148 -0.2875588  0.3632144 -0.6504792  0.77562794
+#&gt; 3  3    0  0.22635897 -0.1014481  0.6277125 -0.6215849  0.86623579
+#&gt; 4  4    0  0.65360972  0.3630433  1.0321208 -0.2365076  1.43172407
+#&gt; 5  5    0  1.14671848  0.8692571  1.4856038  0.4108954  1.81162914
+#&gt; 6  6    0 -0.73281998 -0.9630179 -0.3803159 -1.6285571 -0.03093085</div><div class='input'>  <span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>pt3</span>, <span class='kw'>ids</span> <span class='kw'>=</span> <span class='fl'>1</span>:<span class='fl'>3</span>)</div><div class='output co'>#&gt; <span class='message'>`geom_smooth()` using formula 'y ~ x'</span></div><div class='output co'>#&gt; <span class='message'>`geom_smooth()` using formula 'y ~ x'</span></div><div class='output co'>#&gt; <span class='message'>`geom_smooth()` using formula 'y ~ x'</span></div><div class='img'><img src='posterior_traj-1.png' alt='' width='700' height='433' /></div><div class='input'>
   <span class='co'># If we wanted to extrapolate further in time, but decrease the number of </span>
   <span class='co'># discrete time points at which we obtain predictions for each individual, </span>
   <span class='co'># then we could specify a named list in the 'control' argument</span>
@@ -462,12 +494,12 @@ of individuals, via the <code>ids</code> argument.</p>
   <span class='no'>nd</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>id</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='st'>"new1"</span>, <span class='fl'>11</span>), <span class='kw'>year</span> <span class='kw'>=</span> (<span class='fl'>0</span>:<span class='fl'>10</span> / <span class='fl'>2</span>))
   <span class='no'>pt7</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_traj</span>(<span class='no'>example_jm</span>, <span class='kw'>newdataLong</span> <span class='kw'>=</span> <span class='no'>nd</span>, <span class='kw'>dynamic</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
   <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span>(<span class='no'>pt7</span>)  <span class='co'># note the greater width of the uncertainty interval compared </span></div><div class='output co'>#&gt;     id      year      yfit     ci_lb    ci_ub     pi_lb    pi_ub
-#&gt; 1 new1 0.0000000 0.3777751 -1.316375 2.857139 -1.399359 3.126552
-#&gt; 2 new1 0.3571429 0.4413426 -1.255303 2.912216 -1.411589 3.048678
-#&gt; 3 new1 0.7142857 0.5049101 -1.194232 2.967293 -1.387083 3.133819
-#&gt; 4 new1 1.0714286 0.5640669 -1.133160 3.022371 -1.310765 3.238803
-#&gt; 5 new1 1.4285714 0.6207358 -1.072089 3.077448 -1.313912 3.547780
-#&gt; 6 new1 1.7857143 0.6790623 -1.011017 3.132525 -1.259295 3.635165</div><div class='input'>             <span class='co'># with the subject-specific predictions in pt1, pt2, etc</span>
+#&gt; 1 new1 0.0000000 0.8383967 -2.779474 2.740931 -2.771958 2.807810
+#&gt; 2 new1 0.3571429 0.8964855 -2.722729 2.800614 -2.934628 3.159185
+#&gt; 3 new1 0.7142857 0.9492078 -2.665984 2.860296 -2.875908 2.856379
+#&gt; 4 new1 1.0714286 1.0019300 -2.609239 2.919979 -2.905819 3.159848
+#&gt; 5 new1 1.4285714 1.0574264 -2.552494 2.979661 -2.384959 3.226213
+#&gt; 6 new1 1.7857143 1.1183328 -2.495749 3.039344 -2.552383 3.387019</div><div class='input'>             <span class='co'># with the subject-specific predictions in pt1, pt2, etc</span>
 
   <span class='co'># Alternatively, we could have estimated the "marginal" trajectory by </span>
   <span class='co'># ignoring the random effects (ie, assuming the random effects were set </span>
@@ -488,26 +520,20 @@ of individuals, via the <code>ids</code> argument.</p>
   <span class='co'># example for pt5).</span>
   <span class='no'>pt8</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_traj</span>(<span class='no'>example_jm</span>, <span class='kw'>newdataLong</span> <span class='kw'>=</span> <span class='no'>nd</span>, <span class='kw'>dynamic</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
                         <span class='kw'>re.form</span> <span class='kw'>=</span> <span class='fl'>NA</span>)
-  <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span>(<span class='no'>pt8</span>)  <span class='co'># note the much narrower ci, compared with pt5</span></div><div class='output co'>#&gt;     id      year      yfit      ci_lb    ci_ub      pi_lb    pi_ub
-#&gt; 1 new1 0.0000000 0.4855049 -0.5048463 1.083801 -0.5274157 1.563046
-#&gt; 2 new1 0.3571429 0.5396655 -0.4445547 1.143198 -0.7280434 1.731577
-#&gt; 3 new1 0.7142857 0.5876580 -0.3842630 1.202594 -0.5523293 1.861013
-#&gt; 4 new1 1.0714286 0.6464141 -0.3239713 1.261991 -0.4098204 1.631604
-#&gt; 5 new1 1.4285714 0.6976754 -0.2636796 1.321388 -0.2148327 1.770899
-#&gt; 6 new1 1.7857143 0.7542893 -0.2033879 1.380785 -0.3727113 1.848446</div><div class='input'># }
+  <span class='fu'><a href='https://rdrr.io/r/utils/head.html'>head</a></span>(<span class='no'>pt8</span>)  <span class='co'># note the much narrower ci, compared with pt5</span></div><div class='output co'>#&gt;     id      year      yfit     ci_lb    ci_ub       pi_lb    pi_ub
+#&gt; 1 new1 0.0000000 0.6866444 0.2654333 1.123719 -0.27232294 1.695580
+#&gt; 2 new1 0.3571429 0.7493349 0.3297991 1.182328 -0.20333442 1.858451
+#&gt; 3 new1 0.7142857 0.8098669 0.3941648 1.239708 -0.29720147 1.479493
+#&gt; 4 new1 1.0714286 0.8705245 0.4585306 1.297089 -0.32133975 1.528451
+#&gt; 5 new1 1.4285714 0.9327557 0.5228963 1.355529 -0.16996192 1.859970
+#&gt; 6 new1 1.7857143 0.9964271 0.5872620 1.418941 -0.08560543 1.826824</div><div class='input'># }
 
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#details">Details</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -518,7 +544,7 @@ of individuals, via the <code>ids</code> argument.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

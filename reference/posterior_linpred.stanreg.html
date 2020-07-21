@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Posterior distribution of the linear predictor — posterior_linpred.stanreg • rstanarm</title>
+<title>Posterior distribution of the (possibly transformed) linear predictor — posterior_linpred.stanreg • rstanarm</title>
 
 <!-- favicons -->
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -42,14 +46,13 @@
 
 
 
-<meta property="og:title" content="Posterior distribution of the linear predictor — posterior_linpred.stanreg" />
-<meta property="og:description" content="Extract the posterior draws of the linear predictor, possibly transformed by 
-the inverse-link function. This function is occasionally useful, but it 
-should be used sparingly. Inference and model checking should generally be 
-carried out using the posterior predictive distribution (i.e., using 
+<meta property="og:title" content="Posterior distribution of the (possibly transformed) linear predictor — posterior_linpred.stanreg" />
+<meta property="og:description" content="Extract the posterior draws of the linear predictor, possibly transformed by
+the inverse-link function. This function is occasionally useful, but it
+should be used sparingly: inference and model checking should generally be
+carried out using the posterior predictive distribution (i.e., using
 posterior_predict)." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -67,7 +70,7 @@ posterior_predict)." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -81,17 +84,26 @@ posterior_predict)." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -107,6 +119,9 @@ posterior_predict)." />
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -120,6 +135,9 @@ posterior_predict)." />
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -159,23 +177,41 @@ posterior_predict)." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Posterior distribution of the linear predictor</h1>
-    
+    <h1>Posterior distribution of the (possibly transformed) linear predictor</h1>
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/posterior_linpred.R'><code>R/posterior_linpred.R</code></a></small>
     <div class="hidden name"><code>posterior_linpred.stanreg.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Extract the posterior draws of the linear predictor, possibly transformed by 
-the inverse-link function. This function is occasionally useful, but it 
-should be used sparingly. Inference and model checking should generally be 
-carried out using the posterior predictive distribution (i.e., using 
+    <p>Extract the posterior draws of the linear predictor, possibly transformed by
+the inverse-link function. This function is occasionally useful, but it
+should be used sparingly: inference and model checking should generally be
+carried out using the posterior predictive distribution (i.e., using
 <code><a href='posterior_predict.stanreg.html'>posterior_predict</a></code>).</p>
     </div>
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
-<span class='fu'>posterior_linpred</span>(<span class='no'>object</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>draws</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>re.form</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>XZ</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
+<span class='fu'>posterior_linpred</span>(
+  <span class='no'>object</span>,
+  <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>draws</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>re.form</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>XZ</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='no'>...</span>
+)
+
+<span class='co'># S3 method for stanreg</span>
+<span class='fu'>posterior_epred</span>(
+  <span class='no'>object</span>,
+  <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>draws</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>re.form</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>XZ</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='no'>...</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -188,8 +224,10 @@ carried out using the posterior predictive distribution (i.e., using
     <tr>
       <th>transform</th>
       <td><p>Should the linear predictor be transformed using the
-inverse-link function? The default is <code>FALSE</code>, in which case the
-untransformed linear predictor is returned.</p></td>
+inverse-link function? The default is <code>FALSE</code>. This argument is still
+allowed but not recommended because the <code>posterior_epred</code> function now
+provides the equivalent of <code>posterior_linpred(..., transform=TRUE)</code>.
+See <strong>Examples</strong>.</p></td>
     </tr>
     <tr>
       <th>newdata, draws, re.form, offset</th>
@@ -214,6 +252,15 @@ terms) constructed from <code>newdata</code> is returned. The default is
   matrix of simulations from the posterior distribution of the (possibly
   transformed) linear predictor. The exception is if the argument <code>XZ</code>
   is set to <code>TRUE</code> (see the <code>XZ</code> argument description above).</p>
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p>The <code>posterior_linpred</code> function returns the posterior
+  distribution of the linear predictor, while the <code>posterior_epred</code>
+  function returns the posterior distribution of the conditional expectation.
+  In the special case of a Gaussian likelihood with an identity link
+  function, these two concepts are the same. The <code>posterior_epred</code>
+  function is a less noisy way to obtain expectations over the output of
+  <code><a href='posterior_predict.stanreg.html'>posterior_predict</a></code>.</p>
     <h2 class="hasAnchor" id="note"><a class="anchor" href="#note"></a>Note</h2>
 
     <p>For models estimated with <code><a href='stan_clogit.html'>stan_clogit</a></code>, the number of 
@@ -237,69 +284,64 @@ terms) constructed from <code>newdata</code> is returned. The default is
 <span class='co'># linear predictor on log-odds scale</span>
 <span class='no'>linpred</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_linpred</span>(<span class='no'>example_model</span>)
 <span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colMeans</a></span>(<span class='no'>linpred</span>)</div><div class='output co'>#&gt;          1          2          3          4          5          6          7 
-#&gt; -0.8364713 -1.8237078 -1.9819128 -2.4692746 -1.7636584 -2.7644562 -2.8819770 
+#&gt; -0.8152845 -1.8116712 -1.9709559 -2.4348252 -1.7497529 -2.7594669 -2.8787698 
 #&gt;          8          9         10         11         12         13         14 
-#&gt; -1.0151207 -2.0294800 -2.1673429 -2.6004591 -1.4477854 -2.4214605 -2.5661041 
+#&gt; -0.9964918 -2.0195330 -2.1588268 -2.5693873 -1.4414774 -2.4245369 -2.5704944 
 #&gt;         15         16         17         18         19         20         21 
-#&gt; -3.0466852 -1.6900565 -2.6162667 -2.7609103 -3.3567632 -1.9055274 -2.8792025 
+#&gt; -3.0277001 -1.6833250 -2.6197392 -2.7656967 -3.3361838 -1.9274010 -2.9104606 
 #&gt;         22         23         24         25         26         27         28 
-#&gt; -3.0102847 -3.4569624 -0.5083684 -1.5227276 -1.6673712 -2.1547330 -0.7822030 
+#&gt; -3.0430908 -3.4669784 -0.5042808 -1.5273220 -1.6732794 -2.1371487 -0.7737788 
 #&gt;         29         30         31         32         33         34         35 
-#&gt; -1.7907216 -2.7847388 -2.9090403 -3.3828407 -2.0414400 -3.0151151 -3.1801008 
+#&gt; -1.7486796 -2.7517300 -2.8776966 -3.3282387 -2.0344536 -3.0175131 -3.1834614 
 #&gt;         36         37         38         39         40         41         42 
-#&gt; -3.6132170 -1.5265669 -2.4866806 -2.6584470 -3.1186860 -1.5509410 -2.5381775 
+#&gt; -3.5940218 -1.5258870 -2.4956193 -2.6682312 -3.1054461 -1.5412175 -2.5376043 
 #&gt;         43         44         45         46         47         48         49 
-#&gt; -2.6896018 -3.1566215 -2.2267584 -3.1800914 -3.3518578 -3.7849740 -0.4036530 
+#&gt; -2.6902253 -3.1341038 -2.2197226 -3.1827913 -3.3554031 -3.7659636 -0.3867961 
 #&gt;         50         51         52         53         54         55         56 
-#&gt; -1.4925999 -1.6236821 -2.0907018 -2.0247515 -3.0255494 -3.1634123 -3.6236513 </div><div class='input'>
+#&gt; -1.4831370 -1.6157672 -2.0596457 -2.0323548 -3.0420688 -3.1813626 -3.6185775 </div><div class='input'>
 <span class='co'># probabilities</span>
-<span class='no'>probs</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_linpred</span>(<span class='no'>example_model</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='co'># same as posterior_linpred(example_model, transform = TRUE)</span>
+<span class='no'>probs</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_epred</span>(<span class='no'>example_model</span>)
 <span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colMeans</a></span>(<span class='no'>probs</span>)</div><div class='output co'>#&gt;          1          2          3          4          5          6          7 
-#&gt; 0.30899292 0.14751531 0.12953236 0.08786887 0.15367378 0.06372891 0.05767946 
+#&gt; 0.31245693 0.14846041 0.13049734 0.09004107 0.15494397 0.06446564 0.05786010 
 #&gt;          8          9         10         11         12         13         14 
-#&gt; 0.27096677 0.12223575 0.10827430 0.07574528 0.20117690 0.08890120 0.07785622 
+#&gt; 0.27432841 0.12250403 0.10884892 0.07806808 0.20191414 0.08918999 0.07851123 
 #&gt;         15         16         17         18         19         20         21 
-#&gt; 0.05154500 0.16350585 0.07355212 0.06411584 0.04026080 0.13707233 0.05789233 
+#&gt; 0.05352155 0.16431822 0.07440405 0.06456711 0.04192484 0.13552889 0.05644167 
 #&gt;         22         23         24         25         26         27         28 
-#&gt; 0.05140434 0.03473292 0.37962342 0.18676172 0.16774250 0.11574636 0.31845555 
+#&gt; 0.05044326 0.03489637 0.38017984 0.18722851 0.16638486 0.11754685 0.32105377 
 #&gt;         29         30         31         32         33         34         35 
-#&gt; 0.15773989 0.06780928 0.05985211 0.03981158 0.12189244 0.05081188 0.04358958 
+#&gt; 0.16055695 0.06827046 0.06009342 0.04104611 0.12361467 0.05126156 0.04421960 
 #&gt;         36         37         38         39         40         41         42 
-#&gt; 0.03056571 0.18337651 0.08093218 0.06958383 0.04741135 0.18647290 0.08186125 
+#&gt; 0.03082442 0.18451711 0.08135044 0.06981631 0.04784589 0.18888894 0.08259130 
 #&gt;         43         44         45         46         47         48         49 
-#&gt; 0.07237435 0.04795619 0.10474757 0.04418661 0.03772612 0.02555989 0.40403062 
+#&gt; 0.07228890 0.04980291 0.10599290 0.04435613 0.03810799 0.02665810 0.40784966 
 #&gt;         50         51         52         53         54         55         56 
-#&gt; 0.20127904 0.17952863 0.12620993 0.12519138 0.05135267 0.04514110 0.03008708 </div><div class='input'>
+#&gt; 0.19999285 0.17971539 0.12854926 0.12490419 0.05102307 0.04528235 0.03049865 </div><div class='input'>
 <span class='co'># not conditioning on any group-level parameters</span>
-<span class='no'>probs2</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_linpred</span>(<span class='no'>example_model</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>re.form</span> <span class='kw'>=</span> <span class='fl'>NA</span>)
+<span class='no'>probs2</span> <span class='kw'>&lt;-</span> <span class='fu'>posterior_epred</span>(<span class='no'>example_model</span>, <span class='kw'>re.form</span> <span class='kw'>=</span> <span class='fl'>NA</span>)
 <span class='fu'><a href='https://rdrr.io/r/base/apply.html'>apply</a></span>(<span class='no'>probs2</span>, <span class='fl'>2</span>, <span class='no'>median</span>)</div><div class='output co'>#&gt;          1          2          3          4          5          6          7 
-#&gt; 0.18734957 0.08031484 0.06869496 0.04542085 0.19776733 0.08302029 0.07389265 
+#&gt; 0.19518575 0.08246163 0.07080653 0.04701302 0.20556206 0.08432065 0.07673299 
 #&gt;          8          9         10         11         12         13         14 
-#&gt; 0.19776733 0.08284210 0.07231581 0.04999840 0.18509619 0.07848194 0.06869496 
+#&gt; 0.20556206 0.08414459 0.07369313 0.05124092 0.19363180 0.08114487 0.07080653 
 #&gt;         15         16         17         18         19         20         21 
-#&gt; 0.04561919 0.19263007 0.08690030 0.07466146 0.04514373 0.19124400 0.08284880 
+#&gt; 0.04669380 0.19925389 0.08835134 0.07812142 0.04686144 0.19857247 0.08382122 
 #&gt;         22         23         24         25         26         27         28 
-#&gt; 0.07298753 0.04999840 0.18963047 0.07848194 0.06869496 0.04542085 0.21445087 
+#&gt; 0.07456111 0.05124092 0.19765705 0.08114487 0.07080653 0.04701302 0.21394070 
 #&gt;         29         30         31         32         33         34         35 
-#&gt; 0.18417035 0.07611249 0.06850775 0.04561919 0.19776733 0.08516178 0.07298753 
+#&gt; 0.19276949 0.08019697 0.07027879 0.04669380 0.20556206 0.08711956 0.07456111 
 #&gt;         36         37         38         39         40         41         42 
-#&gt; 0.05012230 0.20236483 0.08866380 0.07418272 0.05012230 0.18509619 0.07669957 
+#&gt; 0.05176011 0.20800334 0.08817986 0.07711859 0.05176011 0.19363180 0.08069798 
 #&gt;         43         44         45         46         47         48         49 
-#&gt; 0.06758083 0.04542085 0.19602077 0.08646439 0.07350768 0.05052907 0.19379381 
+#&gt; 0.06918648 0.04701302 0.20485308 0.08780747 0.07533712 0.05239358 0.20156132 
 #&gt;         50         51         52         53         54         55         56 
-#&gt; 0.07561686 0.06601406 0.04447081 0.19379381 0.08185841 0.07134848 0.04789777 </div><div class='input'>
+#&gt; 0.07888034 0.06892321 0.04684458 0.20156132 0.08384163 0.07312601 0.04901285 </div><div class='input'>
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#note">Note</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -310,7 +352,7 @@ terms) constructed from <code>newdata</code> is returned. The default is
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

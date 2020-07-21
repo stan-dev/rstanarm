@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -54,7 +58,6 @@ rather a matrix (or data frame) of 1000 draws from either the asymptotic
 multivariate Gaussian sampling distribution of the parameters or the
 variational approximation to the posterior distribution." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -72,7 +75,7 @@ variational approximation to the posterior distribution." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -86,17 +89,26 @@ variational approximation to the posterior distribution." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -112,6 +124,9 @@ variational approximation to the posterior distribution." />
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -125,6 +140,9 @@ variational approximation to the posterior distribution." />
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -165,7 +183,7 @@ variational approximation to the posterior distribution." />
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Extract the posterior sample</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/as.matrix.stanreg.R'><code>R/as.matrix.stanreg.R</code></a></small>
     <div class="hidden name"><code>as.matrix.stanreg.Rd</code></div>
     </div>
 
@@ -233,9 +251,8 @@ using optimization.</p></td>
 #&gt; exmpl_+   stan_glmer(cbind(incidence, size - incidence) ~ size + period + (1|herd),
 #&gt; exmpl_+              data = lme4::cbpp, family = binomial, QR = TRUE,
 #&gt; exmpl_+              # this next line is only to keep the example small in size!
-#&gt; exmpl_+              chains = 2, cores = 1, seed = 12345, iter = 500, refresh = 0)</div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
-#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; 
+#&gt; exmpl_+              chains = 2, cores = 1, seed = 12345, iter = 1000, refresh = 0)
+#&gt; 
 #&gt; exmpl_&gt; example_model
 #&gt; stan_glmer
 #&gt;  family:       binomial [logit]
@@ -247,24 +264,24 @@ using optimization.</p></td>
 #&gt; size         0.0    0.0  
 #&gt; period2     -1.0    0.3  
 #&gt; period3     -1.1    0.3  
-#&gt; period4     -1.6    0.4  
+#&gt; period4     -1.5    0.5  
 #&gt; 
 #&gt; Error terms:
 #&gt;  Groups Name        Std.Dev.
-#&gt;  herd   (Intercept) 0.76    
+#&gt;  herd   (Intercept) 0.77    
 #&gt; Num. levels: herd 15 
 #&gt; 
 #&gt; ------
 #&gt; * For help interpreting the printed output see ?print.stanreg
 #&gt; * For info on the priors used see ?prior_summary.stanreg</div><div class='input'><span class='co'># Extract posterior sample after MCMC</span>
 <span class='no'>draws</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>as.matrix</a></span>(<span class='no'>example_model</span>)
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/dim.html'>dim</a></span>(<span class='no'>draws</span>))</div><div class='output co'>#&gt; [1] 500  21</div><div class='input'>
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/dim.html'>dim</a></span>(<span class='no'>draws</span>))</div><div class='output co'>#&gt; [1] 1000   21</div><div class='input'>
 <span class='co'># For example, we can see that the median of the draws for the intercept </span>
 <span class='co'># is the same as the point estimate rstanarm uses</span>
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/median.html'>median</a></span>(<span class='no'>draws</span>[, <span class='st'>"(Intercept)"</span>]))</div><div class='output co'>#&gt; [1] -1.538909</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>example_model</span>$<span class='no'>coefficients</span><span class='kw'>[[</span><span class='st'>"(Intercept)"</span>]])</div><div class='output co'>#&gt; [1] -1.538909</div><div class='input'>
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='fu'><a href='https://rdrr.io/r/stats/median.html'>median</a></span>(<span class='no'>draws</span>[, <span class='st'>"(Intercept)"</span>]))</div><div class='output co'>#&gt; [1] -1.48726</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>example_model</span>$<span class='no'>coefficients</span><span class='kw'>[[</span><span class='st'>"(Intercept)"</span>]])</div><div class='output co'>#&gt; [1] -1.48726</div><div class='input'>
 <span class='co'># The as.array method keeps the chains separate</span>
 <span class='no'>draws_array</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/array.html'>as.array</a></span>(<span class='no'>example_model</span>)
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/dim.html'>dim</a></span>(<span class='no'>draws_array</span>)) <span class='co'># iterations x chains x parameters</span></div><div class='output co'>#&gt; [1] 250   2  21</div><div class='input'>
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/dim.html'>dim</a></span>(<span class='no'>draws_array</span>)) <span class='co'># iterations x chains x parameters</span></div><div class='output co'>#&gt; [1] 500   2  21</div><div class='input'>
 <span class='co'># Extract draws from asymptotic Gaussian sampling distribution </span>
 <span class='co'># after optimization</span>
 <span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='st'>"optimizing"</span>)
@@ -279,8 +296,8 @@ using optimization.</p></td>
 #&gt; Chain 1: 
 #&gt; Chain 1: 
 #&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 1.8e-05 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.18 seconds.
+#&gt; Chain 1: Gradient evaluation took 2.2e-05 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
 #&gt; Chain 1: Adjust your expectations accordingly!
 #&gt; Chain 1: 
 #&gt; Chain 1: 
@@ -294,124 +311,119 @@ using optimization.</p></td>
 #&gt; Chain 1: 
 #&gt; Chain 1: Begin stochastic gradient ascent.
 #&gt; Chain 1:   iter             ELBO   delta_ELBO_mean   delta_ELBO_med   notes 
-#&gt; Chain 1:    100         -129.863             1.000            1.000
-#&gt; Chain 1:    200         -107.240             0.605            1.000
-#&gt; Chain 1:    300          -90.886             0.464            0.211
-#&gt; Chain 1:    400          -90.923             0.348            0.211
-#&gt; Chain 1:    500          -92.955             0.283            0.180
-#&gt; Chain 1:    600          -90.491             0.240            0.180
-#&gt; Chain 1:    700          -90.626             0.206            0.027
-#&gt; Chain 1:    800          -92.299             0.183            0.027
-#&gt; Chain 1:    900          -90.679             0.164            0.022
-#&gt; Chain 1:   1000          -90.786             0.148            0.022
-#&gt; Chain 1:   1100          -90.800             0.048            0.018
-#&gt; Chain 1:   1200          -90.845             0.027            0.018
-#&gt; Chain 1:   1300          -90.568             0.009            0.003
-#&gt; Chain 1:   1400          -90.578             0.009            0.003
-#&gt; Chain 1:   1500          -90.730             0.007            0.002
-#&gt; Chain 1:   1600          -90.573             0.005            0.002
-#&gt; Chain 1:   1700          -91.414             0.005            0.002
-#&gt; Chain 1:   1800          -90.588             0.004            0.002
-#&gt; Chain 1:   1900          -90.620             0.003            0.002
-#&gt; Chain 1:   2000          -90.781             0.003            0.002
-#&gt; Chain 1:   2100          -90.577             0.003            0.002
-#&gt; Chain 1:   2200          -90.497             0.003            0.002
-#&gt; Chain 1:   2300          -90.989             0.003            0.002
-#&gt; Chain 1:   2400          -91.774             0.004            0.002
-#&gt; Chain 1:   2500          -90.849             0.005            0.005
-#&gt; Chain 1:   2600          -91.042             0.005            0.005
-#&gt; Chain 1:   2700          -90.585             0.005            0.005
-#&gt; Chain 1:   2800          -90.714             0.004            0.002
-#&gt; Chain 1:   2900          -90.667             0.004            0.002
-#&gt; Chain 1:   3000          -90.715             0.004            0.002
-#&gt; Chain 1:   3100          -90.466             0.004            0.003
-#&gt; Chain 1:   3200          -90.807             0.004            0.004
-#&gt; Chain 1:   3300          -90.923             0.004            0.003
-#&gt; Chain 1:   3400          -90.695             0.003            0.003
-#&gt; Chain 1:   3500          -90.617             0.002            0.002
-#&gt; Chain 1:   3600          -90.743             0.002            0.001
-#&gt; Chain 1:   3700          -90.902             0.002            0.001
-#&gt; Chain 1:   3800          -90.645             0.002            0.002
-#&gt; Chain 1:   3900          -91.108             0.002            0.003
-#&gt; Chain 1:   4000          -91.436             0.003            0.003
-#&gt; Chain 1:   4100          -90.666             0.003            0.003
-#&gt; Chain 1:   4200          -90.831             0.003            0.003
-#&gt; Chain 1:   4300          -91.838             0.004            0.003
-#&gt; Chain 1:   4400          -90.453             0.005            0.004
-#&gt; Chain 1:   4500          -90.770             0.005            0.004
-#&gt; Chain 1:   4600          -90.625             0.005            0.004
-#&gt; Chain 1:   4700          -90.567             0.005            0.004
-#&gt; Chain 1:   4800          -90.757             0.005            0.004
-#&gt; Chain 1:   4900          -90.597             0.005            0.003
-#&gt; Chain 1:   5000          -90.527             0.005            0.002
-#&gt; Chain 1:   5100          -90.533             0.004            0.002
-#&gt; Chain 1:   5200          -90.547             0.004            0.002
-#&gt; Chain 1:   5300          -90.481             0.003            0.002
-#&gt; Chain 1:   5400          -90.610             0.001            0.001
-#&gt; Chain 1:   5500          -90.558             0.001            0.001
-#&gt; Chain 1:   5600          -90.575             0.001            0.001
-#&gt; Chain 1:   5700          -91.058             0.001            0.001
-#&gt; Chain 1:   5800          -91.149             0.001            0.001
-#&gt; Chain 1:   5900          -90.672             0.002            0.001
-#&gt; Chain 1:   6000          -90.767             0.002            0.001
-#&gt; Chain 1:   6100          -90.774             0.002            0.001
-#&gt; Chain 1:   6200          -90.666             0.002            0.001
-#&gt; Chain 1:   6300          -90.544             0.002            0.001
-#&gt; Chain 1:   6400          -90.444             0.002            0.001
-#&gt; Chain 1:   6500          -90.665             0.002            0.001
-#&gt; Chain 1:   6600          -90.587             0.002            0.001
-#&gt; Chain 1:   6700          -90.633             0.001            0.001
-#&gt; Chain 1:   6800          -90.655             0.001            0.001
-#&gt; Chain 1:   6900          -90.475             0.001            0.001
-#&gt; Chain 1:   7000          -90.658             0.001            0.001
-#&gt; Chain 1:   7100          -90.531             0.001            0.001
-#&gt; Chain 1:   7200          -91.076             0.002            0.001
-#&gt; Chain 1:   7300          -90.483             0.002            0.002
-#&gt; Chain 1:   7400          -90.615             0.002            0.002
-#&gt; Chain 1:   7500          -90.960             0.002            0.002
-#&gt; Chain 1:   7600          -90.683             0.003            0.002
-#&gt; Chain 1:   7700          -90.655             0.003            0.002
-#&gt; Chain 1:   7800          -91.085             0.003            0.003
-#&gt; Chain 1:   7900          -91.095             0.003            0.003
-#&gt; Chain 1:   8000          -90.377             0.004            0.004
-#&gt; Chain 1:   8100          -90.866             0.004            0.005
-#&gt; Chain 1:   8200          -90.729             0.003            0.004
-#&gt; Chain 1:   8300          -90.687             0.003            0.003
-#&gt; Chain 1:   8400          -90.713             0.003            0.003
-#&gt; Chain 1:   8500          -90.390             0.003            0.003
-#&gt; Chain 1:   8600          -90.634             0.003            0.003
-#&gt; Chain 1:   8700          -90.518             0.003            0.003
-#&gt; Chain 1:   8800          -90.715             0.003            0.002
-#&gt; Chain 1:   8900          -90.740             0.003            0.002
-#&gt; Chain 1:   9000          -90.646             0.002            0.002
-#&gt; Chain 1:   9100          -90.695             0.001            0.001
-#&gt; Chain 1:   9200          -90.646             0.001            0.001
-#&gt; Chain 1:   9300          -90.561             0.001            0.001
-#&gt; Chain 1:   9400          -90.641             0.001            0.001
-#&gt; Chain 1:   9500          -90.670             0.001            0.001
-#&gt; Chain 1:   9600          -90.482             0.001            0.001
-#&gt; Chain 1:   9700          -90.650             0.001            0.001
-#&gt; Chain 1:   9800          -90.455             0.001            0.001
-#&gt; Chain 1:   9900          -91.058             0.002            0.001
-#&gt; Chain 1:   10000          -90.506             0.002            0.002
+#&gt; Chain 1:    100         -161.572             1.000            1.000
+#&gt; Chain 1:    200         -144.252             0.560            1.000
+#&gt; Chain 1:    300         -134.024             0.399            0.120
+#&gt; Chain 1:    400         -125.750             0.316            0.120
+#&gt; Chain 1:    500         -113.285             0.274            0.110
+#&gt; Chain 1:    600          -98.533             0.254            0.120
+#&gt; Chain 1:    700          -90.331             0.230            0.110
+#&gt; Chain 1:    800          -89.678             0.203            0.110
+#&gt; Chain 1:    900          -89.555             0.180            0.091
+#&gt; Chain 1:   1000          -89.145             0.163            0.091
+#&gt; Chain 1:   1100          -89.921             0.063            0.076
+#&gt; Chain 1:   1200          -89.202             0.052            0.066
+#&gt; Chain 1:   1300          -89.039             0.045            0.009
+#&gt; Chain 1:   1400          -89.352             0.039            0.008
+#&gt; Chain 1:   1500          -89.057             0.028            0.007
+#&gt; Chain 1:   1600          -89.417             0.013            0.005
+#&gt; Chain 1:   1700          -89.327             0.004            0.004
+#&gt; Chain 1:   1800          -89.653             0.004            0.004
+#&gt; Chain 1:   1900          -89.299             0.004            0.004
+#&gt; Chain 1:   2000          -88.874             0.004            0.004
+#&gt; Chain 1:   2100          -89.270             0.004            0.004
+#&gt; Chain 1:   2200          -89.304             0.003            0.004
+#&gt; Chain 1:   2300          -89.431             0.003            0.004
+#&gt; Chain 1:   2400          -89.393             0.003            0.004
+#&gt; Chain 1:   2500          -89.279             0.003            0.004
+#&gt; Chain 1:   2600          -89.137             0.002            0.002
+#&gt; Chain 1:   2700          -89.333             0.002            0.002
+#&gt; Chain 1:   2800          -89.726             0.002            0.002
+#&gt; Chain 1:   2900          -89.222             0.003            0.002
+#&gt; Chain 1:   3000          -89.288             0.002            0.002
+#&gt; Chain 1:   3100          -89.225             0.002            0.001
+#&gt; Chain 1:   3200          -89.567             0.002            0.002
+#&gt; Chain 1:   3300          -89.237             0.002            0.002
+#&gt; Chain 1:   3400          -89.108             0.003            0.002
+#&gt; Chain 1:   3500          -89.303             0.003            0.002
+#&gt; Chain 1:   3600          -89.145             0.003            0.002
+#&gt; Chain 1:   3700          -89.309             0.003            0.002
+#&gt; Chain 1:   3800          -89.198             0.002            0.002
+#&gt; Chain 1:   3900          -89.193             0.002            0.002
+#&gt; Chain 1:   4000          -89.329             0.002            0.002
+#&gt; Chain 1:   4100          -89.606             0.002            0.002
+#&gt; Chain 1:   4200          -89.123             0.002            0.002
+#&gt; Chain 1:   4300          -89.069             0.002            0.002
+#&gt; Chain 1:   4400          -89.129             0.002            0.002
+#&gt; Chain 1:   4500          -89.123             0.002            0.002
+#&gt; Chain 1:   4600          -89.437             0.002            0.002
+#&gt; Chain 1:   4700          -89.894             0.002            0.002
+#&gt; Chain 1:   4800          -89.679             0.002            0.002
+#&gt; Chain 1:   4900          -89.283             0.003            0.003
+#&gt; Chain 1:   5000          -88.948             0.003            0.004
+#&gt; Chain 1:   5100          -89.017             0.003            0.004
+#&gt; Chain 1:   5200          -89.056             0.002            0.002
+#&gt; Chain 1:   5300          -89.227             0.002            0.002
+#&gt; Chain 1:   5400          -89.055             0.002            0.002
+#&gt; Chain 1:   5500          -89.075             0.002            0.002
+#&gt; Chain 1:   5600          -89.282             0.002            0.002
+#&gt; Chain 1:   5700          -89.063             0.002            0.002
+#&gt; Chain 1:   5800          -89.219             0.002            0.002
+#&gt; Chain 1:   5900          -89.499             0.002            0.002
+#&gt; Chain 1:   6000          -89.686             0.002            0.002
+#&gt; Chain 1:   6100          -89.091             0.002            0.002
+#&gt; Chain 1:   6200          -89.066             0.002            0.002
+#&gt; Chain 1:   6300          -89.143             0.002            0.002
+#&gt; Chain 1:   6400          -89.043             0.002            0.002
+#&gt; Chain 1:   6500          -88.950             0.002            0.002
+#&gt; Chain 1:   6600          -88.988             0.002            0.002
+#&gt; Chain 1:   6700          -89.083             0.002            0.001
+#&gt; Chain 1:   6800          -89.328             0.002            0.001
+#&gt; Chain 1:   6900          -89.002             0.002            0.001
+#&gt; Chain 1:   7000          -89.481             0.002            0.001
+#&gt; Chain 1:   7100          -89.321             0.002            0.001
+#&gt; Chain 1:   7200          -89.337             0.002            0.001
+#&gt; Chain 1:   7300          -89.547             0.002            0.002
+#&gt; Chain 1:   7400          -89.506             0.002            0.002
+#&gt; Chain 1:   7500          -89.160             0.002            0.002
+#&gt; Chain 1:   7600          -89.079             0.002            0.002
+#&gt; Chain 1:   7700          -88.969             0.002            0.002
+#&gt; Chain 1:   7800          -89.337             0.002            0.002
+#&gt; Chain 1:   7900          -89.181             0.002            0.002
+#&gt; Chain 1:   8000          -88.942             0.002            0.002
+#&gt; Chain 1:   8100          -89.011             0.002            0.002
+#&gt; Chain 1:   8200          -89.574             0.002            0.002
+#&gt; Chain 1:   8300          -88.728             0.003            0.003
+#&gt; Chain 1:   8400          -89.325             0.004            0.004
+#&gt; Chain 1:   8500          -89.601             0.004            0.003
+#&gt; Chain 1:   8600          -88.828             0.004            0.004
+#&gt; Chain 1:   8700          -89.140             0.005            0.004
+#&gt; Chain 1:   8800          -89.195             0.004            0.004
+#&gt; Chain 1:   8900          -88.970             0.004            0.004
+#&gt; Chain 1:   9000          -89.349             0.005            0.004
+#&gt; Chain 1:   9100          -89.734             0.005            0.004
+#&gt; Chain 1:   9200          -89.110             0.005            0.004
+#&gt; Chain 1:   9300          -89.341             0.004            0.004
+#&gt; Chain 1:   9400          -89.194             0.004            0.004
+#&gt; Chain 1:   9500          -89.307             0.004            0.004
+#&gt; Chain 1:   9600          -89.221             0.003            0.003
+#&gt; Chain 1:   9700          -89.214             0.003            0.003
+#&gt; Chain 1:   9800          -89.147             0.003            0.003
+#&gt; Chain 1:   9900          -89.304             0.002            0.002
+#&gt; Chain 1:   10000          -88.740             0.003            0.002
 #&gt; Chain 1: Informational Message: The maximum number of iterations is reached! The algorithm may not have converged.
 #&gt; Chain 1: This variational approximation is not guaranteed to be meaningful.
 #&gt; Chain 1: 
 #&gt; Chain 1: Drawing a sample of size 1000 from the approximate posterior... 
-#&gt; Chain 1: COMPLETED.</div><div class='output co'>#&gt; <span class='warning'>Warning: Pareto k diagnostic value is 1.15. Resampling is disabled. Decreasing tol_rel_obj may help if variational algorithm has terminated prematurely. Otherwise consider using sampling instead.</span></div><div class='output co'>#&gt; <span class='message'>Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms. See the documentation for the 'QR' argument.</span></div><div class='input'><span class='no'>draws</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span>(<span class='no'>fit2</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"wt"</span>)
+#&gt; Chain 1: COMPLETED.</div><div class='output co'>#&gt; <span class='message'>Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms. See the documentation for the 'QR' argument.</span></div><div class='input'><span class='no'>draws</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span>(<span class='no'>fit2</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"wt"</span>)
 <span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/colnames.html'>colnames</a></span>(<span class='no'>draws</span>))</div><div class='output co'>#&gt; [1] "wt"</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='no'>draws</span>)) <span class='co'># 1000 draws are taken</span></div><div class='output co'>#&gt; [1] 1000</div><div class='input'># }
 
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -422,7 +434,7 @@ using optimization.</p></td>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

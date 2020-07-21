@@ -12,20 +12,20 @@
 <link rel="apple-touch-icon" type="image/png" sizes="120x120" href="../apple-touch-icon-120x120.png">
 <link rel="apple-touch-icon" type="image/png" sizes="76x76" href="../apple-touch-icon-76x76.png">
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png">
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous">
-<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
+<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><meta property="og:title" content="Modeling Rates/Proportions using Beta Regression with rstanarm">
-<meta property="og:description" content="">
+<meta property="og:description" content="rstanarm">
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png">
-<meta name="twitter:card" content="summary">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
 </head>
-<body>
+<body data-spy="scroll" data-target="#toc">
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -38,17 +38,26 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -64,6 +73,9 @@
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -77,6 +89,9 @@
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -113,15 +128,15 @@
 
       
 
-      </header><div class="row">
+      </header><script src="betareg_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
-      <h1>Modeling Rates/Proportions using Beta Regression with rstanarm</h1>
+      <h1 data-toc-skip>Modeling Rates/Proportions using Beta Regression with rstanarm</h1>
                         <h4 class="author">Imad Ali, Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2019-10-04</h4>
+            <h4 class="date">2020-07-20</h4>
       
-      
+      <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/betareg.Rmd"><code>vignettes/betareg.Rmd</code></a></small>
       <div class="hidden name"><code>betareg.Rmd</code></div>
 
     </div>
@@ -132,9 +147,9 @@
 %\VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{stan_betareg: Models for Rate/Proportion Data}
 -->
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(ggplot2)</a>
-<a class="sourceLine" id="cb1-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(bayesplot)</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw"><a href="https://ggplot2.tidyverse.org/reference/theme_get.html">theme_set</a></span>(bayesplot<span class="op">::</span><span class="kw"><a href="https://mc-stan.org/bayesplot/reference/theme_default.html">theme_default</a></span>())</a></code></pre></div>
+<div class="sourceCode" id="cb1"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">ggplot2</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">bayesplot</span>)
+<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme_get.html">theme_set</a></span>(<span class="kw pkg">bayesplot</span><span class="kw ns">::</span><span class="fu"><a href="https://mc-stan.org/bayesplot/reference/theme_default.html">theme_default</a></span>())</pre></body></html></div>
 <div id="introduction" class="section level1">
 <h1 class="hasAnchor">
 <a href="#introduction" class="anchor"></a>Introduction</h1>
@@ -166,7 +181,7 @@ f(y_i | \mu, \phi) = \frac{y_i^{(\mu\phi-1)}(1-y_i)^{((1-\mu)\phi-1)}}{B(\mu\phi
 <div id="priors" class="section level1">
 <h1 class="hasAnchor">
 <a href="#priors" class="anchor"></a>Priors</h1>
-<p>A full Bayesian analysis requires specifying prior distributions <span class="math inline">\(f(\boldsymbol{\beta})\)</span> and <span class="math inline">\(f(\phi)\)</span> for the vector of regression coefficients and <span class="math inline">\(\phi\)</span>. When using <code>stan_betareg</code>, these distributions can be set using the <code>prior_intercept</code>, <code>prior</code>, and <code>prior_phi</code> arguments. The <code>stan_betareg</code> function supports a variety of prior distributions, which are explained in the <strong>rstanarm</strong> documentation (<code><a href="https://rdrr.io/r/utils/help.html">help(priors, package = 'rstanarm')</a></code>).</p>
+<p>A full Bayesian analysis requires specifying prior distributions <span class="math inline">\(f(\boldsymbol{\beta})\)</span> and <span class="math inline">\(f(\phi)\)</span> for the vector of regression coefficients and <span class="math inline">\(\phi\)</span>. When using <code>stan_betareg</code>, these distributions can be set using the <code>prior_intercept</code>, <code>prior</code>, and <code>prior_phi</code> arguments. The <code>stan_betareg</code> function supports a variety of prior distributions, which are explained in the <strong>rstanarm</strong> documentation (<code><a href="../reference/priors.html">help(priors, package = 'rstanarm')</a></code>).</p>
 <p>When modeling <span class="math inline">\(\phi\)</span> with a linear predictor a full Bayesian analysis requires specifying the prior distributions <span class="math inline">\(f(\boldsymbol{\beta})\)</span> and <span class="math inline">\(f(\boldsymbol{\gamma})\)</span>. In <code>stan_betareg</code> the prior distributions on <span class="math inline">\(\boldsymbol{\gamma}\)</span> can be set using the <code>prior_intercept_z</code> and <code>prior_z</code> arguments.</p>
 <p>As an example, suppose we have <span class="math inline">\(K\)</span> predictors and believe — prior to seeing the data — that <span class="math inline">\(\beta_1, \dots, \beta_K\)</span> and <span class="math inline">\(\phi\)</span> are as likely to be positive as they are to be negative, but are highly unlikely to be far from zero. These beliefs can be represented by normal distributions with mean zero and a small scale (standard deviation). To give <span class="math inline">\(\phi\)</span> and each of the <span class="math inline">\(\beta\)</span>s this prior (with a scale of 1, say), in the call to <code>stan_betareg</code> we would include the arguments <code>prior_intercept = normal(0,1)</code>, <code>prior = normal(0,1)</code>, and <code>prior_phi = normal(0,1)</code>.</p>
 <p>If, on the other hand, we have less a priori confidence that the parameters will be close to zero then we could use a larger scale for the normal distribution and/or a distribution with heavier tails than the normal like the Student t distribution. <strong>Step 1</strong> in the “How to Use the <strong>rstanarm</strong> Package” vignette discusses one such example.</p>
@@ -176,15 +191,15 @@ f(y_i | \mu, \phi) = \frac{y_i^{(\mu\phi-1)}(1-y_i)^{((1-\mu)\phi-1)}}{B(\mu\phi
 <h1 class="hasAnchor">
 <a href="#posterior" class="anchor"></a>Posterior</h1>
 <p>When using only a <em>single set of regressors</em>, the posterior distribution of <span class="math inline">\(\boldsymbol{\beta}\)</span> and <span class="math inline">\(\phi\)</span> is proportional to the product of the likelihood contributions, the <span class="math inline">\(K\)</span> priors on the <span class="math inline">\(\beta_k\)</span> parameters, and <span class="math inline">\(\phi\)</span>, <span class="math display">\[
-f(\boldsymbol{\beta},\phi|\mathbf{y},\mathbf{X}) \propto 
-\prod_{i=1}^N f(y_i | a, b) \times 
+f(\boldsymbol{\beta},\phi|\mathbf{y},\mathbf{X}) \propto
+\prod_{i=1}^N f(y_i | a, b) \times
 \prod_{k=1}^K f(\beta_k) \times
 f(\phi)
 \]</span></p>
 <p>When using <em>two sets of regressors</em>, the posterior distribution of <span class="math inline">\(\boldsymbol{\beta}\)</span> and <span class="math inline">\(\boldsymbol{\gamma}\)</span> is proportional to the product of the likelihood contribution, the <span class="math inline">\(K\)</span> priors on the <span class="math inline">\(\beta_k\)</span> parameters, and the <span class="math inline">\(J\)</span> priors on the <span class="math inline">\(\gamma_j\)</span> parameters,</p>
 <p><span class="math display">\[
-f(\boldsymbol{\beta},\boldsymbol{\gamma}|\mathbf{y},\mathbf{X}) \propto 
-\prod_{i=1}^N f(y_i | a, b) \times 
+f(\boldsymbol{\beta},\boldsymbol{\gamma}|\mathbf{y},\mathbf{X}) \propto
+\prod_{i=1}^N f(y_i | a, b) \times
 \prod_{k=1}^K f(\beta_k) \times
 \prod_{j=1}^J f(\gamma_j)
 \]</span></p>
@@ -194,37 +209,37 @@ f(\boldsymbol{\beta},\boldsymbol{\gamma}|\mathbf{y},\mathbf{X}) \propto
 <a href="#an-example-using-simulated-data" class="anchor"></a>An Example Using Simulated Data</h1>
 <p>In this example the outcome variable <span class="math inline">\(\mathbf{y}\)</span> is simulated in a way that warrants the use of beta regression. It is worth mentioning that the data generation process is quite convoluted, which is apparent in the identification of the likelihood above.</p>
 <p>The data simulated below uses the logistic link function on the first set of regressors and the log link function on the second set of regressors.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1">SEED &lt;-<span class="st"> </span><span class="dv">1234</span></a>
-<a class="sourceLine" id="cb2-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(SEED)</a>
-<a class="sourceLine" id="cb2-3" data-line-number="3">eta &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">1</span>, <span class="fl">-0.2</span>)</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">gamma &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1.8</span>, <span class="fl">0.4</span>)</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">N &lt;-<span class="st"> </span><span class="dv">200</span></a>
-<a class="sourceLine" id="cb2-6" data-line-number="6">x &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(N, <span class="dv">2</span>, <span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb2-7" data-line-number="7">z &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(N, <span class="dv">0</span>, <span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb2-8" data-line-number="8">mu &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/stats/family.html">binomial</a></span>(<span class="dt">link =</span> logit)<span class="op">$</span><span class="kw">linkinv</span>(eta[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span>eta[<span class="dv">2</span>]<span class="op">*</span>x)</a>
-<a class="sourceLine" id="cb2-9" data-line-number="9">phi &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/stats/family.html">binomial</a></span>(<span class="dt">link =</span> log)<span class="op">$</span><span class="kw">linkinv</span>(gamma[<span class="dv">1</span>] <span class="op">+</span><span class="st"> </span>gamma[<span class="dv">2</span>]<span class="op">*</span>z)</a>
-<a class="sourceLine" id="cb2-10" data-line-number="10">y &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/stats/Beta.html">rbeta</a></span>(N, mu <span class="op">*</span><span class="st"> </span>phi, (<span class="dv">1</span> <span class="op">-</span><span class="st"> </span>mu) <span class="op">*</span><span class="st"> </span>phi)</a>
-<a class="sourceLine" id="cb2-11" data-line-number="11">dat &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span>(y, x, z))</a>
-<a class="sourceLine" id="cb2-12" data-line-number="12"><span class="kw"><a href="https://rdrr.io/r/graphics/hist.html">hist</a></span>(dat<span class="op">$</span>y, <span class="dt">col =</span> <span class="st">"darkgrey"</span>, <span class="dt">border =</span> F, <span class="dt">main =</span> <span class="st">"Distribution of Outcome Variable"</span>, <span class="dt">xlab =</span> <span class="st">"y"</span>, <span class="dt">breaks =</span> <span class="dv">20</span>, <span class="dt">freq =</span> F)</a></code></pre></div>
+<div class="sourceCode" id="cb2"><html><body><pre class="r"><span class="no">SEED</span> <span class="kw">&lt;-</span> <span class="fl">1234</span>
+<span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span>(<span class="no">SEED</span>)
+<span class="no">eta</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>, -<span class="fl">0.2</span>)
+<span class="no">gamma</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1.8</span>, <span class="fl">0.4</span>)
+<span class="no">N</span> <span class="kw">&lt;-</span> <span class="fl">200</span>
+<span class="no">x</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="no">N</span>, <span class="fl">2</span>, <span class="fl">2</span>)
+<span class="no">z</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html">rnorm</a></span>(<span class="no">N</span>, <span class="fl">0</span>, <span class="fl">2</span>)
+<span class="no">mu</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html">binomial</a></span>(<span class="kw">link</span> <span class="kw">=</span> <span class="no">logit</span>)$<span class="fu">linkinv</span>(<span class="no">eta</span>[<span class="fl">1</span>] + <span class="no">eta</span>[<span class="fl">2</span>]*<span class="no">x</span>)
+<span class="no">phi</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/family.html">binomial</a></span>(<span class="kw">link</span> <span class="kw">=</span> <span class="no">log</span>)$<span class="fu">linkinv</span>(<span class="no">gamma</span>[<span class="fl">1</span>] + <span class="no">gamma</span>[<span class="fl">2</span>]*<span class="no">z</span>)
+<span class="no">y</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Beta.html">rbeta</a></span>(<span class="no">N</span>, <span class="no">mu</span> * <span class="no">phi</span>, (<span class="fl">1</span> - <span class="no">mu</span>) * <span class="no">phi</span>)
+<span class="no">dat</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html">data.frame</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/cbind.html">cbind</a></span>(<span class="no">y</span>, <span class="no">x</span>, <span class="no">z</span>))
+<span class="fu"><a href="https://rdrr.io/r/graphics/hist.html">hist</a></span>(<span class="no">dat</span>$<span class="no">y</span>, <span class="kw">col</span> <span class="kw">=</span> <span class="st">"darkgrey"</span>, <span class="kw">border</span> <span class="kw">=</span> <span class="no">F</span>, <span class="kw">main</span> <span class="kw">=</span> <span class="st">"Distribution of Outcome Variable"</span>, <span class="kw">xlab</span> <span class="kw">=</span> <span class="st">"y"</span>, <span class="kw">breaks</span> <span class="kw">=</span> <span class="fl">20</span>, <span class="kw">freq</span> <span class="kw">=</span> <span class="no">F</span>)</pre></body></html></div>
 <p><img src="betareg_files/figure-html/simulated-data-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>The model can be fit by calling <code>stan_betareg</code>, using the appropriate link functions.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(rstanarm)</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">fit1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_betareg.html">stan_betareg</a></span>(y <span class="op">~</span><span class="st"> </span>x <span class="op">|</span><span class="st"> </span>z, <span class="dt">data =</span> dat, <span class="dt">link =</span> <span class="st">"logit"</span>, <span class="dt">link.phi =</span> <span class="st">"log"</span>,</a>
-<a class="sourceLine" id="cb3-3" data-line-number="3">                     <span class="dt">cores =</span> <span class="dv">2</span>, <span class="dt">seed =</span> <span class="dv">12345</span>)</a>
-<a class="sourceLine" id="cb3-4" data-line-number="4">fit2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_betareg.html">stan_betareg</a></span>(y <span class="op">~</span><span class="st"> </span><span class="dv">-1</span> <span class="op">+</span><span class="st"> </span>x , <span class="dt">data =</span> dat, <span class="dt">link =</span> <span class="st">"logit"</span>, <span class="dt">link.phi =</span> <span class="st">"log"</span>,</a>
-<a class="sourceLine" id="cb3-5" data-line-number="5">                     <span class="dt">cores =</span> <span class="dv">2</span>, <span class="dt">seed =</span> <span class="dv">12345</span>)</a>
-<a class="sourceLine" id="cb3-6" data-line-number="6"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="kw"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span>(fit1), <span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb3-7" data-line-number="7"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="kw"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span>(fit2), <span class="dv">2</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb3"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">rstanarm</span>)
+<span class="no">fit1</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/stan_betareg.html">stan_betareg</a></span>(<span class="no">y</span> ~ <span class="no">x</span> <span class="kw">|</span> <span class="no">z</span>, <span class="kw">data</span> <span class="kw">=</span> <span class="no">dat</span>, <span class="kw">link</span> <span class="kw">=</span> <span class="st">"logit"</span>, <span class="kw">link.phi</span> <span class="kw">=</span> <span class="st">"log"</span>,
+                     <span class="kw">cores</span> <span class="kw">=</span> <span class="fl">2</span>, <span class="kw">seed</span> <span class="kw">=</span> <span class="fl">12345</span>)
+<span class="no">fit2</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/stan_betareg.html">stan_betareg</a></span>(<span class="no">y</span> ~ -<span class="fl">1</span> + <span class="no">x</span> , <span class="kw">data</span> <span class="kw">=</span> <span class="no">dat</span>, <span class="kw">link</span> <span class="kw">=</span> <span class="st">"logit"</span>, <span class="kw">link.phi</span> <span class="kw">=</span> <span class="st">"log"</span>,
+                     <span class="kw">cores</span> <span class="kw">=</span> <span class="fl">2</span>, <span class="kw">seed</span> <span class="kw">=</span> <span class="fl">12345</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="fu"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span>(<span class="no">fit1</span>), <span class="fl">2</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="fu"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span>(<span class="no">fit2</span>), <span class="fl">2</span>)</pre></body></html></div>
 <pre><code>      (Intercept)                 x (phi)_(Intercept)           (phi)_z 
-             0.94             -0.20              1.84              0.32 </code></pre>
+             0.94             -0.20              1.84              0.31 </code></pre>
 <pre><code>                x (phi)_(Intercept) 
              0.00              1.08 </code></pre>
 <p>For clarity we can use <code>prior_summary</code> to print the information about the prior distributions used to fit the models. The priors used in <code>fit1</code> are provided below.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw"><a href="../reference/prior_summary.stanreg.html">prior_summary</a></span>(fit1)</a></code></pre></div>
+<div class="sourceCode" id="cb6"><html><body><pre class="r"><span class="fu"><a href="../reference/prior_summary.stanreg.html">prior_summary</a></span>(<span class="no">fit1</span>)</pre></body></html></div>
 <pre><code>Priors for model 'fit1' 
 ------
 Intercept (after predictors centered)
- ~ normal(location = 0, scale = 10)
+ ~ normal(location = 0, scale = 2.5)
 
 Coefficients
   Specified prior:
@@ -233,7 +248,7 @@ Coefficients
     ~ normal(location = 0, scale = 1.2)
 
 Intercept_z (after predictors centered)
- ~ normal(location = 0, scale = 10)
+ ~ normal(location = 0, scale = 2.5)
 
 Coefficients_z
   Specified prior:
@@ -243,66 +258,66 @@ Coefficients_z
 ------
 See help('prior_summary.stanreg') for more details</code></pre>
 <p>The usual posterior analyses are available in <strong>rstanarm</strong>. The plots below illustrate simulated values of the outcome variable. The incorrect model noticeably fails to capture the top of the distribution consistently in comparison to the true model.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(ggplot2)</a>
-<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(bayesplot)</a>
-<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="kw"><a href="https://mc-stan.org/bayesplot/reference/bayesplot_grid.html">bayesplot_grid</a></span>(</a>
-<a class="sourceLine" id="cb8-4" data-line-number="4">  <span class="kw"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(fit1), <span class="kw"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(fit2), </a>
-<a class="sourceLine" id="cb8-5" data-line-number="5">  <span class="dt">xlim =</span> <span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">0</span>,<span class="dv">1</span>),  </a>
-<a class="sourceLine" id="cb8-6" data-line-number="6">  <span class="dt">ylim =</span> <span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">0</span>,<span class="dv">4</span>), </a>
-<a class="sourceLine" id="cb8-7" data-line-number="7">  <span class="dt">titles =</span> <span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"True Model: y ~ x | z"</span>, <span class="st">"False Model: y ~ x - 1"</span>),</a>
-<a class="sourceLine" id="cb8-8" data-line-number="8">  <span class="dt">grid_args =</span> <span class="kw"><a href="https://rdrr.io/r/base/list.html">list</a></span>(<span class="dt">ncol =</span> <span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb8-9" data-line-number="9">)</a></code></pre></div>
+<div class="sourceCode" id="cb8"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">ggplot2</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">bayesplot</span>)
+<span class="fu"><a href="https://mc-stan.org/bayesplot/reference/bayesplot_grid.html">bayesplot_grid</a></span>(
+  <span class="fu"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(<span class="no">fit1</span>), <span class="fu"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(<span class="no">fit2</span>),
+  <span class="kw">xlim</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0</span>,<span class="fl">1</span>),
+  <span class="kw">ylim</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0</span>,<span class="fl">4</span>),
+  <span class="kw">titles</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"True Model: y ~ x | z"</span>, <span class="st">"False Model: y ~ x - 1"</span>),
+  <span class="kw">grid_args</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span>(<span class="kw">ncol</span> <span class="kw">=</span> <span class="fl">2</span>)
+)</pre></body></html></div>
 <p><img src="betareg_files/figure-html/simulated-analysis-1.png" width="60%" style="display: block; margin: auto;"></p>
 <p>We can also compare models by evaluating the expected log pointwise predictive density (<code>elpd</code>), which can be calculated using the <code>loo</code> method, which provides an interface for <strong>rstanarm</strong> models to the functionality in the <strong>loo</strong> package.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1">loo1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit1)</a>
-<a class="sourceLine" id="cb9-2" data-line-number="2">loo2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(fit2)</a>
-<a class="sourceLine" id="cb9-3" data-line-number="3"><span class="kw"><a href="../reference/loo.stanreg.html">loo_compare</a></span>(loo1, loo2)</a></code></pre></div>
+<div class="sourceCode" id="cb9"><html><body><pre class="r"><span class="no">loo1</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/loo.stanreg.html">loo</a></span>(<span class="no">fit1</span>)
+<span class="no">loo2</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/loo.stanreg.html">loo</a></span>(<span class="no">fit2</span>)
+<span class="fu"><a href="../reference/loo.stanreg.html">loo_compare</a></span>(<span class="no">loo1</span>, <span class="no">loo2</span>)</pre></body></html></div>
 <pre><code>     elpd_diff se_diff
 fit1   0.0       0.0  
-fit2 -80.1      11.9  </code></pre>
+fit2 -80.0      11.8  </code></pre>
 <p>The difference in <code>elpd</code> is negative indicating that the expected predictive accuracy for the first model is higher.</p>
 </div>
 <div id="an-example-using-gasoline-data" class="section level1">
 <h1 class="hasAnchor">
 <a href="#an-example-using-gasoline-data" class="anchor"></a>An Example Using Gasoline Data</h1>
 <p>In some applied contexts it may be necessary to work with an outcome variable that is a proportion. If the proportion is bound on the open unit interval then beta regression can be considered a reasonable estimation method. The <code>betareg</code> package provides a dataset on the proportion of crude oil converted to gasoline after distillation and fractionation. This variable is defined as yield. Below <code>stan_betareg</code> is used to model yield as a function of temperature, pressure, and the batch of conditions.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(rstanarm)</a>
-<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="kw"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"GasolineYield"</span>, <span class="dt">package =</span> <span class="st">"betareg"</span>)</a>
-<a class="sourceLine" id="cb11-3" data-line-number="3">gas_fit1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_betareg.html">stan_betareg</a></span>(yield <span class="op">~</span><span class="st"> </span>temp <span class="op">+</span><span class="st"> </span>batch, <span class="dt">data =</span> GasolineYield, <span class="dt">link =</span> <span class="st">"logit"</span>,</a>
-<a class="sourceLine" id="cb11-4" data-line-number="4">                         <span class="dt">seed =</span> <span class="dv">12345</span>)</a>
-<a class="sourceLine" id="cb11-5" data-line-number="5">gas_fit2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/stan_betareg.html">stan_betareg</a></span>(yield <span class="op">~</span><span class="st"> </span>temp <span class="op">+</span><span class="st"> </span>batch <span class="op">|</span><span class="st"> </span>pressure,</a>
-<a class="sourceLine" id="cb11-6" data-line-number="6">                         <span class="dt">data =</span> GasolineYield, <span class="dt">link =</span> <span class="st">"logit"</span>,</a>
-<a class="sourceLine" id="cb11-7" data-line-number="7">                         <span class="dt">seed =</span> <span class="dv">12345</span>)</a>
-<a class="sourceLine" id="cb11-8" data-line-number="8"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="kw"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span>(gas_fit1), <span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb11-9" data-line-number="9"><span class="kw"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="kw"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span>(gas_fit2), <span class="dv">2</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb11"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">rstanarm</span>)
+<span class="fu"><a href="https://rdrr.io/r/utils/data.html">data</a></span>(<span class="st">"GasolineYield"</span>, <span class="kw">package</span> <span class="kw">=</span> <span class="st">"betareg"</span>)
+<span class="no">gas_fit1</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/stan_betareg.html">stan_betareg</a></span>(<span class="no">yield</span> ~ <span class="no">temp</span> + <span class="no">batch</span>, <span class="kw">data</span> <span class="kw">=</span> <span class="no">GasolineYield</span>, <span class="kw">link</span> <span class="kw">=</span> <span class="st">"logit"</span>,
+                         <span class="kw">seed</span> <span class="kw">=</span> <span class="fl">12345</span>)
+<span class="no">gas_fit2</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/stan_betareg.html">stan_betareg</a></span>(<span class="no">yield</span> ~ <span class="no">temp</span> + <span class="no">batch</span> <span class="kw">|</span> <span class="no">pressure</span>,
+                         <span class="kw">data</span> <span class="kw">=</span> <span class="no">GasolineYield</span>, <span class="kw">link</span> <span class="kw">=</span> <span class="st">"logit"</span>,
+                         <span class="kw">seed</span> <span class="kw">=</span> <span class="fl">12345</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="fu"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span>(<span class="no">gas_fit1</span>), <span class="fl">2</span>)
+<span class="fu"><a href="https://rdrr.io/r/base/Round.html">round</a></span>(<span class="fu"><a href="https://rdrr.io/r/stats/coef.html">coef</a></span>(<span class="no">gas_fit2</span>), <span class="fl">2</span>)</pre></body></html></div>
 <pre><code>(Intercept)        temp      batch1      batch2      batch3      batch4 
-      -5.13        0.01        1.34        0.92        1.13        0.76 
+      -5.16        0.01        1.35        0.95        1.15        0.77 
      batch5      batch6      batch7      batch8      batch9       (phi) 
-       0.79        0.71        0.29        0.26        0.13       12.11 </code></pre>
+       0.80        0.72        0.33        0.26        0.15       12.04 </code></pre>
 <pre><code>      (Intercept)              temp            batch1            batch2 
-            -6.08              0.01              1.70              1.29 
+            -6.06              0.01              1.70              1.29 
            batch3            batch4            batch5            batch6 
-             1.53              1.04              1.11              1.02 
+             1.53              1.03              1.10              1.01 
            batch7            batch8            batch9 (phi)_(Intercept) 
-             0.52              0.48              0.36              5.43 
+             0.52              0.47              0.36              5.32 
    (phi)_pressure 
              0.04 </code></pre>
 <p>The plots below illustrate simulated values of gasoline yield. While the first model accounts for variation in batch conditions its predictions looks somewhat uniform rather than resembling the peaked and right-skewed behavior of the true data. The second model does a somewhat better job at capturing the shape of the distribution, however its location is off as it is centered around 0.50 rather than 0.20.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(ggplot2)</a>
-<a class="sourceLine" id="cb14-2" data-line-number="2"><span class="kw"><a href="https://mc-stan.org/bayesplot/reference/bayesplot_grid.html">bayesplot_grid</a></span>(</a>
-<a class="sourceLine" id="cb14-3" data-line-number="3">  <span class="kw"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(gas_fit1), <span class="kw"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(gas_fit2), </a>
-<a class="sourceLine" id="cb14-4" data-line-number="4">  <span class="dt">xlim =</span> <span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">0</span>,<span class="dv">1</span>),  </a>
-<a class="sourceLine" id="cb14-5" data-line-number="5">  <span class="dt">ylim =</span> <span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">0</span>,<span class="dv">5</span>), </a>
-<a class="sourceLine" id="cb14-6" data-line-number="6">  <span class="dt">titles =</span> <span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"gas_fit1"</span>, <span class="st">"gas_fit2"</span>),</a>
-<a class="sourceLine" id="cb14-7" data-line-number="7">  <span class="dt">grid_args =</span> <span class="kw"><a href="https://rdrr.io/r/base/list.html">list</a></span>(<span class="dt">ncol =</span> <span class="dv">2</span>)</a>
-<a class="sourceLine" id="cb14-8" data-line-number="8">)</a></code></pre></div>
+<div class="sourceCode" id="cb14"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="no">ggplot2</span>)
+<span class="fu"><a href="https://mc-stan.org/bayesplot/reference/bayesplot_grid.html">bayesplot_grid</a></span>(
+  <span class="fu"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(<span class="no">gas_fit1</span>), <span class="fu"><a href="../reference/pp_check.stanreg.html">pp_check</a></span>(<span class="no">gas_fit2</span>),
+  <span class="kw">xlim</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0</span>,<span class="fl">1</span>),
+  <span class="kw">ylim</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0</span>,<span class="fl">5</span>),
+  <span class="kw">titles</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"gas_fit1"</span>, <span class="st">"gas_fit2"</span>),
+  <span class="kw">grid_args</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span>(<span class="kw">ncol</span> <span class="kw">=</span> <span class="fl">2</span>)
+)</pre></body></html></div>
 <p><img src="betareg_files/figure-html/gas-analysis-1.png" width="60%" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1">gas_loo1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(gas_fit1)</a>
-<a class="sourceLine" id="cb15-2" data-line-number="2">gas_loo2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/loo.stanreg.html">loo</a></span>(gas_fit2)</a>
-<a class="sourceLine" id="cb15-3" data-line-number="3"><span class="kw"><a href="../reference/loo.stanreg.html">loo_compare</a></span>(gas_loo1, gas_loo2)</a></code></pre></div>
+<div class="sourceCode" id="cb15"><html><body><pre class="r"><span class="no">gas_loo1</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/loo.stanreg.html">loo</a></span>(<span class="no">gas_fit1</span>)
+<span class="no">gas_loo2</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/loo.stanreg.html">loo</a></span>(<span class="no">gas_fit2</span>)
+<span class="fu"><a href="../reference/loo.stanreg.html">loo_compare</a></span>(<span class="no">gas_loo1</span>, <span class="no">gas_loo2</span>)</pre></body></html></div>
 <pre><code>         elpd_diff se_diff
 gas_fit2   0.0       0.0  
-gas_fit1 -34.2       3.6  </code></pre>
+gas_fit1 -33.6       3.2  </code></pre>
 <p>Evaluating the expected log predictive distribution using <code>loo</code> reveals that the second of the two models is preferred.</p>
 </div>
 <div id="references" class="section level1">
@@ -312,22 +327,11 @@ gas_fit1 -34.2       3.6  </code></pre>
 </div>
   </div>
 
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-        <div id="tocnav">
-      <h2 class="hasAnchor">
-<a href="#tocnav" class="anchor"></a>Contents</h2>
-      <ul class="nav nav-pills nav-stacked">
-<li><a href="#introduction">Introduction</a></li>
-      <li><a href="#likelihood">Likelihood</a></li>
-      <li><a href="#priors">Priors</a></li>
-      <li><a href="#posterior">Posterior</a></li>
-      <li><a href="#an-example-using-simulated-data">An Example Using Simulated Data</a></li>
-      <li><a href="#an-example-using-gasoline-data">An Example Using Gasoline Data</a></li>
-      <li><a href="#references">References</a></li>
-      </ul>
+        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
+    </nav>
 </div>
-      </div>
 
 </div>
 
@@ -338,7 +342,7 @@ gas_fit1 -34.2       3.6  </code></pre>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

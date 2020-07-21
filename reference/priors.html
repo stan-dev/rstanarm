@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -49,7 +53,7 @@
   prior_summary).  
 The default priors used in the various rstanarm modeling functions
   are intended to be weakly informative in that they provide moderate
-  regularlization and help stabilize computation. For many applications the
+  regularization and help stabilize computation. For many applications the
   defaults will perform well, but prudent use of more informative priors is
   encouraged. Uniform prior distributions are possible (e.g. by setting
   stan_glm's prior argument to NULL) but, unless
@@ -59,12 +63,12 @@ The default priors used in the various rstanarm modeling functions
 More information on priors is available in the vignette
   Prior
   Distributions for rstanarm Models as well as the vignettes for the
-  various modeling functions. In particular, for details on the 
-  priors used for multilevel models see the vignette
+  various modeling functions. For details on the 
+  priors used for multilevel models in particular see the vignette
   Estimating
-  Generalized (Non-)Linear Models with Group-Specific Terms with rstanarm." />
+  Generalized (Non-)Linear Models with Group-Specific Terms with rstanarm
+  and also the Covariance matrices section lower down on this page." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -82,7 +86,7 @@ More information on priors is available in the vignette
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -96,17 +100,26 @@ More information on priors is available in the vignette
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -122,6 +135,9 @@ More information on priors is available in the vignette
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -135,6 +151,9 @@ More information on priors is available in the vignette
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -175,7 +194,7 @@ More information on priors is available in the vignette
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Prior distributions and options</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/priors.R'><code>R/priors.R</code></a></small>
     <div class="hidden name"><code>priors.Rd</code></div>
     </div>
 
@@ -186,7 +205,7 @@ More information on priors is available in the vignette
   <code><a href='prior_summary.stanreg.html'>prior_summary</a></code>).</p>  
 <p>The default priors used in the various <span class="pkg">rstanarm</span> modeling functions
   are intended to be <em>weakly informative</em> in that they provide moderate
-  regularlization and help stabilize computation. For many applications the
+  regularization and help stabilize computation. For many applications the
   defaults will perform well, but prudent use of more informative priors is
   encouraged. Uniform prior distributions are possible (e.g. by setting
   <code><a href='stan_glm.html'>stan_glm</a></code>'s <code>prior</code> argument to <code>NULL</code>) but, unless
@@ -196,31 +215,37 @@ More information on priors is available in the vignette
 <p>More information on priors is available in the vignette
   <a href='http://mc-stan.org/rstanarm/articles/priors.html'><em>Prior
   Distributions for rstanarm Models</em></a> as well as the vignettes for the
-  various modeling functions. In particular, for details on the 
-  priors used for multilevel models see the vignette
+  various modeling functions. For details on the 
+  priors used for multilevel models in particular see the vignette
   <a href='http://mc-stan.org/rstanarm/articles/glmer.html'><em>Estimating
-  Generalized (Non-)Linear Models with Group-Specific Terms with rstanarm</em></a>.</p>
+  Generalized (Non-)Linear Models with Group-Specific Terms with rstanarm</em></a>
+  and also the <strong>Covariance matrices</strong> section lower down on this page.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>normal</span>(<span class='kw'>location</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+    <pre class="usage"><span class='fu'>normal</span>(<span class='kw'>location</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
-<span class='fu'>student_t</span>(<span class='kw'>df</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>location</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='fu'>student_t</span>(<span class='kw'>df</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>location</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
-<span class='fu'>cauchy</span>(<span class='kw'>location</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='fu'>cauchy</span>(<span class='kw'>location</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
-<span class='fu'>hs</span>(<span class='kw'>df</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>global_df</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>global_scale</span> <span class='kw'>=</span> <span class='fl'>0.01</span>, <span class='kw'>slab_df</span> <span class='kw'>=</span> <span class='fl'>4</span>,
-  <span class='kw'>slab_scale</span> <span class='kw'>=</span> <span class='fl'>2.5</span>)
+<span class='fu'>hs</span>(<span class='kw'>df</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>global_df</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>global_scale</span> <span class='kw'>=</span> <span class='fl'>0.01</span>, <span class='kw'>slab_df</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='kw'>slab_scale</span> <span class='kw'>=</span> <span class='fl'>2.5</span>)
 
-<span class='fu'>hs_plus</span>(<span class='kw'>df1</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>df2</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>global_df</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>global_scale</span> <span class='kw'>=</span> <span class='fl'>0.01</span>,
-  <span class='kw'>slab_df</span> <span class='kw'>=</span> <span class='fl'>4</span>, <span class='kw'>slab_scale</span> <span class='kw'>=</span> <span class='fl'>2.5</span>)
+<span class='fu'>hs_plus</span>(
+  <span class='kw'>df1</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>df2</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>global_df</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>global_scale</span> <span class='kw'>=</span> <span class='fl'>0.01</span>,
+  <span class='kw'>slab_df</span> <span class='kw'>=</span> <span class='fl'>4</span>,
+  <span class='kw'>slab_scale</span> <span class='kw'>=</span> <span class='fl'>2.5</span>
+)
 
-<span class='fu'>laplace</span>(<span class='kw'>location</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='fu'>laplace</span>(<span class='kw'>location</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
-<span class='fu'>lasso</span>(<span class='kw'>df</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>location</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='fu'>lasso</span>(<span class='kw'>df</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>location</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
 <span class='fu'>product_normal</span>(<span class='kw'>df</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>location</span> <span class='kw'>=</span> <span class='fl'>0</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>1</span>)
 
-<span class='fu'>exponential</span>(<span class='kw'>rate</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='fu'>exponential</span>(<span class='kw'>rate</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
 <span class='fu'>decov</span>(<span class='kw'>regularization</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>concentration</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>shape</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>1</span>)
 
@@ -228,7 +253,11 @@ More information on priors is available in the vignette
 
 <span class='fu'>dirichlet</span>(<span class='kw'>concentration</span> <span class='kw'>=</span> <span class='fl'>1</span>)
 
-<span class='fu'>R2</span>(<span class='kw'>location</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>what</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"mode"</span>, <span class='st'>"mean"</span>, <span class='st'>"median"</span>, <span class='st'>"log"</span>))</pre>
+<span class='fu'>R2</span>(<span class='kw'>location</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>what</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"mode"</span>, <span class='st'>"mean"</span>, <span class='st'>"median"</span>, <span class='st'>"log"</span>))
+
+<span class='fu'>default_prior_intercept</span>(<span class='no'>family</span>)
+
+<span class='fu'>default_prior_coef</span>(<span class='no'>family</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -252,18 +281,17 @@ value of the <code>what</code> argument (see the <em>R2 family</em> section in
     </tr>
     <tr>
       <th>autoscale</th>
-      <td><p>A logical scalar, defaulting to <code>TRUE</code>. If <code>TRUE</code> 
-then the scales of the priors on the intercept and regression coefficients 
-may be additionally modified internally by <span class="pkg">rstanarm</span> in the following 
-cases. First, for Gaussian models only, the prior scales for the intercept, 
-coefficients, and the auxiliary parameter <code>sigma</code> (error standard 
-deviation) are multiplied by <code><a href='https://rdrr.io/r/stats/sd.html'>sd(y)</a></code>. Additionally --- not only for 
-Gaussian models --- if the <code>QR</code> argument to the model fitting function
-(e.g. <code>stan_glm</code>) is <code>FALSE</code> then: for a predictor with only one 
-value nothing is changed; for a predictor <code>x</code> with exactly two unique 
-values, we take the user-specified (or default) scale(s) for the selected 
-priors and divide by the range of <code>x</code>; for a predictor <code>x</code> with 
-more than two unique values, we divide the prior scale(s) by <code><a href='https://rdrr.io/r/stats/sd.html'>sd(x)</a></code>.</p></td>
+      <td><p>If <code>TRUE</code> then the scales of the priors on the
+intercept and regression coefficients may be additionally modified
+internally by <span class="pkg">rstanarm</span> in the following cases. First, for Gaussian
+models only, the prior scales for the intercept, coefficients, and the
+auxiliary parameter <code>sigma</code> (error standard deviation) are multiplied
+by <code><a href='https://rdrr.io/r/stats/sd.html'>sd(y)</a></code>. Additionally --- not only for Gaussian models --- if the
+<code>QR</code> argument to the model fitting function (e.g. <code>stan_glm</code>) is
+<code>FALSE</code> then we also divide the prior scale(s) by <code><a href='https://rdrr.io/r/stats/sd.html'>sd(x)</a></code>.
+Prior autoscaling is also discussed in the vignette 
+<a href='http://mc-stan.org/rstanarm/articles/priors.html'><em>Prior
+Distributions for rstanarm Models</em></a></p></td>
     </tr>
     <tr>
       <th>df, df1, df2</th>
@@ -317,6 +345,10 @@ or equal to two, the mode of this Beta distribution does not exist
 and an error will prompt the user to specify another choice for
 <code>what</code>.</p></td>
     </tr>
+    <tr>
+      <th>family</th>
+      <td><p>Not currently used.</p></td>
+    </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
@@ -339,11 +371,10 @@ and an error will prompt the user to specify another choice for
   degrees of freedom approaches infinity, the Student t distribution 
   approaches the normal distribution and if the degrees of freedom are one,
   then the Student t distribution is the Cauchy distribution.</p>  
-<p>If <code>scale</code> is not specified it will default to \(10\) for the
-  intercept and \(2.5\) for the other coefficients, unless the probit link
-  function is used, in which case these defaults are scaled by a factor of 
-  <code>dnorm(0)/dlogis(0)</code>, which is roughly \(1.6\).</p>  
-<p>If the <code>autoscale</code> argument is <code>TRUE</code> (the default), then the 
+<p>If <code>scale</code> is not specified it will default to \(2.5\), unless the
+  probit link function is used, in which case these defaults are scaled by a
+  factor of <code>dnorm(0)/dlogis(0)</code>, which is roughly \(1.6\).</p>  
+<p>If the <code>autoscale</code> argument is <code>TRUE</code>, then the 
   scales will be further adjusted as described above in the documentation of 
   the <code>autoscale</code> argument in the <strong>Arguments</strong> section.</p>
 <h3>Hierarchical shrinkage family</h3>
@@ -398,7 +429,7 @@ and an error will prompt the user to specify another choice for
   degrees of freedom minus 2, if this difference is positive.</p>  
 <p>It is also common in supervised learning to standardize the predictors 
   before training the model. We do not recommend doing so. Instead, it is
-  better to specify <code>autoscale = TRUE</code> (the default value), which 
+  better to specify <code>autoscale = TRUE</code>, which 
   will adjust the scales of the priors according to the dispersion in the
   variables. See the documentation of the <code>autoscale</code> argument above 
   and also the <code><a href='prior_summary.stanreg.html'>prior_summary</a></code> page for more information.</p>
@@ -589,8 +620,8 @@ Reference Manual.</em> <a href='https://mc-stan.org/users/documentation/'>https:
                            <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'>exponential</span>(<span class='fl'>1</span>/<span class='fl'>2</span>))</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 2.6e-05 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.26 seconds.
+#&gt; Chain 1: Gradient evaluation took 2.2e-05 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
 #&gt; Chain 1: Adjust your expectations accordingly!
 #&gt; Chain 1: 
 #&gt; Chain 1: 
@@ -615,14 +646,16 @@ Reference Manual.</em> <a href='https://mc-stan.org/users/documentation/'>https:
 #&gt; Chain 1: Iteration: 225 / 250 [ 90%]  (Sampling)
 #&gt; Chain 1: Iteration: 250 / 250 [100%]  (Sampling)
 #&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 0.060168 seconds (Warm-up)
-#&gt; Chain 1:                0.063486 seconds (Sampling)
-#&gt; Chain 1:                0.123654 seconds (Total)
-#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+#&gt; Chain 1:  Elapsed Time: 0.02027 seconds (Warm-up)
+#&gt; Chain 1:                0.019899 seconds (Sampling)
+#&gt; Chain 1:                0.040169 seconds (Total)
+#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: The largest R-hat is 1.14, indicating chains have not mixed.</span>
+#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#r-hat</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>prior_pred_fit</span>, <span class='st'>"hist"</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><div class='img'><img src='priors-1.png' alt='' width='700' height='433' /></div><div class='input'>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>prior_pred_fit</span>, <span class='st'>"hist"</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><div class='img'><img src='priors-1.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'># \donttest{</span>
 <span class='co'># Can assign priors to names</span>
 <span class='no'>N05</span> <span class='kw'>&lt;-</span> <span class='fu'>normal</span>(<span class='fl'>0</span>, <span class='fl'>5</span>)
@@ -647,15 +680,15 @@ Reference Manual.</em> <a href='https://mc-stan.org/users/documentation/'>https:
 #&gt; Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 0.138379 seconds (Warm-up)
-#&gt; Chain 1:                0.105216 seconds (Sampling)
-#&gt; Chain 1:                0.243595 seconds (Total)
+#&gt; Chain 1:  Elapsed Time: 0.066157 seconds (Warm-up)
+#&gt; Chain 1:                0.059846 seconds (Sampling)
+#&gt; Chain 1:                0.126003 seconds (Total)
 #&gt; Chain 1: 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #&gt; Chain 2: 
-#&gt; Chain 2: Gradient evaluation took 1.7e-05 seconds
-#&gt; Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
+#&gt; Chain 2: Gradient evaluation took 1.4e-05 seconds
+#&gt; Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
 #&gt; Chain 2: Adjust your expectations accordingly!
 #&gt; Chain 2: 
 #&gt; Chain 2: 
@@ -672,15 +705,15 @@ Reference Manual.</em> <a href='https://mc-stan.org/users/documentation/'>https:
 #&gt; Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; Chain 2: 
-#&gt; Chain 2:  Elapsed Time: 0.128794 seconds (Warm-up)
-#&gt; Chain 2:                0.094608 seconds (Sampling)
-#&gt; Chain 2:                0.223402 seconds (Total)
+#&gt; Chain 2:  Elapsed Time: 0.066193 seconds (Warm-up)
+#&gt; Chain 2:                0.08006 seconds (Sampling)
+#&gt; Chain 2:                0.146253 seconds (Total)
 #&gt; Chain 2: 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #&gt; Chain 3: 
-#&gt; Chain 3: Gradient evaluation took 1e-05 seconds
-#&gt; Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
+#&gt; Chain 3: Gradient evaluation took 1.6e-05 seconds
+#&gt; Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
 #&gt; Chain 3: Adjust your expectations accordingly!
 #&gt; Chain 3: 
 #&gt; Chain 3: 
@@ -697,15 +730,15 @@ Reference Manual.</em> <a href='https://mc-stan.org/users/documentation/'>https:
 #&gt; Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; Chain 3: 
-#&gt; Chain 3:  Elapsed Time: 0.116302 seconds (Warm-up)
-#&gt; Chain 3:                0.120624 seconds (Sampling)
-#&gt; Chain 3:                0.236926 seconds (Total)
+#&gt; Chain 3:  Elapsed Time: 0.083264 seconds (Warm-up)
+#&gt; Chain 3:                0.081392 seconds (Sampling)
+#&gt; Chain 3:                0.164656 seconds (Total)
 #&gt; Chain 3: 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #&gt; Chain 4: 
-#&gt; Chain 4: Gradient evaluation took 1.1e-05 seconds
-#&gt; Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.11 seconds.
+#&gt; Chain 4: Gradient evaluation took 1.4e-05 seconds
+#&gt; Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
 #&gt; Chain 4: Adjust your expectations accordingly!
 #&gt; Chain 4: 
 #&gt; Chain 4: 
@@ -722,9 +755,9 @@ Reference Manual.</em> <a href='https://mc-stan.org/users/documentation/'>https:
 #&gt; Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; Chain 4: 
-#&gt; Chain 4:  Elapsed Time: 0.107179 seconds (Warm-up)
-#&gt; Chain 4:                0.090774 seconds (Sampling)
-#&gt; Chain 4:                0.197953 seconds (Total)
+#&gt; Chain 4:  Elapsed Time: 0.067262 seconds (Warm-up)
+#&gt; Chain 4:                0.065753 seconds (Sampling)
+#&gt; Chain 4:                0.133015 seconds (Total)
 #&gt; Chain 4: </div><div class='input'><span class='co'># }</span>
 
 <span class='co'># Visually compare normal, student_t, cauchy, laplace, and product_normal</span>
@@ -739,7 +772,7 @@ Reference Manual.</em> <a href='https://mc-stan.org/users/documentation/'>https:
     <span class='fu'><a href='https://rdrr.io/r/base/Bessel.html'>besselK</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/MathFun.html'>abs</a></span>(<span class='no'>x</span>) / <span class='no'>scale</span> ^ <span class='fl'>2</span>, <span class='kw'>nu</span> <span class='kw'>=</span> <span class='fl'>0</span>) / (<span class='no'>scale</span> ^ <span class='fl'>2</span> * <span class='no'>pi</span>)
   }
   <span class='no'>stat_dist</span> <span class='kw'>&lt;-</span> <span class='kw'>function</span>(<span class='no'>dist</span>, <span class='no'>...</span>) {
-    <span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/stat_function.html'>stat_function</a></span>(<span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes_.html'>aes_</a></span>(<span class='kw'>color</span> <span class='kw'>=</span> <span class='no'>dist</span>), <span class='no'>...</span>)
+    <span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/geom_function.html'>stat_function</a></span>(<span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes_.html'>aes_</a></span>(<span class='kw'>color</span> <span class='kw'>=</span> <span class='no'>dist</span>), <span class='no'>...</span>)
   }
   <span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/ggplot.html'>ggplot</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/data.frame.html'>data.frame</a></span>(<span class='kw'>x</span> <span class='kw'>=</span> <span class='no'>xlim</span>), <span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/aes.html'>aes</a></span>(<span class='no'>x</span>)) +
     <span class='fu'>stat_dist</span>(<span class='st'>"normal"</span>, <span class='kw'>size</span> <span class='kw'>=</span> <span class='fl'>.75</span>, <span class='kw'>fun</span> <span class='kw'>=</span> <span class='no'>dnorm</span>,
@@ -765,17 +798,10 @@ Reference Manual.</em> <a href='https://mc-stan.org/users/documentation/'>https:
 <span class='fu'>compare_priors</span>(<span class='kw'>scale</span> <span class='kw'>=</span> <span class='fl'>1000</span>, <span class='kw'>xlim</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(-<span class='fl'>1000</span>,<span class='fl'>1000</span>))</div><div class='img'><img src='priors-5.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#details">Details</a></li>
-      <li><a href="#references">References</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -786,7 +812,7 @@ Reference Manual.</em> <a href='https://mc-stan.org/users/documentation/'>https:
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

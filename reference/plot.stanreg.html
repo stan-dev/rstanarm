@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -44,13 +48,12 @@
 
 <meta property="og:title" content="Plot method for stanreg objects — plot.stanreg" />
 <meta property="og:description" content="The plot method for stanreg-objects provides a convenient 
-interface to the MCMC module in the bayesplot 
-package for plotting MCMC draws and diagnostics. It is also straightforward 
-to use the functions from the bayesplot package directly rather than 
+interface to the MCMC module in the 
+bayesplot package for plotting MCMC draws and diagnostics. It is also 
+straightforward to use the functions from the bayesplot package directly rather than
 via the plot method. Examples of both methods of plotting are given
 below." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -68,7 +71,7 @@ below." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -82,17 +85,26 @@ below." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -108,6 +120,9 @@ below." />
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -121,6 +136,9 @@ below." />
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -161,22 +179,21 @@ below." />
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Plot method for stanreg objects</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/plots.R'><code>R/plots.R</code></a></small>
     <div class="hidden name"><code>plot.stanreg.Rd</code></div>
     </div>
 
     <div class="ref-description">
     <p>The <code>plot</code> method for <a href='stanreg-objects.html'>stanreg-objects</a> provides a convenient 
-interface to the <a href='https://mc-stan.org/bayesplot/reference/MCMC-overview.html'>MCMC</a> module in the <span class="pkg">bayesplot</span> 
-package for plotting MCMC draws and diagnostics. It is also straightforward 
-to use the functions from the <span class="pkg">bayesplot</span> package directly rather than 
+interface to the <a href='https://mc-stan.org/bayesplot/reference/MCMC-overview.html'>MCMC</a> module in the 
+<span class="pkg">bayesplot</span> package for plotting MCMC draws and diagnostics. It is also 
+straightforward to use the functions from the <span class="pkg">bayesplot</span> package directly rather than
 via the <code>plot</code> method. Examples of both methods of plotting are given
 below.</p>
     </div>
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>x</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"intervals"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
+<span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>x</span>, <span class='kw'>plotfun</span> <span class='kw'>=</span> <span class='st'>"intervals"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -255,13 +272,13 @@ functions. For example, the arguments accepted for the default
 <span class='co'>#####################################</span>
 <span class='co'>### Intervals and point estimates ###</span>
 <span class='co'>#####################################</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>) <span class='co'># same as plot(fit, "intervals"), plot(fit, "mcmc_intervals")</span></div><div class='img'><img src='plot.stanreg-1.png' alt='' width='700' height='433' /></div><div class='input'>
-<span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"size"</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"period"</span>,
+<span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>) <span class='co'># same as plot(fit, "intervals"), plot(fit, "mcmc_intervals")</span></div><div class='img'><img src='plot.stanreg-1.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"size"</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"period"</span>,
           <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>prob_outer</span> <span class='kw'>=</span> <span class='fl'>0.9</span>)
 <span class='no'>p</span> + <span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>ggtitle</a></span>(<span class='st'>"Posterior medians \n with 50% and 90% intervals"</span>)</div><div class='img'><img src='plot.stanreg-2.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'># Shaded areas under densities</span>
 <span class='kw pkg'>bayesplot</span><span class='kw ns'>::</span><span class='fu'><a href='https://mc-stan.org/bayesplot/reference/bayesplot-colors.html'>color_scheme_set</a></span>(<span class='st'>"brightblue"</span>)
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"areas"</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"period"</span>,
+<span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"areas"</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"period"</span>,
      <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>prob_outer</span> <span class='kw'>=</span> <span class='fl'>0.9</span>)</div><div class='img'><img src='plot.stanreg-3.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'># Make the same plot by extracting posterior draws and calling</span>
 <span class='co'># bayesplot::mcmc_areas directly</span>
@@ -274,13 +291,13 @@ functions. For example, the arguments accepted for the default
 <span class='co'>### Histograms &amp; density plots ###</span>
 <span class='co'>##################################</span>
 <span class='no'>plot_title</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/labs.html'>ggtitle</a></span>(<span class='st'>"Posterior Distributions"</span>)
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"hist"</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"period"</span>) + <span class='no'>plot_title</span></div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><div class='img'><img src='plot.stanreg-6.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"dens_overlay"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"(Intercept)"</span>,
+<span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"hist"</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"period"</span>) + <span class='no'>plot_title</span></div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><div class='img'><img src='plot.stanreg-6.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"dens_overlay"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"(Intercept)"</span>,
      <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"period"</span>) + <span class='no'>plot_title</span></div><div class='img'><img src='plot.stanreg-7.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'>####################</span>
 <span class='co'>### Scatterplots ###</span>
 <span class='co'>####################</span>
 <span class='kw pkg'>bayesplot</span><span class='kw ns'>::</span><span class='fu'><a href='https://mc-stan.org/bayesplot/reference/bayesplot-colors.html'>color_scheme_set</a></span>(<span class='st'>"teal"</span>)
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"scatter"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span>(<span class='st'>"period"</span>, <span class='fl'>2</span>:<span class='fl'>3</span>))</div><div class='img'><img src='plot.stanreg-8.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"scatter"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"(Intercept)"</span>, <span class='st'>"size"</span>),
+<span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"scatter"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/paste.html'>paste0</a></span>(<span class='st'>"period"</span>, <span class='fl'>2</span>:<span class='fl'>3</span>))</div><div class='img'><img src='plot.stanreg-8.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"scatter"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"(Intercept)"</span>, <span class='st'>"size"</span>),
      <span class='kw'>size</span> <span class='kw'>=</span> <span class='fl'>3</span>, <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>0.5</span>) +
      <span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/stat_ellipse.html'>stat_ellipse</a></span>(<span class='kw'>level</span> <span class='kw'>=</span> <span class='fl'>0.9</span>)</div><div class='img'><img src='plot.stanreg-9.png' alt='' width='700' height='433' /></div><div class='input'>
 
@@ -290,11 +307,11 @@ functions. For example, the arguments accepted for the default
 <span class='kw pkg'>bayesplot</span><span class='kw ns'>::</span><span class='fu'><a href='https://mc-stan.org/bayesplot/reference/bayesplot-colors.html'>color_scheme_set</a></span>(<span class='st'>"red"</span>)
 
 <span class='co'># rhat</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"rhat"</span>)</div><div class='img'><img src='plot.stanreg-10.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"rhat_hist"</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><div class='img'><img src='plot.stanreg-11.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"rhat"</span>)</div><div class='img'><img src='plot.stanreg-10.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"rhat_hist"</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><div class='img'><img src='plot.stanreg-11.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'># ratio of effective sample size to total posterior sample size</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"neff"</span>)</div><div class='img'><img src='plot.stanreg-12.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"neff_hist"</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><div class='img'><img src='plot.stanreg-13.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"neff"</span>)</div><div class='img'><img src='plot.stanreg-12.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"neff_hist"</span>)</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><div class='img'><img src='plot.stanreg-13.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'># autocorrelation by chain</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"acf"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"(Intercept)"</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"period"</span>)</div><div class='img'><img src='plot.stanreg-14.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"acf_bar"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"(Intercept)"</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"period"</span>)</div><div class='img'><img src='plot.stanreg-15.png' alt='' width='700' height='433' /></div><div class='input'>
+<span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"acf"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"(Intercept)"</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"period"</span>)</div><div class='img'><img src='plot.stanreg-14.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"acf_bar"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"(Intercept)"</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"period"</span>)</div><div class='img'><img src='plot.stanreg-15.png' alt='' width='700' height='433' /></div><div class='input'>
 
 <span class='co'>##################</span>
 <span class='co'>### Traceplots ###</span>
@@ -304,13 +321,13 @@ functions. For example, the arguments accepted for the default
 <span class='co'># rstanarm) so the iterations in the traceplot are post-warmup iterations</span>
 
 <span class='kw pkg'>bayesplot</span><span class='kw ns'>::</span><span class='fu'><a href='https://mc-stan.org/bayesplot/reference/bayesplot-colors.html'>color_scheme_set</a></span>(<span class='st'>"pink"</span>)
-(<span class='no'>trace</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"trace"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"(Intercept)"</span>))</div><div class='img'><img src='plot.stanreg-16.png' alt='' width='700' height='433' /></div><div class='input'>
+(<span class='no'>trace</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"trace"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"(Intercept)"</span>))</div><div class='img'><img src='plot.stanreg-16.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'># change traceplot colors to ggplot defaults or custom values</span>
 <span class='no'>trace</span> + <span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_hue.html'>scale_color_discrete</a></span>()</div><div class='output co'>#&gt; <span class='message'>Scale for 'colour' is already present. Adding another scale for 'colour',</span>
 #&gt; <span class='message'>which will replace the existing scale.</span></div><div class='img'><img src='plot.stanreg-17.png' alt='' width='700' height='433' /></div><div class='input'><span class='no'>trace</span> + <span class='kw pkg'>ggplot2</span><span class='kw ns'>::</span><span class='fu'><a href='https://ggplot2.tidyverse.org/reference/scale_manual.html'>scale_color_manual</a></span>(<span class='kw'>values</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"maroon"</span>, <span class='st'>"skyblue2"</span>))</div><div class='output co'>#&gt; <span class='message'>Scale for 'colour' is already present. Adding another scale for 'colour',</span>
 #&gt; <span class='message'>which will replace the existing scale.</span></div><div class='img'><img src='plot.stanreg-18.png' alt='' width='700' height='433' /></div><div class='input'>
 <span class='co'># changing facet layout </span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"trace"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"(Intercept)"</span>, <span class='st'>"period2"</span>),
+<span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"trace"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"(Intercept)"</span>, <span class='st'>"period2"</span>),
      <span class='kw'>facet_args</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='kw'>nrow</span> <span class='kw'>=</span> <span class='fl'>2</span>))</div><div class='img'><img src='plot.stanreg-19.png' alt='' width='700' height='433' /></div><div class='input'><span class='co'># same plot by calling bayesplot::mcmc_trace directly</span>
 <span class='no'>x</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/array.html'>as.array</a></span>(<span class='no'>fit</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"(Intercept)"</span>, <span class='st'>"period2"</span>))
 <span class='kw pkg'>bayesplot</span><span class='kw ns'>::</span><span class='fu'><a href='https://mc-stan.org/bayesplot/reference/MCMC-traces.html'>mcmc_trace</a></span>(<span class='no'>x</span>, <span class='kw'>facet_args</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='kw'>nrow</span> <span class='kw'>=</span> <span class='fl'>2</span>))</div><div class='img'><img src='plot.stanreg-20.png' alt='' width='700' height='433' /></div><div class='input'>
@@ -320,23 +337,17 @@ functions. For example, the arguments accepted for the default
 <span class='co'>############</span>
 
 <span class='co'># regex_pars examples</span>
-<span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"herd:1\\]"</span>)</div><div class='img'><img src='plot.stanreg-21.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"herd:[279]"</span>)</div><div class='img'><img src='plot.stanreg-22.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"herd:[279]|period2"</span>)</div><div class='img'><img src='plot.stanreg-23.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"herd:[279]"</span>, <span class='st'>"period2"</span>))</div><div class='img'><img src='plot.stanreg-24.png' alt='' width='700' height='433' /></div><div class='input'># }
+<span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"herd:1\\]"</span>)</div><div class='img'><img src='plot.stanreg-21.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"herd:[279]"</span>)</div><div class='img'><img src='plot.stanreg-22.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='st'>"herd:[279]|period2"</span>)</div><div class='img'><img src='plot.stanreg-23.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"herd:[279]"</span>, <span class='st'>"period2"</span>))</div><div class='img'><img src='plot.stanreg-24.png' alt='' width='700' height='433' /></div><div class='input'># }
 
 # For graphical posterior predictive checks see
 # help("pp_check.stanreg")
 
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#references">References</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -347,7 +358,7 @@ functions. For example, the arguments accepted for the default
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

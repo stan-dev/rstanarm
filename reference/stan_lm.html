@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -52,7 +56,6 @@ stan_glm with family=&quot;gaussian&quot; also estimates a linear
 model with normally-distributed errors and allows for various other priors on
 the coefficients." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -70,7 +73,7 @@ the coefficients." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -84,13 +87,19 @@ the coefficients." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
@@ -113,6 +122,9 @@ the coefficients." />
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -126,6 +138,9 @@ the coefficients." />
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -166,7 +181,7 @@ the coefficients." />
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Bayesian regularized linear models via Stan</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/stan_aov.R'><code>R/stan_aov.R</code></a>, <a href='https://github.com/stan-dev/rstanarm/blob/master/R/stan_lm.R'><code>R/stan_lm.R</code></a>, <a href='https://github.com/stan-dev/rstanarm/blob/master/R/stan_lm.fit.R'><code>R/stan_lm.fit.R</code></a></small>
     <div class="hidden name"><code>stan_lm.Rd</code></div>
     </div>
 
@@ -181,26 +196,64 @@ model with normally-distributed errors and allows for various other priors on
 the coefficients.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>stan_aov</span>(<span class='no'>formula</span>, <span class='no'>data</span>, <span class='kw'>projections</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>contrasts</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>,
-  <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/stop.html'>stop</a></span>(<span class='st'>"'location' must be specified"</span>)), <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+    <pre class="usage"><span class='fu'>stan_aov</span>(
+  <span class='no'>formula</span>,
+  <span class='no'>data</span>,
+  <span class='kw'>projections</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>contrasts</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='no'>...</span>,
+  <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/stop.html'>stop</a></span>(<span class='st'>"'location' must be specified"</span>)),
+  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
-  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
+  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
+)
 
-<span class='fu'>stan_lm</span>(<span class='no'>formula</span>, <span class='no'>data</span>, <span class='no'>subset</span>, <span class='no'>weights</span>, <span class='no'>na.action</span>, <span class='kw'>model</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
-  <span class='kw'>x</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>y</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>singular.ok</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>contrasts</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='no'>offset</span>, <span class='no'>...</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/stop.html'>stop</a></span>(<span class='st'>"'location' must be specified"</span>)),
-  <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>,
-  <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>), <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
-
-<span class='fu'>stan_lm.wfit</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='no'>w</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>singular.ok</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>,
+<span class='fu'>stan_lm</span>(
+  <span class='no'>formula</span>,
+  <span class='no'>data</span>,
+  <span class='no'>subset</span>,
+  <span class='no'>weights</span>,
+  <span class='no'>na.action</span>,
+  <span class='kw'>model</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>x</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>y</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>singular.ok</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>contrasts</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='no'>offset</span>,
+  <span class='no'>...</span>,
   <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/stop.html'>stop</a></span>(<span class='st'>"'location' must be specified"</span>)),
-  <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>,
-  <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>), <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
+  <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
+  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
+)
 
-<span class='fu'>stan_lm.fit</span>(<span class='no'>x</span>, <span class='no'>y</span>, <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>singular.ok</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>,
+<span class='fu'>stan_lm.wfit</span>(
+  <span class='no'>x</span>,
+  <span class='no'>y</span>,
+  <span class='no'>w</span>,
+  <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>singular.ok</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='no'>...</span>,
   <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/stop.html'>stop</a></span>(<span class='st'>"'location' must be specified"</span>)),
-  <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>,
-  <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>), <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>
+  <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
+  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
+)
+
+<span class='fu'>stan_lm.fit</span>(
+  <span class='no'>x</span>,
+  <span class='no'>y</span>,
+  <span class='kw'>offset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>singular.ok</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='no'>...</span>,
+  <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/stop.html'>stop</a></span>(<span class='st'>"'location' must be specified"</span>)),
+  <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
+  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -222,11 +275,12 @@ on the fit.</p></td>
     <tr>
       <th>...</th>
       <td><p>Further arguments passed to the function in the <span class="pkg">rstan</span> 
-package (<code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-sampling.html'>sampling</a></code>, <code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-vb.html'>vb</a></code>, or 
-<code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-optimizing.html'>optimizing</a></code>), corresponding to the estimation method 
-named by <code>algorithm</code>. For example, if <code>algorithm</code> is
-<code>"sampling"</code> it is possibly to specify <code>iter</code>, <code>chains</code>,
-<code>cores</code>, <code>refresh</code>, etc.</p></td>
+package (<code>sampling</code>, 
+<code>vb</code>, or 
+<code>optimizing</code>), 
+corresponding to the estimation method named by <code>algorithm</code>. For example, 
+if <code>algorithm</code> is <code>"sampling"</code> it is possibly to specify <code>iter</code>, 
+<code>chains</code>, <code>cores</code>, <code>refresh</code>, etc.</p></td>
     </tr>
     <tr>
       <th>prior</th>
@@ -296,7 +350,7 @@ predictors (i.e., same as in <code>glm</code>).</p></td>
     </tr>
     <tr>
       <th>w</th>
-      <td><p>Same as in <code><a href='https://rdrr.io/r/stats/lmfit.html'>lm.wfit</a></code> but rarely specified.</p></td>
+      <td><p>Same as in <code>lm.wfit</code> but rarely specified.</p></td>
     </tr>
     </table>
 
@@ -315,8 +369,8 @@ for <code>stan_lm, stan_aov</code>.</p>
   <code>"sampling"</code>). The <code>stan_lm</code> function has a formula-based
   interface and would usually be called by users but the <code>stan_lm.fit</code>
   and <code>stan_lm.wfit</code> functions might be called by other functions that
-  parse the data themselves and are analogous to <code><a href='https://rdrr.io/r/stats/lmfit.html'>lm.fit</a></code>
-  and <code><a href='https://rdrr.io/r/stats/lmfit.html'>lm.wfit</a></code> respectively.</p>     
+  parse the data themselves and are analogous to <code>lm.fit</code>
+  and <code>lm.wfit</code> respectively.</p>     
 <p>In addition to estimating <code>sigma</code> --- the standard deviation of the
   normally-distributed errors --- this model estimates a positive parameter
   called <code>log-fit_ratio</code>. If it is positive, the marginal posterior 
@@ -354,8 +408,8 @@ normally-distributed errors but specifies different priors.</p></div>
          <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fl'>0.5</span>), <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>)</div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 2.4e-05 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
+#&gt; Chain 1: Gradient evaluation took 2.1e-05 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
 #&gt; Chain 1: Adjust your expectations accordingly!
 #&gt; Chain 1: 
 #&gt; Chain 1: 
@@ -372,15 +426,15 @@ normally-distributed errors but specifies different priors.</p></div>
 #&gt; Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 0.180854 seconds (Warm-up)
-#&gt; Chain 1:                0.096668 seconds (Sampling)
-#&gt; Chain 1:                0.277522 seconds (Total)
+#&gt; Chain 1:  Elapsed Time: 0.139354 seconds (Warm-up)
+#&gt; Chain 1:                0.137737 seconds (Sampling)
+#&gt; Chain 1:                0.277091 seconds (Total)
 #&gt; Chain 1: 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 2).
 #&gt; Chain 2: 
-#&gt; Chain 2: Gradient evaluation took 1.1e-05 seconds
-#&gt; Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.11 seconds.
+#&gt; Chain 2: Gradient evaluation took 1.2e-05 seconds
+#&gt; Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
 #&gt; Chain 2: Adjust your expectations accordingly!
 #&gt; Chain 2: 
 #&gt; Chain 2: 
@@ -397,15 +451,15 @@ normally-distributed errors but specifies different priors.</p></div>
 #&gt; Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; Chain 2: 
-#&gt; Chain 2:  Elapsed Time: 0.147892 seconds (Warm-up)
-#&gt; Chain 2:                0.109623 seconds (Sampling)
-#&gt; Chain 2:                0.257515 seconds (Total)
+#&gt; Chain 2:  Elapsed Time: 0.141158 seconds (Warm-up)
+#&gt; Chain 2:                0.143705 seconds (Sampling)
+#&gt; Chain 2:                0.284863 seconds (Total)
 #&gt; Chain 2: 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 3).
 #&gt; Chain 3: 
-#&gt; Chain 3: Gradient evaluation took 1.1e-05 seconds
-#&gt; Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.11 seconds.
+#&gt; Chain 3: Gradient evaluation took 1e-05 seconds
+#&gt; Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
 #&gt; Chain 3: Adjust your expectations accordingly!
 #&gt; Chain 3: 
 #&gt; Chain 3: 
@@ -422,15 +476,15 @@ normally-distributed errors but specifies different priors.</p></div>
 #&gt; Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; Chain 3: 
-#&gt; Chain 3:  Elapsed Time: 0.156569 seconds (Warm-up)
-#&gt; Chain 3:                0.132974 seconds (Sampling)
-#&gt; Chain 3:                0.289543 seconds (Total)
+#&gt; Chain 3:  Elapsed Time: 0.129516 seconds (Warm-up)
+#&gt; Chain 3:                0.084488 seconds (Sampling)
+#&gt; Chain 3:                0.214004 seconds (Total)
 #&gt; Chain 3: 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'lm' NOW (CHAIN 4).
 #&gt; Chain 4: 
-#&gt; Chain 4: Gradient evaluation took 1e-05 seconds
-#&gt; Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
+#&gt; Chain 4: Gradient evaluation took 1.1e-05 seconds
+#&gt; Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.11 seconds.
 #&gt; Chain 4: Adjust your expectations accordingly!
 #&gt; Chain 4: 
 #&gt; Chain 4: 
@@ -447,45 +501,47 @@ normally-distributed errors but specifies different priors.</p></div>
 #&gt; Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #&gt; Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
 #&gt; Chain 4: 
-#&gt; Chain 4:  Elapsed Time: 0.159664 seconds (Warm-up)
-#&gt; Chain 4:                0.220511 seconds (Sampling)
-#&gt; Chain 4:                0.380175 seconds (Total)
+#&gt; Chain 4:  Elapsed Time: 0.126441 seconds (Warm-up)
+#&gt; Chain 4:                0.102928 seconds (Sampling)
+#&gt; Chain 4:                0.229369 seconds (Total)
 #&gt; Chain 4: </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/options.html'>options</a></span>(<span class='no'>op</span>)
 <span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>fit_aov</span>)</div><div class='output co'>#&gt; stan_aov
 #&gt;  family:       gaussian [identity]
 #&gt;  formula:      yield ~ block + N * P * K
 #&gt;  observations: 24
-#&gt;  predictors:   12
+#&gt;  predictors:   13
 #&gt; ------
-#&gt;             Median MAD_SD
-#&gt; (Intercept) 54.9    0.9  
-#&gt; block1       1.2    1.3  
-#&gt; block2       1.2    0.7  
-#&gt; block3      -1.3    0.5  
-#&gt; block4      -0.7    0.4  
-#&gt; block5       0.2    0.3  
-#&gt; N1           2.0    0.7  
-#&gt; P1          -0.4    0.7  
-#&gt; K1          -1.4    0.7  
-#&gt; N1:P1       -0.7    0.7  
-#&gt; N1:K1       -0.8    0.7  
-#&gt; P1:K1        0.1    0.7  
+#&gt;             Median        MAD_SD       
+#&gt; (Intercept)  5.490000e+01  9.000000e-01
+#&gt; block1      -1.302753e+14  4.523190e+15
+#&gt; block2      -4.342511e+13  1.507730e+15
+#&gt; block3      -2.171256e+13  7.538650e+14
+#&gt; block4       3.908260e+13  1.356957e+15
+#&gt; block5       2.605507e+13  9.046380e+14
+#&gt; N1           1.900000e+00  8.000000e-01
+#&gt; P1          -4.000000e-01  8.000000e-01
+#&gt; K1          -1.300000e+00  7.000000e-01
+#&gt; N1:P1       -6.000000e-01  7.000000e-01
+#&gt; N1:K1       -8.000000e-01  8.000000e-01
+#&gt; P1:K1        1.000000e-01  8.000000e-01
+#&gt; N1:P1:K1     1.302753e+14  4.523190e+15
 #&gt; 
 #&gt; Auxiliary parameter(s):
 #&gt;               Median MAD_SD
 #&gt; R2            0.5    0.1   
 #&gt; log-fit_ratio 0.0    0.1   
-#&gt; sigma         4.2    0.7   
+#&gt; sigma         4.3    0.7   
 #&gt; 
 #&gt; ANOVA-like table:
 #&gt;               Median MAD_SD
-#&gt; Mean Sq block 43.4   20.9  
-#&gt; Mean Sq N     48.4   28.4  
-#&gt; Mean Sq P     14.1   12.0  
-#&gt; Mean Sq K     28.9   19.5  
-#&gt; Mean Sq N:P   12.4   16.4  
-#&gt; Mean Sq N:K   16.7   21.5  
-#&gt; Mean Sq P:K    5.4    7.4  
+#&gt; Mean Sq block 59.4   34.0  
+#&gt; Mean Sq N     44.5   25.5  
+#&gt; Mean Sq P     18.5   14.3  
+#&gt; Mean Sq K     30.2   19.5  
+#&gt; Mean Sq N:P   20.9   22.1  
+#&gt; Mean Sq N:K   22.4   22.5  
+#&gt; Mean Sq P:K   15.5   16.0  
+#&gt; Mean Sq N:P:K 14.9   20.5  
 #&gt; 
 #&gt; ------
 #&gt; * For help interpreting the printed output see ?print.stanreg
@@ -493,44 +549,38 @@ normally-distributed errors but specifies different priors.</p></div>
 
 (<span class='no'>fit</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_lm</span>(<span class='no'>mpg</span> ~ <span class='no'>wt</span> + <span class='no'>qsec</span> + <span class='no'>am</span>, <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>R2</a></span>(<span class='fl'>0.75</span>),
                 <span class='co'># the next line is only to make the example go fast enough</span>
-                <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>refresh</span> <span class='kw'>=</span> <span class='fl'>0</span>))</div><div class='output co'>#&gt; <span class='warning'>Warning: There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.99 may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+                <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>300</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>12345</span>, <span class='kw'>refresh</span> <span class='kw'>=</span> <span class='fl'>0</span>))</div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; stan_lm
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='output co'>#&gt; stan_lm
 #&gt;  family:       gaussian [identity]
 #&gt;  formula:      mpg ~ wt + qsec + am
 #&gt;  observations: 32
 #&gt;  predictors:   4
 #&gt; ------
 #&gt;             Median MAD_SD
-#&gt; (Intercept) 10.2    5.7  
-#&gt; wt          -3.8    0.7  
-#&gt; qsec         1.2    0.2  
-#&gt; am           3.0    1.4  
+#&gt; (Intercept) 10.3    7.8  
+#&gt; wt          -3.8    0.6  
+#&gt; qsec         1.2    0.3  
+#&gt; am           3.1    1.6  
 #&gt; 
 #&gt; Auxiliary parameter(s):
 #&gt;               Median MAD_SD
-#&gt; R2            0.8    0.0   
+#&gt; R2            0.8    0.1   
 #&gt; log-fit_ratio 0.0    0.1   
-#&gt; sigma         2.5    0.3   
+#&gt; sigma         2.6    0.5   
 #&gt; 
 #&gt; ------
 #&gt; * For help interpreting the printed output see ?print.stanreg
-#&gt; * For info on the priors used see ?prior_summary.stanreg</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.8</span>)</div><div class='img'><img src='stan_lm-1.png' alt='' width='700' height='433' /></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/graphics/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"hist"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"wt"</span>, <span class='st'>"am"</span>, <span class='st'>"qsec"</span>, <span class='st'>"sigma"</span>),
-     <span class='kw'>transformations</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='kw'>sigma</span> <span class='kw'>=</span> <span class='st'>"log"</span>))</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><div class='img'><img src='stan_lm-2.png' alt='' width='700' height='433' /></div><div class='input'>
+#&gt; * For info on the priors used see ?prior_summary.stanreg</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/plot.html'>plot</a></span>(<span class='no'>fit</span>, <span class='st'>"hist"</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"wt"</span>, <span class='st'>"am"</span>, <span class='st'>"qsec"</span>, <span class='st'>"sigma"</span>),
+     <span class='kw'>transformations</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='kw'>sigma</span> <span class='kw'>=</span> <span class='st'>"log"</span>))</div><div class='output co'>#&gt; <span class='message'>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</span></div><div class='img'><img src='stan_lm-1.png' alt='' width='700' height='433' /></div><div class='input'>
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#details">Details</a></li>
-      <li><a href="#references">References</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -541,7 +591,7 @@ normally-distributed errors but specifies different priors.</p></div>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

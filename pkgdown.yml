@@ -1,5 +1,5 @@
-pandoc: 2.3.1
-pkgdown: 1.4.1
+pandoc: 2.7.3
+pkgdown: 1.5.1
 pkgdown_sha: ~
 articles:
   aov: aov.html
@@ -15,6 +15,7 @@ articles:
   pooling: pooling.html
   priors: priors.html
   rstanarm: rstanarm.html
+last_built: 2020-07-21T01:31Z
 urls:
   reference: https://mc-stan.org/rstanarm/reference
   article: https://mc-stan.org/rstanarm/articles

@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -56,7 +60,6 @@ Note: these functions are not guaranteed to work
   as possible by setting the cores argument or using
   options(mc.cores = VALUE) to set it for an entire session." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -74,7 +77,7 @@ Note: these functions are not guaranteed to work
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -88,13 +91,19 @@ Note: these functions are not guaranteed to work
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
@@ -117,6 +126,9 @@ Note: these functions are not guaranteed to work
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -130,6 +142,9 @@ Note: these functions are not guaranteed to work
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -170,7 +185,7 @@ Note: these functions are not guaranteed to work
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Information criteria and cross-validation</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/loo.R'><code>R/loo.R</code></a></small>
     <div class="hidden name"><code>loo.stanreg.Rd</code></div>
     </div>
 
@@ -190,23 +205,25 @@ Note: these functions are not guaranteed to work
     </div>
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
-<span class='fu'>loo</span>(<span class='no'>x</span>, <span class='no'>...</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"mc.cores"</span>, <span class='fl'>1</span>),
-  <span class='kw'>save_psis</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
+<span class='fu'>loo</span>(
+  <span class='no'>x</span>,
+  <span class='no'>...</span>,
+  <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"mc.cores"</span>, <span class='fl'>1</span>),
+  <span class='kw'>save_psis</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
+)
 
 <span class='co'># S3 method for stanreg</span>
 <span class='fu'>waic</span>(<span class='no'>x</span>, <span class='no'>...</span>)
 
 <span class='co'># S3 method for stanreg</span>
-<span class='fu'>loo_compare</span>(<span class='no'>x</span>, <span class='no'>...</span>, <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"loo"</span>, <span class='st'>"kfold"</span>,
-  <span class='st'>"waic"</span>), <span class='kw'>detail</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+<span class='fu'>loo_compare</span>(<span class='no'>x</span>, <span class='no'>...</span>, <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"loo"</span>, <span class='st'>"kfold"</span>, <span class='st'>"waic"</span>), <span class='kw'>detail</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
 <span class='co'># S3 method for stanreg_list</span>
-<span class='fu'>loo_compare</span>(<span class='no'>x</span>, <span class='no'>...</span>, <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"loo"</span>, <span class='st'>"kfold"</span>,
-  <span class='st'>"waic"</span>), <span class='kw'>detail</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+<span class='fu'>loo_compare</span>(<span class='no'>x</span>, <span class='no'>...</span>, <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"loo"</span>, <span class='st'>"kfold"</span>, <span class='st'>"waic"</span>), <span class='kw'>detail</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 
 <span class='co'># S3 method for stanreg_list</span>
-<span class='fu'>loo_model_weights</span>(<span class='no'>x</span>, <span class='no'>...</span>,
-  <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"mc.cores"</span>, <span class='fl'>1</span>), <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
+<span class='fu'>loo_model_weights</span>(<span class='no'>x</span>, <span class='no'>...</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"mc.cores"</span>, <span class='fl'>1</span>), <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
 
 <span class='fu'>compare_models</span>(<span class='no'>...</span>, <span class='kw'>loos</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(), <span class='kw'>detail</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
 
@@ -229,12 +246,12 @@ Note: these functions are not guaranteed to work
   returned by the <code>loo</code>, <code><a href='kfold.stanreg.html'>kfold</a></code>, or
   <code>waic</code> method (see the <strong>Examples</strong> section, below).</p>
 <p>For <code>loo_model_weights</code>, <code>...</code> should contain arguments (e.g.
-  <code>method</code>) to pass to the default <code><a href='https://rdrr.io/pkg/loo/man/loo_model_weights.html'>loo_model_weights</a></code>
+  <code>method</code>) to pass to the default <code><a href='https://mc-stan.org/loo/reference/loo_model_weights.html'>loo_model_weights</a></code>
   method from the <span class="pkg">loo</span> package.</p></td>
     </tr>
     <tr>
       <th>cores, save_psis</th>
-      <td><p>Passed to <code><a href='https://rdrr.io/pkg/loo/man/loo.html'>loo</a></code>.</p></td>
+      <td><p>Passed to <code><a href='https://mc-stan.org/loo/reference/loo.html'>loo</a></code>.</p></td>
     </tr>
     <tr>
       <th>k_threshold</th>
@@ -267,7 +284,7 @@ the output.</p></td>
 
     <p>The structure of the objects returned by <code>loo</code> and <code>waic</code>
   methods are documented in detail in the <strong>Value</strong> section in
-  <code><a href='https://rdrr.io/pkg/loo/man/loo.html'>loo</a></code> and <code><a href='https://rdrr.io/pkg/loo/man/waic.html'>waic</a></code> (from the <span class="pkg">loo</span>
+  <code><a href='https://mc-stan.org/loo/reference/loo.html'>loo</a></code> and <code><a href='https://mc-stan.org/loo/reference/waic.html'>waic</a></code> (from the <span class="pkg">loo</span>
   package).</p>
 <p><code>loo_compare</code> returns a matrix with class 'compare.loo'. See the
   <strong>Comparing models</strong> section below for more details.</p>
@@ -284,8 +301,8 @@ the output.</p></td>
   distributional assumption and integrate over uncertainty in the parameters.
   This only assumes that any one observation can be omitted without having a
   major effect on the posterior distribution, which can be judged using the
-  diagnostic plot provided by the <code><a href='https://rdrr.io/pkg/loo/man/pareto-k-diagnostic.html'>plot.loo</a></code> method and the
-  warnings provided by the <code><a href='https://rdrr.io/pkg/loo/man/print.loo.html'>print.loo</a></code> method (see the
+  diagnostic plot provided by the <code><a href='https://mc-stan.org/loo/reference/pareto-k-diagnostic.html'>plot.loo</a></code> method and the
+  warnings provided by the <code><a href='https://mc-stan.org/loo/reference/print.loo.html'>print.loo</a></code> method (see the
   <em>How to Use the rstanarm Package</em> vignette for an example of this
   process).</p>
 <p></p><h3>How to proceed when <code>loo</code> gives warnings (k_threshold)</h3>
@@ -317,7 +334,7 @@ the output.</p></td>
     <h2 class="hasAnchor" id="comparing-models"><a class="anchor" href="#comparing-models"></a>Comparing models</h2>
 
     <p>"loo" (or "waic" or "kfold") objects can be passed
-  to the <code><a href='https://rdrr.io/pkg/loo/man/loo_compare.html'>loo_compare</a></code> function in the <span class="pkg">loo</span> package to
+  to the <code><a href='https://mc-stan.org/loo/reference/loo_compare.html'>loo_compare</a></code> function in the <span class="pkg">loo</span> package to
   perform model comparison. <span class="pkg">rstanarm</span> also provides a
   <code>loo_compare.stanreg</code> method that can be used if the "loo" (or "waic"
   or "kfold") object has been added to the fitted model object (see the
@@ -332,7 +349,7 @@ the output.</p></td>
   this model and itself). For each of the remaining models the ELPD
   difference and SE are reported relative to the model with the best ELPD
   (the first row). See the <strong>Details</strong> section at the
-  <code><a href='https://rdrr.io/pkg/loo/man/loo_compare.html'>loo_compare</a></code> page in the <span class="pkg">loo</span> package for more
+  <code><a href='https://mc-stan.org/loo/reference/loo_compare.html'>loo_compare</a></code> page in the <span class="pkg">loo</span> package for more
   information.</p>
     <h2 class="hasAnchor" id="model-weights"><a class="anchor" href="#model-weights"></a>Model weights</h2>
 
@@ -340,7 +357,7 @@ the output.</p></td>
   compute model weights for a <code>"stanreg_list"</code> object, which is a list
   of fitted model objects made with <code><a href='stanreg_list.html'>stanreg_list</a></code>. The end of
   the <strong>Examples</strong> section has a demonstration. For details see the
-  <code><a href='https://rdrr.io/pkg/loo/man/loo_model_weights.html'>loo_model_weights</a></code> documentation in the <span class="pkg">loo</span>
+  <code><a href='https://mc-stan.org/loo/reference/loo_model_weights.html'>loo_model_weights</a></code> documentation in the <span class="pkg">loo</span>
   package.</p>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
@@ -366,7 +383,7 @@ the output.</p></td>
 <li><p>The new <a href='http://mc-stan.org/loo/articles/'><span class="pkg">loo</span> package vignettes</a>
   and various <a href='http://mc-stan.org/rstanarm/articles/'><span class="pkg">rstanarm</span> vignettes</a>
   for more examples using <code>loo</code> and related functions with <span class="pkg">rstanarm</span> models.</p></li>
-<li><p><code><a href='https://rdrr.io/pkg/loo/man/pareto-k-diagnostic.html'>pareto-k-diagnostic</a></code> in the <span class="pkg">loo</span> package for
+<li><p><code><a href='https://mc-stan.org/loo/reference/pareto-k-diagnostic.html'>pareto-k-diagnostic</a></code> in the <span class="pkg">loo</span> package for
   more on Pareto \(k\) diagnostics.</p></li>
 <li><p><code><a href='log_lik.stanreg.html'>log_lik.stanreg</a></code> to directly access the pointwise
   log-likelihood matrix.</p></li>
@@ -384,40 +401,40 @@ the output.</p></td>
 #&gt; Computed from 4000 by 32 log-likelihood matrix
 #&gt; 
 #&gt;          Estimate  SE
-#&gt; elpd_loo    -83.4 4.3
-#&gt; p_loo         3.2 1.2
-#&gt; looic       166.9 8.6
+#&gt; elpd_loo    -83.6 4.3
+#&gt; p_loo         3.3 1.2
+#&gt; looic       167.1 8.6
 #&gt; ------
 #&gt; Monte Carlo SE of elpd_loo is 0.1.
 #&gt; 
-#&gt; Pareto k diagnostic values:
-#&gt;                          Count Pct.    Min. n_eff
-#&gt; (-Inf, 0.5]   (good)     31    96.9%   801       
-#&gt;  (0.5, 0.7]   (ok)        1     3.1%   594       
-#&gt;    (0.7, 1]   (bad)       0     0.0%   &lt;NA&gt;      
-#&gt;    (1, Inf)   (very bad)  0     0.0%   &lt;NA&gt;      
-#&gt; 
-#&gt; All Pareto k estimates are ok (k &lt; 0.7).
+#&gt; All Pareto k estimates are good (k &lt; 0.5).
 #&gt; See help('pareto-k-diagnostic') for details.</div><div class='input'><span class='no'>loo2</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit2</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>)
 <span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>loo2</span>)</div><div class='output co'>#&gt; 
 #&gt; Computed from 4000 by 32 log-likelihood matrix
 #&gt; 
 #&gt;          Estimate  SE
-#&gt; elpd_loo    -78.5 4.5
-#&gt; p_loo         4.0 1.2
-#&gt; looic       157.0 9.1
+#&gt; elpd_loo    -78.6 4.6
+#&gt; p_loo         4.1 1.3
+#&gt; looic       157.1 9.2
 #&gt; ------
 #&gt; Monte Carlo SE of elpd_loo is 0.1.
 #&gt; 
-#&gt; All Pareto k estimates are good (k &lt; 0.5).
+#&gt; Pareto k diagnostic values:
+#&gt;                          Count Pct.    Min. n_eff
+#&gt; (-Inf, 0.5]   (good)     31    96.9%   711       
+#&gt;  (0.5, 0.7]   (ok)        1     3.1%   456       
+#&gt;    (0.7, 1]   (bad)       0     0.0%   &lt;NA&gt;      
+#&gt;    (1, Inf)   (very bad)  0     0.0%   &lt;NA&gt;      
+#&gt; 
+#&gt; All Pareto k estimates are ok (k &lt; 0.7).
 #&gt; See help('pareto-k-diagnostic') for details.</div><div class='input'>
 <span class='co'># when comparing models the loo objects can be passed to loo_compare</span>
 <span class='co'># as individual arguments or as a list of loo objects</span>
 <span class='fu'>loo_compare</span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>)</div><div class='output co'>#&gt;      elpd_diff se_diff
 #&gt; fit2  0.0       0.0   
-#&gt; fit1 -4.9       2.7   </div><div class='input'><span class='fu'>loo_compare</span>(<span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>))</div><div class='output co'>#&gt;      elpd_diff se_diff
+#&gt; fit1 -5.0       2.8   </div><div class='input'><span class='fu'>loo_compare</span>(<span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>))</div><div class='output co'>#&gt;      elpd_diff se_diff
 #&gt; fit2  0.0       0.0   
-#&gt; fit1 -4.9       2.7   </div><div class='input'>
+#&gt; fit1 -5.0       2.8   </div><div class='input'>
 <span class='co'># if the fitted model objects contain a loo object in the component "loo"</span>
 <span class='co'># then the model objects can be passed directly or as a stanreg_list</span>
 <span class='no'>fit1</span>$<span class='no'>loo</span> <span class='kw'>&lt;-</span> <span class='no'>loo1</span>
@@ -425,7 +442,7 @@ the output.</p></td>
 <span class='fu'>loo_compare</span>(<span class='no'>fit1</span>, <span class='no'>fit2</span>)</div><div class='output co'>#&gt; Model comparison based on LOO-CV: 
 #&gt;      elpd_diff se_diff
 #&gt; fit2  0.0       0.0   
-#&gt; fit1 -4.9       2.7   </div><div class='input'>
+#&gt; fit1 -5.0       2.8   </div><div class='input'>
 <span class='co'># if the fitted model objects contain a loo object _and_ a waic or kfold</span>
 <span class='co'># object, then the criterion argument determines which of them the comparison</span>
 <span class='co'># is based on </span>
@@ -434,21 +451,20 @@ the output.</p></td>
 #&gt; <span class='warning'>3 (9.4%) p_waic estimates greater than 0.4. We recommend trying loo instead.</span></div><div class='input'><span class='fu'>loo_compare</span>(<span class='no'>fit1</span>, <span class='no'>fit2</span>, <span class='kw'>criterion</span> <span class='kw'>=</span> <span class='st'>"waic"</span>)</div><div class='output co'>#&gt; Model comparison based on WAIC: 
 #&gt;      elpd_diff se_diff
 #&gt; fit2  0.0       0.0   
-#&gt; fit1 -4.9       2.7   </div><div class='input'>
+#&gt; fit1 -5.0       2.8   </div><div class='input'>
 <span class='co'># the models can also be combined into a stanreg_list object, and more </span>
 <span class='co'># informative model names can be provided to use when printing</span>
 <span class='no'>model_list</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stanreg_list.html'>stanreg_list</a></span>(<span class='no'>fit1</span>, <span class='no'>fit2</span>, <span class='kw'>model_names</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"Fewer predictors"</span>, <span class='st'>"More predictors"</span>))
 <span class='fu'>loo_compare</span>(<span class='no'>model_list</span>)</div><div class='output co'>#&gt; Model comparison based on LOO-CV: 
 #&gt;                  elpd_diff se_diff
 #&gt; More predictors   0.0       0.0   
-#&gt; Fewer predictors -4.9       2.7   </div><div class='input'>
+#&gt; Fewer predictors -5.0       2.8   </div><div class='input'>
 <span class='no'>fit3</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glm.html'>stan_glm</a></span>(<span class='no'>mpg</span> ~ <span class='no'>disp</span> * <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>as.factor</a></span>(<span class='no'>cyl</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>refresh</span> <span class='kw'>=</span> <span class='fl'>0</span>)
-<span class='no'>loo3</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit3</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='fl'>0.7</span>)</div><div class='output co'>#&gt; <span class='message'>1 problematic observation(s) found.</span>
-#&gt; <span class='message'>Model will be refit 1 times.</span></div><div class='output co'>#&gt; <span class='message'></span>
-#&gt; <span class='message'>Fitting model 1 out of 1 (leaving out observation 4)</span></div><div class='input'><span class='fu'>loo_compare</span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>, <span class='no'>loo3</span>)</div><div class='output co'>#&gt;      elpd_diff se_diff
+<span class='no'>loo3</span> <span class='kw'>&lt;-</span> <span class='fu'>loo</span>(<span class='no'>fit3</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>k_threshold</span> <span class='kw'>=</span> <span class='fl'>0.7</span>)</div><div class='output co'>#&gt; <span class='message'>All pareto_k estimates below user-specified threshold of 0.7. </span>
+#&gt; <span class='message'>Returning loo object.</span></div><div class='input'><span class='fu'>loo_compare</span>(<span class='no'>loo1</span>, <span class='no'>loo2</span>, <span class='no'>loo3</span>)</div><div class='output co'>#&gt;      elpd_diff se_diff
 #&gt; fit3  0.0       0.0   
-#&gt; fit2 -0.5       3.9   
-#&gt; fit1 -5.4       5.0   </div><div class='input'>
+#&gt; fit2 -1.0       4.2   
+#&gt; fit1 -6.0       5.1   </div><div class='input'>
 <span class='co'># setting detail=TRUE will also print model formulas if used with</span>
 <span class='co'># loo_compare.stanreg or loo_compare.stanreg_list</span>
 <span class='no'>fit3</span>$<span class='no'>loo</span> <span class='kw'>&lt;-</span> <span class='no'>loo3</span>
@@ -461,8 +477,8 @@ the output.</p></td>
 #&gt; Model comparison based on LOO-CV: 
 #&gt;      elpd_diff se_diff
 #&gt; fit3  0.0       0.0   
-#&gt; fit2 -0.5       3.9   
-#&gt; fit1 -5.4       5.0   </div><div class='input'>
+#&gt; fit2 -1.0       4.2   
+#&gt; fit1 -6.0       5.1   </div><div class='input'>
 <span class='co'># Computing model weights</span>
 <span class='co'>#</span>
 <span class='co'># if the objects in model_list already have 'loo' components then those</span>
@@ -472,42 +488,33 @@ the output.</p></td>
 #&gt; ------
 #&gt;      weight
 #&gt; fit1 0.000 
-#&gt; fit2 0.511 
-#&gt; fit3 0.489 </div><div class='input'><span class='fu'>loo_model_weights</span>(<span class='no'>model_list</span>,  <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"pseudobma"</span>)</div><div class='output co'>#&gt; Method: pseudo-BMA+ with Bayesian bootstrap
+#&gt; fit2 0.494 
+#&gt; fit3 0.506 </div><div class='input'><span class='fu'>loo_model_weights</span>(<span class='no'>model_list</span>,  <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"pseudobma"</span>)</div><div class='output co'>#&gt; Method: pseudo-BMA+ with Bayesian bootstrap
 #&gt; ------
 #&gt;      weight
-#&gt; fit1 0.036 
-#&gt; fit2 0.440 
-#&gt; fit3 0.524 </div><div class='input'><span class='fu'>loo_model_weights</span>(<span class='no'>model_list</span>,  <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"pseudobma"</span>, <span class='kw'>BB</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</div><div class='output co'>#&gt; Method: pseudo-BMA
+#&gt; fit1 0.034 
+#&gt; fit2 0.396 
+#&gt; fit3 0.570 </div><div class='input'><span class='fu'>loo_model_weights</span>(<span class='no'>model_list</span>,  <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"pseudobma"</span>, <span class='kw'>BB</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</div><div class='output co'>#&gt; Method: pseudo-BMA
 #&gt; ------
 #&gt;      weight
-#&gt; fit1 0.003 
-#&gt; fit2 0.377 
-#&gt; fit3 0.621 </div><div class='input'>
+#&gt; fit1 0.002 
+#&gt; fit2 0.273 
+#&gt; fit3 0.725 </div><div class='input'>
 <span class='co'># you can also pass precomputed loo objects directly to loo_model_weights</span>
 <span class='no'>loo_list</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='kw'>A</span> <span class='kw'>=</span> <span class='no'>loo1</span>, <span class='kw'>B</span> <span class='kw'>=</span> <span class='no'>loo2</span>, <span class='kw'>C</span> <span class='kw'>=</span> <span class='no'>loo3</span>) <span class='co'># names optional (affects printing)</span>
 <span class='fu'>loo_model_weights</span>(<span class='no'>loo_list</span>)</div><div class='output co'>#&gt; Method: stacking
 #&gt; ------
 #&gt;   weight
 #&gt; A 0.000 
-#&gt; B 0.511 
-#&gt; C 0.489 </div><div class='input'># }
+#&gt; B 0.494 
+#&gt; C 0.506 </div><div class='input'># }
 
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#approximate-loo-cv">Approximate LOO CV</a></li>
-      <li><a href="#comparing-models">Comparing models</a></li>
-      <li><a href="#model-weights">Model weights</a></li>
-      <li><a href="#references">References</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -518,7 +525,7 @@ the output.</p></td>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

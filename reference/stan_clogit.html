@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -47,7 +51,6 @@
 A model for case-control studies with optional prior distributions for the
 coefficients, intercept, and auxiliary parameters." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -65,7 +68,7 @@ coefficients, intercept, and auxiliary parameters." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -79,17 +82,26 @@ coefficients, intercept, and auxiliary parameters." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -105,6 +117,9 @@ coefficients, intercept, and auxiliary parameters." />
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -118,6 +133,9 @@ coefficients, intercept, and auxiliary parameters." />
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -158,7 +176,7 @@ coefficients, intercept, and auxiliary parameters." />
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Conditional logistic (clogit) regression models via Stan</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/stan_clogit.R'><code>R/stan_clogit.R</code></a></small>
     <div class="hidden name"><code>stan_clogit.Rd</code></div>
     </div>
 
@@ -168,10 +186,21 @@ A model for case-control studies with optional prior distributions for the
 coefficients, intercept, and auxiliary parameters.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>stan_clogit</span>(<span class='no'>formula</span>, <span class='no'>data</span>, <span class='no'>subset</span>, <span class='kw'>na.action</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>, <span class='no'>strata</span>,
-  <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>decov</a></span>(), <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+    <pre class="usage"><span class='fu'>stan_clogit</span>(
+  <span class='no'>formula</span>,
+  <span class='no'>data</span>,
+  <span class='no'>subset</span>,
+  <span class='kw'>na.action</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='no'>...</span>,
+  <span class='no'>strata</span>,
+  <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>decov</a></span>(),
+  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"optimizing"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
-  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sparse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
+  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>sparse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -188,11 +217,12 @@ guaranteed to work properly.</p></td>
     <tr>
       <th>...</th>
       <td><p>Further arguments passed to the function in the <span class="pkg">rstan</span> 
-package (<code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-sampling.html'>sampling</a></code>, <code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-vb.html'>vb</a></code>, or 
-<code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-optimizing.html'>optimizing</a></code>), corresponding to the estimation method 
-named by <code>algorithm</code>. For example, if <code>algorithm</code> is
-<code>"sampling"</code> it is possibly to specify <code>iter</code>, <code>chains</code>,
-<code>cores</code>, <code>refresh</code>, etc.</p></td>
+package (<code>sampling</code>, 
+<code>vb</code>, or 
+<code>optimizing</code>), 
+corresponding to the estimation method named by <code>algorithm</code>. For example, 
+if <code>algorithm</code> is <code>"sampling"</code> it is possibly to specify <code>iter</code>, 
+<code>chains</code>, <code>cores</code>, <code>refresh</code>, etc.</p></td>
     </tr>
     <tr>
       <th>strata</th>
@@ -204,11 +234,15 @@ any object besides the <code>data</code> <code><a href='https://rdrr.io/r/base/d
     </tr>
     <tr>
       <th>prior</th>
-      <td><p>The prior distribution for the regression coefficients. 
-<code>prior</code> should be a call to one of the various functions provided by 
-<span class="pkg">rstanarm</span> for specifying priors. The subset of these functions that 
-can be used for the prior on the coefficients can be grouped into several 
-"families":</p>
+      <td><p>The prior distribution for the (non-hierarchical) regression
+coefficients.</p> 
+<p>The default priors are described in the vignette 
+<a href='http://mc-stan.org/rstanarm/articles/priors.html'><em>Prior
+Distributions for rstanarm Models</em></a>.
+If not using the default, <code>prior</code> should be a call to one of the
+various functions provided by <span class="pkg">rstanarm</span> for specifying priors. The
+subset of these functions that can be used for the prior on the
+coefficients can be grouped into several "families":</p>
 <table class='table'>
 <tr><td><strong>Family</strong></td><td><strong>Functions</strong></td></tr>
 <tr><td><em>Student t family</em></td><td><code>normal</code>, <code>student_t</code>, <code>cauchy</code></td></tr>
@@ -321,8 +355,8 @@ for <code>stan_clogit</code>.</p>
                     <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>) <span class='co'># for speed only</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'bernoulli' NOW (CHAIN 1).
 #&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 0.000226 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.26 seconds.
+#&gt; Chain 1: Gradient evaluation took 9.7e-05 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.97 seconds.
 #&gt; Chain 1: Adjust your expectations accordingly!
 #&gt; Chain 1: 
 #&gt; Chain 1: 
@@ -339,15 +373,15 @@ for <code>stan_clogit</code>.</p>
 #&gt; Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 0.393 seconds (Warm-up)
-#&gt; Chain 1:                0.112695 seconds (Sampling)
-#&gt; Chain 1:                0.505695 seconds (Total)
+#&gt; Chain 1:  Elapsed Time: 0.282441 seconds (Warm-up)
+#&gt; Chain 1:                0.088467 seconds (Sampling)
+#&gt; Chain 1:                0.370908 seconds (Total)
 #&gt; Chain 1: 
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'bernoulli' NOW (CHAIN 2).
 #&gt; Chain 2: 
-#&gt; Chain 2: Gradient evaluation took 5.3e-05 seconds
-#&gt; Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.53 seconds.
+#&gt; Chain 2: Gradient evaluation took 4.4e-05 seconds
+#&gt; Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.44 seconds.
 #&gt; Chain 2: Adjust your expectations accordingly!
 #&gt; Chain 2: 
 #&gt; Chain 2: 
@@ -364,30 +398,24 @@ for <code>stan_clogit</code>.</p>
 #&gt; Chain 2: Iteration: 450 / 500 [ 90%]  (Sampling)
 #&gt; Chain 2: Iteration: 500 / 500 [100%]  (Sampling)
 #&gt; Chain 2: 
-#&gt; Chain 2:  Elapsed Time: 0.454144 seconds (Warm-up)
-#&gt; Chain 2:                0.140407 seconds (Sampling)
-#&gt; Chain 2:                0.594551 seconds (Total)
+#&gt; Chain 2:  Elapsed Time: 0.336151 seconds (Warm-up)
+#&gt; Chain 2:                0.094005 seconds (Sampling)
+#&gt; Chain 2:                0.430156 seconds (Total)
 #&gt; Chain 2: </div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='input'>
 <span class='no'>nd</span> <span class='kw'>&lt;-</span> <span class='no'>dat</span>[<span class='no'>dat</span>$<span class='no'>parity</span> <span class='kw'>&gt;</span> <span class='fl'>2</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"case"</span>, <span class='st'>"spontaneous"</span>, <span class='st'>"induced"</span>, <span class='st'>"education"</span>, <span class='st'>"stratum"</span>)]
 <span class='co'># next line would fail without case and stratum variables                                 </span>
-<span class='no'>pr</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='posterior_linpred.stanreg.html'>posterior_linpred</a></span>(<span class='no'>post</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='no'>nd</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>) <span class='co'># transform=TRUE gives probabilities</span>
+<span class='no'>pr</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='posterior_linpred.stanreg.html'>posterior_epred</a></span>(<span class='no'>post</span>, <span class='kw'>newdata</span> <span class='kw'>=</span> <span class='no'>nd</span>) <span class='co'># get predicted probabilities</span>
 
 <span class='co'># not a random variable b/c probabilities add to 1 within strata</span>
 <span class='fu'><a href='https://rdrr.io/r/base/all.equal.html'>all.equal</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/sum.html'>sum</a></span>(<span class='no'>nd</span>$<span class='no'>case</span>), <span class='fu'><a href='https://rdrr.io/r/base/nrow.html'>nrow</a></span>(<span class='no'>pr</span>)), <span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>rowSums</a></span>(<span class='no'>pr</span>))</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'>            
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#details">Details</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -398,7 +426,7 @@ for <code>stan_clogit</code>.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

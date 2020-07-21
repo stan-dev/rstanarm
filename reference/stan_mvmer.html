@@ -18,23 +18,27 @@ group-specific terms via Stan — stan_mvmer • rstanarm</title>
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -49,7 +53,6 @@ group-specific terms via Stan — stan_mvmer" />
 Bayesian inference for multivariate GLMs with group-specific coefficients 
 that are assumed to be correlated across the GLM submodels." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -67,7 +70,7 @@ that are assumed to be correlated across the GLM submodels." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -81,17 +84,26 @@ that are assumed to be correlated across the GLM submodels." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -107,6 +119,9 @@ that are assumed to be correlated across the GLM submodels." />
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -120,6 +135,9 @@ that are assumed to be correlated across the GLM submodels." />
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -161,7 +179,7 @@ that are assumed to be correlated across the GLM submodels." />
     <div class="page-header">
     <h1>Bayesian multivariate generalized linear models with correlated 
 group-specific terms via Stan</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/stan_mvmer.R'><code>R/stan_mvmer.R</code></a></small>
     <div class="hidden name"><code>stan_mvmer.Rd</code></div>
     </div>
 
@@ -171,12 +189,24 @@ Bayesian inference for multivariate GLMs with group-specific coefficients
 that are assumed to be correlated across the GLM submodels.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>stan_mvmer</span>(<span class='no'>formula</span>, <span class='no'>data</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='no'>gaussian</span>, <span class='no'>weights</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(),
-  <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>cauchy</a></span>(<span class='fl'>0</span>, <span class='fl'>5</span>),
-  <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>lkj</a></span>(), <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+    <pre class="usage"><span class='fu'>stan_mvmer</span>(
+  <span class='no'>formula</span>,
+  <span class='no'>data</span>,
+  <span class='kw'>family</span> <span class='kw'>=</span> <span class='no'>gaussian</span>,
+  <span class='no'>weights</span>,
+  <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>cauchy</a></span>(<span class='fl'>0</span>, <span class='fl'>5</span>, <span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>lkj</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
-  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>max_treedepth</span> <span class='kw'>=</span> <span class='fl'>10L</span>, <span class='kw'>init</span> <span class='kw'>=</span> <span class='st'>"random"</span>,
-  <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sparse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
+  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>max_treedepth</span> <span class='kw'>=</span> <span class='fl'>10L</span>,
+  <span class='kw'>init</span> <span class='kw'>=</span> <span class='st'>"random"</span>,
+  <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>sparse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='no'>...</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -296,11 +326,12 @@ the code run faster and can consume much less RAM.</p></td>
     <tr>
       <th>...</th>
       <td><p>Further arguments passed to the function in the <span class="pkg">rstan</span> 
-package (<code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-sampling.html'>sampling</a></code>, <code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-vb.html'>vb</a></code>, or 
-<code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-optimizing.html'>optimizing</a></code>), corresponding to the estimation method 
-named by <code>algorithm</code>. For example, if <code>algorithm</code> is
-<code>"sampling"</code> it is possibly to specify <code>iter</code>, <code>chains</code>,
-<code>cores</code>, <code>refresh</code>, etc.</p></td>
+package (<code>sampling</code>, 
+<code>vb</code>, or 
+<code>optimizing</code>), 
+corresponding to the estimation method named by <code>algorithm</code>. For example, 
+if <code>algorithm</code> is <code>"sampling"</code> it is possibly to specify <code>iter</code>, 
+<code>chains</code>, <code>cores</code>, <code>refresh</code>, etc.</p></td>
     </tr>
     </table>
 
@@ -350,8 +381,8 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'mvmer' NOW (CHAIN 1).
 #&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 0.00011 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.1 seconds.
+#&gt; Chain 1: Gradient evaluation took 0.000106 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.06 seconds.
 #&gt; Chain 1: Adjust your expectations accordingly!
 #&gt; Chain 1: 
 #&gt; Chain 1: 
@@ -368,10 +399,10 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 3.86845 seconds (Warm-up)
-#&gt; Chain 1:                1.72519 seconds (Sampling)
-#&gt; Chain 1:                5.59364 seconds (Total)
-#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: The largest R-hat is 1.08, indicating chains have not mixed.</span>
+#&gt; Chain 1:  Elapsed Time: 4.56009 seconds (Warm-up)
+#&gt; Chain 1:                2.67051 seconds (Sampling)
+#&gt; Chain 1:                7.2306 seconds (Total)
+#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: The largest R-hat is 1.06, indicating chains have not mixed.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#r-hat</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
@@ -394,58 +425,58 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; 
 #&gt; Estimates:
 #&gt;                                           mean     sd       2.5%     25%   
-#&gt; y1|(Intercept)                             0.716    0.203    0.373    0.573
-#&gt; y1|year                                    0.090    0.009    0.072    0.084
-#&gt; y1|sigma                                   0.510    0.024    0.462    0.493
-#&gt; y1|mean_PPD                                0.585    0.041    0.501    0.558
-#&gt; y2|(Intercept)                             3.420    0.213    3.017    3.273
-#&gt; y2|sexf                                    0.121    0.216   -0.287   -0.031
-#&gt; y2|year                                   -0.136    0.019   -0.175   -0.148
-#&gt; y2|sigma                                   0.290    0.015    0.263    0.280
-#&gt; y2|mean_PPD                                3.344    0.023    3.296    3.330
-#&gt; Sigma[id:y1|(Intercept),y1|(Intercept)]    1.661    0.416    1.049    1.363
-#&gt; Sigma[id:y2|(Intercept),y1|(Intercept)]   -0.415    0.141   -0.748   -0.497
-#&gt; Sigma[id:y2|year,y1|(Intercept)]          -0.072    0.033   -0.152   -0.088
-#&gt; Sigma[id:y2|(Intercept),y2|(Intercept)]    0.248    0.066    0.152    0.199
-#&gt; Sigma[id:y2|year,y2|(Intercept)]           0.016    0.011   -0.003    0.010
+#&gt; y1|(Intercept)                             0.719    0.186    0.396    0.579
+#&gt; y1|year                                    0.090    0.009    0.073    0.084
+#&gt; y1|sigma                                   0.508    0.021    0.471    0.492
+#&gt; y1|mean_PPD                                0.585    0.043    0.500    0.557
+#&gt; y2|(Intercept)                             3.423    0.205    3.027    3.287
+#&gt; y2|sexf                                    0.119    0.214   -0.287   -0.047
+#&gt; y2|year                                   -0.134    0.021   -0.184   -0.147
+#&gt; y2|sigma                                   0.290    0.013    0.265    0.281
+#&gt; y2|mean_PPD                                3.344    0.024    3.295    3.328
+#&gt; Sigma[id:y1|(Intercept),y1|(Intercept)]    1.687    0.382    1.042    1.406
+#&gt; Sigma[id:y2|(Intercept),y1|(Intercept)]   -0.430    0.133   -0.723   -0.512
+#&gt; Sigma[id:y2|year,y1|(Intercept)]          -0.073    0.030   -0.146   -0.089
+#&gt; Sigma[id:y2|(Intercept),y2|(Intercept)]    0.265    0.071    0.166    0.211
+#&gt; Sigma[id:y2|year,y2|(Intercept)]           0.016    0.012   -0.007    0.009
 #&gt; Sigma[id:y2|year,y2|year]                  0.007    0.003    0.003    0.005
-#&gt; log-posterior                           -483.918   11.422 -506.948 -491.688
+#&gt; log-posterior                           -481.227   10.849 -502.062 -488.473
 #&gt;                                           50%      75%      97.5% 
-#&gt; y1|(Intercept)                             0.694    0.844    1.153
-#&gt; y1|year                                    0.090    0.097    0.108
-#&gt; y1|sigma                                   0.509    0.525    0.558
-#&gt; y1|mean_PPD                                0.585    0.614    0.662
-#&gt; y2|(Intercept)                             3.418    3.573    3.809
-#&gt; y2|sexf                                    0.120    0.283    0.536
-#&gt; y2|year                                   -0.134   -0.124   -0.100
-#&gt; y2|sigma                                   0.289    0.299    0.323
-#&gt; y2|mean_PPD                                3.345    3.358    3.389
-#&gt; Sigma[id:y1|(Intercept),y1|(Intercept)]    1.617    1.883    2.581
-#&gt; Sigma[id:y2|(Intercept),y1|(Intercept)]   -0.393   -0.317   -0.181
-#&gt; Sigma[id:y2|year,y1|(Intercept)]          -0.068   -0.051   -0.016
-#&gt; Sigma[id:y2|(Intercept),y2|(Intercept)]    0.240    0.284    0.406
-#&gt; Sigma[id:y2|year,y2|(Intercept)]           0.015    0.021    0.039
-#&gt; Sigma[id:y2|year,y2|year]                  0.006    0.008    0.016
-#&gt; log-posterior                           -483.342 -476.309 -462.803
+#&gt; y1|(Intercept)                             0.715    0.834    1.101
+#&gt; y1|year                                    0.089    0.096    0.108
+#&gt; y1|sigma                                   0.507    0.523    0.550
+#&gt; y1|mean_PPD                                0.585    0.613    0.670
+#&gt; y2|(Intercept)                             3.419    3.577    3.821
+#&gt; y2|sexf                                    0.124    0.260    0.523
+#&gt; y2|year                                   -0.133   -0.119   -0.098
+#&gt; y2|sigma                                   0.290    0.299    0.314
+#&gt; y2|mean_PPD                                3.344    3.360    3.387
+#&gt; Sigma[id:y1|(Intercept),y1|(Intercept)]    1.657    1.912    2.492
+#&gt; Sigma[id:y2|(Intercept),y1|(Intercept)]   -0.415   -0.332   -0.212
+#&gt; Sigma[id:y2|year,y1|(Intercept)]          -0.068   -0.053   -0.020
+#&gt; Sigma[id:y2|(Intercept),y2|(Intercept)]    0.253    0.307    0.441
+#&gt; Sigma[id:y2|year,y2|(Intercept)]           0.016    0.022    0.040
+#&gt; Sigma[id:y2|year,y2|year]                  0.006    0.008    0.015
+#&gt; log-posterior                           -481.111 -473.795 -460.966
 #&gt; 
 #&gt; Diagnostics:
 #&gt;                                         mcse  Rhat  n_eff
-#&gt; y1|(Intercept)                          0.027 1.084  57  
-#&gt; y1|year                                 0.000 0.998 575  
-#&gt; y1|sigma                                0.001 0.998 756  
-#&gt; y1|mean_PPD                             0.002 0.998 361  
-#&gt; y2|(Intercept)                          0.020 1.015 115  
-#&gt; y2|sexf                                 0.022 1.006  99  
-#&gt; y2|year                                 0.002 1.010 118  
-#&gt; y2|sigma                                0.001 0.998 365  
-#&gt; y2|mean_PPD                             0.001 1.000 568  
-#&gt; Sigma[id:y1|(Intercept),y1|(Intercept)] 0.043 1.024  93  
-#&gt; Sigma[id:y2|(Intercept),y1|(Intercept)] 0.014 1.022  97  
-#&gt; Sigma[id:y2|year,y1|(Intercept)]        0.003 1.033 124  
-#&gt; Sigma[id:y2|(Intercept),y2|(Intercept)] 0.006 1.004 141  
-#&gt; Sigma[id:y2|year,y2|(Intercept)]        0.001 1.002 148  
-#&gt; Sigma[id:y2|year,y2|year]               0.000 1.033 161  
-#&gt; log-posterior                           1.100 1.002 108  
+#&gt; y1|(Intercept)                          0.025 1.059   56 
+#&gt; y1|year                                 0.000 0.998 1349 
+#&gt; y1|sigma                                0.001 1.000  910 
+#&gt; y1|mean_PPD                             0.002 1.001  446 
+#&gt; y2|(Intercept)                          0.012 0.998  278 
+#&gt; y2|sexf                                 0.015 0.998  212 
+#&gt; y2|year                                 0.001 1.010  217 
+#&gt; y2|sigma                                0.001 1.000  575 
+#&gt; y2|mean_PPD                             0.001 0.998  536 
+#&gt; Sigma[id:y1|(Intercept),y1|(Intercept)] 0.033 1.030  135 
+#&gt; Sigma[id:y2|(Intercept),y1|(Intercept)] 0.012 1.039  119 
+#&gt; Sigma[id:y2|year,y1|(Intercept)]        0.002 1.001  206 
+#&gt; Sigma[id:y2|(Intercept),y2|(Intercept)] 0.006 1.017  147 
+#&gt; Sigma[id:y2|year,y2|(Intercept)]        0.001 1.000  176 
+#&gt; Sigma[id:y2|year,y2|year]               0.000 0.998  259 
+#&gt; log-posterior                           0.914 0.998  141 
 #&gt; 
 #&gt; For each parameter, mcse is Monte Carlo standard error, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence Rhat=1).</div><div class='input'>
 <span class='co'>#####</span>
@@ -465,8 +496,8 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; 
 #&gt; SAMPLING FOR MODEL 'mvmer' NOW (CHAIN 1).
 #&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 0.000101 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.01 seconds.
+#&gt; Chain 1: Gradient evaluation took 0.000135 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.35 seconds.
 #&gt; Chain 1: Adjust your expectations accordingly!
 #&gt; Chain 1: 
 #&gt; Chain 1: 
@@ -483,25 +514,19 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 #&gt; Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #&gt; Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 4.78728 seconds (Warm-up)
-#&gt; Chain 1:                2.56634 seconds (Sampling)
-#&gt; Chain 1:                7.35362 seconds (Total)
+#&gt; Chain 1:  Elapsed Time: 5.07487 seconds (Warm-up)
+#&gt; Chain 1:                2.82034 seconds (Sampling)
+#&gt; Chain 1:                7.89521 seconds (Total)
 #&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='input'># }
 
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#details">Details</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -512,7 +537,7 @@ named by <code>algorithm</code>. For example, if <code>algorithm</code> is
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

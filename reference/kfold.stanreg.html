@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -52,7 +56,6 @@ number of observations in the data then \(K\)-fold cross-validation is
 equivalent to exact leave-one-out cross-validation (to which
 loo is an efficient approximation)." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -70,7 +73,7 @@ loo is an efficient approximation)." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -84,13 +87,19 @@ loo is an efficient approximation)." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
@@ -113,6 +122,9 @@ loo is an efficient approximation)." />
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -126,6 +138,9 @@ loo is an efficient approximation)." />
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -166,7 +181,7 @@ loo is an efficient approximation)." />
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>K-fold cross-validation</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/loo-kfold.R'><code>R/loo-kfold.R</code></a></small>
     <div class="hidden name"><code>kfold.stanreg.Rd</code></div>
     </div>
 
@@ -182,8 +197,14 @@ equivalent to exact leave-one-out cross-validation (to which
     </div>
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
-<span class='fu'>kfold</span>(<span class='no'>x</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='no'>...</span>, <span class='kw'>folds</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>save_fits</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"mc.cores"</span>, <span class='fl'>1</span>))</pre>
+<span class='fu'>kfold</span>(
+  <span class='no'>x</span>,
+  <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>,
+  <span class='no'>...</span>,
+  <span class='kw'>folds</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>save_fits</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>cores</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"mc.cores"</span>, <span class='fl'>1</span>)
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -200,7 +221,7 @@ will be partitioned for performing \(K\)-fold cross-validation. The model
 is refit <code>K</code> times, each time leaving out one of the <code>K</code> folds.
 If the <code>folds</code> argument is specified then <code>K</code> will automatically
 be set to <code><a href='https://rdrr.io/r/base/length.html'>length(unique(folds))</a></code>, otherwise the specified value of
-<code>K</code> is passed to <code>loo::<a href='https://rdrr.io/pkg/loo/man/kfold-helpers.html'>kfold_split_random</a></code> to
+<code>K</code> is passed to <code>loo::<a href='https://mc-stan.org/loo/reference/kfold-helpers.html'>kfold_split_random</a></code> to
 randomly partition the data into <code>K</code> subsets of equal (or as close to
 equal as possible) size.</p></td>
     </tr>
@@ -216,7 +237,7 @@ vector is an integer in <code>1:K</code> indicating to which of the <code>K</cod
 folds the corresponding observation belongs. There are some convenience
 functions available in the <span class="pkg">loo</span> package that create integer vectors to
 use for this purpose (see the <strong>Examples</strong> section below and also the
-<a href='https://rdrr.io/pkg/loo/man/kfold-helpers.html'>kfold-helpers</a> page).</p></td>
+<a href='https://mc-stan.org/loo/reference/kfold-helpers.html'>kfold-helpers</a> page).</p></td>
     </tr>
     <tr>
       <th>save_fits</th>
@@ -273,19 +294,19 @@ when calling the <code>kfold</code> function. See the end of the
 #&gt; Based on 10-fold cross-validation
 #&gt; 
 #&gt;            Estimate  SE
-#&gt; elpd_kfold    -83.8 4.3
+#&gt; elpd_kfold    -83.6 4.2
 #&gt; p_kfold          NA  NA
-#&gt; kfoldic       167.6 8.6</div><div class='input'><span class='no'>kfold2</span> <span class='kw'>&lt;-</span> <span class='fu'>kfold</span>(<span class='no'>fit2</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>)</div><div class='output co'>#&gt; <span class='message'>Fitting model 1 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 2 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 3 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 4 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 5 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 6 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 7 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 8 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 9 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 10 out of 10</span></div><div class='input'><span class='no'>kfold3</span> <span class='kw'>&lt;-</span> <span class='fu'>kfold</span>(<span class='no'>fit3</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>)</div><div class='output co'>#&gt; <span class='message'>Fitting model 1 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 2 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 3 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 4 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 5 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 6 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 7 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 8 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 9 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 10 out of 10</span></div><div class='input'><span class='fu'><a href='loo.stanreg.html'>loo_compare</a></span>(<span class='no'>kfold1</span>, <span class='no'>kfold2</span>, <span class='no'>kfold3</span>)</div><div class='output co'>#&gt;      elpd_diff se_diff
-#&gt; fit2  0.0       0.0   
-#&gt; fit3 -1.1       3.5   
-#&gt; fit1 -6.1       2.8   </div><div class='input'>
+#&gt; kfoldic       167.2 8.5</div><div class='input'><span class='no'>kfold2</span> <span class='kw'>&lt;-</span> <span class='fu'>kfold</span>(<span class='no'>fit2</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>)</div><div class='output co'>#&gt; <span class='message'>Fitting model 1 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 2 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 3 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 4 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 5 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 6 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 7 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 8 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 9 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 10 out of 10</span></div><div class='input'><span class='no'>kfold3</span> <span class='kw'>&lt;-</span> <span class='fu'>kfold</span>(<span class='no'>fit3</span>, <span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>10</span>)</div><div class='output co'>#&gt; <span class='message'>Fitting model 1 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 2 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 3 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 4 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 5 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 6 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 7 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 8 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 9 out of 10</span></div><div class='output co'>#&gt; <span class='message'>Fitting model 10 out of 10</span></div><div class='input'><span class='fu'><a href='loo.stanreg.html'>loo_compare</a></span>(<span class='no'>kfold1</span>, <span class='no'>kfold2</span>, <span class='no'>kfold3</span>)</div><div class='output co'>#&gt;      elpd_diff se_diff
+#&gt; fit3  0.0       0.0   
+#&gt; fit2 -4.6       6.1   
+#&gt; fit1 -6.0       5.0   </div><div class='input'>
 <span class='co'># stratifying by a grouping variable</span>
 <span class='co'># (note: might get some divergences warnings with this model but </span>
 <span class='co'># this is just intended as a quick example of how to code this)</span>
-<span class='no'>fit4</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glmer.html'>stan_lmer</a></span>(<span class='no'>mpg</span> ~ <span class='no'>disp</span> + (<span class='fl'>1</span><span class='kw'>|</span><span class='no'>cyl</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>refresh</span> <span class='kw'>=</span> <span class='fl'>0</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: There were 2 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See</span>
+<span class='no'>fit4</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='stan_glmer.html'>stan_lmer</a></span>(<span class='no'>mpg</span> ~ <span class='no'>disp</span> + (<span class='fl'>1</span><span class='kw'>|</span><span class='no'>cyl</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>mtcars</span>, <span class='kw'>refresh</span> <span class='kw'>=</span> <span class='fl'>0</span>)</div><div class='output co'>#&gt; <span class='warning'>Warning: There were 5 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span>(<span class='no'>mtcars</span>$<span class='no'>cyl</span>)</div><div class='output co'>#&gt; 
 #&gt;  4  6  8 
-#&gt; 11  7 14 </div><div class='input'><span class='no'>folds_cyl</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>loo</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/loo/man/kfold-helpers.html'>kfold_split_stratified</a></span>(<span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>3</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>cyl</span>)
+#&gt; 11  7 14 </div><div class='input'><span class='no'>folds_cyl</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>loo</span><span class='kw ns'>::</span><span class='fu'><a href='https://mc-stan.org/loo/reference/kfold-helpers.html'>kfold_split_stratified</a></span>(<span class='kw'>K</span> <span class='kw'>=</span> <span class='fl'>3</span>, <span class='kw'>x</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>cyl</span>)
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span>(<span class='kw'>cyl</span> <span class='kw'>=</span> <span class='no'>mtcars</span>$<span class='no'>cyl</span>, <span class='kw'>fold</span> <span class='kw'>=</span> <span class='no'>folds_cyl</span>)</div><div class='output co'>#&gt;    fold
 #&gt; cyl 1 2 3
 #&gt;   4 4 4 3
@@ -294,9 +315,9 @@ when calling the <code>kfold</code> function. See the end of the
 #&gt; Based on 3-fold cross-validation
 #&gt; 
 #&gt;            Estimate  SE
-#&gt; elpd_kfold    -83.7 4.2
+#&gt; elpd_kfold    -86.4 4.2
 #&gt; p_kfold          NA  NA
-#&gt; kfoldic       167.4 8.4</div><div class='input'># }
+#&gt; kfoldic       172.7 8.5</div><div class='input'># }
 
 # Example code demonstrating the different ways to specify the number 
 # of cores and how the cores are used
@@ -316,15 +337,10 @@ when calling the <code>kfold</code> function. See the end of the
 
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#references">References</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -335,7 +351,7 @@ when calling the <code>kfold</code> function. See the end of the
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

@@ -18,23 +18,27 @@ terms via Stan — stan_gamm4 • rstanarm</title>
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -48,7 +52,6 @@ terms via Stan — stan_gamm4" />
 <meta property="og:description" content="
 Bayesian inference for GAMMs with flexible priors." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -66,7 +69,7 @@ Bayesian inference for GAMMs with flexible priors." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -80,17 +83,26 @@ Bayesian inference for GAMMs with flexible priors." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -106,6 +118,9 @@ Bayesian inference for GAMMs with flexible priors." />
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -119,6 +134,9 @@ Bayesian inference for GAMMs with flexible priors." />
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -160,7 +178,7 @@ Bayesian inference for GAMMs with flexible priors." />
     <div class="page-header">
     <h1>Bayesian generalized linear additive models with optional group-specific
 terms via Stan</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/stan_gamm4.R'><code>R/stan_gamm4.R</code></a></small>
     <div class="hidden name"><code>stan_gamm4.Rd</code></div>
     </div>
 
@@ -169,16 +187,38 @@ terms via Stan</h1>
 Bayesian inference for GAMMs with flexible priors.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>stan_gamm4</span>(<span class='no'>formula</span>, <span class='kw'>random</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>gaussian</a></span>(), <span class='no'>data</span>,
-  <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>subset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>na.action</span>, <span class='kw'>knots</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>drop.unused.levels</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='no'>...</span>, <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(),
-  <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>normal</a></span>(), <span class='kw'>prior_smooth</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>exponential</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span>
-  <span class='fl'>FALSE</span>), <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>exponential</a></span>(), <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>decov</a></span>(),
-  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
-  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>sparse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
+    <pre class="usage"><span class='fu'>stan_gamm4</span>(
+  <span class='no'>formula</span>,
+  <span class='kw'>random</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>family</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/family.html'>gaussian</a></span>(),
+  <span class='no'>data</span>,
+  <span class='kw'>weights</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>subset</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='no'>na.action</span>,
+  <span class='kw'>knots</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>drop.unused.levels</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='no'>...</span>,
+  <span class='kw'>prior</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>default_prior_coef</a></span>(<span class='no'>family</span>),
+  <span class='kw'>prior_intercept</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>default_prior_intercept</a></span>(<span class='no'>family</span>),
+  <span class='kw'>prior_smooth</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>exponential</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>),
+  <span class='kw'>prior_aux</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>exponential</a></span>(<span class='kw'>autoscale</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>),
+  <span class='kw'>prior_covariance</span> <span class='kw'>=</span> <span class='fu'><a href='priors.html'>decov</a></span>(),
+  <span class='kw'>prior_PD</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>algorithm</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"sampling"</span>, <span class='st'>"meanfield"</span>, <span class='st'>"fullrank"</span>),
+  <span class='kw'>adapt_delta</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>QR</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='kw'>sparse</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
+)
 
-<span class='fu'>plot_nonlinear</span>(<span class='no'>x</span>, <span class='no'>smooths</span>, <span class='no'>...</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.9</span>, <span class='kw'>facet_args</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(),
-  <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>size</span> <span class='kw'>=</span> <span class='fl'>0.75</span>)</pre>
+<span class='fu'>plot_nonlinear</span>(
+  <span class='no'>x</span>,
+  <span class='no'>smooths</span>,
+  <span class='no'>...</span>,
+  <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.9</span>,
+  <span class='kw'>facet_args</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(),
+  <span class='kw'>alpha</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='kw'>size</span> <span class='kw'>=</span> <span class='fl'>0.75</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -198,18 +238,22 @@ but rarely specified.</p></td>
     </tr>
     <tr>
       <th>...</th>
-      <td><p>Further arguments passed to <code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-sampling.html'>sampling</a></code> (e.g. 
+      <td><p>Further arguments passed to <code>sampling</code> (e.g. 
 <code>iter</code>, <code>chains</code>, <code>cores</code>, etc.) or to
-<code><a href='https://rdrr.io/pkg/rstan/man/stanmodel-method-vb.html'>vb</a></code> (if <code>algorithm</code> is <code>"meanfield"</code> or
+<code>vb</code> (if <code>algorithm</code> is <code>"meanfield"</code> or
 <code>"fullrank"</code>).</p></td>
     </tr>
     <tr>
       <th>prior</th>
-      <td><p>The prior distribution for the regression coefficients. 
-<code>prior</code> should be a call to one of the various functions provided by 
-<span class="pkg">rstanarm</span> for specifying priors. The subset of these functions that 
-can be used for the prior on the coefficients can be grouped into several 
-"families":</p>
+      <td><p>The prior distribution for the (non-hierarchical) regression
+coefficients.</p> 
+<p>The default priors are described in the vignette 
+<a href='http://mc-stan.org/rstanarm/articles/priors.html'><em>Prior
+Distributions for rstanarm Models</em></a>.
+If not using the default, <code>prior</code> should be a call to one of the
+various functions provided by <span class="pkg">rstanarm</span> for specifying priors. The
+subset of these functions that can be used for the prior on the
+coefficients can be grouped into several "families":</p>
 <table class='table'>
 <tr><td><strong>Family</strong></td><td><strong>Functions</strong></td></tr>
 <tr><td><em>Student t family</em></td><td><code>normal</code>, <code>student_t</code>, <code>cauchy</code></td></tr>
@@ -236,24 +280,30 @@ particular model.</p></td>
     </tr>
     <tr>
       <th>prior_intercept</th>
-      <td><p>The prior distribution for the intercept. 
-<code>prior_intercept</code> can be a call to <code>normal</code>, <code>student_t</code> or 
-<code>cauchy</code>. See the <a href='priors.html'>priors help page</a> for details on 
-these functions. To omit a prior on the intercept ---i.e., to use a flat
-(improper) uniform prior--- <code>prior_intercept</code> can be set to
-<code>NULL</code>.</p>
+      <td><p>The prior distribution for the intercept (after
+  centering all predictors, see note below).</p>
+<p>The default prior is described in the vignette 
+  <a href='http://mc-stan.org/rstanarm/articles/priors.html'><em>Prior
+  Distributions for rstanarm Models</em></a>.
+  If not using the default, <code>prior_intercept</code> can be a call to
+  <code>normal</code>, <code>student_t</code> or <code>cauchy</code>. See the
+  <a href='priors.html'>priors help page</a> for details on these functions. To omit a
+  prior on the intercept ---i.e., to use a flat (improper) uniform prior---
+  <code>prior_intercept</code> can be set to <code>NULL</code>.</p>  
 <p><strong>Note:</strong> If using a dense representation of the design matrix
----i.e., if the <code>sparse</code> argument is left at its default value of
-<code>FALSE</code>--- then the prior distribution for the intercept is set so it
-applies to the value <em>when all predictors are centered</em>. If you prefer
-to specify a prior on the intercept without the predictors being
-auto-centered, then you have to omit the intercept from the
-<code><a href='https://rdrr.io/r/stats/formula.html'>formula</a></code> and include a column of ones as a predictor,
-in which case some element of <code>prior</code> specifies the prior on it,
-rather than <code>prior_intercept</code>. Regardless of how
-<code>prior_intercept</code> is specified, the reported <em>estimates</em> of the
-intercept always correspond to a parameterization without centered
-predictors (i.e., same as in <code>glm</code>).</p></td>
+  ---i.e., if the <code>sparse</code> argument is left at its default value of
+  <code>FALSE</code>--- then the prior distribution for the intercept is set so it
+  applies to the value <em>when all predictors are centered</em> (you don't
+  need to manually center them). This is explained further in
+  [Prior Distributions for rstanarm Models](https://mc-stan.org/rstanarm/articles/priors.html)
+  If you prefer to specify a prior on the intercept without the predictors
+  being auto-centered, then you have to omit the intercept from the
+  <code><a href='https://rdrr.io/r/stats/formula.html'>formula</a></code> and include a column of ones as a predictor,
+  in which case some element of <code>prior</code> specifies the prior on it,
+  rather than <code>prior_intercept</code>. Regardless of how
+  <code>prior_intercept</code> is specified, the reported <em>estimates</em> of the
+  intercept always correspond to a parameterization without centered
+  predictors (i.e., same as in <code>glm</code>).</p></td>
     </tr>
     <tr>
       <th>prior_smooth</th>
@@ -284,12 +334,15 @@ to the <code>"shape"</code> parameter (see e.g.,
 so-called <code>"lambda"</code> parameter (which is essentially the reciprocal of
 a scale parameter). Binomial and Poisson models do not have auxiliary 
 parameters.</p>
-<p><code>prior_aux</code> can be a call to <code>exponential</code> to 
-use an exponential distribution, or <code>normal</code>, <code>student_t</code> or 
-<code>cauchy</code>, which results in a half-normal, half-t, or half-Cauchy 
-prior. See <code><a href='priors.html'>priors</a></code> for details on these functions. To omit a 
-prior ---i.e., to use a flat (improper) uniform prior--- set 
-<code>prior_aux</code> to <code>NULL</code>.</p></td>
+<p>The default prior is described in the vignette 
+<a href='http://mc-stan.org/rstanarm/articles/priors.html'><em>Prior
+Distributions for rstanarm Models</em></a>.
+If not using the default, <code>prior_aux</code> can be a call to
+<code>exponential</code> to use an exponential distribution, or <code>normal</code>,
+<code>student_t</code> or <code>cauchy</code>, which results in a half-normal, half-t,
+or half-Cauchy prior. See <code><a href='priors.html'>priors</a></code> for details on these
+functions. To omit a prior ---i.e., to use a flat (improper) uniform
+prior--- set <code>prior_aux</code> to <code>NULL</code>.</p></td>
     </tr>
     <tr>
       <th>prior_covariance</th>
@@ -432,70 +485,61 @@ Software</em>. <strong>14</strong>(14), 1--22.
 <span class='no'>dat</span>$<span class='no'>y</span> <span class='kw'>&lt;-</span> <span class='no'>dat</span>$<span class='no'>y</span> + <span class='fu'><a href='https://rdrr.io/r/stats/model.matrix.html'>model.matrix</a></span>(~ <span class='no'>fac</span> - <span class='fl'>1</span>) <span class='kw'>%*%</span> <span class='fu'><a href='https://rdrr.io/r/stats/Normal.html'>rnorm</a></span>(<span class='fl'>20</span>) * <span class='fl'>.5</span>
 
 <span class='no'>br</span> <span class='kw'>&lt;-</span> <span class='fu'>stan_gamm4</span>(<span class='no'>y</span> ~ <span class='fu'>s</span>(<span class='no'>x0</span>) + <span class='no'>x1</span> + <span class='fu'>s</span>(<span class='no'>x2</span>), <span class='kw'>data</span> <span class='kw'>=</span> <span class='no'>dat</span>, <span class='kw'>random</span> <span class='kw'>=</span> ~ (<span class='fl'>1</span> <span class='kw'>|</span> <span class='no'>fac</span>),
-                 <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>200</span>) <span class='co'># for example speed</span></div><div class='output co'>#&gt; 
+                 <span class='kw'>chains</span> <span class='kw'>=</span> <span class='fl'>1</span>, <span class='kw'>iter</span> <span class='kw'>=</span> <span class='fl'>500</span>) <span class='co'># for example speed</span></div><div class='output co'>#&gt; 
 #&gt; SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #&gt; Chain 1: 
-#&gt; Chain 1: Gradient evaluation took 0.000138 seconds
-#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.38 seconds.
+#&gt; Chain 1: Gradient evaluation took 9.8e-05 seconds
+#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.98 seconds.
 #&gt; Chain 1: Adjust your expectations accordingly!
 #&gt; Chain 1: 
 #&gt; Chain 1: 
-#&gt; Chain 1: WARNING: There aren't enough warmup iterations to fit the
-#&gt; Chain 1:          three stages of adaptation as currently configured.
-#&gt; Chain 1:          Reducing each adaptation stage to 15%/75%/10% of
-#&gt; Chain 1:          the given number of warmup iterations:
-#&gt; Chain 1:            init_buffer = 15
-#&gt; Chain 1:            adapt_window = 75
-#&gt; Chain 1:            term_buffer = 10
+#&gt; Chain 1: Iteration:   1 / 500 [  0%]  (Warmup)
+#&gt; Chain 1: Iteration:  50 / 500 [ 10%]  (Warmup)
+#&gt; Chain 1: Iteration: 100 / 500 [ 20%]  (Warmup)
+#&gt; Chain 1: Iteration: 150 / 500 [ 30%]  (Warmup)
+#&gt; Chain 1: Iteration: 200 / 500 [ 40%]  (Warmup)
+#&gt; Chain 1: Iteration: 250 / 500 [ 50%]  (Warmup)
+#&gt; Chain 1: Iteration: 251 / 500 [ 50%]  (Sampling)
+#&gt; Chain 1: Iteration: 300 / 500 [ 60%]  (Sampling)
+#&gt; Chain 1: Iteration: 350 / 500 [ 70%]  (Sampling)
+#&gt; Chain 1: Iteration: 400 / 500 [ 80%]  (Sampling)
+#&gt; Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
+#&gt; Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #&gt; Chain 1: 
-#&gt; Chain 1: Iteration:   1 / 200 [  0%]  (Warmup)
-#&gt; Chain 1: Iteration:  20 / 200 [ 10%]  (Warmup)
-#&gt; Chain 1: Iteration:  40 / 200 [ 20%]  (Warmup)
-#&gt; Chain 1: Iteration:  60 / 200 [ 30%]  (Warmup)
-#&gt; Chain 1: Iteration:  80 / 200 [ 40%]  (Warmup)
-#&gt; Chain 1: Iteration: 100 / 200 [ 50%]  (Warmup)
-#&gt; Chain 1: Iteration: 101 / 200 [ 50%]  (Sampling)
-#&gt; Chain 1: Iteration: 120 / 200 [ 60%]  (Sampling)
-#&gt; Chain 1: Iteration: 140 / 200 [ 70%]  (Sampling)
-#&gt; Chain 1: Iteration: 160 / 200 [ 80%]  (Sampling)
-#&gt; Chain 1: Iteration: 180 / 200 [ 90%]  (Sampling)
-#&gt; Chain 1: Iteration: 200 / 200 [100%]  (Sampling)
-#&gt; Chain 1: 
-#&gt; Chain 1:  Elapsed Time: 2.46052 seconds (Warm-up)
-#&gt; Chain 1:                2.8035 seconds (Sampling)
-#&gt; Chain 1:                5.26403 seconds (Total)
-#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: The largest R-hat is 1.12, indicating chains have not mixed.</span>
-#&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
-#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#r-hat</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+#&gt; Chain 1:  Elapsed Time: 3.96087 seconds (Warm-up)
+#&gt; Chain 1:                1.7028 seconds (Sampling)
+#&gt; Chain 1:                5.66367 seconds (Total)
+#&gt; Chain 1: </div><div class='output co'>#&gt; <span class='warning'>Warning: There were 8 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See</span>
+#&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Examine the pairs() plot to diagnose sampling problems</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#bulk-ess</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
 #&gt; <span class='warning'>Running the chains for more iterations may help. See</span>
 #&gt; <span class='warning'>http://mc-stan.org/misc/warnings.html#tail-ess</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>br</span>)</div><div class='output co'>#&gt; stan_gamm4
 #&gt;  family:       gaussian [identity]
-#&gt;  formula:      y ~ s(x0) + x1 + s(x2), random = ~(1 | fac)
+#&gt;  formula:      y ~ s(x0) + x1 + s(x2)
 #&gt;  observations: 400
 #&gt; ------
 #&gt;             Median MAD_SD
 #&gt; (Intercept)   4.3    0.2 
-#&gt; x1            6.4    0.3 
-#&gt; s(x0).1       0.5    2.3 
-#&gt; s(x0).2       0.2    1.8 
-#&gt; s(x0).3       0.8    2.1 
-#&gt; s(x0).4       0.2    2.1 
-#&gt; s(x0).5       0.9    2.1 
+#&gt; x1            6.4    0.4 
+#&gt; s(x0).1       0.9    2.2 
+#&gt; s(x0).2       0.5    1.9 
+#&gt; s(x0).3       0.5    2.2 
+#&gt; s(x0).4       0.6    1.8 
+#&gt; s(x0).5       1.3    1.9 
 #&gt; s(x0).6      -1.9    1.2 
-#&gt; s(x0).7      -0.6    0.7 
-#&gt; s(x0).8      -2.8    1.9 
-#&gt; s(x0).9      -0.1    0.9 
-#&gt; s(x2).1     -45.3   13.5 
-#&gt; s(x2).2      -4.8    9.1 
-#&gt; s(x2).3      38.2    8.7 
-#&gt; s(x2).4     -39.4    5.0 
-#&gt; s(x2).5       2.9    4.9 
-#&gt; s(x2).6     -10.8    1.6 
-#&gt; s(x2).7       8.4    1.4 
-#&gt; s(x2).8      -9.3    4.0 
-#&gt; s(x2).9       1.7    3.1 
+#&gt; s(x0).7      -0.7    0.8 
+#&gt; s(x0).8      -2.7    1.6 
+#&gt; s(x0).9      -0.1    1.1 
+#&gt; s(x2).1     -42.9   12.0 
+#&gt; s(x2).2      -5.7    8.1 
+#&gt; s(x2).3      39.5    8.8 
+#&gt; s(x2).4     -40.3    6.1 
+#&gt; s(x2).5       4.2    4.5 
+#&gt; s(x2).6     -10.4    2.0 
+#&gt; s(x2).7       8.9    1.6 
+#&gt; s(x2).8      -9.8    5.1 
+#&gt; s(x2).9       3.5    5.4 
 #&gt; 
 #&gt; Auxiliary parameter(s):
 #&gt;       Median MAD_SD
@@ -503,15 +547,15 @@ Software</em>. <strong>14</strong>(14), 1--22.
 #&gt; 
 #&gt; Smoothing terms:
 #&gt;                   Median MAD_SD
-#&gt; smooth_sd[s(x0)1]  2.2    0.8  
-#&gt; smooth_sd[s(x0)2]  1.2    1.4  
-#&gt; smooth_sd[s(x2)1] 18.8    3.7  
-#&gt; smooth_sd[s(x2)2]  2.9    3.5  
+#&gt; smooth_sd[s(x0)1]  2.3    0.8  
+#&gt; smooth_sd[s(x0)2]  1.5    1.4  
+#&gt; smooth_sd[s(x2)1] 18.6    2.9  
+#&gt; smooth_sd[s(x2)2]  3.6    3.8  
 #&gt; 
 #&gt; Error terms:
 #&gt;  Groups   Name        Std.Dev.
 #&gt;  fac      (Intercept) 0.45    
-#&gt;  Residual             2.01    
+#&gt;  Residual             2.02    
 #&gt; Num. levels: fac 20 
 #&gt; 
 #&gt; ------
@@ -520,17 +564,10 @@ Software</em>. <strong>14</strong>(14), 1--22.
 
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#details">Details</a></li>
-      <li><a href="#references">References</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -541,7 +578,7 @@ Software</em>. <strong>14</strong>(14), 1--22.
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

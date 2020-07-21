@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -46,7 +50,6 @@
 <meta property="og:description" content="Summaries of parameter estimates and MCMC convergence diagnostics 
 (Monte Carlo error, effective sample size, Rhat)." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -64,7 +67,7 @@
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -78,17 +81,26 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -104,6 +116,9 @@
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -117,6 +132,9 @@
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -157,7 +175,7 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Summary method for stanreg objects</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/print-and-summary.R'><code>R/print-and-summary.R</code></a></small>
     <div class="hidden name"><code>summary.stanreg.Rd</code></div>
     </div>
 
@@ -167,23 +185,26 @@
     </div>
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>object</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>probs</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0.1</span>, <span class='fl'>0.5</span>, <span class='fl'>0.9</span>), <span class='no'>...</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>1</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(
+  <span class='no'>object</span>,
+  <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>probs</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>0.1</span>, <span class='fl'>0.5</span>, <span class='fl'>0.9</span>),
+  <span class='no'>...</span>,
+  <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>1</span>
+)
 
 <span class='co'># S3 method for summary.stanreg</span>
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>x</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Extremes.html'>max</a></span>(<span class='fl'>1</span>, <span class='fu'><a href='https://rdrr.io/r/base/attr.html'>attr</a></span>(<span class='no'>x</span>,
-  <span class='st'>"print.digits"</span>)), <span class='no'>...</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>x</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Extremes.html'>max</a></span>(<span class='fl'>1</span>, <span class='fu'><a href='https://rdrr.io/r/base/attr.html'>attr</a></span>(<span class='no'>x</span>, <span class='st'>"print.digits"</span>)), <span class='no'>...</span>)
 
 <span class='co'># S3 method for summary.stanreg</span>
 <span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span>(<span class='no'>x</span>, <span class='no'>...</span>)
 
 <span class='co'># S3 method for stanmvreg</span>
-<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>object</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>probs</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>3</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>object</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>regex_pars</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>probs</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fl'>3</span>)
 
 <span class='co'># S3 method for summary.stanmvreg</span>
-<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>x</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Extremes.html'>max</a></span>(<span class='fl'>1</span>, <span class='fu'><a href='https://rdrr.io/r/base/attr.html'>attr</a></span>(<span class='no'>x</span>,
-  <span class='st'>"print.digits"</span>)), <span class='no'>...</span>)</pre>
+<span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>(<span class='no'>x</span>, <span class='kw'>digits</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/Extremes.html'>max</a></span>(<span class='fl'>1</span>, <span class='fu'><a href='https://rdrr.io/r/base/attr.html'>attr</a></span>(<span class='no'>x</span>, <span class='st'>"print.digits"</span>)), <span class='no'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -290,34 +311,34 @@ data, computational issues, etc.).</p>
 #&gt;  family:       binomial [logit]
 #&gt;  formula:      cbind(incidence, size - incidence) ~ size + period + (1 | herd)
 #&gt;  algorithm:    sampling
-#&gt;  sample:       500 (posterior sample size)
+#&gt;  sample:       1000 (posterior sample size)
 #&gt;  priors:       see help('prior_summary')
 #&gt;  observations: 56
 #&gt;  groups:       herd (15)
 #&gt; 
 #&gt; Estimates:
 #&gt;                                       mean   sd   10%   90%
-#&gt; (Intercept)                         -1.6    0.6 -2.3  -0.8 
+#&gt; (Intercept)                         -1.5    0.6 -2.3  -0.8 
 #&gt; size                                 0.0    0.0  0.0   0.0 
-#&gt; period2                             -1.0    0.3 -1.3  -0.6 
-#&gt; period3                             -1.1    0.3 -1.5  -0.7 
+#&gt; period2                             -1.0    0.3 -1.4  -0.6 
+#&gt; period3                             -1.1    0.3 -1.6  -0.7 
 #&gt; period4                             -1.6    0.5 -2.2  -1.0 
 #&gt; b[(Intercept) herd:1]                0.6    0.4  0.1   1.2 
-#&gt; b[(Intercept) herd:2]               -0.4    0.4 -0.9   0.2 
+#&gt; b[(Intercept) herd:2]               -0.4    0.4 -0.9   0.1 
 #&gt; b[(Intercept) herd:3]                0.4    0.4 -0.1   0.8 
-#&gt; b[(Intercept) herd:4]                0.0    0.5 -0.5   0.6 
-#&gt; b[(Intercept) herd:5]               -0.3    0.4 -0.8   0.3 
+#&gt; b[(Intercept) herd:4]                0.0    0.5 -0.6   0.6 
+#&gt; b[(Intercept) herd:5]               -0.3    0.4 -0.8   0.2 
 #&gt; b[(Intercept) herd:6]               -0.5    0.4 -1.1   0.0 
-#&gt; b[(Intercept) herd:7]                0.9    0.4  0.4   1.5 
-#&gt; b[(Intercept) herd:8]                0.5    0.5  0.0   1.1 
-#&gt; b[(Intercept) herd:9]               -0.3    0.6 -1.1   0.5 
-#&gt; b[(Intercept) herd:10]              -0.6    0.5 -1.2  -0.1 
-#&gt; b[(Intercept) herd:11]              -0.1    0.4 -0.6   0.3 
+#&gt; b[(Intercept) herd:7]                0.9    0.4  0.4   1.4 
+#&gt; b[(Intercept) herd:8]                0.5    0.5 -0.1   1.1 
+#&gt; b[(Intercept) herd:9]               -0.3    0.5 -1.0   0.3 
+#&gt; b[(Intercept) herd:10]              -0.7    0.5 -1.3  -0.1 
+#&gt; b[(Intercept) herd:11]              -0.2    0.4 -0.7   0.3 
 #&gt; b[(Intercept) herd:12]              -0.1    0.5 -0.8   0.6 
 #&gt; b[(Intercept) herd:13]              -0.8    0.5 -1.5  -0.3 
-#&gt; b[(Intercept) herd:14]               1.0    0.5  0.5   1.6 
-#&gt; b[(Intercept) herd:15]              -0.6    0.5 -1.2  -0.1 
-#&gt; Sigma[herd:(Intercept),(Intercept)]  0.6    0.3  0.2   1.0 
+#&gt; b[(Intercept) herd:14]               1.0    0.5  0.4   1.6 
+#&gt; b[(Intercept) herd:15]              -0.6    0.5 -1.3  -0.1 
+#&gt; Sigma[herd:(Intercept),(Intercept)]  0.6    0.4  0.2   1.0 
 #&gt; 
 #&gt; Fit Diagnostics:
 #&gt;            mean   sd   10%   90%
@@ -327,29 +348,29 @@ data, computational issues, etc.).</p>
 #&gt; 
 #&gt; MCMC diagnostics
 #&gt;                                     mcse Rhat n_eff
-#&gt; (Intercept)                         0.0  1.0  203  
-#&gt; size                                0.0  1.0  250  
-#&gt; period2                             0.0  1.0  881  
-#&gt; period3                             0.0  1.0  569  
-#&gt; period4                             0.0  1.0  430  
-#&gt; b[(Intercept) herd:1]               0.0  1.0  383  
-#&gt; b[(Intercept) herd:2]               0.0  1.0  551  
-#&gt; b[(Intercept) herd:3]               0.0  1.0  410  
-#&gt; b[(Intercept) herd:4]               0.0  1.0  394  
-#&gt; b[(Intercept) herd:5]               0.0  1.0  539  
-#&gt; b[(Intercept) herd:6]               0.0  1.0  544  
-#&gt; b[(Intercept) herd:7]               0.0  1.0  322  
-#&gt; b[(Intercept) herd:8]               0.0  1.0  354  
-#&gt; b[(Intercept) herd:9]               0.0  1.0  474  
-#&gt; b[(Intercept) herd:10]              0.0  1.0  400  
-#&gt; b[(Intercept) herd:11]              0.0  1.0  409  
-#&gt; b[(Intercept) herd:12]              0.0  1.0  570  
-#&gt; b[(Intercept) herd:13]              0.0  1.0  441  
-#&gt; b[(Intercept) herd:14]              0.0  1.0  458  
-#&gt; b[(Intercept) herd:15]              0.0  1.0  609  
-#&gt; Sigma[herd:(Intercept),(Intercept)] 0.0  1.0  227  
-#&gt; mean_PPD                            0.0  1.0  455  
-#&gt; log-posterior                       0.3  1.0  150  
+#&gt; (Intercept)                         0.0  1.0   692 
+#&gt; size                                0.0  1.0   668 
+#&gt; period2                             0.0  1.0  1653 
+#&gt; period3                             0.0  1.0  1192 
+#&gt; period4                             0.0  1.0   867 
+#&gt; b[(Intercept) herd:1]               0.0  1.0   877 
+#&gt; b[(Intercept) herd:2]               0.0  1.0   850 
+#&gt; b[(Intercept) herd:3]               0.0  1.0   569 
+#&gt; b[(Intercept) herd:4]               0.0  1.0   910 
+#&gt; b[(Intercept) herd:5]               0.0  1.0   985 
+#&gt; b[(Intercept) herd:6]               0.0  1.0   804 
+#&gt; b[(Intercept) herd:7]               0.0  1.0   695 
+#&gt; b[(Intercept) herd:8]               0.0  1.0   817 
+#&gt; b[(Intercept) herd:9]               0.0  1.0   853 
+#&gt; b[(Intercept) herd:10]              0.0  1.0   698 
+#&gt; b[(Intercept) herd:11]              0.0  1.0   681 
+#&gt; b[(Intercept) herd:12]              0.0  1.0   957 
+#&gt; b[(Intercept) herd:13]              0.0  1.0   761 
+#&gt; b[(Intercept) herd:14]              0.0  1.0   936 
+#&gt; b[(Intercept) herd:15]              0.0  1.0   951 
+#&gt; Sigma[herd:(Intercept),(Intercept)] 0.0  1.0   424 
+#&gt; mean_PPD                            0.0  1.0  1115 
+#&gt; log-posterior                       0.3  1.0   290 
 #&gt; 
 #&gt; For each parameter, mcse is Monte Carlo standard error, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence Rhat=1).</div><div class='input'>
 <span class='co'># These produce the same output for this example, </span>
@@ -361,26 +382,26 @@ data, computational issues, etc.).</p>
 #&gt;  family:       binomial [logit]
 #&gt;  formula:      cbind(incidence, size - incidence) ~ size + period + (1 | herd)
 #&gt;  algorithm:    sampling
-#&gt;  sample:       500 (posterior sample size)
+#&gt;  sample:       1000 (posterior sample size)
 #&gt;  priors:       see help('prior_summary')
 #&gt;  observations: 56
 #&gt;  groups:       herd (15)
 #&gt; 
 #&gt; Estimates:
 #&gt;               mean   sd   10%   50%   90%
-#&gt; (Intercept) -1.6    0.6 -2.3  -1.5  -0.8 
+#&gt; (Intercept) -1.5    0.6 -2.3  -1.5  -0.8 
 #&gt; size         0.0    0.0  0.0   0.0   0.0 
-#&gt; period2     -1.0    0.3 -1.3  -1.0  -0.6 
-#&gt; period3     -1.1    0.3 -1.5  -1.1  -0.7 
-#&gt; period4     -1.6    0.5 -2.2  -1.6  -1.0 
+#&gt; period2     -1.0    0.3 -1.4  -1.0  -0.6 
+#&gt; period3     -1.1    0.3 -1.6  -1.1  -0.7 
+#&gt; period4     -1.6    0.5 -2.2  -1.5  -1.0 
 #&gt; 
 #&gt; MCMC diagnostics
 #&gt;             mcse Rhat n_eff
-#&gt; (Intercept) 0.0  1.0  203  
-#&gt; size        0.0  1.0  250  
-#&gt; period2     0.0  1.0  881  
-#&gt; period3     0.0  1.0  569  
-#&gt; period4     0.0  1.0  430  
+#&gt; (Intercept) 0.0  1.0   692 
+#&gt; size        0.0  1.0   668 
+#&gt; period2     0.0  1.0  1653 
+#&gt; period3     0.0  1.0  1192 
+#&gt; period4     0.0  1.0   867 
 #&gt; 
 #&gt; For each parameter, mcse is Monte Carlo standard error, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence Rhat=1).</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"alpha"</span>, <span class='st'>"beta"</span>))</div><div class='output co'>#&gt; 
 #&gt; Model Info:
@@ -388,26 +409,26 @@ data, computational issues, etc.).</p>
 #&gt;  family:       binomial [logit]
 #&gt;  formula:      cbind(incidence, size - incidence) ~ size + period + (1 | herd)
 #&gt;  algorithm:    sampling
-#&gt;  sample:       500 (posterior sample size)
+#&gt;  sample:       1000 (posterior sample size)
 #&gt;  priors:       see help('prior_summary')
 #&gt;  observations: 56
 #&gt;  groups:       herd (15)
 #&gt; 
 #&gt; Estimates:
 #&gt;               mean   sd   10%   50%   90%
-#&gt; (Intercept) -1.6    0.6 -2.3  -1.5  -0.8 
+#&gt; (Intercept) -1.5    0.6 -2.3  -1.5  -0.8 
 #&gt; size         0.0    0.0  0.0   0.0   0.0 
-#&gt; period2     -1.0    0.3 -1.3  -1.0  -0.6 
-#&gt; period3     -1.1    0.3 -1.5  -1.1  -0.7 
-#&gt; period4     -1.6    0.5 -2.2  -1.6  -1.0 
+#&gt; period2     -1.0    0.3 -1.4  -1.0  -0.6 
+#&gt; period3     -1.1    0.3 -1.6  -1.1  -0.7 
+#&gt; period4     -1.6    0.5 -2.2  -1.5  -1.0 
 #&gt; 
 #&gt; MCMC diagnostics
 #&gt;             mcse Rhat n_eff
-#&gt; (Intercept) 0.0  1.0  203  
-#&gt; size        0.0  1.0  250  
-#&gt; period2     0.0  1.0  881  
-#&gt; period3     0.0  1.0  569  
-#&gt; period4     0.0  1.0  430  
+#&gt; (Intercept) 0.0  1.0   692 
+#&gt; size        0.0  1.0   668 
+#&gt; period2     0.0  1.0  1653 
+#&gt; period3     0.0  1.0  1192 
+#&gt; period4     0.0  1.0   867 
 #&gt; 
 #&gt; For each parameter, mcse is Monte Carlo standard error, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence Rhat=1).</div><div class='input'>
 <span class='co'># Only show parameters varying by group</span>
@@ -417,7 +438,7 @@ data, computational issues, etc.).</p>
 #&gt;  family:       binomial [logit]
 #&gt;  formula:      cbind(incidence, size - incidence) ~ size + period + (1 | herd)
 #&gt;  algorithm:    sampling
-#&gt;  sample:       500 (posterior sample size)
+#&gt;  sample:       1000 (posterior sample size)
 #&gt;  priors:       see help('prior_summary')
 #&gt;  observations: 56
 #&gt;  groups:       herd (15)
@@ -425,83 +446,77 @@ data, computational issues, etc.).</p>
 #&gt; Estimates:
 #&gt;                          mean   sd   10%   50%   90%
 #&gt; b[(Intercept) herd:1]   0.6    0.4  0.1   0.6   1.2 
-#&gt; b[(Intercept) herd:2]  -0.4    0.4 -0.9  -0.3   0.2 
+#&gt; b[(Intercept) herd:2]  -0.4    0.4 -0.9  -0.4   0.1 
 #&gt; b[(Intercept) herd:3]   0.4    0.4 -0.1   0.4   0.8 
-#&gt; b[(Intercept) herd:4]   0.0    0.5 -0.5   0.0   0.6 
-#&gt; b[(Intercept) herd:5]  -0.3    0.4 -0.8  -0.2   0.3 
-#&gt; b[(Intercept) herd:6]  -0.5    0.4 -1.1  -0.4   0.0 
-#&gt; b[(Intercept) herd:7]   0.9    0.4  0.4   0.9   1.5 
-#&gt; b[(Intercept) herd:8]   0.5    0.5  0.0   0.5   1.1 
-#&gt; b[(Intercept) herd:9]  -0.3    0.6 -1.1  -0.3   0.5 
-#&gt; b[(Intercept) herd:10] -0.6    0.5 -1.2  -0.6  -0.1 
-#&gt; b[(Intercept) herd:11] -0.1    0.4 -0.6  -0.1   0.3 
+#&gt; b[(Intercept) herd:4]   0.0    0.5 -0.6   0.0   0.6 
+#&gt; b[(Intercept) herd:5]  -0.3    0.4 -0.8  -0.3   0.2 
+#&gt; b[(Intercept) herd:6]  -0.5    0.4 -1.1  -0.5   0.0 
+#&gt; b[(Intercept) herd:7]   0.9    0.4  0.4   0.9   1.4 
+#&gt; b[(Intercept) herd:8]   0.5    0.5 -0.1   0.5   1.1 
+#&gt; b[(Intercept) herd:9]  -0.3    0.5 -1.0  -0.3   0.3 
+#&gt; b[(Intercept) herd:10] -0.7    0.5 -1.3  -0.6  -0.1 
+#&gt; b[(Intercept) herd:11] -0.2    0.4 -0.7  -0.2   0.3 
 #&gt; b[(Intercept) herd:12] -0.1    0.5 -0.8  -0.1   0.6 
 #&gt; b[(Intercept) herd:13] -0.8    0.5 -1.5  -0.8  -0.3 
-#&gt; b[(Intercept) herd:14]  1.0    0.5  0.5   1.0   1.6 
-#&gt; b[(Intercept) herd:15] -0.6    0.5 -1.2  -0.6  -0.1 
+#&gt; b[(Intercept) herd:14]  1.0    0.5  0.4   1.0   1.6 
+#&gt; b[(Intercept) herd:15] -0.6    0.5 -1.3  -0.6  -0.1 
 #&gt; 
 #&gt; MCMC diagnostics
 #&gt;                        mcse Rhat n_eff
-#&gt; b[(Intercept) herd:1]  0.0  1.0  383  
-#&gt; b[(Intercept) herd:2]  0.0  1.0  551  
-#&gt; b[(Intercept) herd:3]  0.0  1.0  410  
-#&gt; b[(Intercept) herd:4]  0.0  1.0  394  
-#&gt; b[(Intercept) herd:5]  0.0  1.0  539  
-#&gt; b[(Intercept) herd:6]  0.0  1.0  544  
-#&gt; b[(Intercept) herd:7]  0.0  1.0  322  
-#&gt; b[(Intercept) herd:8]  0.0  1.0  354  
-#&gt; b[(Intercept) herd:9]  0.0  1.0  474  
-#&gt; b[(Intercept) herd:10] 0.0  1.0  400  
-#&gt; b[(Intercept) herd:11] 0.0  1.0  409  
-#&gt; b[(Intercept) herd:12] 0.0  1.0  570  
-#&gt; b[(Intercept) herd:13] 0.0  1.0  441  
-#&gt; b[(Intercept) herd:14] 0.0  1.0  458  
-#&gt; b[(Intercept) herd:15] 0.0  1.0  609  
+#&gt; b[(Intercept) herd:1]  0.0  1.0  877  
+#&gt; b[(Intercept) herd:2]  0.0  1.0  850  
+#&gt; b[(Intercept) herd:3]  0.0  1.0  569  
+#&gt; b[(Intercept) herd:4]  0.0  1.0  910  
+#&gt; b[(Intercept) herd:5]  0.0  1.0  985  
+#&gt; b[(Intercept) herd:6]  0.0  1.0  804  
+#&gt; b[(Intercept) herd:7]  0.0  1.0  695  
+#&gt; b[(Intercept) herd:8]  0.0  1.0  817  
+#&gt; b[(Intercept) herd:9]  0.0  1.0  853  
+#&gt; b[(Intercept) herd:10] 0.0  1.0  698  
+#&gt; b[(Intercept) herd:11] 0.0  1.0  681  
+#&gt; b[(Intercept) herd:12] 0.0  1.0  957  
+#&gt; b[(Intercept) herd:13] 0.0  1.0  761  
+#&gt; b[(Intercept) herd:14] 0.0  1.0  936  
+#&gt; b[(Intercept) herd:15] 0.0  1.0  951  
 #&gt; 
-#&gt; For each parameter, mcse is Monte Carlo standard error, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence Rhat=1).</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"varying"</span>))</div><div class='output co'>#&gt;                               mean       mcse        sd         10%         50%
-#&gt; b[(Intercept) herd:1]   0.62179124 0.02232820 0.4372469  0.05695058  0.59668830
-#&gt; b[(Intercept) herd:2]  -0.35964139 0.01792239 0.4205940 -0.90738108 -0.33500973
-#&gt; b[(Intercept) herd:3]   0.38889627 0.01759661 0.3563992 -0.08772663  0.38967437
-#&gt; b[(Intercept) herd:4]   0.03759993 0.02413744 0.4793584 -0.53741816  0.02781152
-#&gt; b[(Intercept) herd:5]  -0.25891671 0.01838653 0.4269887 -0.79368970 -0.24284159
-#&gt; b[(Intercept) herd:6]  -0.46760700 0.01785554 0.4163340 -1.05385969 -0.44309550
-#&gt; b[(Intercept) herd:7]   0.93633277 0.02356719 0.4227285  0.36964614  0.94248007
-#&gt; b[(Intercept) herd:8]   0.54044563 0.02505708 0.4714153 -0.03495114  0.53504744
-#&gt; b[(Intercept) herd:9]  -0.29855559 0.02752184 0.5994836 -1.05611929 -0.29690968
-#&gt; b[(Intercept) herd:10] -0.63742302 0.02256440 0.4515056 -1.23389287 -0.61740557
-#&gt; b[(Intercept) herd:11] -0.14289200 0.01883113 0.3808413 -0.63791759 -0.13608123
-#&gt; b[(Intercept) herd:12] -0.06555572 0.02220200 0.5301830 -0.76243882 -0.07447618
-#&gt; b[(Intercept) herd:13] -0.81596071 0.02239910 0.4702956 -1.46290565 -0.75003938
-#&gt; b[(Intercept) herd:14]  1.02070607 0.02133722 0.4567096  0.45202467  0.99353243
-#&gt; b[(Intercept) herd:15] -0.60039245 0.01886562 0.4654002 -1.17121616 -0.55848015
-#&gt;                                90% n_eff      Rhat
-#&gt; b[(Intercept) herd:1]   1.21997676   383 0.9966435
-#&gt; b[(Intercept) herd:2]   0.18312166   551 1.0001733
-#&gt; b[(Intercept) herd:3]   0.83592239   410 1.0015732
-#&gt; b[(Intercept) herd:4]   0.61272869   394 0.9972941
-#&gt; b[(Intercept) herd:5]   0.29051561   539 1.0000865
-#&gt; b[(Intercept) herd:6]   0.02560707   544 1.0002528
-#&gt; b[(Intercept) herd:7]   1.47831133   322 1.0006741
-#&gt; b[(Intercept) herd:8]   1.10466613   354 1.0026239
-#&gt; b[(Intercept) herd:9]   0.49438671   474 0.9984309
-#&gt; b[(Intercept) herd:10] -0.08642849   400 0.9993428
-#&gt; b[(Intercept) herd:11]  0.32962385   409 0.9980906
-#&gt; b[(Intercept) herd:12]  0.62454688   570 0.9974849
-#&gt; b[(Intercept) herd:13] -0.26039584   441 0.9986466
-#&gt; b[(Intercept) herd:14]  1.63921436   458 1.0000451
-#&gt; b[(Intercept) herd:15] -0.05283553   609 0.9973613</div><div class='input'>
+#&gt; For each parameter, mcse is Monte Carlo standard error, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence Rhat=1).</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/as.data.frame.html'>as.data.frame</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span>(<span class='no'>example_model</span>, <span class='kw'>pars</span> <span class='kw'>=</span> <span class='st'>"varying"</span>))</div><div class='output co'>#&gt;                                mean       mcse        sd         10%
+#&gt; b[(Intercept) herd:1]   0.604783025 0.01471882 0.4359469  0.06148133
+#&gt; b[(Intercept) herd:2]  -0.382994268 0.01462581 0.4264550 -0.91458443
+#&gt; b[(Intercept) herd:3]   0.370266800 0.01516369 0.3618129 -0.09723500
+#&gt; b[(Intercept) herd:4]   0.005244565 0.01594533 0.4810427 -0.58123388
+#&gt; b[(Intercept) herd:5]  -0.289911929 0.01328420 0.4168151 -0.82669390
+#&gt; b[(Intercept) herd:6]  -0.527324356 0.01579077 0.4476147 -1.09942183
+#&gt; b[(Intercept) herd:7]   0.902459532 0.01627785 0.4290710  0.37536777
+#&gt; b[(Intercept) herd:8]   0.513016497 0.01767929 0.5053240 -0.06661935
+#&gt; b[(Intercept) herd:9]  -0.295294019 0.01809977 0.5287524 -0.98924943
+#&gt; b[(Intercept) herd:10] -0.667694946 0.01776687 0.4693281 -1.29119377
+#&gt; b[(Intercept) herd:11] -0.179119207 0.01607633 0.4194779 -0.70084966
+#&gt; b[(Intercept) herd:12] -0.094495552 0.01732486 0.5359092 -0.78562181
+#&gt; b[(Intercept) herd:13] -0.846300347 0.01770006 0.4882524 -1.51910581
+#&gt; b[(Intercept) herd:14]  0.999953352 0.01479055 0.4525484  0.43870004
+#&gt; b[(Intercept) herd:15] -0.645605381 0.01594687 0.4916736 -1.30940428
+#&gt;                                 50%         90% n_eff      Rhat
+#&gt; b[(Intercept) herd:1]   0.601862454  1.16625406   877 1.0014746
+#&gt; b[(Intercept) herd:2]  -0.360913301  0.13469303   850 1.0011829
+#&gt; b[(Intercept) herd:3]   0.383693821  0.81024339   569 0.9994316
+#&gt; b[(Intercept) herd:4]  -0.007906003  0.59977894   910 0.9985698
+#&gt; b[(Intercept) herd:5]  -0.269964967  0.23529695   985 1.0036898
+#&gt; b[(Intercept) herd:6]  -0.498233143  0.01616496   804 0.9992756
+#&gt; b[(Intercept) herd:7]   0.881424738  1.43156904   695 0.9991341
+#&gt; b[(Intercept) herd:8]   0.507587177  1.14087504   817 0.9985972
+#&gt; b[(Intercept) herd:9]  -0.256824944  0.32911594   853 1.0016025
+#&gt; b[(Intercept) herd:10] -0.641624524 -0.08721296   698 1.0047409
+#&gt; b[(Intercept) herd:11] -0.164954759  0.32468865   681 1.0017397
+#&gt; b[(Intercept) herd:12] -0.069369761  0.56870495   957 1.0010215
+#&gt; b[(Intercept) herd:13] -0.791944334 -0.27120170   761 1.0024421
+#&gt; b[(Intercept) herd:14]  0.981693175  1.59229011   936 1.0008012
+#&gt; b[(Intercept) herd:15] -0.606239187 -0.05207457   951 0.9986671</div><div class='input'>
 </div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#details">Details</a></li>
-      <li><a href="#see-also">See also</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -512,7 +527,7 @@ data, computational issues, etc.).</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

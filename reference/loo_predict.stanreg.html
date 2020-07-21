@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -46,7 +50,6 @@
 <meta property="og:description" content="These functions are wrappers around the E_loo function
 (loo package) that provide compatibility for rstanarm models." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -64,7 +67,7 @@
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -78,17 +81,26 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -104,6 +116,9 @@
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -117,6 +132,9 @@
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -157,27 +175,36 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Compute weighted expectations using LOO</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/loo-prediction.R'><code>R/loo-prediction.R</code></a></small>
     <div class="hidden name"><code>loo_predict.stanreg.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>These functions are wrappers around the <code><a href='https://rdrr.io/pkg/loo/man/E_loo.html'>E_loo</a></code> function
+    <p>These functions are wrappers around the <code><a href='https://mc-stan.org/loo/reference/E_loo.html'>E_loo</a></code> function
 (<span class="pkg">loo</span> package) that provide compatibility for <span class="pkg">rstanarm</span> models.</p>
     </div>
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
-<span class='fu'>loo_predict</span>(<span class='no'>object</span>, <span class='kw'>type</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"mean"</span>, <span class='st'>"var"</span>,
-  <span class='st'>"quantile"</span>), <span class='kw'>probs</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='no'>...</span>, <span class='kw'>psis_object</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
+<span class='fu'>loo_predict</span>(
+  <span class='no'>object</span>,
+  <span class='kw'>type</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"mean"</span>, <span class='st'>"var"</span>, <span class='st'>"quantile"</span>),
+  <span class='kw'>probs</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
+  <span class='no'>...</span>,
+  <span class='kw'>psis_object</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
+)
 
 <span class='co'># S3 method for stanreg</span>
-<span class='fu'>loo_linpred</span>(<span class='no'>object</span>, <span class='kw'>type</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"mean"</span>, <span class='st'>"var"</span>,
-  <span class='st'>"quantile"</span>), <span class='kw'>probs</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>,
-  <span class='kw'>psis_object</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
+<span class='fu'>loo_linpred</span>(
+  <span class='no'>object</span>,
+  <span class='kw'>type</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"mean"</span>, <span class='st'>"var"</span>, <span class='st'>"quantile"</span>),
+  <span class='kw'>probs</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
+  <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+  <span class='no'>...</span>,
+  <span class='kw'>psis_object</span> <span class='kw'>=</span> <span class='kw'>NULL</span>
+)
 
 <span class='co'># S3 method for stanreg</span>
-<span class='fu'>loo_predictive_interval</span>(<span class='no'>object</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.9</span>, <span class='no'>...</span>,
-  <span class='kw'>psis_object</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>
+<span class='fu'>loo_predictive_interval</span>(<span class='no'>object</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.9</span>, <span class='no'>...</span>, <span class='kw'>psis_object</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -202,7 +229,7 @@
     </tr>
     <tr>
       <th>psis_object</th>
-      <td><p>An object returned by <code><a href='https://rdrr.io/pkg/loo/man/psis.html'>psis</a></code>. If missing 
+      <td><p>An object returned by <code><a href='https://mc-stan.org/loo/reference/psis.html'>psis</a></code>. If missing 
 then <code>psis</code> will be run internally, which may be time consuming
 for models fit to very large datasets.</p></td>
     </tr>
@@ -229,7 +256,7 @@ default is <code>prob=0.9</code> (\(90\)% intervals).</p></td>
   = p)</code> is equivalent to <code>loo_predict(..., type = "quantile", probs =
   c(a, 1-a))</code> with <code>a = (1 - p)/2</code>, except it transposes the result and
   adds informative column names.</p>  
-<p>See <code><a href='https://rdrr.io/pkg/loo/man/E_loo.html'>E_loo</a></code> and <code><a href='https://rdrr.io/pkg/loo/man/pareto-k-diagnostic.html'>pareto-k-diagnostic</a></code> for
+<p>See <code><a href='https://mc-stan.org/loo/reference/E_loo.html'>E_loo</a></code> and <code><a href='https://mc-stan.org/loo/reference/pareto-k-diagnostic.html'>pareto-k-diagnostic</a></code> for
   details on the <code>pareto_k</code> diagnostic.</p>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
@@ -250,31 +277,32 @@ default is <code>prob=0.9</code> (\(90\)% intervals).</p></td>
   <a href='https://github.com/jgabry/bayes-vis-paper'>code on GitHub</a>)</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='co'># \dontrun{</span>
 <span class='kw'>if</span> (!<span class='fu'><a href='https://rdrr.io/r/base/exists.html'>exists</a></span>(<span class='st'>"example_model"</span>)) <span class='fu'><a href='https://rdrr.io/r/utils/example.html'>example</a></span>(<span class='no'>example_model</span>)
 
 <span class='co'># optionally, log-weights can be pre-computed and reused</span>
-<span class='no'>psis_result</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>loo</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/loo/man/psis.html'>psis</a></span>(<span class='kw'>log_ratios</span> <span class='kw'>=</span> -<span class='fu'><a href='log_lik.stanreg.html'>log_lik</a></span>(<span class='no'>example_model</span>))
-
-<span class='no'>loo_probs</span> <span class='kw'>&lt;-</span> <span class='fu'>loo_linpred</span>(<span class='no'>example_model</span>, <span class='kw'>type</span> <span class='kw'>=</span> <span class='st'>"mean"</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>psis_object</span> <span class='kw'>=</span> <span class='no'>psis_result</span>)
-<span class='fu'><a href='https://rdrr.io/r/utils/str.html'>str</a></span>(<span class='no'>loo_probs</span>)
-
+<span class='no'>psis_result</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>loo</span><span class='kw ns'>::</span><span class='fu'><a href='https://mc-stan.org/loo/reference/psis.html'>psis</a></span>(<span class='kw'>log_ratios</span> <span class='kw'>=</span> -<span class='fu'><a href='log_lik.stanreg.html'>log_lik</a></span>(<span class='no'>example_model</span>))</div><div class='output co'>#&gt; <span class='warning'>Warning: Relative effective sample sizes ('r_eff' argument) not specified. PSIS n_eff will not be adjusted based on MCMC n_eff.</span></div><div class='output co'>#&gt; <span class='warning'>Warning: Some Pareto k diagnostic values are too high. See help('pareto-k-diagnostic') for details.</span></div><div class='input'>
+<span class='no'>loo_probs</span> <span class='kw'>&lt;-</span> <span class='fu'>loo_linpred</span>(<span class='no'>example_model</span>, <span class='kw'>type</span> <span class='kw'>=</span> <span class='st'>"mean"</span>, <span class='kw'>transform</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>psis_object</span> <span class='kw'>=</span> <span class='no'>psis_result</span>)</div><div class='output co'>#&gt; <span class='message'>Instead of posterior_linpred(..., transform=TRUE) please call posterior_epred(), which provides equivalent functionality.</span></div><div class='input'><span class='fu'><a href='https://rdrr.io/r/utils/str.html'>str</a></span>(<span class='no'>loo_probs</span>)</div><div class='output co'>#&gt; List of 2
+#&gt;  $ value   : num [1:56] 0.4209 0.1157 0.0703 0.1037 0.1688 ...
+#&gt;  $ pareto_k: num [1:56] 0.6827 0.2988 0.5858 0.0642 0.4565 ...</div><div class='input'>
 <span class='no'>loo_pred_var</span> <span class='kw'>&lt;-</span> <span class='fu'>loo_predict</span>(<span class='no'>example_model</span>, <span class='kw'>type</span> <span class='kw'>=</span> <span class='st'>"var"</span>, <span class='kw'>psis_object</span> <span class='kw'>=</span> <span class='no'>psis_result</span>)
-<span class='fu'><a href='https://rdrr.io/r/utils/str.html'>str</a></span>(<span class='no'>loo_pred_var</span>)
-
+<span class='fu'><a href='https://rdrr.io/r/utils/str.html'>str</a></span>(<span class='no'>loo_pred_var</span>)</div><div class='output co'>#&gt; List of 2
+#&gt;  $ value   : num [1:56] 0.064117 0.002284 0.004407 0.000646 0.007451 ...
+#&gt;  $ pareto_k: num [1:56] 0.62 0.235 0.664 0.278 0.373 ...</div><div class='input'>
 <span class='no'>loo_pred_ints</span> <span class='kw'>&lt;-</span> <span class='fu'>loo_predictive_interval</span>(<span class='no'>example_model</span>, <span class='kw'>prob</span> <span class='kw'>=</span> <span class='fl'>0.8</span>, <span class='kw'>psis_object</span> <span class='kw'>=</span> <span class='no'>psis_result</span>)
-<span class='fu'><a href='https://rdrr.io/r/utils/str.html'>str</a></span>(<span class='no'>loo_pred_ints</span>)
-}</div></pre>
-  </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
-      <li><a href="#references">References</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
+<span class='fu'><a href='https://rdrr.io/r/utils/str.html'>str</a></span>(<span class='no'>loo_pred_ints</span>)</div><div class='output co'>#&gt; List of 2
+#&gt;  $ value   : num [1:56, 1:2] 3 0 0 0 1 0 0 2 0 0 ...
+#&gt;   ..- attr(*, "dimnames")=List of 2
+#&gt;   .. ..$ : NULL
+#&gt;   .. ..$ : chr [1:2] "10%" "90%"
+#&gt;  $ pareto_k: num [1:56] 0.594 0.372 0.683 0.223 0.493 ...</div><div class='input'># }
 
+</div></pre>
+  </div>
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -285,7 +313,7 @@ default is <code>prob=0.9</code> (\(90\)% intervals).</p></td>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>

@@ -17,23 +17,27 @@
 <link rel="apple-touch-icon" type="image/png" sizes="60x60" href="../apple-touch-icon-60x60.png" />
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.3.7/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -46,7 +50,6 @@
 <meta property="og:description" content="The ShinyStan interface provides visual and numerical summaries of model
 parameters and convergence diagnostics." />
 <meta property="og:image" content="https://mc-stan.org/rstanarm/logo.png" />
-<meta name="twitter:card" content="summary" />
 
 
 
@@ -64,7 +67,7 @@ parameters and convergence diagnostics." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -78,17 +81,26 @@ parameters and convergence diagnostics." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.19.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
+  <a href="../index.html">
+    <span class="fa fa-home fa-lg"></span>
+     
+  </a>
+</li>
+<li>
   <a href="../articles/index.html">Vignettes</a>
 </li>
 <li>
   <a href="../reference/index.html">Functions</a>
+</li>
+<li>
+  <a href="../news/index.html">News</a>
 </li>
 <li>
   <a href="../dev-notes/index.html">Develop</a>
@@ -104,6 +116,9 @@ parameters and convergence diagnostics." />
       <a href="https://mc-stan.org/rstan">rstan</a>
     </li>
     <li>
+      <a href="https://mc-stan.org/cmdstanr">cmdstanr</a>
+    </li>
+    <li>
       <a href="https://mc-stan.org/bayesplot">bayesplot</a>
     </li>
     <li>
@@ -117,6 +132,9 @@ parameters and convergence diagnostics." />
     </li>
     <li>
       <a href="https://mc-stan.org/rstantools">rstantools</a>
+    </li>
+    <li>
+      <a href="https://mc-stan.org/posterior">posterior</a>
     </li>
   </ul>
 </li>
@@ -157,7 +175,7 @@ parameters and convergence diagnostics." />
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Using the ShinyStan GUI with rstanarm models</h1>
-    
+    <small class="dont-index">Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/R/launch_shinystan.R'><code>R/launch_shinystan.R</code></a></small>
     <div class="hidden name"><code>launch_shinystan.stanreg.Rd</code></div>
     </div>
 
@@ -167,9 +185,15 @@ parameters and convergence diagnostics.</p>
     </div>
 
     <pre class="usage"><span class='co'># S3 method for stanreg</span>
-<span class='fu'>launch_shinystan</span>(<span class='no'>object</span>, <span class='kw'>ppd</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>1234</span>,
-  <span class='kw'>model_name</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>note</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
-  <span class='kw'>rstudio</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"shinystan.rstudio"</span>), <span class='no'>...</span>)</pre>
+<span class='fu'>launch_shinystan</span>(
+  <span class='no'>object</span>,
+  <span class='kw'>ppd</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+  <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>1234</span>,
+  <span class='kw'>model_name</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>note</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>rstudio</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/options.html'>getOption</a></span>(<span class='st'>"shinystan.rstudio"</span>),
+  <span class='no'>...</span>
+)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -190,7 +214,7 @@ predictive checks are available when ShinyStan is launched.</p></td>
     </tr>
     <tr>
       <th>seed</th>
-      <td><p>Passed to <code><a href='pp_check.stanreg.html'>pp_check</a></code> (<span class="pkg">rstanarm</span>) if 
+      <td><p>Passed to <a href='pp_check.stanreg.html'>pp_check</a> if 
 <code>ppd</code> is <code>TRUE</code>.</p></td>
     </tr>
     <tr>
@@ -228,7 +252,7 @@ TRUE)</a></code>.</p></td>
 
 <p>For some <span class="pkg">rstanarm</span> models ShinyStan may take a very long time to launch.
 If this is the case with one of your models you may be able to speed up
-<code>launch_shinystan</code> in one of several ways:</p><dl class='dl-horizontal'>
+<code>launch_shinystan</code> in one of several ways:</p><dl'>
   <dt>Prevent ShinyStan from preparing graphical posterior predictive
   checks:</dt><dd><p>When used with a <code><a href='stanreg-objects.html'>stanreg</a></code> object 
   (<span class="pkg">rstanarm</span> model object) ShinyStan will draw from the posterior 
@@ -270,7 +294,7 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 <a href='https://www.tqmp.org/RegularArticles/vol14-2/p099/p099.pdf'>https://www.tqmp.org/RegularArticles/vol14-2/p099/p099.pdf</a></p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
+    <pre class="examples"><div class='input'><span class='co'># \dontrun{</span>
 <span class='kw'>if</span> (!<span class='fu'><a href='https://rdrr.io/r/base/exists.html'>exists</a></span>(<span class='st'>"example_model"</span>)) <span class='fu'><a href='https://rdrr.io/r/utils/example.html'>example</a></span>(<span class='no'>example_model</span>)
 
 <span class='co'># Launch the ShinyStan app without saving the resulting shinystan object</span>
@@ -280,26 +304,21 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 <span class='kw'>if</span> (<span class='fu'><a href='https://rdrr.io/r/base/interactive.html'>interactive</a></span>()) <span class='no'>sso</span> <span class='kw'>&lt;-</span> <span class='fu'>launch_shinystan</span>(<span class='no'>example_model</span>)
 
 <span class='co'># First create shinystan object then call launch_shinystan</span>
-<span class='no'>sso</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>shinystan</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/shinystan/man/as.shinystan.html'>as.shinystan</a></span>(<span class='no'>example_model</span>)
-<span class='kw'>if</span> (<span class='fu'><a href='https://rdrr.io/r/base/interactive.html'>interactive</a></span>()) <span class='fu'>launch_shinystan</span>(<span class='no'>sso</span>)
+<span class='no'>sso</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>shinystan</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/shinystan/man/as.shinystan.html'>as.shinystan</a></span>(<span class='no'>example_model</span>)</div><div class='output co'>#&gt; <span class='message'></span>
+#&gt; <span class='message'>Hang on... preparing graphical posterior predictive checks for rstanarm model.</span>
+#&gt; <span class='message'>See help('shinystan', 'rstanarm') for how to disable this feature.</span></div><div class='input'><span class='kw'>if</span> (<span class='fu'><a href='https://rdrr.io/r/base/interactive.html'>interactive</a></span>()) <span class='fu'>launch_shinystan</span>(<span class='no'>sso</span>)
 
 <span class='co'># Prevent ShinyStan from preparing graphical posterior predictive checks that</span>
 <span class='co'># can be time consuming. example_model is small enough that it won't matter</span>
 <span class='co'># much here but in general this can help speed up launch_shinystan</span>
 <span class='no'>sso</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>shinystan</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/shinystan/man/as.shinystan.html'>as.shinystan</a></span>(<span class='no'>example_model</span>, <span class='kw'>ppd</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 <span class='kw'>if</span> (<span class='fu'><a href='https://rdrr.io/r/base/interactive.html'>interactive</a></span>()) <span class='fu'>launch_shinystan</span>(<span class='no'>sso</span>)
-}</div></pre>
+<span class='co'># }</span></div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#details">Details</a></li>
-      <li><a href="#faster-launch-times">Faster launch times</a></li>
-      <li><a href="#references">References</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -310,7 +329,7 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>
