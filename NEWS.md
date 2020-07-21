@@ -1,27 +1,3 @@
-# rstanarm 2.21.1
-
-### Bug fixes
-
-* Fixed error in `kfold()` for `stan_gamm4()` models that used `random` argument (#435)
-* Fixed error in `posterior_predict()` and `posterior_linpred()` when using `newdata` with `family = mgcv::betar` (#406, #407)
-* `singular.ok` argument now works as intended in `stan_lm()`(#402)
-* Fix a potential error when `data` is a `data.table` object (#434, @danschrage)
-
-### New features and improvements
-
-* Compatibility with rstan v2.21.1
-
-* Some changes to priors, as described in detail in the vignette *Prior Distributions for rstanarm Models* and 
-  book *Regression and Other Stories*:
-  - `autoscale` argument now defaults to `FALSE` except when used in default priors (#432)
-  - Slight changes to calculating automatic prior scale adjustments for default priors. (#432)
-  
-* New method `posterior_epred()`, which is equivalent to (and may eventually entirely replace) 
-  setting argument `transform=TRUE` with `posterior_linpred()`. (#432)
-
-* Added convenience functions `logit()` and `invlogit()` that are just wrappers for `qlogis()` and `plogis()`. (#432) 
-
-
 # rstanarm 2.19.3
 
 ### Bug fixes
