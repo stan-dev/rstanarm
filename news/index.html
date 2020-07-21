@@ -176,13 +176,57 @@
       <small>Source: <a href='https://github.com/stan-dev/rstanarm/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
+    <div id="rstanarm-2211" class="section level1">
+<h1 class="page-header" data-toc-text="2.21.1">
+<a href="#rstanarm-2211" class="anchor"></a>rstanarm 2.21.1<small> 2020-07-20 </small>
+</h1>
+<ul>
+<li>Compatible with rstan v2.21.1</li>
+<li>Consistent with new book <a href="https://statmodeling.stat.columbia.edu/2020/07/08/regression-and-other-stories-is-available/">Regression and Other Stories</a>
+</li>
+</ul>
+<div id="backwards-incompatible-changes" class="section level3">
+<h3 class="hasAnchor">
+<a href="#backwards-incompatible-changes" class="anchor"></a>Backwards incompatible changes</h3>
+<ul>
+<li><p><code><a href="../reference/stan_jm.html">stan_jm()</a></code> is not available for 32bit Windows</p></li>
+<li>
+<p>Some improvements to prior distributions, as described in detail in the vignette <em>Prior Distributions for rstanarm Models</em> and book <em>Regression and Other Stories</em>. These changes shouldn’t cause any existing code to error, but default priors have changed in some cases:</p>
+<ul>
+<li>default prior on intercept is still Gaussian but the way the location and scale are determined has been updated (<a href='https://github.com/stan-dev/rstanarm/issues/432'>#432</a>)</li>
+<li>
+<code>autoscale</code> argument to functions like <code><a href="../reference/priors.html">normal()</a></code>, <code><a href="../reference/priors.html">student_t()</a></code>, etc., now defaults to <code>FALSE</code> except when used by default priors (default priors still do autoscalinng). This makes it simpler to specify non-default priors. (<a href='https://github.com/stan-dev/rstanarm/issues/432'>#432</a>)</li>
+</ul>
+</li>
+</ul>
+</div>
+<div id="bug-fixes" class="section level3">
+<h3 class="hasAnchor">
+<a href="#bug-fixes" class="anchor"></a>Bug fixes</h3>
+<ul>
+<li>Fixed error in <code><a href="../reference/kfold.stanreg.html">kfold()</a></code> for <code><a href="../reference/stan_gamm4.html">stan_gamm4()</a></code> models that used <code>random</code> argument (<a href='https://github.com/stan-dev/rstanarm/issues/435'>#435</a>)</li>
+<li>Fixed error in <code><a href="../reference/posterior_predict.stanreg.html">posterior_predict()</a></code> and <code><a href="../reference/posterior_linpred.stanreg.html">posterior_linpred()</a></code> when using <code>newdata</code> with <code>family = mgcv::betar</code> (<a href='https://github.com/stan-dev/rstanarm/issues/406'>#406</a>, <a href='https://github.com/stan-dev/rstanarm/issues/407'>#407</a>)</li>
+<li>
+<code>singular.ok</code> now rules out singular design matrices in <code><a href="../reference/stan_lm.html">stan_lm()</a></code> (<a href='https://github.com/stan-dev/rstanarm/issues/402'>#402</a>)</li>
+<li>Fix a potential error when <code>data</code> is a <code>data.table</code> object (<a href='https://github.com/stan-dev/rstanarm/issues/434'>#434</a>, <a href='https://github.com/danschrage'>@danschrage</a>)</li>
+</ul>
+</div>
+<div id="new-functions" class="section level3">
+<h3 class="hasAnchor">
+<a href="#new-functions" class="anchor"></a>New functions</h3>
+<ul>
+<li><p>New method <code><a href="../reference/posterior_linpred.stanreg.html">posterior_epred()</a></code> returns the posterior distribution of the conditional expectation, which is equivalent to (and may eventually entirely replace) setting argument <code>transform=TRUE</code> with <code><a href="../reference/posterior_linpred.stanreg.html">posterior_linpred()</a></code>. (<a href='https://github.com/stan-dev/rstanarm/issues/432'>#432</a>)</p></li>
+<li><p>Added convenience functions <code><a href="../reference/logit.html">logit()</a></code> and <code><a href="../reference/logit.html">invlogit()</a></code> that are just wrappers for <code><a href="https://rdrr.io/r/stats/Logistic.html">qlogis()</a></code> and <code><a href="https://rdrr.io/r/stats/Logistic.html">plogis()</a></code>. These were previously provided by the <code>arm</code> package. (<a href='https://github.com/stan-dev/rstanarm/issues/432'>#432</a>)</p></li>
+</ul>
+</div>
+</div>
     <div id="rstanarm-2193" class="section level1">
 <h1 class="page-header" data-toc-text="2.19.3">
 <a href="#rstanarm-2193" class="anchor"></a>rstanarm 2.19.3<small> 2020-02-11 </small>
 </h1>
-<div id="bug-fixes" class="section level3">
+<div id="bug-fixes-1" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-1" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>Allow the vignettes to knit on platforms that do not support version 2 of RMarkdown</li>
 </ul>
@@ -192,9 +236,9 @@
 <h1 class="page-header" data-toc-text="2.19.2">
 <a href="#rstanarm-2192" class="anchor"></a>rstanarm 2.19.2<small> 2019-10-03 </small>
 </h1>
-<div id="bug-fixes-1" class="section level3">
+<div id="bug-fixes-2" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-1" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-2" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p>src/Makevars{.win} now uses a more robust way to find StanHeaders</p></li>
 <li><p>Fixed bug where <code><a href="../reference/stanreg-methods.html">ranef()</a></code> and <code><a href="https://rdrr.io/r/stats/coef.html">coef()</a></code> methods for <code>glmer</code>-style models printed the wrong output for certain combinations of varying intercepts and slopes.</p></li>
@@ -220,9 +264,9 @@
 <h1 class="page-header" data-toc-text="2.18.1">
 <a href="#rstanarm-2181" class="anchor"></a>rstanarm 2.18.1<small> 2018-10-21 </small>
 </h1>
-<div id="bug-fixes-2" class="section level3">
+<div id="bug-fixes-3" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-2" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-3" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>
 <code><a href="../reference/stan_clogit.html">stan_clogit()</a></code> now works even when there are no common predictors</li>
@@ -247,9 +291,9 @@
 <h1 class="page-header" data-toc-text="2.17.4">
 <a href="#rstanarm-2174" class="anchor"></a>rstanarm 2.17.4<small> 2018-04-13 </small>
 </h1>
-<div id="bug-fixes-3" class="section level3">
+<div id="bug-fixes-4" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-3" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-4" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>
 <code><a href="../reference/stan_jm.html">stan_jm()</a></code> and <code><a href="../reference/stan_mvmer.html">stan_mvmer()</a></code> now correctly include the intercept in the longitudinal submodel</li>
@@ -278,9 +322,9 @@
 <a href="#rstanarm-2172" class="anchor"></a>rstanarm 2.17.2<small> 2017-12-21 </small>
 </h1>
 <p>Lots of good stuff in this release.</p>
-<div id="bug-fixes-4" class="section level3">
+<div id="bug-fixes-5" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-4" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-5" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>
 <code><a href="../reference/stan_polr.html">stan_polr()</a></code> and <code><a href="../reference/stan_lm.html">stan_lm()</a></code> handle the <code>K = 1</code> case better</li>
@@ -314,9 +358,9 @@
 <h1 class="page-header" data-toc-text="2.15.3">
 <a href="#rstanarm-2153" class="anchor"></a>rstanarm 2.15.3<small> 2017-04-29 </small>
 </h1>
-<div id="bug-fixes-5" class="section level3">
+<div id="bug-fixes-6" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-5" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-6" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p>Fix to <code><a href="../reference/stan_glmer.html">stan_glmer()</a></code> Bernoulli models with multiple group-specific intercept terms that could result in draws from the wrong posterior distribution</p></li>
 <li><p>Fix bug with contrasts in <code><a href="../reference/stan_lm.html">stan_aov()</a></code> (thanks to Henrik Singmann)</p></li>
@@ -334,9 +378,9 @@
 <h1 class="page-header" data-toc-text="2.14.2">
 <a href="#rstanrm-2142" class="anchor"></a>rstanrm 2.14.2<small> Unreleased </small>
 </h1>
-<div id="bug-fixes-6" class="section level3">
+<div id="bug-fixes-7" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-6" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-7" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p>Fix for intercept with identity or square root link functions for the auxiliary parameter of a beta regression</p></li>
 <li><p>Fix for special case where only the intercepts vary by group and a non-default prior is specified for their standard deviation</p></li>
@@ -358,9 +402,9 @@
 <h1 class="page-header" data-toc-text="2.14.1">
 <a href="#rstanarm-2141" class="anchor"></a>rstanarm 2.14.1<small> 2017-01-17 </small>
 </h1>
-<div id="bug-fixes-7" class="section level3">
+<div id="bug-fixes-8" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-7" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-8" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p><code><a href="../reference/stanreg-methods.html">VarCorr()</a></code> could return duplicates in cases where a <code>stan_{g}lmer</code> model used grouping factor level names with spaces</p></li>
 <li><p><code>The pairs()</code> function now works with group-specific parameters</p></li>
@@ -393,9 +437,9 @@
 <h1 class="page-header" data-toc-text="2.13.1">
 <a href="#rstanarm-2131" class="anchor"></a>rstanarm 2.13.1<small> 2016-11-20 </small>
 </h1>
-<div id="bug-fixes-8" class="section level3">
+<div id="bug-fixes-9" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-8" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-9" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>Fix bug in <code>reloo()</code> if data was not specified</li>
 <li>Fix bug in <code><a href="../reference/pp_validate.html">pp_validate()</a></code> that was only introduced on GitHub</li>
@@ -417,9 +461,9 @@
 <h1 class="page-header" data-toc-text="2.12.1">
 <a href="#rstanarm-2121" class="anchor"></a>rstanarm 2.12.1<small> 2016-09-13 </small>
 </h1>
-<div id="bug-fixes-9" class="section level3">
+<div id="bug-fixes-10" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-9" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-10" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p>Fix for bad bug in <code><a href="../reference/posterior_predict.stanreg.html">posterior_predict()</a></code> when factor labels have spaces in lme4-style models</p></li>
 <li><p>Fix when weights are used in Poisson models</p></li>
@@ -438,9 +482,9 @@
 <h1 class="page-header" data-toc-text="2.11.1">
 <a href="#rstanarm-2111" class="anchor"></a>rstanarm 2.11.1<small> 2016-07-29 </small>
 </h1>
-<div id="bug-fixes-10" class="section level3">
+<div id="bug-fixes-11" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-10" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-11" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>Requiring manually specifying offsets when model has an offset and newdata is not NULL</li>
 </ul>
@@ -458,9 +502,9 @@
 <h1 class="page-header" data-toc-text="2.10.1">
 <a href="#rstanarm-2101" class="anchor"></a>rstanarm 2.10.1<small> 2016-06-25 </small>
 </h1>
-<div id="bug-fixes-11" class="section level3">
+<div id="bug-fixes-12" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-11" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-12" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li>Works with devtools now</li>
 </ul>
@@ -478,9 +522,9 @@
 <h3 class="hasAnchor">
 <a href="#rstanarm-290-4" class="anchor"></a>rstanarm 2.9.0-4</h3>
 </div>
-<div id="bug-fixes-12" class="section level3">
+<div id="bug-fixes-13" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-12" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-13" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p><code><a href="../reference/posterior_predict.stanreg.html">posterior_predict()</a></code> with newdata now works correctly for ordinal models</p></li>
 <li><p><code><a href="../reference/stan_lm.html">stan_lm()</a></code> now works when intercept is omitted</p></li>
@@ -503,9 +547,9 @@
 <h1 class="page-header" data-toc-text="2.9.0-3">
 <a href="#rstanarm-290-3" class="anchor"></a>rstanarm 2.9.0-3<small> 2016-02-13 </small>
 </h1>
-<div id="bug-fixes-13" class="section level3">
+<div id="bug-fixes-14" class="section level3">
 <h3 class="hasAnchor">
-<a href="#bug-fixes-13" class="anchor"></a>Bug fixes</h3>
+<a href="#bug-fixes-14" class="anchor"></a>Bug fixes</h3>
 <ul>
 <li><p>Fix problem with models that had group-specific coefficients, which were mislabled. Although the parameters were estimated correctly, users of previous versions of rstanarm should run such models again to obtain correct summaries and posterior predictions. Thanks to someone named Luke for pointing this problem out on stan-users.</p></li>
 <li><p>Vignettes now view correctly on the CRAN webiste thanks to Yihui Xie</p></li>
