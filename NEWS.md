@@ -1,3 +1,9 @@
+# rstanarm 2.19.3
+
+### Bug fixes
+
+* Allow the vignettes to knit on platforms that do not support version 2 of RMarkdown
+
 # rstanarm 2.19.2
 
 ### Bug fixes

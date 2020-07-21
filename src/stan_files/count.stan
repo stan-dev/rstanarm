@@ -12,7 +12,7 @@ data {
   int<lower=0> y[N];  // count outcome
   // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
 #include /data/data_glm.stan
-  // declares has_weights, weights, has_offset, offset
+  // declares has_weights, weights, has_offset, offset_
 #include /data/weights_offset.stan
   int<lower=6,upper=7> family; // 6 poisson, 7 neg-binom, (8 poisson with gamma noise at some point?)
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
@@ -26,7 +26,9 @@ transformed data{
   real poisson_max = pow(2.0, 30.0);
   int<lower=1> V[special_case ? t : 0, N] = make_V(N, special_case ? t : 0, v);
   
-  int can_do_countlogglm = link == 1 && prior_PD == 0 && dense_X == 1 && has_weights == 0 && t == 0;
+  int can_do_countlogglm = K != 0 &&  // remove K!=0 after rstan includes this Stan bugfix: https://github.com/stan-dev/math/issues/1398
+                           link == 1 && prior_PD == 0 && 
+                           dense_X == 1 && has_weights == 0 && t == 0; 
   matrix[can_do_countlogglm ? N : 0, can_do_countlogglm ? K + K_smooth : 0] XS;
   
   // defines hs, len_z_T, len_var_group, delta, pos
@@ -83,13 +85,13 @@ model {
     vector[K + K_smooth] coeff = K_smooth > 0 ? append_row(beta, beta_smooth) : beta;
     if (family != 7) {
       if (has_offset) {
-        target += poisson_log_glm_lpmf(y | XS, has_intercept ? offset + gamma[1] : offset, coeff);
+        target += poisson_log_glm_lpmf(y | XS, has_intercept ? offset_ + gamma[1] : offset_, coeff);
       } else {
         target += poisson_log_glm_lpmf(y | XS, has_intercept ? gamma[1] : 0.0, coeff);
       }
     } else {
       if (has_offset) {
-        target += neg_binomial_2_log_glm_lpmf(y | XS, has_intercept ? offset + gamma[1] : offset, coeff, aux);
+        target += neg_binomial_2_log_glm_lpmf(y | XS, has_intercept ? offset_ + gamma[1] : offset_, coeff, aux);
       } else {
         target += neg_binomial_2_log_glm_lpmf(y | XS, has_intercept ? gamma[1] : 0.0, coeff, aux);
       }

@@ -17,7 +17,7 @@
 #
 #' Graphical posterior predictive checks
 #' 
-#' Interface to the \link[bayesplot]{PPC} (posterior predictive checking) module
+#' Interface to the \link[bayesplot:PPC-overview]{PPC} (posterior predictive checking) module
 #' in the \pkg{\link{bayesplot}} package, providing various plots comparing the 
 #' observed outcome variable \eqn{y} to simulated datasets \eqn{y^{rep}}{yrep} 
 #' from the posterior predictive distribution. The \code{pp_check} method for 
@@ -37,8 +37,8 @@
 #' @template reference-bayesvis
 #' @template args-stanreg-object
 #' @param plotfun A character string naming the \pkg{bayesplot} 
-#'   \link[bayesplot]{PPC} function to use. The default is to call
-#'   \code{\link[bayesplot]{ppc_dens_overlay}}. \code{plotfun} can be specified
+#'   \link[bayesplot:PPC-overview]{PPC} function to use. The default is to call
+#'   \code{\link[bayesplot:PPC-distributions]{ppc_dens_overlay}}. \code{plotfun} can be specified
 #'   either as the full name of a \pkg{bayesplot} plotting function (e.g.
 #'   \code{"ppc_hist"}) or can be abbreviated to the part of the name following
 #'   the \code{"ppc_"} prefix (e.g. \code{"hist"}). To get the names of all
@@ -66,7 +66,7 @@
 #' 
 #' @note For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the 
 #'   proportion of 'successes' rather than the raw count. Also for binomial 
-#'   models see \code{\link[bayesplot]{ppc_error_binned}} for binned residual
+#'   models see \code{\link[bayesplot:PPC-errors]{ppc_error_binned}} for binned residual
 #'   plots.
 #' 
 #' @seealso 
@@ -78,7 +78,7 @@
 #'     the documentation for all the available plotting functions.
 #'   \item \code{\link{posterior_predict}} for drawing from the posterior 
 #'     predictive distribution. 
-#'   \item \code{\link[bayesplot]{color_scheme_set}} to change the color scheme 
+#'   \item \code{\link[bayesplot:bayesplot-colors]{color_scheme_set}} to change the color scheme 
 #'     of the plots.
 #' }
 #' 
@@ -207,7 +207,7 @@ is_binomial_ppc <- function(object, ...) {
            ...) {
     y <- get_y(object, ...)
     if (binned_resid_plot) {
-      yrep <- posterior_linpred(object, transform = TRUE, ...)
+      yrep <- posterior_epred(object, ...)
       yrep <- yrep[1:nreps, , drop = FALSE]
     } else {
       yrep <- posterior_predict(object, draws = nreps, seed = seed, ...)

@@ -2,12 +2,10 @@
 title: "Estimating Joint Models for Longitudinal and Time-to-Event Data with rstanarm"
 author: "Sam Brilleman"
 date: "`r Sys.Date()`"
-output: 
+output:
   html_vignette:
     toc: true
     number_sections: false
-params:
-  EVAL: !r TRUE
 ---
 
 <!--
@@ -37,13 +35,13 @@ library(rstanarm)
 
 # Preamble
 
-This vignette provides an introduction to the `stan_jm` modelling function in the __rstanarm__ package. The `stan_jm` function allows the user to estimate a shared parameter joint model for longitudinal and time-to-event data under a Bayesian framework. 
+This vignette provides an introduction to the `stan_jm` modelling function in the __rstanarm__ package. The `stan_jm` function allows the user to estimate a shared parameter joint model for longitudinal and time-to-event data under a Bayesian framework.
 
 # Introduction
 
 Joint modelling can be broadly defined as the simultaneous estimation of two or more statistical models which traditionally would have been separately estimated. When we refer to a shared parameter joint model for longitudinal and time-to-event data, we generally mean the joint estimation of: 1) a longitudinal mixed effects model which analyses patterns of change in an outcome variable that has been measured repeatedly over time (for example, a clinical biomarker) and 2) a survival or time-to-event model which analyses the time until an event of interest occurs (for example, death or disease progression). Joint estimation of these so-called "submodels" is achieved by assuming they are correlated via individual-specific parameters (i.e. individual-level random effects).
 
-Over the last two decades the joint modelling of longitudinal and time-to-event data has received a significant amount of attention [1-5]. Methodological developments in the area have been motivated by a growing awareness of the benefits that a joint modelling approach can provide. In clinical or epidemiological research it is common for a clinical biomarker to be repeatedly measured over time on a given patient. In addition, it is common for time-to-event data, such as the patient-specific time from a defined origin (e.g. time of diagnosis of a disease) until a terminating clinical event such as death or disease progression to also be collected. The figure below shows observed longitudinal measurements (i.e. observed "trajectories") of log serum bilirubin for a small sample of patients with primary biliary cirrhosis. Solid lines are used for those patients who were still alive at the end of follow up, while dashed lines are used for those patients who died. From the plots, we can observe between-patient variation in the longitudinal trajectories for log serum bilirubin, with some patients showing an increase in the biomarker over time, others decreasing, and some remaining stable. Moreover, there is variation between patients in terms of the frequency and timing of the longitudinal measurements. 
+Over the last two decades the joint modelling of longitudinal and time-to-event data has received a significant amount of attention [1-5]. Methodological developments in the area have been motivated by a growing awareness of the benefits that a joint modelling approach can provide. In clinical or epidemiological research it is common for a clinical biomarker to be repeatedly measured over time on a given patient. In addition, it is common for time-to-event data, such as the patient-specific time from a defined origin (e.g. time of diagnosis of a disease) until a terminating clinical event such as death or disease progression to also be collected. The figure below shows observed longitudinal measurements (i.e. observed "trajectories") of log serum bilirubin for a small sample of patients with primary biliary cirrhosis. Solid lines are used for those patients who were still alive at the end of follow up, while dashed lines are used for those patients who died. From the plots, we can observe between-patient variation in the longitudinal trajectories for log serum bilirubin, with some patients showing an increase in the biomarker over time, others decreasing, and some remaining stable. Moreover, there is variation between patients in terms of the frequency and timing of the longitudinal measurements.
 \
 ```{r traj_figure, echo=FALSE}
 # Plot observed longitudinal trajectories for log serum bilirubin
@@ -54,26 +52,26 @@ pbcLong_subset$Died <- factor(pbcLong_subset$death,
                               labels = c("No", "Yes"))
 patient_labels <- paste("Patient", 1:8)
 names(patient_labels) <- ids
-ggplot() + 
-  geom_line(aes(y = logBili, x = year, lty = Died), 
-            data = pbcLong_subset) + 
+ggplot() +
+  geom_line(aes(y = logBili, x = year, lty = Died),
+            data = pbcLong_subset) +
   facet_wrap(~ id, ncol = 4, labeller = labeller(id = patient_labels)) +
   theme_bw() +
   ylab("Log serum bilirubin") +
   xlab("Time (years)")
 ```
 
-From the perspective of clinical risk prediction, we may be interested in asking whether the between-patient variation in the log serum bilirubin trajectories provides meaningful prognostic information that can help us differentiate patients with regard to some clinical event of interest, such as death. Alternatively, from an epidemiological perspective we may wish to explore the potential for etiological associations between changes in log serum bilirubin and mortality. Joint modelling approaches provide us with a framework under which we can begin to answer these types of clinical and epidemiological questions. 
+From the perspective of clinical risk prediction, we may be interested in asking whether the between-patient variation in the log serum bilirubin trajectories provides meaningful prognostic information that can help us differentiate patients with regard to some clinical event of interest, such as death. Alternatively, from an epidemiological perspective we may wish to explore the potential for etiological associations between changes in log serum bilirubin and mortality. Joint modelling approaches provide us with a framework under which we can begin to answer these types of clinical and epidemiological questions.
 
 More formally, the motivations for undertaking a joint modelling analysis of longitudinal and time-to-event data might include one or more of the following:
 
 - One may be interested in how *underlying changes in the biomarker influence the occurrence of the event*. However, including the observed biomarker measurements directly into a time-to-event model as time-varying covariates poses several problems. For example, if the widely used Cox proportional hazards model is assumed for the time-to-event model then biomarker measurements need to be available for all patients at all failure times, which is unlikely to be the case [3]. If simple methods of imputation are used, such as the "last observation carried forward" method, then these are likely to induce bias [6]. Furthermore, the observed biomarker measurements may be subject to measurement error and therefore their inclusion as time-varying covariates may result in biased and inefficient estimates. In most cases, the measurement error will result in parameter estimates which are shrunk towards the null [7]. On the other hand, joint modelling approaches allow us to estimate the association between the biomarker (or some function of the biomarker trajectory, such as rate of change in the biomarker) and the risk of the event, whilst allowing for both the discrete time and measurement-error aspects of the observed biomarker.
 
-- One may be interested primarily in the evolution of the clinical biomarker but *may wish to account for what is known as informative dropout*. If the value of future (unobserved) biomarker measurements are related to the occurrence of the terminating event, then those unobserved biomarker measurements will be "missing not at random" [8,9]. In other words, biomarker measurements for patients who have an event will differ from those who do not have an event. Under these circumstances, inference based solely on observed measurements of the biomarker will be subject to bias. A joint modelling approach can help to adjust for informative dropout and has been shown to reduce bias in the estimated parameters associated with longitudinal changes in the biomarker [1,9,10]. 
+- One may be interested primarily in the evolution of the clinical biomarker but *may wish to account for what is known as informative dropout*. If the value of future (unobserved) biomarker measurements are related to the occurrence of the terminating event, then those unobserved biomarker measurements will be "missing not at random" [8,9]. In other words, biomarker measurements for patients who have an event will differ from those who do not have an event. Under these circumstances, inference based solely on observed measurements of the biomarker will be subject to bias. A joint modelling approach can help to adjust for informative dropout and has been shown to reduce bias in the estimated parameters associated with longitudinal changes in the biomarker [1,9,10].
 
 - Joint models are naturally suited to the task of *dynamic risk prediction*. For example, joint modelling approaches have been used to develop prognostic models where predictions of event risk can be updated as new longitudinal biomarker measurements become available. Taylor et al. [11] jointly modelled longitudinal measurements of the prostate specific antigen (PSA) and time to clinical recurrence of prostate cancer. The joint model was then used to develop a web-based calculator which could provide real-time predictions of the probability of recurrence based on a patient's up to date PSA measurements.
 
-In this vignette, we describe the __rstanarm__ package's `stan_jm` modelling function. This modelling function allows users to fit a shared parameter joint model for longitudinal and time-to-event data under a Bayesian framework, with the backend estimation carried out using Stan. In Section 2 we describe the formulation of the joint model used by `stan_jm`. In Section 3 we present a variety of examples showing the usage of `stan_jm`. 
+In this vignette, we describe the __rstanarm__ package's `stan_jm` modelling function. This modelling function allows users to fit a shared parameter joint model for longitudinal and time-to-event data under a Bayesian framework, with the backend estimation carried out using Stan. In Section 2 we describe the formulation of the joint model used by `stan_jm`. In Section 3 we present a variety of examples showing the usage of `stan_jm`.
 
 Note that some aspects of the estimation are covered in other vignettes, such as the priors [vignette](priors.html) which contains details on the prior distributions available for regression coefficients.
 
@@ -88,15 +86,15 @@ A shared parameter joint model consists of related submodels which are specified
 We assume $y_{ijm}(t) = y_{im}(t_{ij})$ corresponds to the observed value of the $m^{th}$ $(m = 1,...,M)$ biomarker for individual $i$ $(i = 1,...,N)$ taken at time point $t_{ij}$, $j =  1,...,n_{im}$. We specify a (multivariate) generalised linear mixed model that assumes $y_{ijm}(t)$ follows a distribution in the exponential family with mean $\mu_{ijm}(t)$ and linear predictor
 
 $$
-\eta_{ijm}(t) = g_m(\mu_{ijm}(t)) = 
+\eta_{ijm}(t) = g_m(\mu_{ijm}(t)) =
   \boldsymbol{x}^T_{ijm}(t) \boldsymbol{\beta}_m +
   \boldsymbol{z}^T_{ijm}(t) \boldsymbol{b}_{im}
 $$
 
-where $\boldsymbol{x}^T_{ijm}(t)$ and $\boldsymbol{z}^T_{ijm}(t)$ are both row-vectors of covariates (which likely include some function of time, for example a linear slope, cubic splines, or polynomial terms) with associated vectors of fixed and individual-specific parameters $\boldsymbol{\beta}_m$ and $\boldsymbol{b}_{im}$, respectively, and $g_m$ is some known link function. The distribution and link function are allowed to differ over the $M$ longitudinal submodels. We let the vector $\boldsymbol{\beta} = \{ \boldsymbol{\beta}_m ; m = 1,...,M\}$ denote the collection of population-level parameters across the $M$ longitudinal submodels. We assume that the dependence across the different longitudinal submodels (i.e. the correlation between the different longitudinal biomarkers) is captured through a shared multivariate normal distribution for the individual-specific parameters; that is, we assume 
+where $\boldsymbol{x}^T_{ijm}(t)$ and $\boldsymbol{z}^T_{ijm}(t)$ are both row-vectors of covariates (which likely include some function of time, for example a linear slope, cubic splines, or polynomial terms) with associated vectors of fixed and individual-specific parameters $\boldsymbol{\beta}_m$ and $\boldsymbol{b}_{im}$, respectively, and $g_m$ is some known link function. The distribution and link function are allowed to differ over the $M$ longitudinal submodels. We let the vector $\boldsymbol{\beta} = \{ \boldsymbol{\beta}_m ; m = 1,...,M\}$ denote the collection of population-level parameters across the $M$ longitudinal submodels. We assume that the dependence across the different longitudinal submodels (i.e. the correlation between the different longitudinal biomarkers) is captured through a shared multivariate normal distribution for the individual-specific parameters; that is, we assume
 
 $$
-\begin{pmatrix} \boldsymbol{b}_{i1} \\ \vdots \\ \boldsymbol{b}_{iM} \end{pmatrix} = 
+\begin{pmatrix} \boldsymbol{b}_{i1} \\ \vdots \\ \boldsymbol{b}_{iM} \end{pmatrix} =
   \boldsymbol{b}_i \sim
   \mathsf{Normal} \left( 0 , \boldsymbol{\Sigma} \right)
 $$
@@ -108,24 +106,24 @@ for some unstructured variance-covariance matrix $\boldsymbol{\Sigma}$.
 We assume that we also observe an event time $T_i = \mathsf{min} \left( T^*_i , C_i \right)$ where $T^*_i$ denotes the so-called "true" event time for individual $i$ (potentially unobserved) and $C_i$ denotes the censoring time. We define an event indicator $d_i = I(T^*_i \leq C_i)$. We then model the hazard of the event using a parametric proportional hazards regression model of the form
 
 $$
-h_i(t) = h_0(t; \boldsymbol{\omega}) \mathsf{exp} 
+h_i(t) = h_0(t; \boldsymbol{\omega}) \mathsf{exp}
   \left(
     \boldsymbol{w}^T_i(t) \boldsymbol{\gamma} +
     \sum_{m=1}^M \sum_{q=1}^{Q_m}
-      f_{mq}(\boldsymbol{\beta}, \boldsymbol{b}_{i}, \alpha_{mq}; t) 
-  \right) 
+      f_{mq}(\boldsymbol{\beta}, \boldsymbol{b}_{i}, \alpha_{mq}; t)
+  \right)
 $$
 
 
 where $h_i(t)$ is the hazard of the event for individual $i$ at time $t$, $h_0(t; \boldsymbol{\omega})$ is the baseline hazard at time $t$ given parameters $\boldsymbol{\omega}$, $\boldsymbol{w}^T_i(t)$ is a row-vector of individual-specific covariates (possibly time-dependent) with an associated vector of regression coefficients $\boldsymbol{\gamma}$ (log hazard ratios), $f_{mq}(.)$ are a set of known functions for $m=1,...,M$ and $q=1,...,Q_m$, and the $\alpha_{mq}$ are regression coefficients (log hazard ratios).
-  
+
 The longitudinal and event submodels are assumed to be related via an "association structure", which is a set of functions each $\{ f_{mq} ; m = 1,...,M, q = 1,...,Q_m \}$ that may each be conditional on the population-level parameters from the longitudinal submodel $\boldsymbol{\beta}$, the individual-specific parameters $\boldsymbol{b}_{i}$, and the population-level parameters $\alpha_{mq}$ for $m=1,...,M$ and $q=1,...,Q_m$. That is, the association structure of the joint model is captured via the $\sum_{m=1}^M \sum_{q=1}^{Q_m} f_{mq}(\boldsymbol{\beta}_m, \boldsymbol{b}_{im}, \alpha_{mq}; t)$ term in the linear predictor of the event submodel. The $\alpha_{mq}$ are referred to as the "association parameters" since they quantify the strength of the association between the longitudinal and event processes. The various ways in which the association structure can be are described in the next section.
 
 The probability of individual $i$ still being event-free at time $t$, often referred to as the "survival probability", is defined as
 
 $$
-S_i(t) = 
-  \text{Prob} \Big( T_i^* \geq t \Big) = 
+S_i(t) =
+  \text{Prob} \Big( T_i^* \geq t \Big) =
   \exp \Big( -H_i(t) \Big)
 $$
 
@@ -149,7 +147,7 @@ $$
 f_{mq}(\boldsymbol{\beta}, \boldsymbol{b}_{i}, \alpha_{mq}; t) = \alpha_{mq} \frac{d\eta_{im}(t)}{dt}
 $$
 
-There are in fact a whole range of possible association structures, many of which have been discussed in the literature [14-16]. 
+There are in fact a whole range of possible association structures, many of which have been discussed in the literature [14-16].
 
 The `stan_jm` modelling function in the __rstanarm__ package allows for the following association structures, which are specified via the `assoc` argument:
 
@@ -173,11 +171,11 @@ $$
 
 Interactions between different biomarkers
 $$
-f_{mq}(\boldsymbol{\beta}, \boldsymbol{b}_{i}, \alpha_{mq}; t) = \alpha_{mq} \eta_{im}(t) \eta_{im'}(t) 
+f_{mq}(\boldsymbol{\beta}, \boldsymbol{b}_{i}, \alpha_{mq}; t) = \alpha_{mq} \eta_{im}(t) \eta_{im'}(t)
   \text{ for some } m = m' \text{ or } m \neq m' \\
-f_{mq}(\boldsymbol{\beta}, \boldsymbol{b}_{i}, \alpha_{mq}; t) = \alpha_{mq} \eta_{im}(t) \mu_{im'}(t) 
+f_{mq}(\boldsymbol{\beta}, \boldsymbol{b}_{i}, \alpha_{mq}; t) = \alpha_{mq} \eta_{im}(t) \mu_{im'}(t)
   \text{ for some } m = m' \text{ or } m \neq m' \\
-f_{mq}(\boldsymbol{\beta}, \boldsymbol{b}_{i}, \alpha_{mq}; t) = \alpha_{mq} \mu_{im}(t) \mu_{im'}(t) 
+f_{mq}(\boldsymbol{\beta}, \boldsymbol{b}_{i}, \alpha_{mq}; t) = \alpha_{mq} \mu_{im}(t) \mu_{im'}(t)
   \text{ for some } m = m' \text{ or } m \neq m'
 $$   
 
@@ -195,16 +193,16 @@ $$
 
 As well as using lagged values for any of the above. That is, replacing $t$ with $t-u$ where $u$ is some lag time, such that the hazard of the event at time $t$ is assumed to be associated with some function of the longitudinal submodel parameters at time $t-u$.
 
-Lastly, we can specify some time-independent function of the random effects, possibly including the fixed effect component. For example, 
+Lastly, we can specify some time-independent function of the random effects, possibly including the fixed effect component. For example,
 
 $$
 f_{mq}(\boldsymbol{\beta}, \boldsymbol{b}_{i}, \alpha_{mq}; t) = \alpha_{mq} \boldsymbol{b}_{im0}
 $$
 
-or 
+or
 
 $$
-f_{mq}(\boldsymbol{\beta}, \boldsymbol{b}_{i}, \alpha_{mq}; t) = 
+f_{mq}(\boldsymbol{\beta}, \boldsymbol{b}_{i}, \alpha_{mq}; t) =
   \alpha_{mq} \Big( \boldsymbol{\beta}_{m0} + \boldsymbol{b}_{im0} \Big)
 $$
 
@@ -214,14 +212,14 @@ Note that more than one association structure can be specified, however, not all
 
 ### Assumptions
 
-Here we define a set of assumptions for the multivariate shared parameter joint model. 
+Here we define a set of assumptions for the multivariate shared parameter joint model.
 
 The so-called conditional independence assumption of the shared parameter joint model postulates
 
 $$
   y_{im}(t) \perp y_{im'}(t) \mid \boldsymbol{b}_i, \boldsymbol{\theta}  \\
   y_{im}(t) \perp y_{im}(t') \mid \boldsymbol{b}_i, \boldsymbol{\theta} \\
-  y_{im}(t) \perp T_i^*      \mid \boldsymbol{b}_i, \boldsymbol{\theta} 
+  y_{im}(t) \perp T_i^*      \mid \boldsymbol{b}_i, \boldsymbol{\theta}
 $$
 
 for some $m \neq m'$ and $t \neq t'$, and where $\boldsymbol{\theta}$ denotes the combined vector of all remaining population-level parameters in the model. That is, conditional on the individual-specific parameters $\boldsymbol{b}_i$ and population-level parameters $\boldsymbol{\theta}$, the following are assumed: (i) any biomarker measurement for individual $i$ is independent of that individual's true event time $T_i^*$; (ii) any two measurements of the $m^{th}$ biomarker taken on the $i^{th}$ individual at two distinct time points $t$ and $t'$ (i.e. longitudinal or repeated measurements) are independent of one another; and (iii) any two measurements of two different biomarkers, taken on the $i^{th}$ individual at some time point $t$ are independent of one another. These conditional independence assumptions allow for a convenient factorisation of the full likelihood for joint model into the likelihoods for each of the component parts (i.e. the likelihood for the longitudinal submodel, the likelihood for the event submodel, and the likelihood for the distribution of the individual-specific parameters), which facilitates the estimation of the model.
@@ -237,8 +235,8 @@ $$
   \propto
     \log \Bigg[
       \Bigg(
-        \prod_{m=1}^M 
-          \prod_{j=1}^{n_i} 
+        \prod_{m=1}^M
+          \prod_{j=1}^{n_i}
             p(y_{ijm}(t) \mid \boldsymbol{b}_{i}, \boldsymbol{\theta})
       \Bigg)
       p(T_i, d_i \mid \boldsymbol{b}_{i}, \boldsymbol{\theta})
@@ -247,16 +245,16 @@ $$
     \Bigg]    
 $$
 
-where $\boldsymbol{y}_i = \{ y_{ijm}(t); j = 1,...,n_i, m = 1,...,M \}$ denotes the collection of longitudinal biomarker data for individual $i$ and $\boldsymbol{\theta}$ denotes all remaining population-level parameters in the model. 
+where $\boldsymbol{y}_i = \{ y_{ijm}(t); j = 1,...,n_i, m = 1,...,M \}$ denotes the collection of longitudinal biomarker data for individual $i$ and $\boldsymbol{\theta}$ denotes all remaining population-level parameters in the model.
 
-We can rewrite this log posterior as 
+We can rewrite this log posterior as
 
 $$
 \log p(\boldsymbol{\theta}, \boldsymbol{b}_{i} \mid \boldsymbol{y}_{i}, T_i, d_i)
   \propto
     \Bigg(
-      \sum_{m=1}^M 
-        \sum_{j=1}^{n_i} 
+      \sum_{m=1}^M
+        \sum_{j=1}^{n_i}
           \log p(y_{ijm}(t) \mid \boldsymbol{b}_{i}, \boldsymbol{\theta})
     \Bigg) +
     \log p(T_i, d_i \mid \boldsymbol{b}_{i}, \boldsymbol{\theta}) +
@@ -269,11 +267,11 @@ where $\sum_{j=1}^{n_{im}} \log p(y_{ijm} \mid \boldsymbol{b}_{i}, \boldsymbol{\
 We can rewrite the log likelihood for the event submodel as
 
 $$
-\log p(T_i, d_i \mid \boldsymbol{b}_{i}, \boldsymbol{\theta}) = 
+\log p(T_i, d_i \mid \boldsymbol{b}_{i}, \boldsymbol{\theta}) =
   d_i * \log h_i(T_i) - \int_0^{T_i} h_i(s) ds
 $$
 
-and then use Gauss-Kronrod quadrature with $Q$ nodes to approximate $\int_0^{T_i} h_i(s) ds$, such that 
+and then use Gauss-Kronrod quadrature with $Q$ nodes to approximate $\int_0^{T_i} h_i(s) ds$, such that
 
 $$
 \int_0^{T_i} h_i(s) ds \approx \frac{T_i}{2} \sum_{q=1}^{Q} w_q h_i \bigg( \frac{T_i(1+s_q)}{2} \bigg)
@@ -291,20 +289,20 @@ Before discussing the methods by which we can generate posterior predictions, fi
 
 We can generate posterior predictions for the longitudinal and time-to-event outcomes in the following manner. For the $i^{th}$ individual in our training data, a predicted value for the $m^{th}$ longitudinal biomarker at time $t$, denoted $y^*_{im}(t)$, can be generated from the posterior predictive distribution
 
-$$ 
-p \Big( y^{*}_{im}(t) \mid \mathcal{D} \Big) = 
-  \int 
-    \int 
+$$
+p \Big( y^{*}_{im}(t) \mid \mathcal{D} \Big) =
+  \int
+    \int
       p \Big( y^{*}_{im}(t) \mid \boldsymbol{\theta}, \boldsymbol{b}_i \Big)
-      p \Big( \boldsymbol{\theta}, \boldsymbol{b}_i \mid \mathcal{D} \Big) 
+      p \Big( \boldsymbol{\theta}, \boldsymbol{b}_i \mid \mathcal{D} \Big)
     \space d \boldsymbol{b}_i
-  \space d \boldsymbol{\theta} 
+  \space d \boldsymbol{\theta}
 $$
 
 and, similarly, a predicted probability of the $i^{th}$ individual being event-free at time $t$, denoted $S^*_i(t)$, can be generated from the posterior predictive distribution
 
-$$ 
-p \Big( S^{*}_{i}(t) \mid \mathcal{D} \Big) = 
+$$
+p \Big( S^{*}_{i}(t) \mid \mathcal{D} \Big) =
   \int
     \int
       p \Big( S^{*}_i(t) \mid \boldsymbol{\theta}, \boldsymbol{b}_i \Big)
@@ -312,39 +310,39 @@ p \Big( S^{*}_{i}(t) \mid \mathcal{D} \Big) =
     d \boldsymbol{b}_i \space d \boldsymbol{\theta}      
 $$
 
-Note that for simplicity we have ignored the implicit conditioning on covariates; $\boldsymbol{x}_{im}(t)$ and $\boldsymbol{z}_{im}(t)$, for $m = 1,...,M$, and $\boldsymbol{w}_{i}(t)$. Since individual $i$ is included in the training data, it is easy for us to approximate these posterior predictive distributions by drawing from $p(y^{*}_{im}(t) \mid \boldsymbol{\theta}^{(l)}, \boldsymbol{b}_i^{(l)})$ and $p(S^{*}_i(t) \mid \boldsymbol{\theta}^{(l)}, \boldsymbol{b}_i^{(l)})$ where $\boldsymbol{\theta}^{(l)}$ and $\boldsymbol{b}_i^{(l)}$ are the $l^{th}$ $(l = 1,...,L)$ MCMC draws from the joint posterior distribution $p(\boldsymbol{\theta}, \boldsymbol{b}_i \mid \mathcal{D})$. 
+Note that for simplicity we have ignored the implicit conditioning on covariates; $\boldsymbol{x}_{im}(t)$ and $\boldsymbol{z}_{im}(t)$, for $m = 1,...,M$, and $\boldsymbol{w}_{i}(t)$. Since individual $i$ is included in the training data, it is easy for us to approximate these posterior predictive distributions by drawing from $p(y^{*}_{im}(t) \mid \boldsymbol{\theta}^{(l)}, \boldsymbol{b}_i^{(l)})$ and $p(S^{*}_i(t) \mid \boldsymbol{\theta}^{(l)}, \boldsymbol{b}_i^{(l)})$ where $\boldsymbol{\theta}^{(l)}$ and $\boldsymbol{b}_i^{(l)}$ are the $l^{th}$ $(l = 1,...,L)$ MCMC draws from the joint posterior distribution $p(\boldsymbol{\theta}, \boldsymbol{b}_i \mid \mathcal{D})$.
 
-These draws from the posterior predictive distributions can be used for assessing the fit of the model. For example, 
+These draws from the posterior predictive distributions can be used for assessing the fit of the model. For example,
 
 - the draws from $p(y^{*}_{im}(t) \mid \mathcal{D})$ for $0 \leq t \leq T_i$ can be used to evaluate the fit of the longitudinal trajectory for the $m^{th}$ biomarker for the $i^{th}$ individual, and
 
 - the draws from $p(S^{*}_{i}(t) \mid \mathcal{D})$ for $0 \leq t \leq T_{max}$ can be averaged across the $N$ individuals to obtain a standardised survival curve (discussed in greater detail in later sections) which can then be compared to the observed survival curve, for example, the Kaplan-Meier curve.
-    
+
 ### Individual-specific predictions for in-sample individuals (for $t > C_i$)
 
-However, given that we know the event or censoring time for each individual in our training data, it may make more sense to consider what will happen to censored individuals in our study when we look beyond their last known survival time (i.e. extrapolation). 
+However, given that we know the event or censoring time for each individual in our training data, it may make more sense to consider what will happen to censored individuals in our study when we look beyond their last known survival time (i.e. extrapolation).
 
-For an individual $i$, who was in our training data, and who was known to be event-free up until their censoring time $C_i$, we wish to draw from the conditional posterior predictive distribution for their longitudinal outcome at some time $t > C_i$, that is 
+For an individual $i$, who was in our training data, and who was known to be event-free up until their censoring time $C_i$, we wish to draw from the conditional posterior predictive distribution for their longitudinal outcome at some time $t > C_i$, that is
 
 $$
-p \Big( y^{*}_{im}(t) \mid \mathcal{D}, t > C_i \Big) = 
-  \int 
-    \int 
+p \Big( y^{*}_{im}(t) \mid \mathcal{D}, t > C_i \Big) =
+  \int
+    \int
       p \Big( y^{*}_{im}(t) \mid \boldsymbol{\theta}, \boldsymbol{b}_i, t > C_i \Big)
-      p \Big( \boldsymbol{\theta}, \boldsymbol{b}_i \mid \mathcal{D} \Big) 
-    d \boldsymbol{b}_i \space d \boldsymbol{\theta} 
-$$ 
+      p \Big( \boldsymbol{\theta}, \boldsymbol{b}_i \mid \mathcal{D} \Big)
+    d \boldsymbol{b}_i \space d \boldsymbol{\theta}
+$$
 
 and the conditional posterior predictive distribution for their survival probability at some time $t > C_i$, that is
 
-$$ 
+$$
 \begin{aligned}
-p \Big( S^{*}_{i}(t) \mid \mathcal{D}, t > C_i, T_i^* > C_i \Big) 
-& = 
+p \Big( S^{*}_{i}(t) \mid \mathcal{D}, t > C_i, T_i^* > C_i \Big)
+& =
   \frac
     {p \Big( S^{*}_{i}(t)   \mid \mathcal{D} \Big)}
     {p \Big( S^{*}_{i}(C_i) \mid \mathcal{D} \Big)} \\
-& = 
+& =
   \int
     \int
       \frac
@@ -371,33 +369,33 @@ We can also generate posterior predictions for the longitudinal and time-to-even
 
 The first way is to "marginalise" over the distribution of the individual-specific parameters. We wish to generate a predicted value for the $m^{th}$ longitudinal biomarker at time $t$ for a new individual $k$ for whom we do not have any observed data. We will denote this prediction $y^*_{km}(t)$ and note that it can be generated from the posterior predictive distribution for the longitudinal outcome
 
-$$ 
+$$
 \begin{aligned}
-p \Big( y^{*}_{km}(t) \mid \mathcal{D} \Big) 
-& = 
-  \int 
-    \int 
+p \Big( y^{*}_{km}(t) \mid \mathcal{D} \Big)
+& =
+  \int
+    \int
       p \Big( y^{*}_{km}(t) \mid \boldsymbol{\theta}, \boldsymbol{\tilde{b}}_k \Big)
-      p \Big( \boldsymbol{\theta}, \boldsymbol{\tilde{b}}_k \mid \mathcal{D} \Big) 
+      p \Big( \boldsymbol{\theta}, \boldsymbol{\tilde{b}}_k \mid \mathcal{D} \Big)
     \space d \boldsymbol{\tilde{b}}_{k}
   \space d \boldsymbol{\theta} \\
 & =
-  \int 
-    \int 
+  \int
+    \int
       p \Big( y^{*}_{km}(t) \mid \boldsymbol{\theta}, \boldsymbol{\tilde{b}}_k \Big)
-      p \Big( \boldsymbol{\tilde{b}}_k \mid \boldsymbol{\theta} \Big) 
-      p \Big( \boldsymbol{\theta} \mid \mathcal{D} \Big) 
+      p \Big( \boldsymbol{\tilde{b}}_k \mid \boldsymbol{\theta} \Big)
+      p \Big( \boldsymbol{\theta} \mid \mathcal{D} \Big)
     \space d \boldsymbol{\tilde{b}}_{k}
-  \space d \boldsymbol{\theta} 
+  \space d \boldsymbol{\theta}
 \end{aligned}
 $$
 
 and similarly for the survival probability
 
-$$ 
+$$
 \begin{aligned}
-p \Big( S^{*}_{k}(t) \mid \mathcal{D} \Big) 
-& = 
+p \Big( S^{*}_{k}(t) \mid \mathcal{D} \Big)
+& =
   \int
     \int
       p \Big( S^{*}_k(t) \mid \boldsymbol{\theta}, \boldsymbol{\tilde{b}}_k \Big)
@@ -413,23 +411,23 @@ p \Big( S^{*}_{k}(t) \mid \mathcal{D} \Big)
 $$
 
 We can obtain draws for $\boldsymbol{\tilde{b}}_k$ in the same manner as for the individual-specific parameters $\boldsymbol{b}_i$. That is, at the $l^{th}$ iteration of the MCMC sampler we draw $\boldsymbol{\tilde{b}}_k^{(l)}$ and store it^[These random draws from the posterior distribution of the group-specific parameters are stored each time a joint model is estimated using `stan_glmer`, `stan_mvmer`, or `stan_jm`; they are saved under an ID value called `"_NEW_"`]. However, individual $k$ did not provide any contribution to the training data and so we are effectively taking random draws from the posterior distribution for the individual-specific parameters. We are therefore effectively marginalising over the distribution of the group-specific coefficients when we obtain predictions using the draws $\boldsymbol{\tilde{b}}_k^{(l)}$ fro $l = 1,\dots,L$. In other words, we are predicting for a new individual whom we have no information except that they are drawn from the same population as the $i = 1,...,N$ individuals in the training data. Because these predictions will incorporate all the uncertainty associated with between-individual variation our 95% credible intervals are likely to be very wide. These types of marginal predictions can be obtained using the `posterior_traj` and `posterior_survfit` functions by providing prediction data and specifying `dynamic = FALSE`; see the examples provided below.
- 
+
 The second way is to effectively ignore the group-level structure in the model. That is, to only predict with only the population-level parameters contributing to the model. For example, under a identity link function and normal error distribution (i.e. linear mixed effect longitudinal submodel), we would obtain draws from the distribution $y^{(l)}_{km}(t) \sim N \Big( \boldsymbol{x}^T_{km}(t) \boldsymbol{\beta}_m^{(l)}, \sigma_m^{(l)} \Big)$ where $\boldsymbol{\beta}_m^{(l)}$ and $\sigma_m^{(l)}$ are the population-level parameters and residual error standard deviation, respectively, for the $l^{th}$ draw of the MCMC samples. However, referring to this as a "marginal" prediction is somewhat misleading since we are not explicitly conditioning on the individual-specific parameters but we are implicitly assuming that we know they are equal to zero with absolute certainty. That is, we are actually drawing from the posterior predictive distribution for the longitudinal outcome
 
-$$ 
+$$
 \begin{aligned}
-p \Big( y^{*}_{km}(t) \mid \mathcal{D} \Big) 
-& = 
-  \int 
+p \Big( y^{*}_{km}(t) \mid \mathcal{D} \Big)
+& =
+  \int
       p \Big( y^{*}_{km}(t) \mid \boldsymbol{\theta}, \boldsymbol{b}_k = 0 \Big)
-      p \Big( \boldsymbol{\theta} \mid \mathcal{D} \Big) 
+      p \Big( \boldsymbol{\theta} \mid \mathcal{D} \Big)
   d \boldsymbol{\theta} \\
 \end{aligned}
 $$
 and similarly for the survival probability
 
-$$ 
-p \Big( S^{*}_{k}(t) \mid \mathcal{D} \Big) = 
+$$
+p \Big( S^{*}_{k}(t) \mid \mathcal{D} \Big) =
   \int
     p \Big( S^{*}_k(t) \mid \boldsymbol{\theta}, \boldsymbol{b}_k = 0 \Big)
     p \Big( \boldsymbol{\theta} \mid \mathcal{D} \Big)
@@ -444,7 +442,7 @@ All of the previously discussed population-level (i.e. marginal) predictions ass
 
 At any time $t$, it is possible to obtain a standardised survival probability by averaging the individual-specific survival probabilities. That is, we can obtain
 
-$$ 
+$$
 S^*(t) = \frac{\sum_{i=1}^{N^{pred}} S_i^*(t)}{N^{pred}}
 $$
 
@@ -472,7 +470,7 @@ Note however, that if $N_{pred}$ is not sufficiently large (e.g. we pass new dat
 
 ## Dataset used in the examples
 
-We use the Mayo Clinic's primary biliary cirrhosis (PBC) dataset in the examples below. The dataset contains 312 individuals with primary biliary cirrhosis who participated in a randomised placebo controlled trial of D-penicillamine conducted at the Mayo Clinic between 1974 and 1984 [19]. However, to ensure the examples run quickly, we use a small random subset of just 40 patients from the full data. 
+We use the Mayo Clinic's primary biliary cirrhosis (PBC) dataset in the examples below. The dataset contains 312 individuals with primary biliary cirrhosis who participated in a randomised placebo controlled trial of D-penicillamine conducted at the Mayo Clinic between 1974 and 1984 [19]. However, to ensure the examples run quickly, we use a small random subset of just 40 patients from the full data.
 
 These example data are contained in two separate data frames. The first data frame contains multiple-row per patient longitudinal biomarker information, as shown in
 
@@ -480,7 +478,7 @@ These example data are contained in two separate data frames. The first data fra
 head(pbcLong)
 ```
 
-while the second data frame contains single-row per patient survival information, as shown in 
+while the second data frame contains single-row per patient survival information, as shown in
 
 ```{r pbcSurv}
 head(pbcSurv)
@@ -518,15 +516,15 @@ The formula for the event submodel is specified using the **survival** package f
 
 ```{r univariate_fit, results = "hold", message = FALSE, warning = FALSE}
 library(rstanarm)
-mod1 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id), 
+mod1 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id),
                 dataLong = pbcLong,
-                formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
+                formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt,
                 dataEvent = pbcSurv,
                 time_var = "year",
                 chains = 1, refresh = 2000, seed = 12345)
 ```
 
-The argument `refresh = 2000` was specified so that Stan didn't provide us with excessive progress updates whilst fitting the model. However, if you are fitting a model that will take several minutes or hours to fit, then you may wish to request progress updates quite regularly, for example setting `refresh = 20` for every 20 iterations (by default the refresh argument is set to 1/10th of the total number of iterations). 
+The argument `refresh = 2000` was specified so that Stan didn't provide us with excessive progress updates whilst fitting the model. However, if you are fitting a model that will take several minutes or hours to fit, then you may wish to request progress updates quite regularly, for example setting `refresh = 20` for every 20 iterations (by default the refresh argument is set to 1/10th of the total number of iterations).
 
 The fitted model is returned as an object of the S3 class `stanjm`. We have a variety of methods and post-estimation functions available for this class, including: `print`, `summary`, `plot`, `fixef`, `ranef`, `coef`, `VarCorr`, `posterior_interval`, `update`, and more. Here, we will examine the most basic output for the fitted joint model by typing `print(mod1)`:
 
@@ -550,19 +548,19 @@ as.data.frame(VarCorr(mod1))
 
 ### Univariate joint model (current value and current slope association structure)
 
-In the previous example we were fitting a shared parameter joint model which assumed that the log hazard of the event (in this case the log hazard of death) at time *t* was linearly related to the subject-specific expected value of the longitudinal marker (in this case the expected value of log serum bilirubin) also at time *t*. This is the default association structure, although it could be explicitly specified by setting the `assoc = "etavalue"` argument. 
+In the previous example we were fitting a shared parameter joint model which assumed that the log hazard of the event (in this case the log hazard of death) at time *t* was linearly related to the subject-specific expected value of the longitudinal marker (in this case the expected value of log serum bilirubin) also at time *t*. This is the default association structure, although it could be explicitly specified by setting the `assoc = "etavalue"` argument.
 
 However, let's suppose we believe that the log hazard of death is actually related to both the *current value* of log serum bilirubin and the current *rate of change* in log serum bilirubin. To estimate this joint model we need to indicate that we want to also include the subject-specific slope (at time *t*) from the longitudinal submodel as part of the association structure. We do this by setting the `assoc` argument equal to a character vector `c("etavalue", "etaslope")` which indicates our desired association structure:
 
 ```{r assoc_etaslope, eval = FALSE}
-mod2 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id), 
+mod2 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id),
                 dataLong = pbcLong,
-                formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
+                formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt,
                 dataEvent = pbcSurv,
                 assoc = c("etavalue", "etaslope"),
-                time_var = "year", 
+                time_var = "year",
                 chains = 1, refresh = 2000, seed = 12345)
-``` 
+```
 
 In this example the subject-specific slope is actually constant across time *t* since we have a linear trajectory. Note however that we could still use the `"etaslope"` association structure even if we had a non-linear subject specific trajectory (for example modelled using cubic splines or polynomials).
 
@@ -591,9 +589,9 @@ where $t$ is time in years, and $w_{1i}$ and $w_{2i}$ are, respectively, the gen
 ```{r fitmodel_mv_ev_ev, warning=FALSE, message=FALSE}
 mod3 <- stan_jm(
     formulaLong = list(
-        logBili ~ sex + trt + year + (year | id), 
+        logBili ~ sex + trt + year + (year | id),
         albumin ~ sex + trt + year + (year | id)),
-    formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
+    formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt,
     dataLong = pbcLong, dataEvent = pbcSurv,
     time_var = "year",
     chains = 1, refresh = 2000, seed = 12345)
@@ -613,7 +611,7 @@ summary(mod3, pars = "assoc")
 
 ## Posterior predictions
 
-We can also access the range of post-estimation functions (described in the `stan_jm` and related help documentation; see for example `help(posterior_traj)` or `help(posterior_survfit)`). 
+We can also access the range of post-estimation functions (described in the `stan_jm` and related help documentation; see for example `help(posterior_traj)` or `help(posterior_survfit)`).
 
 ### Predicted individual-specific longitudinal trajectory for in-sample individuals
 
@@ -655,15 +653,15 @@ pp4 <- plot(p4, plot_observed = TRUE, vline = TRUE)
 pp4
 ```
 
-Here, we included the `vline = TRUE` which adds a vertical dashed line at the timing of the individual's event or censoring time. The interpolation and extrapolation of the biomarker trajectory can be further controlled through the `control` argument to the `posterior_traj` function; for example, we could specify the number of time points at which to predict, the distance by which to extrapolate, and so on. 
+Here, we included the `vline = TRUE` which adds a vertical dashed line at the timing of the individual's event or censoring time. The interpolation and extrapolation of the biomarker trajectory can be further controlled through the `control` argument to the `posterior_traj` function; for example, we could specify the number of time points at which to predict, the distance by which to extrapolate, and so on.
 
-We could customize these plots further, for example, by using any of the __ggplot2__ functionality or using the additional arguments described in `help(plot.predict.stanjm)`. 
+We could customize these plots further, for example, by using any of the __ggplot2__ functionality or using the additional arguments described in `help(plot.predict.stanjm)`.
 
 ### Predicted individual-specific survival curves for in-sample individuals
 
-Predicted individual-specific survival probabilities and/or survival curves can be obtained using the `posterior_survfit` function. The function by default returns a data frame with the individual ID, the time, and the predicted survival probability (posterior mean and limits for the 95% credible interval). The uncertainty level for the credible interval can be changed via the `prob` argument. By default, individual-specific survival probabilities are calculated *conditional* on the individual's last known survival time. When we are predicting survival probabilities for individuals that were used in the estimation of the model (i.e. in-sample individuals, where no new covariate data is provided), then the individual's "last known survival time" will be their event or censoring time. (Note that if we wanted didn't want to condition on the individual's last known survival time, then we could specify `condition = FALSE`, but we probably wouldn't want to do this unless we were calculating marginal or standardised survival probabilities, which are discussed later). 
+Predicted individual-specific survival probabilities and/or survival curves can be obtained using the `posterior_survfit` function. The function by default returns a data frame with the individual ID, the time, and the predicted survival probability (posterior mean and limits for the 95% credible interval). The uncertainty level for the credible interval can be changed via the `prob` argument. By default, individual-specific survival probabilities are calculated *conditional* on the individual's last known survival time. When we are predicting survival probabilities for individuals that were used in the estimation of the model (i.e. in-sample individuals, where no new covariate data is provided), then the individual's "last known survival time" will be their event or censoring time. (Note that if we wanted didn't want to condition on the individual's last known survival time, then we could specify `condition = FALSE`, but we probably wouldn't want to do this unless we were calculating marginal or standardised survival probabilities, which are discussed later).
 
-The default argument `extrapolate = TRUE` specifies that the individual-specific conditional survival probabilities will be calculated at evenly spaced time points between the individual's last known survival time and the maximum follow up time that was observed in the estimation sample. The behaviour of the extrapolation can be further controlled via the `control` argument. If we were to specify `extrapolate = FALSE` then the survival probabilities would only be calculated at one time point, which could be specified in the `times` argument (or otherwise would default to the individual's last known survival time). 
+The default argument `extrapolate = TRUE` specifies that the individual-specific conditional survival probabilities will be calculated at evenly spaced time points between the individual's last known survival time and the maximum follow up time that was observed in the estimation sample. The behaviour of the extrapolation can be further controlled via the `control` argument. If we were to specify `extrapolate = FALSE` then the survival probabilities would only be calculated at one time point, which could be specified in the `times` argument (or otherwise would default to the individual's last known survival time).
 
 As an example, let plot the predicted individual-specific conditional survival curve for the same three individual's that were used in the previous example. The predicted survival curve will be obtained under the multivariate joint model estimated above.
 \
@@ -673,17 +671,17 @@ pp5 <- plot(p5)
 pp5
 ```
 
-We could customize the plot further, for example, by using any of the __ggplot2__ functionality or using the additional arguments described in `help(plot.survfit.stanjm)`. 
+We could customize the plot further, for example, by using any of the __ggplot2__ functionality or using the additional arguments described in `help(plot.survfit.stanjm)`.
 
 ### Combined plot of longitudinal trajectories and survival curves
 
-The package also provides a convenience plotting function, which combines plots of the individual-specific longitudinal trajectories, and the individual-specific survival function. We can demonstrate this by replotting the predictions for the three individuals in the previous example: 
+The package also provides a convenience plotting function, which combines plots of the individual-specific longitudinal trajectories, and the individual-specific survival function. We can demonstrate this by replotting the predictions for the three individuals in the previous example:
 
 ```{r plots_987321, fig.height=13}
 plot_stack_jm(yplot = list(pp3, pp4), survplot = pp5)
 ```
 
-Here we can see the strong relationship between the underlying values of the biomarkers and mortality. Patient `8` who, relative to patients `6` and `7`, has a higher underlying value for log serum bilirubin and a lower underlying value for serum albumin at the end of their follow up has a far worse predicted probability of survival. 
+Here we can see the strong relationship between the underlying values of the biomarkers and mortality. Patient `8` who, relative to patients `6` and `7`, has a higher underlying value for log serum bilirubin and a lower underlying value for serum albumin at the end of their follow up has a far worse predicted probability of survival.
 
 ### Predicted individual-specific longitudinal trajectory and survival curve for out-of-sample individuals (i.e. dynamic predictions)
 
@@ -705,8 +703,8 @@ Now we can pass this data to the `posterior_traj` function in the same way as fo
 Our predictions for this new individual for the log serum bilirubin trajectory can be obtained using:
 
 ```{r plots_999333}
-p6 <- posterior_traj(mod3, m = 1, 
-                     newdataLong = ndL, 
+p6 <- posterior_traj(mod3, m = 1,
+                     newdataLong = ndL,
                      newdataEvent = ndE,
                      last_time = "futimeYears")
 pp6 <- plot(p6, plot_observed = TRUE, vline = TRUE)
@@ -716,8 +714,8 @@ pp6
 and for the serum albumin trajectory:
 
 ```{r plots_122223}
-p7 <- posterior_traj(mod3, m = 2, 
-                     newdataLong = ndL, 
+p7 <- posterior_traj(mod3, m = 2,
+                     newdataLong = ndL,
                      newdataEvent = ndE,
                      last_time = "futimeYears")
 pp7 <- plot(p7, plot_observed = TRUE, vline = TRUE)
@@ -728,7 +726,7 @@ For the conditional survival probabilities we use similar information, provided 
 
 ```{r plots_65401}
 p8 <- posterior_survfit(mod3,
-                        newdataLong = ndL, 
+                        newdataLong = ndL,
                         newdataEvent = ndE,
                         last_time = "futimeYears")
 pp8 <- plot(p8)
@@ -741,12 +739,12 @@ We can then use the `plot_stack_jm` function, as we saw in a previous example, t
 plot_stack_jm(yplot = list(pp6, pp7), survplot = pp8)
 ```
 
-Here we see that the predicted longitudinal trajectories and conditional survival curve for this individual, obtained using the dynamic predictions approach, are similar to the predictions we obtained when we used their individual-specific parameters from the original model estimation. This is because in both situations we are conditioning on the same outcome data. 
+Here we see that the predicted longitudinal trajectories and conditional survival curve for this individual, obtained using the dynamic predictions approach, are similar to the predictions we obtained when we used their individual-specific parameters from the original model estimation. This is because in both situations we are conditioning on the same outcome data.
 
 **Side note:** We can even compare the estimated individual specific parameters obtained under the two approaches. For example, here is the posterior mean for the estimated individual-specific parameters for individual `8` from the fitted model:
 
 ```{r b_pars_23123}
-c(ranef(mod3)[["Long1"]][["id"]][8,], 
+c(ranef(mod3)[["Long1"]][["id"]][8,],
   ranef(mod3)[["Long2"]][["id"]][8,])
 ```
 
@@ -758,7 +756,7 @@ colMeans(attr(p6, "b_new"))
 
 ### Predicted population-level longitudinal trajectory
 
-Suppose we wanted to predict the longitudinal trajectory for each of the biomarkers, marginalising over the distribution of the individual-specific parameters. To do this, we can pass a new data frame with the covariate values we want to use in the predictions. Here, we will demonstrate this by obtaining the predicted trajectory for log serum bilirubin, under the multivariate joint model that was estimated previously. Our prediction data will require the variables `year`, `sex` and `trt`, since these were the covariates used in the longitudinal submodel. 
+Suppose we wanted to predict the longitudinal trajectory for each of the biomarkers, marginalising over the distribution of the individual-specific parameters. To do this, we can pass a new data frame with the covariate values we want to use in the predictions. Here, we will demonstrate this by obtaining the predicted trajectory for log serum bilirubin, under the multivariate joint model that was estimated previously. Our prediction data will require the variables `year`, `sex` and `trt`, since these were the covariates used in the longitudinal submodel.
 
 We will predict the value of log serum bilirubin at years 0 through 10, for each combination of `sex` and `trt`. We also need to include the `id` variable in our prediction data because this is relevant to the longitudinal submodel. Since we want to marginalise over the individual-specific parameters (i.e. individual-level random effects) we need to note two things:
 
@@ -770,7 +768,7 @@ Here is our prediction data:
 
 ```{r newdata_19213}
 ndL <- expand.grid(year = seq(0, 10, 1),
-                   sex = c("m", "f"), 
+                   sex = c("m", "f"),
                    trt = 0:1)
 ndL$id <- rep(c("male_notrt", "female_notrt",
                 "male_trt", "female_trt"), each = 11)
@@ -831,4 +829,3 @@ plot(p1) # plot the standardised survival curve
 17. Laurie DP. Calculation of Gauss-Kronrod quadrature rules. *Math Comput* 1997;**66**(219):1133-45.
 18. Rizopoulos D. Dynamic Predictions and Prospective Accuracy in Joint Models for Longitudinal and Time-to-Event Data. *Biometrics* 2011;**67**(3):819-829.
 19. Therneau T, Grambsch P. *Modeling Survival Data: Extending the Cox Model* Springer-Verlag, New York; 2000. ISBN: 0-387-98784-3
-

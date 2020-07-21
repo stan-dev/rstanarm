@@ -2,11 +2,9 @@
 title: "Modeling Rates/Proportions using Beta Regression with rstanarm"
 author: "Imad Ali, Jonah Gabry and Ben Goodrich"
 date: "`r Sys.Date()`"
-output: 
-  html_vignette: 
+output:
+  html_vignette:
     toc: yes
-params:
-  EVAL: !r TRUE
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -75,7 +73,7 @@ specifying the prior distributions $f(\boldsymbol{\beta})$ and $f(\boldsymbol{\g
 In `stan_betareg` the prior distributions on $\boldsymbol{\gamma}$ can be set using
 the `prior_intercept_z` and `prior_z` arguments.
 
-As an example, suppose we have $K$ predictors and believe --- prior to seeing 
+As an example, suppose we have $K$ predictors and believe --- prior to seeing
 the data --- that $\beta_1, \dots, \beta_K$ and $\phi$ are as likely to be positive
 as they are to be negative, but are highly unlikely to be far from zero. These
 beliefs can be represented by normal distributions with mean zero and a small
@@ -85,9 +83,9 @@ arguments `prior_intercept = normal(0,1)`, `prior = normal(0,1)`, and
 `prior_phi = normal(0,1)`.
 
 If, on the other hand, we have less a priori confidence that the parameters will
-be close to zero then we could use a larger scale for the normal distribution 
-and/or a distribution with heavier tails than the normal like the Student t 
-distribution. __Step 1__ in the "How to Use the __rstanarm__ Package" vignette 
+be close to zero then we could use a larger scale for the normal distribution
+and/or a distribution with heavier tails than the normal like the Student t
+distribution. __Step 1__ in the "How to Use the __rstanarm__ Package" vignette
 discusses one such example.
 
 After fitting the model we can use the `prior_summary` function to print
@@ -99,8 +97,8 @@ When using only a *single set of regressors*, the posterior distribution of
 $\boldsymbol{\beta}$ and $\phi$ is proportional to the product of the likelihood
 contributions, the $K$ priors on the $\beta_k$ parameters, and $\phi$,
 $$
-f(\boldsymbol{\beta},\phi|\mathbf{y},\mathbf{X}) \propto 
-\prod_{i=1}^N f(y_i | a, b) \times 
+f(\boldsymbol{\beta},\phi|\mathbf{y},\mathbf{X}) \propto
+\prod_{i=1}^N f(y_i | a, b) \times
 \prod_{k=1}^K f(\beta_k) \times
 f(\phi)
 $$
@@ -110,8 +108,8 @@ $\boldsymbol{\gamma}$ is proportional to the product of the likelihood contribut
 priors on the $\beta_k$ parameters, and the $J$ priors on the $\gamma_j$ parameters,
 
 $$
-f(\boldsymbol{\beta},\boldsymbol{\gamma}|\mathbf{y},\mathbf{X}) \propto 
-\prod_{i=1}^N f(y_i | a, b) \times 
+f(\boldsymbol{\beta},\boldsymbol{\gamma}|\mathbf{y},\mathbf{X}) \propto
+\prod_{i=1}^N f(y_i | a, b) \times
 \prod_{k=1}^K f(\beta_k) \times
 \prod_{j=1}^J f(\gamma_j)
 $$
@@ -158,7 +156,7 @@ round(coef(fit2), 2)
 ```
 
 For clarity we can use `prior_summary` to print the information about the prior
-distributions used to fit the models. The priors used in `fit1` are provided below. 
+distributions used to fit the models. The priors used in `fit1` are provided below.
 
 ``` {r print-priors}
 prior_summary(fit1)
@@ -172,15 +170,15 @@ comparison to the true model.
 library(ggplot2)
 library(bayesplot)
 bayesplot_grid(
-  pp_check(fit1), pp_check(fit2), 
+  pp_check(fit1), pp_check(fit2),
   xlim = c(0,1),  
-  ylim = c(0,4), 
+  ylim = c(0,4),
   titles = c("True Model: y ~ x | z", "False Model: y ~ x - 1"),
   grid_args = list(ncol = 2)
 )
 ```
 
-We can also compare models by evaluating the expected log pointwise predictive 
+We can also compare models by evaluating the expected log pointwise predictive
 density (`elpd`), which can be calculated using the `loo` method, which provides
 an interface for __rstanarm__ models to the functionality in the __loo__
 package.
@@ -230,9 +228,9 @@ than 0.20.
 ```{r gas-analysis, fig.height=5}
 library(ggplot2)
 bayesplot_grid(
-  pp_check(gas_fit1), pp_check(gas_fit2), 
+  pp_check(gas_fit1), pp_check(gas_fit2),
   xlim = c(0,1),  
-  ylim = c(0,5), 
+  ylim = c(0,5),
   titles = c("gas_fit1", "gas_fit2"),
   grid_args = list(ncol = 2)
 )
@@ -243,7 +241,7 @@ gas_loo2 <- loo(gas_fit2)
 loo_compare(gas_loo1, gas_loo2)
 ```
 
-Evaluating the expected log predictive distribution using `loo` 
+Evaluating the expected log predictive distribution using `loo`
 reveals that the second of the two models is preferred.
 
 # References

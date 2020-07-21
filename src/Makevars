@@ -1,19 +1,23 @@
 STANHEADERS_SRC = $(shell "$(R_HOME)/bin$(R_ARCH_BIN)/Rscript" -e "message()" -e "cat(system.file('include', 'src', package = 'StanHeaders', mustWork = TRUE))" -e "message()" | grep "StanHeaders")
-PKG_CPPFLAGS = -I"../inst/include" -I"$(STANHEADERS_SRC)" -DBOOST_DISABLE_ASSERTS -DEIGEN_NO_DEBUG -DBOOST_MATH_OVERFLOW_ERROR_POLICY=errno_on_error
+TBB_LIB = $(shell "$(R_HOME)/bin$(R_ARCH_BIN)/Rscript" -e "message()" -e "cat(system.file('lib', .Platform[['r_arch']], package = 'RcppParallel', mustWork = TRUE))" -e "message()" | grep "RcppParallel")
+PKG_CPPFLAGS = -I"../inst/include" -I"$(STANHEADERS_SRC)" -DBOOST_DISABLE_ASSERTS -DEIGEN_NO_DEBUG
+PKG_CXXFLAGS = `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "RcppParallel::CxxFlags()"` `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "StanHeaders:::CxxFlags()"`
+SHLIB_LDFLAGS = $(SHLIB_CXXLDFLAGS)
+SHLIB_LD = $(SHLIB_CXXLD)
+PKG_LIBS = `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "RcppParallel::RcppParallelLibs()"` -L"$(TBB_LIB)" -ltbb -ltbbmalloc
+
 CXX_STD = CXX14
 SOURCES = $(wildcard stan_files/*.stan)
 OBJECTS = $(SOURCES:.stan=.o) init.o
 
 all: $(SHLIB)
-		@if test -e "/usr/bin/install_name_tool" && test -e "/usr/local/clang4/lib/libc++.1.dylib" && test -e "/usr/lib/libc++.1.dylib"; then /usr/bin/install_name_tool -change /usr/local/clang4/lib/libc++.1.dylib /usr/lib/libc++.1.dylib $(SHLIB); fi
 
 clean:
-		rm -rf stan_files/*.o
-		rm -rf *.so *.o
-		rm -rf stan_files/*.cc
-		rm -rf stan_files/*.hpp
+		RM -rf stan_files/*.o
+		RM -rf *.so *.o
+		RM -rf stan_files/*.cc
+		RM -rf stan_files/*.hpp
+
 
 %.cc: %.stan
 		"$(R_HOME)/bin$(R_ARCH_BIN)/Rscript" -e "source(file.path('..', 'tools', 'make_cc.R')); make_cc(commandArgs(TRUE))" $<
-
-.phony: all clean
