@@ -1,6 +1,11 @@
+# rstanarm <img src="man/figures/stanlogo.png" align="right" width="120" />
+
+<!-- badges: start -->
 [![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/rstanarm?color=blue)](https://cran.r-project.org/package=rstanarm)
 [![Downloads](https://cranlogs.r-pkg.org/badges/rstanarm?color=blue)](https://cran.rstudio.com/package=rstanarm)
+<!-- badges: end -->
 
+<!--
 <br>
 
 <div style="text-align:left">
@@ -10,6 +15,8 @@
 </div>
 
 <br>
+-->
+
 
 **rstanarm** is an R package that emulates other R model-fitting functions but
 uses Stan (via the [rstan](https://mc-stan.org/rstan/) package)
