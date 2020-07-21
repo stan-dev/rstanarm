@@ -75,7 +75,7 @@
 #'   distributional assumption and integrate over uncertainty in the parameters.
 #'   This only assumes that any one observation can be omitted without having a
 #'   major effect on the posterior distribution, which can be judged using the
-#'   diagnostic plot provided by the \code{\link[loo]{plot.loo}} method and the
+#'   diagnostic plot provided by the \code{\link[loo:pareto-k-diagnostic]{plot.loo}} method and the
 #'   warnings provided by the \code{\link[loo]{print.loo}} method (see the
 #'   \emph{How to Use the rstanarm Package} vignette for an example of this
 #'   process).
@@ -708,6 +708,10 @@ kfold_and_reloo_data <- function(x) {
   } else {
     # already a data frame
     all_vars <- all.vars(formula(x))
+    if (isTRUE(x$stan_function == "stan_gamm4")) {
+      # see https://github.com/stan-dev/rstanarm/issues/435
+      all_vars <- c(all_vars, all.vars(getCall(x)[["random"]]))
+    }
     if ("." %in% all_vars) {
       all_vars <- seq_len(ncol(d))
     }

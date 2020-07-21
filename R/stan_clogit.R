@@ -84,14 +84,14 @@
 #'
 #' nd <- dat[dat$parity > 2, c("case", "spontaneous", "induced", "education", "stratum")]
 #' # next line would fail without case and stratum variables                                 
-#' pr <- posterior_linpred(post, newdata = nd, transform = TRUE) # transform=TRUE gives probabilities
+#' pr <- posterior_epred(post, newdata = nd) # get predicted probabilities
 #' 
 #' # not a random variable b/c probabilities add to 1 within strata
 #' all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr)) 
 #'             
 #' @importFrom lme4 findbars
 stan_clogit <- function(formula, data, subset, na.action = NULL, ..., 
-                        strata, prior = normal(), 
+                        strata, prior = normal(autoscale=TRUE), 
                         prior_covariance = decov(), prior_PD = FALSE, 
                         algorithm = c("sampling", "optimizing", 
                                       "meanfield", "fullrank"),

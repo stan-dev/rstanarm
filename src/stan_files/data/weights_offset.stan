@@ -4,4 +4,4 @@
   
   // offset
   int<lower=0,upper=1> has_offset;  // 0 = No, 1 = Yes
-  vector[has_offset ? N : 0] offset;
+  vector[has_offset ? N : 0] offset_;

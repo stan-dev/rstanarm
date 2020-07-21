@@ -28,11 +28,11 @@
 #' \code{neg_binomial_2} internally.
 #' 
 #' @export
-#' @param link The same as for \code{\link{poisson}}, typically a character
+#' @param link The same as for \code{\link[stats:family]{poisson}}, typically a character
 #'   vector of length one among \code{"log"}, \code{"identity"}, and
 #'   \code{"sqrt"}.
 #' @return An object of class \code{\link[stats]{family}} very similar to
-#'   that of \code{\link[stats]{poisson}} but with a different family name.
+#'   that of \code{\link[stats:family]{poisson}} but with a different family name.
 #' @examples
 #' if (!grepl("^sparc",  R.version$platform))
 #' stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, seed = 123,

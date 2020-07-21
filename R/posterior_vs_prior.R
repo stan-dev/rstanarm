@@ -20,8 +20,8 @@
 #'   \code{\link[ggplot2]{aes}}thetic and it is therefore also possible to
 #'   change the default colors by adding one of the various discrete color
 #'   scales available in \code{ggplot2} 
-#'   (\code{\link[ggplot2]{scale_color_manual}}, 
-#'   \code{\link[ggplot2]{scale_color_brewer}}, etc.). See Examples.
+#'   (\code{\link[ggplot2:scale_manual]{scale_color_manual}}, 
+#'   \code{scale_colour_brewer}, etc.). See Examples.
 #' @param prob A number \eqn{p \in (0,1)}{p (0 < p < 1)} indicating the desired 
 #'   posterior probability mass to include in the (central posterior) interval 
 #'   estimates displayed in the plot. The default is \eqn{0.9}.
@@ -31,8 +31,8 @@
 #'   allow axis scales to vary across facets, etc. See Examples.
 #' @param ... The S3 generic uses \code{...} to pass arguments to any defined 
 #'   methods. For the method for stanreg objects, \code{...} is for arguments
-#'   (other than \code{color}) passed to \code{\link[ggplot2]{geom_pointrange}}
-#'   to control the appearance of the plotted intervals.
+#'   (other than \code{color}) passed to \code{geom_pointrange} in the \pkg{ggplot2}
+#'   package to control the appearance of the plotted intervals.
 #'   
 #' @return A ggplot object that can be further customized using the 
 #'   \pkg{ggplot2} package.
