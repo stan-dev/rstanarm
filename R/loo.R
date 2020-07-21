@@ -120,6 +120,7 @@
 #' }
 #'
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #' fit1 <- stan_glm(mpg ~ wt, data = mtcars, refresh = 0)
 #' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, refresh = 0)
@@ -176,7 +177,7 @@
 #' loo_list <- list(A = loo1, B = loo2, C = loo3) # names optional (affects printing)
 #' loo_model_weights(loo_list)
 #' }
-#'
+#' }
 loo.stanreg <-
   function(x,
            ...,

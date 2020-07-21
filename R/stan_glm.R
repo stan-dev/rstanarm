@@ -87,7 +87,7 @@
 #'   \url{http://mc-stan.org/rstanarm/articles/}.
 #' 
 #' @examples
-#' if (!grepl("^sparc",  R.version$platform)) {
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' ### Linear regression
 #' mtcars$mpg10 <- mtcars$mpg / 10
 #' fit <- stan_glm(
@@ -102,7 +102,6 @@
 #' plot(fit, prob = 0.5)
 #' plot(fit, prob = 0.5, pars = "beta")
 #' plot(fit, "hist", pars = "sigma")
-#' }
 #' \donttest{
 #' ### Logistic regression
 #' head(wells)
@@ -193,7 +192,7 @@
 #' posterior_interval(fit6, pars = "reciprocal_dispersion", prob = 0.8)
 #' plot(fit6, "areas", pars = "reciprocal_dispersion", prob = 0.8)
 #' }
-#'
+#' }
 stan_glm <-
   function(formula,
            family = gaussian(),

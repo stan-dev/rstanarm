@@ -34,6 +34,7 @@
 #'   apples when \code{algorithm} is \code{"optimizing"} but defaults to
 #'   \code{TRUE} in that case
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' # create inputs
 #' ols <- lm(mpg ~ wt + qsec + am, data = mtcars, # all row are complete so ...
 #'           na.action = na.exclude)              # not necessary in this case
@@ -50,7 +51,7 @@
 #'                        # the next line is only to make the example go fast
 #'                        chains = 1, iter = 500, seed = 12345)
 #' cbind(lm = b, stan_lm = rstan::get_posterior_mean(post)[13:15,]) # shrunk
-#' 
+#' }
 stan_biglm.fit <- function(b, R, SSR, N, xbar, ybar, s_y, has_intercept = TRUE, ...,
                            prior = R2(stop("'location' must be specified")), 
                            prior_intercept = NULL, prior_PD = FALSE, 

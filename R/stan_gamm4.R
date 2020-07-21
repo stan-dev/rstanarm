@@ -102,6 +102,7 @@
 #'   \code{stan_gamm4}. \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' # from example(gamm4, package = "gamm4"), prefixing gamm4() call with stan_
 #' \donttest{
 #' dat <- mgcv::gamSim(1, n = 400, scale = 2) ## simulate 4 term additive truth
@@ -115,7 +116,7 @@
 #' plot_nonlinear(br)
 #' plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #' }
-#' 
+#' }
 stan_gamm4 <-
   function(formula,
            random = NULL,

@@ -84,6 +84,7 @@
 #' @template reference-muth
 #'   
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \dontrun{
 #' if (!exists("example_model")) example(example_model) 
 #' 
@@ -103,7 +104,7 @@
 #' sso <- shinystan::as.shinystan(example_model, ppd = FALSE)
 #' if (interactive()) launch_shinystan(sso)
 #' }
-#' 
+#' }
 launch_shinystan.stanreg <-
   function(object,
            ppd = TRUE, 

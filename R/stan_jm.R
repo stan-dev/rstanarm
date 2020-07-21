@@ -408,8 +408,8 @@
 #'   \code{\link{pp_check}}, \code{\link{ps_check}}, \code{\link{stan_mvmer}}.
 #' 
 #' @examples
-#' \donttest{
 #' if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
+#' \donttest{
 #' 
 #' #####
 #' # Univariate joint model, with association structure based on the 

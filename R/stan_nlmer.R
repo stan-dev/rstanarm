@@ -69,6 +69,7 @@
 #'   \code{stan_nlmer} models. \url{http://mc-stan.org/rstanarm/articles/}
 #'   
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #' \donttest{
 #' data("Orange", package = "datasets")
 #' Orange$circumference <- Orange$circumference / 100
@@ -83,6 +84,7 @@
 #' print(fit)
 #' posterior_interval(fit)
 #' plot(fit, regex_pars = "b\\[")
+#' }
 #' }
 #' @importFrom lme4 nlformula
 #' @importFrom stats getInitial

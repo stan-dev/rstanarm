@@ -85,11 +85,12 @@
 #' plot.
 #'
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \dontrun{
 #' if (!exists("example_model")) example(example_model)
 #' try(pp_validate(example_model)) # fails with default seed / priors
 #' }
-#'
+#' }
 #' @importFrom ggplot2 rel geom_point geom_segment scale_x_continuous element_line
 #'
 pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
