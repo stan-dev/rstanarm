@@ -15,6 +15,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
+#' Logit and inverse logit
+#' 
+#' @export
+#' @param x Numeric vector. 
+#' @return A numeric vector the same length as \code{x}.
+logit <- function(x) stats::qlogis(x)
+
+#' @rdname logit
+#' @export
+invlogit <- function(x) stats::plogis(x)
+
 # Set arguments for sampling 
 #
 # Prepare a list of arguments to use with \code{rstan::sampling} via
@@ -807,6 +819,9 @@ validate_data <- function(data, if_missing = NULL) {
   if (!is.data.frame(data)) {
     stop("'data' must be a data frame.", call. = FALSE)
   }
+  
+  # drop other classes (e.g. 'tbl_df', 'tbl', 'data.table')
+  data <- as.data.frame(data)
   
   drop_redundant_dims(data)
 }

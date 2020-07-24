@@ -1,20 +1,17 @@
 ---
-title: "MRP in rstanarm"
+title: "MRP with rstanarm"
 author: "Lauren Kennedy and Jonah Gabry"
 date: "`r Sys.Date()`"
 output: 
   html_vignette: 
     toc: yes
-params:
-  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 bibliography: mrp-files/mrp.bib
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{mrp: MRP in rstanarm}
+%\VignetteIndexEntry{MRP with rstanarm}
 -->
-```{r, child="children/SETTINGS-knitr.txt"}
-```
+
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
 ```{r packages-1, message=FALSE}
@@ -33,7 +30,7 @@ library(tidyr)
 Inference about the population is one the main aims of statistical methodology.
 Multilevel regression and post-stratification (MRP) [@little1993post;
 @lax2009should; @park2004bayesian] has been shown to be an effective method of
-adjusting the sample so that it is representative of the population for a set of
+adjusting the sample to be more representative of the population for a set of
 key variables. Recent work has demonstrated the effectiveness of MRP when there
 are a number of suspected interactions between these variables
 [@ghitza2013deep], replicated by @lei20172008. While @ghitza2013deep use
@@ -86,7 +83,7 @@ simulate_mrp_data <- function(n) {
   # Now let's adjust for the probability of response
   p_response_baseline <- 0.01
   p_response_male <- c(2, 0.8) / 2.8
-  p_response_eth <- c(1, 1.2, 2.5) / 3.7
+  p_response_eth <- c(1, 1.2, 2.5) / 4.7
   p_response_age <- c(1, 0.4, 1, 1.5,  3, 5, 7) / 18.9
   p_response_inc <- c(1, 0.9, 0.8) / 2.7
   p_response_state <- rbeta(50, 1, 1)
@@ -163,19 +160,22 @@ for this R markdown document (and printed in the appendix). The first, `sample`,
 contains $n$ observations from the individuals that form our sample (i.e., $n$
 rows). For each individual we have their age (recorded as membership within a
 specific age bracket), ethnicity, income level (recorded as membership within a
-specific bracket), and male/gender. Participants were randomly sampled from a
-state. The outcome variable of interest is a binary variable (MRP can also be
-used with a continuous variable outcome variable). Oftentimes this is the
-outcome of a two option fixed choice question (for example McCain's share of two
-party vote [@ghitza2013deep]; support for George W Bush, [@park2004bayesian]; or
-support for the death penalty [@shirley2015hierarchical]).
+specific bracket), and gender. Participants were randomly sampled from a
+state. 
+
+MRP is often used for dichotomous fixed choice questions (e.g., McCain's
+share of two party vote [@ghitza2013deep]; support for George W Bush,
+[@park2004bayesian]; or support for the death penalty
+[@shirley2015hierarchical]), so we will use a binary variable as the outcome in
+this vignette. However, MRP can also be used if there are more than two
+categories or if the outcome is continuous.
 
 As this is a simple toy example, we will describe the proportion of the
 population who would choose to adopt a cat over a dog, given the opportunity. We
 will simulate data using a function that is included in the appendix of this
-document. This function simulates sample from a much larger population. It
-returns a list including the sample, population poststratification matrix and
-the true population preference for cats.
+document. The `simulate_mrp_data()` function simulates a sample from a much
+larger population. It returns a list including the sample, population
+poststratification matrix and the true population preference for cats.
 
 
 ```{r include=FALSE, eval=FALSE}
@@ -197,25 +197,27 @@ str(mrp_sim)
 sample <- mrp_sim[["sample"]]
 rbind(head(sample), tail(sample))
 ```
+
 The variables describing the individual (age, ethnicity, income level and
 gender) will be used to match the sample to the population of interest. To do
 this we will need to form a post-stratification table, which contains the number
-of people in each possible combination of post-stratification variable. As we
-have 4 variables with 2 (male), 7 (age), 3 (ethnicity) and 3 (income) levels,
+of people in each possible combination of the post-stratification variables. We
+have 4 variables with 2 (male), 7 (age), 3 (ethnicity) and 3 (income) levels, so
 there are 2x7x3x3 different levels. Participants are also selected from a state
 (50), increasing the number of possible levels to $6300$.
 
-To make inference about the population, we will also need the proportion of the
-population in each  post stratification cell at the *population* level. We will
+To make inference about the population, we will also need the proportion of 
+individuals in each post stratification cell at the *population* level. We will
 use this information to update the estimate of our outcome variable from the
 sample so that is more representative of the population. This is particularly
-helpful if there is a belief that the sample has some bias (i.e., a greater
-proportion of females responded than males), and that bias impacts the outcome
-variable (i.e, women are more likely to adopt a cat than men).  For each
+helpful if there is a belief that the sample has some bias (e.g., a greater
+proportion of females responded than males), and that the bias impacts the outcome
+variable (e.g., maybe women are more likely to pick a cat than men). For each
 possible combination of factors, the post-stratification table shows the
 proportion/number of the population in that cell (rather than the
-proportion/number in the sample in the cell). Below we read in the poststrat
-data our simulated data list.
+proportion/number in the sample in the cell). 
+
+Below we read in the poststrat data our simulated data list.
 
 ```{r message=FALSE}
 poststrat <- mrp_sim[["poststrat"]]
@@ -223,7 +225,7 @@ rbind(head(poststrat), tail(poststrat))
 ```
 
 One of the benefits of using a simulated data set for this example is that the
-actual, population level probability of cat preference is known for each
+actual population level probability of cat preference is known for each
 post-stratification cell. In real world data analysis, we don't have this
 luxury, but we will use it later in this case study to check the predictions of
 the model. Details regarding the simulation of this data are available in the
@@ -542,7 +544,7 @@ bayesplot_grid(compare,compare2,
 ```
 
 
-# MRP in RStanArm
+# MRP with rstanarm
 
 From visual inspection, it appears that different levels of post-stratification
 variable have different preferences for cats. Our survey also appears to have
@@ -553,59 +555,69 @@ the preference for cats in the *population* using the post-stratification
 variables to account for systematic differences between the sample and
 population. Using rstanarm, this becomes a simple procedure.
 
-The first step is to use a multi-level generalized logistic regression model to
-predict preference for cats in the sample given the variables that we wish to
-post-stratify with. Note that we actually have more rows in the
+The first step is to use a multi-level logistic regression model to
+predict preference for cats in the sample given the variables that we will use
+to post-stratify. Note that we actually have more rows in the
 post-stratification matrix than the we have observed units, so there are some
 cells in the poststrat matrix that we don't observe. We can use a multi-level
 model to partially pool information across the different levels within each
 variable to assist with this. In the model described below, we use a fixed
-intercept for male, and random intercepts for each of the other factors. This
-model is included below, with $\theta_{j}$ representing the preference for cats
-in the poststratification cell $j$, and $X_j$ representing the predictor male
+intercept for gender, and hierarchically modeled varying intercepts 
+for each of the other factors. 
 
-$$\theta_j= logit^{-1}(X_{j}\beta)$$
+Let $\theta_{j}$ denote the preference for cats in the $j$th poststratification cell.
+The non-hierarchical part of the model can be written as
 
-The multi level component part of the model fits for each post-stratification
-variable (other than male) a variable $\sigma_{S[j]}$ so that we model for each
-variable an intercept $\alpha_{S[j]}$ but constrain $\alpha_{S[j]}$ so that it
-is distributed $N(0,\sigma_{S[j]})$. This is beneficial as it means we share
-information between the levels of each variable, we can prevent little observed
-levels from being fit too tightly to the observed values, and for those levels
-that we don't observe, we can make a good estimate based on the distribution of
-levels that we do observe. For more benefits of this type of model, see
-@gelman2005analysis. For simplicity we will use an intercept only model with
-states, ethnicity, income and age allowed to have different baseline cat
-preferences, but @ghitza2013deep extend this for other possible models.
+$$\theta_j= logit^{-1}(X_{j}\beta),$$
 
-$$\theta_j = logit^{-1}(X_{j}\beta + \alpha_{S[j]}^{S})$$
+where here $X$ only contains an indicator for male or female and an interaction
+term with age.
 
-where:
+Adding the varying intercepts for the other variables the model becomes
 
-$$\alpha_{S[j]}^{S} \sim N(0, \sigma^2_{S[j]})$$
+$$
+\theta_j = logit^{-1}(
+X_{j}\beta 
++ \alpha_{\rm state[j]}^{\rm state}
++ \alpha_{\rm age[j]}^{\rm age}
++ \alpha_{\rm eth[j]}^{\rm eth}
++ \alpha_{\rm inc[j]}^{\rm inc}
+)
+$$
+with 
 
-In the following code we predict y (preference for cats) using fixed effects for
-gender and an interaction between age and gender, which allows the relationship
-between gender and cat preference to differ with age. We chose to use fixed
-effects for gender because with two levels it is difficult to fit a varying
-effect. An alternative would be to use a strong prior as in @si2017bayesian.
-Lastly we include a term that suggests that the intercept might differ by state,
-ethnicity, age and income. In the appendix a number of different model
-structures are tabled for ease of use. They are all highly similar to the
-formulae used by the glmer in the lme4 package.
+$$
+\begin{align*}
+\alpha_{\rm state[j]}^{\rm state} & \sim N(0,\sigma^{\rm state}) \\
+\alpha_{\rm age[j]}^{\rm age} & \sim N(0,\sigma^{\rm age})\\
+\alpha_{\rm eth[j]}^{\rm eth} & \sim N(0,\sigma^{\rm eth})\\
+\alpha_{\rm inc[j]}^{\rm inc} &\sim N(0,\sigma^{\rm inc}) \\
+\end{align*}
 
-Finally we specify the relationship between the predictors and outcome variable,
-in this case a logit function. The final element of the input specifies the data
-frame that contains the variables in the formula and manually sets the
-adapt_delta value.
+$$
 
-```{r,echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+
+Each of $\sigma^{\rm state}$, $\sigma^{\rm age}$, $\sigma^{\rm eth}$, 
+and $\sigma^{\rm inc}$ are estimated from the data (in this case using 
+rstanarm's default priors), which is beneficial as it means we share
+information between the levels of each variable and we can prevent levels with 
+with less data from being too sensitive to the few observed values. This also 
+helps with the levels we don't observe at all it will use information from the
+levels that we do observe. For more on the benefits of this type of model, see
+@gelman2005analysis, and see @ghitza2013deep and @si2017bayesian for more 
+complicated extensions that involve deep interactions and structured prior
+distributions. 
+
+Here is the model specified using the `stan_glmer()` function in rstanarm, 
+which uses the same formula syntax as the `glmer()` function from the lme4
+package:
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
 fit <- stan_glmer(
   cat_pref ~ factor(male) + factor(male) * factor(age) + 
     (1 | state) + (1 | age) + (1 | eth) + (1 | income),
   family = binomial(link = "logit"),
-  data = sample,
-  refresh = 0
+  data = sample
 )
 ```
 
@@ -625,7 +637,7 @@ these errors do occur, more information on how to alleviate them is provided
 From this we get a summary of the baseline log odds of cat preference at the
 first element of each factor (i.e., male = 0, age = 1) for each state, plus
 estimates on variability of the intercept for state, ethnicity, age and income.
-Whilst this is interesting, currently all we have achieved is a model that
+While this is interesting, currently all we have achieved is a model that
 predicts cat preference given a number of factor-type predictors in a sample.
 What we would like to do is estimate cat preference in the population by
 accounting for differences between our sample and the population. We use the
@@ -835,14 +847,19 @@ convenient for the data at hand. More details on these two forms of binomial mod
 are available [here](https://mc-stan.org/rstanarm/articles/binomial.html).
 
 
-## Examples of other formulas
+# Appendix
+
+### Examples of other formulas
 
 The formulas for fitting so-called "mixed-effects" models in **rstanarm** are
 the same as those in the **lme4** package. A table of examples can be found in
 Table 2 of the vignette for the **lme4** package, available
 [here](https://CRAN.R-project.org/package=lme4/vignettes/lmer.pdf).
 
-# Appendix: Code to simulate the data
+### Code to simulate the data
+
+Here is the source code for the `simulate_mrp_function()`, which is based off 
+of some code provided by Aki Vehtari.
 
 ```{r}
 print(simulate_mrp_data)

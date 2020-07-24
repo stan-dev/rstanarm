@@ -119,7 +119,7 @@
 #'   \url{http://mc-stan.org/rstanarm/articles/}
 #'
 #' @examples
-#' if (!grepl("^sparc",  R.version$platform)) {
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #'  fit <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
 #'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345,
 #'           algorithm = "fullrank") # for speed only

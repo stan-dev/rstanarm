@@ -42,7 +42,8 @@
 #'   an \eqn{S} by \eqn{Npat} matrix where \eqn{Npat} is the number of individuals.
 #'   
 #'   
-#' @examples 
+#' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'  roaches$roach100 <- roaches$roach1 / 100
 #'  fit <- stan_glm(
@@ -52,7 +53,8 @@
 #'     family = poisson(link = "log"),
 #'     prior = normal(0, 2.5),
 #'     prior_intercept = normal(0, 10),
-#'     iter = 500 # to speed up example
+#'     iter = 500, # just to speed up example,
+#'     refresh = 0
 #'  )
 #'  ll <- log_lik(fit)
 #'  dim(ll)
@@ -66,7 +68,7 @@
 #'  dim(ll2)
 #'  all.equal(ncol(ll2), nrow(nd))
 #' }
-#'
+#' }
 log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
   newdata <- validate_newdata(object, newdata, m = NULL)
   calling_fun <- as.character(sys.call(-1))[1]

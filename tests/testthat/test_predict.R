@@ -66,8 +66,7 @@ test_that("predict ok for binomial", {
   expect_equal(pg$se.fit, ps$se.fit, tol = 0.2)
   expect_equal(pg$se.fit, pso$se.fit, tol = 0.1)
   expect_equal(presp(glmfit)[1:2], presp(stanfit_opt), tol = 0.05)
-  expect_error(presp(stanfit))
-  
+
   ld <- seq(0, 5, 0.1)
   newd <- data.frame(ldose = ld, sex = factor(rep("M", length(ld)), 
                                               levels = levels(sex)))
@@ -100,7 +99,6 @@ test_that("predict ok for gaussian", {
   expect_equal(pg$se.fit, ps$se.fit, tol = 0.3)
   expect_equal(pg$se.fit, pso$se.fit, tol = 0.1)
   expect_equal(presp(glmfit)[1:2], presp(stanfit_opt), tol = 0.1)
-  expect_error(presp(stanfit))
 
   newd <- data.frame(wt = c(1,5))
   pg <- plink(glmfit, newd)
@@ -132,7 +130,6 @@ test_that("predict ok for Poisson", {
   expect_equal(pg$se.fit, ps$se.fit, tol = 0.1)
   expect_equal(pg$se.fit, pso$se.fit, tol = 0.1)
   expect_equal(presp(glmfit)[1:2], presp(stanfit_opt), tol = 0.1)
-  expect_error(presp(stanfit))
 
   expect_equal(plink(stanfit, sef = FALSE), plink(glmfit, sef = FALSE), tol = 0.05)
   expect_equal(presp(stanfit, sef = FALSE), presp(glmfit, sef = FALSE), tol = 0.05)

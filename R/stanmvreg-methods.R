@@ -497,7 +497,7 @@ family.stanmvreg <- function(object, m = NULL, ...) {
 #' @templateVar mArg m
 #' @template args-m
 #' @param formula,... See \code{\link[stats]{model.frame}}.
-#' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
+#' @param fixed.only See \code{\link[lme4:merMod-class]{model.frame.merMod}}.
 #' 
 model.frame.stanmvreg <- function(formula, fixed.only = FALSE, m = NULL, ...) {
   if (is.stanmvreg(formula)) {

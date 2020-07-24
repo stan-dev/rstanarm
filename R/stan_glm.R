@@ -87,7 +87,7 @@
 #'   \url{http://mc-stan.org/rstanarm/articles/}.
 #' 
 #' @examples
-#' if (!grepl("^sparc",  R.version$platform)) {
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' ### Linear regression
 #' mtcars$mpg10 <- mtcars$mpg / 10
 #' fit <- stan_glm(
@@ -95,13 +95,13 @@
 #'   data = mtcars, 
 #'   QR = TRUE,
 #'   # for speed of example only (default is "sampling")
-#'   algorithm = "fullrank" 
+#'   algorithm = "fullrank",
+#'   refresh = 0 
 #'  ) 
 #'                 
 #' plot(fit, prob = 0.5)
 #' plot(fit, prob = 0.5, pars = "beta")
 #' plot(fit, "hist", pars = "sigma")
-#' }
 #' \donttest{
 #' ### Logistic regression
 #' head(wells)
@@ -112,6 +112,7 @@
 #'   family = binomial(link = "logit"), 
 #'   prior_intercept = normal(0, 10),
 #'   QR = TRUE,
+#'   refresh = 0,
 #'   # for speed of example only
 #'   chains = 2, iter = 200 
 #' )
@@ -136,7 +137,8 @@
 #'   counts ~ outcome + treatment, 
 #'   data = count_data, 
 #'   family = poisson(link="log"),
-#'   prior = normal(0, 2, autoscale = FALSE),
+#'   prior = normal(0, 2),
+#'   refresh = 0,
 #'   # for speed of example only
 #'   chains = 2, iter = 250 
 #' ) 
@@ -156,7 +158,8 @@
 #'   lot1 ~ log_u, 
 #'   data = clotting, 
 #'   family = Gamma(link="log"),
-#'   iter = 500 # for speed of example only 
+#'   iter = 500, # for speed of example only
+#'   refresh = 0
 #'  ) 
 #' print(fit4, digits = 2)
 #' 
@@ -171,9 +174,14 @@
 #' 
 #' 
 #' ### Negative binomial regression
-#' fit6 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, 
-#'                     link = "log", prior_aux = exponential(1.5),
-#'                     chains = 2, iter = 200) # for speed of example only
+#' fit6 <- stan_glm.nb(
+#'   Days ~ Sex/(Age + Eth*Lrn), 
+#'   data = MASS::quine, 
+#'   link = "log", 
+#'   prior_aux = exponential(1.5, autoscale=TRUE),
+#'   chains = 2, iter = 200, # for speed of example only
+#'   refresh = 0
+#' ) 
 #' 
 #' prior_summary(fit6)
 #' bayesplot::color_scheme_set("brightblue")
@@ -184,7 +192,7 @@
 #' posterior_interval(fit6, pars = "reciprocal_dispersion", prob = 0.8)
 #' plot(fit6, "areas", pars = "reciprocal_dispersion", prob = 0.8)
 #' }
-#'
+#' }
 stan_glm <-
   function(formula,
            family = gaussian(),
@@ -198,9 +206,9 @@ stan_glm <-
            y = TRUE,
            contrasts = NULL,
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
-           prior_aux = exponential(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
+           prior_aux = exponential(autoscale=TRUE),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            mean_PPD = algorithm != "optimizing",
@@ -310,9 +318,9 @@ stan_glm.nb <-
            contrasts = NULL,
            link = "log",
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
-           prior_aux = exponential(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
+           prior_aux = exponential(autoscale=TRUE),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            mean_PPD = algorithm != "optimizing",

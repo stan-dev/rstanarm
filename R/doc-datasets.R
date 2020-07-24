@@ -256,7 +256,8 @@
 #' Therneau, T. and Grambsch, P. (2000) \emph{Modeling Survival Data: Extending 
 #' the Cox Model}. Springer-Verlag, New York, US.
 #' 
-#' @examples 
+#' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' # Using 'kidiq' dataset 
 #' fit <- stan_lm(kid_score ~ mom_hs * mom_iq, data = kidiq, 
 #'                prior = R2(location = 0.30, what = "mean"),
@@ -268,5 +269,5 @@
 #' pp_check(fit, plotfun = "stat_grouped", stat = "median", 
 #'          group = factor(kidiq$mom_hs, labels = c("No HS", "HS")))
 #' }
-#' 
+#' }
 NULL

@@ -224,11 +224,11 @@
 #'   controls \code{"sigma"}, the error 
 #'   standard deviation. For negative binomial models \code{priorLong_aux} controls 
 #'   \code{"reciprocal_dispersion"}, which is similar to the 
-#'   \code{"size"} parameter of \code{\link[stats]{rnbinom}}:
+#'   \code{"size"} parameter of \code{\link[stats:NegBinomial]{rnbinom}}:
 #'   smaller values of \code{"reciprocal_dispersion"} correspond to 
 #'   greater dispersion. For gamma models \code{priorLong_aux} sets the prior on 
 #'   to the \code{"shape"} parameter (see e.g., 
-#'   \code{\link[stats]{rgamma}}), and for inverse-Gaussian models it is the 
+#'   \code{\link[stats:GammaDist]{rgamma}}), and for inverse-Gaussian models it is the 
 #'   so-called \code{"lambda"} parameter (which is essentially the reciprocal of
 #'   a scale parameter). Binomial and Poisson models do not have auxiliary 
 #'   parameters. 
@@ -408,7 +408,9 @@
 #'   \code{\link{pp_check}}, \code{\link{ps_check}}, \code{\link{stan_mvmer}}.
 #' 
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #' \donttest{
+#' 
 #' #####
 #' # Univariate joint model, with association structure based on the 
 #' # current value of the linear predictor
@@ -517,16 +519,17 @@
 #'         time_var = "year", 
 #'         chains = 1, cores = 1, seed = 12345, iter = 1000)
 #' }
+#' }
 #' 
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 
                     id_var, family = gaussian, assoc = "etavalue", 
                     lag_assoc = 0, grp_assoc, epsilon = 1E-5,
                     basehaz = c("bs", "weibull", "piecewise"), basehaz_ops, 
                     qnodes = 15, init = "prefit", weights,	
-                    priorLong = normal(), priorLong_intercept = normal(), 
-                    priorLong_aux = cauchy(0, 5), priorEvent = normal(), 
-                    priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
-                    priorEvent_assoc = normal(), prior_covariance = lkj(), 
+                    priorLong = normal(autoscale=TRUE), priorLong_intercept = normal(autoscale=TRUE), 
+                    priorLong_aux = cauchy(0, 5, autoscale=TRUE), priorEvent = normal(autoscale=TRUE), 
+                    priorEvent_intercept = normal(autoscale=TRUE), priorEvent_aux = cauchy(autoscale=TRUE),
+                    priorEvent_assoc = normal(autoscale=TRUE), prior_covariance = lkj(autoscale=TRUE), 
                     prior_PD = FALSE, algorithm = c("sampling", "meanfield", "fullrank"), 
                     adapt_delta = NULL, max_treedepth = 10L, QR = FALSE, 
                     sparse = FALSE, ...) {

@@ -32,6 +32,7 @@
 #'   details on the \code{pareto_k} diagnostic.
 #'   
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \dontrun{
 #' if (!exists("example_model")) example(example_model)
 #' 
@@ -47,7 +48,7 @@
 #' loo_pred_ints <- loo_predictive_interval(example_model, prob = 0.8, psis_object = psis_result)
 #' str(loo_pred_ints)
 #' }
-#' 
+#' }
 loo_predict.stanreg <-
   function(object, 
            type = c("mean", "var", "quantile"), 

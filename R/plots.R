@@ -18,10 +18,10 @@
 #
 #' Plot method for stanreg objects
 #'
-#' The \code{plot} method for \link{stanreg-objects} provides a convenient
-#' interface to the \link[bayesplot]{MCMC} module in the \pkg{\link{bayesplot}}
-#' package for plotting MCMC draws and diagnostics. It is also straightforward
-#' to use the functions from the \pkg{bayesplot} package directly rather than
+#' The \code{plot} method for \link{stanreg-objects} provides a convenient 
+#' interface to the \link[bayesplot:MCMC-overview]{MCMC} module in the 
+#' \pkg{\link{bayesplot}} package for plotting MCMC draws and diagnostics. It is also 
+#' straightforward to use the functions from the \pkg{bayesplot} package directly rather than
 #' via the \code{plot} method. Examples of both methods of plotting are given
 #' below.
 #'
@@ -47,7 +47,7 @@
 #'   plot. These are described on the help pages for the individual plotting
 #'   functions. For example, the arguments accepted for the default
 #'   \code{plotfun="intervals"} can be found at
-#'   \code{\link[bayesplot]{mcmc_intervals}}.
+#'   \code{\link[bayesplot:MCMC-intervals]{mcmc_intervals}}.
 #'
 #' @return Either a ggplot object that can be further customized using the
 #'   \pkg{ggplot2} package, or an object created from multiple ggplot objects
@@ -58,7 +58,7 @@
 #'   \item The vignettes in the \pkg{bayesplot} package for many examples.
 #'   \item \code{\link[bayesplot]{MCMC-overview}} (\pkg{bayesplot}) for links to
 #'   the documentation for all the available plotting functions.
-#'   \item \code{\link[bayesplot]{color_scheme_set}} (\pkg{bayesplot}) to change
+#'   \item \code{\link[bayesplot:bayesplot-colors]{color_scheme_set}} (\pkg{bayesplot}) to change
 #'   the color scheme used for plotting.
 #'   \item \code{\link{pp_check}} for graphical posterior predictive checks.
 #'   \item \code{\link{plot_nonlinear}} for models with nonlinear smooth
@@ -68,6 +68,7 @@
 #' @template reference-bayesvis
 #'
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #' # Use rstanarm example model
 #' if (!exists("example_model")) example(example_model)
@@ -167,7 +168,7 @@
 #'
 #' # For graphical posterior predictive checks see
 #' # help("pp_check.stanreg")
-#'
+#' }
 #' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
 #'
 plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
@@ -449,8 +450,8 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 # pairs method ------------------------------------------------------------
 
 #' Pairs method for stanreg objects
-#'
-#' Interface to \pkg{bayesplot}'s \code{\link[bayesplot]{mcmc_pairs}} function
+#' 
+#' Interface to \pkg{bayesplot}'s \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}} function 
 #' for use with \pkg{rstanarm} models. Be careful not to specify too
 #' many parameters to include or the plot will be both hard to read and slow to
 #' render.
@@ -486,14 +487,22 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #'   The \code{np}, \code{lp}, and \code{max_treedepth} arguments to
 #'   \code{mcmc_pairs} are handled automatically by \pkg{rstanarm} and do not
 #'   need to be specified by the user in \code{...}. The arguments that can be
+#'   behavior see the documentation of the \code{condition} argument at 
+#'   \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}.
+#' @param ... Optional arguments passed to 
+#'   \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}. 
+#'   The \code{np}, \code{lp}, and \code{max_treedepth} arguments to 
+#'   \code{mcmc_pairs} are handled automatically by \pkg{rstanarm} and do not 
+#'   need to be specified by the user in \code{...}. The arguments that can be 
 #'   specified in \code{...} include \code{transformations}, \code{diag_fun},
 #'   \code{off_diag_fun}, \code{diag_args}, \code{off_diag_args},
 #'   and \code{np_style}. These arguments are
 #'   documented thoroughly on the help page for
-#'   \code{\link[bayesplot]{mcmc_pairs}}.
-#'
-#'
+#'   \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}.
+#' 
+#'   
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #' if (!exists("example_model")) example(example_model)
 #'
@@ -519,7 +528,8 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #'   iter = 1000,
 #'   # this combo of prior and adapt_delta should lead to some divergences
 #'   prior = hs(),
-#'   adapt_delta = 0.9
+#'   adapt_delta = 0.9,
+#'   refresh = 0
 #' )
 #'
 #' pairs(fit, pars = c("wt", "sigma", "log-posterior"))
@@ -549,7 +559,7 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' )
 #'
 #' }
-#'
+#' }
 pairs.stanreg <-
   function(x,
            pars = NULL,

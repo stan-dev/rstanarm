@@ -6,7 +6,7 @@
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
 #' @param re.form For models with group-level terms, \code{re.form} is
-#'   passed to \code{\link{posterior_linpred}} if specified.
+#'   passed to \code{\link{posterior_epred}} if specified.
 #' @param ... Currently ignored.
 #' 
 #' @return A vector of R-squared values with length equal to the posterior
@@ -21,7 +21,14 @@
 #' \href{https://avehtari.github.io/bayes_R2/bayes_R2.html}{Notebook})
 #' 
 #' @examples
-#' fit <- stan_glm(mpg ~ wt + cyl, data = mtcars, QR = TRUE, chains = 2)
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' fit <- stan_glm(
+#'   mpg ~ wt + cyl, 
+#'   data = mtcars, 
+#'   QR = TRUE, 
+#'   chains = 2, 
+#'   refresh = 0
+#' )
 #' rsq <- bayes_R2(fit)
 #' print(median(rsq))
 #' hist(rsq)
@@ -34,7 +41,7 @@
 #' print(example_model)
 #' median(bayes_R2(example_model))
 #' median(bayes_R2(example_model, re.form = NA)) # exclude group-level
-#' 
+#' }
 bayes_R2.stanreg <- function(object, ..., re.form = NULL) {
     
     if (!used.sampling(object))
@@ -47,7 +54,7 @@ bayes_R2.stanreg <- function(object, ..., re.form = NULL) {
       stop("bayes_R2 is only available for Gaussian and binomial models.")
     }
     
-    mu_pred <- posterior_linpred(object, transform = TRUE, re.form = re.form)
+    mu_pred <- posterior_epred(object, re.form = re.form)
     if (is.binomial(fam)) {
       y <- get_y(object)
       if (NCOL(y) == 2) {
@@ -93,7 +100,7 @@ loo_R2.stanreg <- function(object, ...) {
     psis_object <- loo::psis(log_ratios, r_eff = NA)
   }
   
-  mu_pred <- posterior_linpred(object, transform = TRUE)
+  mu_pred <- posterior_epred(object)
   if (is.binomial(fam)) {
     if (is.factor(y)) {
       y <- fac2bin(y)

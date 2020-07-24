@@ -58,14 +58,7 @@ predict.stanreg <- function(object,
       object$linear.predictors else object$fitted.values
     return(preds)
   }
-  if (!used.optimizing(object) && type == "response")
-    stop(
-      "type='response' should not be used for models estimated by MCMC",
-      "\nor variational approximation. Instead, use the 'posterior_predict' ",
-      "function to draw \nfrom the posterior predictive distribution.",
-      call. = FALSE
-    )
-  
+
   if (isTRUE(object$stan_function == "stan_betareg") && 
       !is.null(newdata)) {
     # avoid false positive warnings about missing z variables in newdata

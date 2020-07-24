@@ -297,6 +297,7 @@
 #'   \strong{67}, 819.
 #'      
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'   # Run example model if not already loaded
 #'   if (!exists("example_jm")) example(example_jm)
@@ -1102,7 +1103,7 @@ print.survfit.stanjm <- function(x, digits = 4, ...) {
 #'   (often known as a credible interval); or \code{"none"} for no interval 
 #'   limits.
 #' @param ... Optional arguments passed to 
-#'   \code{\link[ggplot2]{geom_line}} and used to control features
+#'   \code{\link[ggplot2:geom_path]{geom_line}} and used to control features
 #'   of the plotted survival function.
 #'      
 #' @return The plot method returns a \code{ggplot} object, also of class
@@ -1113,7 +1114,8 @@ print.survfit.stanjm <- function(x, digits = 4, ...) {
 #' @seealso \code{\link{posterior_survfit}}, \code{\link{plot_stack_jm}},
 #'   \code{\link{posterior_traj}}, \code{\link{plot.predict.stanjm}}      
 #'   
-#' @examples 
+#' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'   # Run example model if not already loaded
 #'   if (!exists("example_jm")) example(example_jm)
@@ -1156,7 +1158,6 @@ print.survfit.stanjm <- function(x, digits = 4, ...) {
 #'                           control = list(epoints = 20))
 #'   plot(ps2)   
 #' }
-#'    
 plot.survfit.stanjm <- function(x, 
                                 ids    = NULL, 
                                 limits = c("ci", "none"),  
@@ -1275,6 +1276,7 @@ plot.survfit.stansurv <- function(x,
 #'   \code{\link{posterior_predict}}, \code{\link{posterior_survfit}}
 #'    
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'   if (!exists("example_jm")) example(example_jm)
 #'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,15))
@@ -1283,7 +1285,7 @@ plot.survfit.stansurv <- function(x,
 #'   plot_traj <- plot(pt1, vline = TRUE, plot_observed = TRUE)
 #'   plot_stack_jm(plot_traj, plot_surv)
 #' }
-#'  
+#' }
 plot_stack_jm <- function(yplot, survplot) {
   
   if (!is(yplot, "list")) yplot <- list(yplot)
