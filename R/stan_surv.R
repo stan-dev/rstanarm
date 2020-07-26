@@ -337,6 +337,7 @@
 #' }
 #'              
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #' #----- Proportional hazards
 #' 
@@ -448,6 +449,7 @@
 #' print(m_frail)   # shows SD for frailty
 #' VarCorr(m_frail) # extract SD explicitly
 #'
+#' }
 #' }
 #' 
 stan_surv <- function(formula, 
