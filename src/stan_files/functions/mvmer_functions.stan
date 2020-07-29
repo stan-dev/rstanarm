@@ -336,7 +336,7 @@
   * @param df Real, df for the prior distribution
   * @return Nothing
   */
-  void gamma_lp(real gamma, int dist, real mean_, real scale, real df) {
+  real gamma_lp(real gamma, int dist, real mean_, real scale, real df) {
     if (dist == 1)  // normal
       target += normal_lpdf(gamma | mean_, scale);
     else if (dist == 2)  // student_t
