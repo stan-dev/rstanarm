@@ -29,7 +29,7 @@ REFRESH <- ITER
 set.seed(SEED)
 if (interactive()) options(mc.cores = parallel::detectCores())
 FIXEF_tol <- 0.05
-RANEF_tol <- 0.20 
+RANEF_tol <- 0.25
 
 source(test_path("helpers", "expect_stanreg.R"))
 source(test_path("helpers", "SW.R"))

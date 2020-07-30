@@ -74,6 +74,7 @@
 #'   \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' dat <- infert[order(infert$stratum), ] # order by strata
 #' post <- stan_clogit(case ~ spontaneous + induced + (1 | education), 
 #'                     strata = stratum,
@@ -88,7 +89,7 @@
 #' 
 #' # not a random variable b/c probabilities add to 1 within strata
 #' all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr)) 
-#'             
+#' }
 #' @importFrom lme4 findbars
 stan_clogit <- function(formula, data, subset, na.action = NULL, ..., 
                         strata, prior = normal(autoscale=TRUE), 

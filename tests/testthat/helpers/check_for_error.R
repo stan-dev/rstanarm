@@ -9,7 +9,7 @@ check_for_error <- function(fit, data = NULL, offset = NULL) {
   
   expect_silent(yrep1 <- posterior_predict(fit))
   expect_silent(lin1 <- posterior_linpred(fit))
-  expect_silent(posterior_linpred(fit, transform = TRUE))
+  expect_silent(suppressMessages(posterior_linpred(fit, transform = TRUE)))
   expect_equal(dim(yrep1), c(nsims, nobs(fit)))
   expect_equal(dim(lin1), c(nsims, nobs(fit)))
   

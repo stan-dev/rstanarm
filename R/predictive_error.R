@@ -57,6 +57,7 @@
 #'   errors.
 #'   
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' if (!exists("example_model")) example(example_model)
 #' err1 <- predictive_error(example_model, draws = 50)
 #' hist(err1)
@@ -78,7 +79,7 @@
 #'   predictive_error(fit, seed = 123),
 #'   predictive_error(preds, y = fit$y)
 #' )
-#' 
+#' }
 predictive_error.stanreg <-
   function(object,
            newdata = NULL,

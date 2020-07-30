@@ -132,14 +132,6 @@ stan_glm.fit <-
   ok_aux_dists <- c(ok_dists[1:3], exponential = "exponential")
   
   # prior distributions
-  if (isTRUE(prior_intercept$default)) {
-    m_y <- 0
-    if (family$family == "gaussian" && family$link == "identity") {
-      if (!is.null(y)) m_y <- mean(y) # y can be NULL if prior_PD=TRUE
-    }
-    prior_intercept$location <- m_y
-  }
-  
   prior_stuff <- handle_glm_prior(
     prior,
     nvars,
@@ -151,7 +143,15 @@ stan_glm.fit <-
   # global_prior_df, global_prior_scale, slab_df, slab_scale
   for (i in names(prior_stuff))
     assign(i, prior_stuff[[i]])
-  
+
+  if (isTRUE(is.list(prior_intercept)) && 
+      isTRUE(prior_intercept$default)) {
+    m_y <- 0
+    if (family$family == "gaussian" && family$link == "identity") {
+      if (!is.null(y)) m_y <- mean(y) # y can be NULL if prior_PD=TRUE
+    }
+    prior_intercept$location <- m_y
+  }
   prior_intercept_stuff <- handle_glm_prior(
     prior_intercept,
     nvars = 1,

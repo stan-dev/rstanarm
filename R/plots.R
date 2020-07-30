@@ -63,6 +63,7 @@
 #' @template reference-bayesvis
 #' 
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #' # Use rstanarm example model
 #' if (!exists("example_model")) example(example_model)
@@ -162,7 +163,7 @@
 #'
 #' # For graphical posterior predictive checks see
 #' # help("pp_check.stanreg")
-#'
+#' }
 #' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
 #'
 plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
@@ -359,6 +360,7 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' 
 #'   
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #' if (!exists("example_model")) example(example_model)
 #' 
@@ -415,7 +417,7 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' )
 #' 
 #' }
-#'
+#' }
 pairs.stanreg <-
   function(x,
            pars = NULL,

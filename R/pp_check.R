@@ -82,7 +82,8 @@
 #'     of the plots.
 #' }
 #' 
-#' @examples 
+#' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' fit <- stan_glmer(
 #'   mpg ~ wt + am + (1|cyl), 
 #'   data = mtcars, 
@@ -143,6 +144,7 @@
 #' pp_check(fit2, plotfun = "bars", nreps = 500, prob = 0.5)
 #' pp_check(fit2, plotfun = "bars_grouped", group = esoph$agegp, 
 #'          nreps = 500, prob = 0.5)
+#' }
 #' }
 pp_check.stanreg <-
   function(object,

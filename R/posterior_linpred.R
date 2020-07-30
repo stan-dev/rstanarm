@@ -65,6 +65,7 @@
 #'   predictive distribution of the outcome, which is typically preferable.
 #'
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' if (!exists("example_model")) example(example_model)
 #' print(family(example_model))
 #' 
@@ -80,7 +81,7 @@
 #' # not conditioning on any group-level parameters
 #' probs2 <- posterior_epred(example_model, re.form = NA)
 #' apply(probs2, 2, median)
-#' 
+#' }
 posterior_linpred.stanreg <-
   function(object,
            transform = FALSE,
