@@ -97,6 +97,7 @@
 #' \code{\link{predictive_error}} and \code{\link{predictive_interval}}.
 #'
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' if (!exists("example_model")) example(example_model)
 #' yrep <- posterior_predict(example_model)
 #' table(yrep)
@@ -147,7 +148,7 @@
 #' fit <- stan_glm(log_mpg ~ wt, data = mtcars2, refresh = 0)
 #' ytilde <- posterior_predict(fit, fun = exp)
 #' }
-#'
+#' }
 posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
                                       re.form = NULL, fun = NULL, seed = NULL,
                                       offset = NULL, ...) {

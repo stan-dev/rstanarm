@@ -23,6 +23,7 @@
 #'   \code{FALSE}) indicating whether \code{\link[stats]{proj}} should be called
 #'   on the fit.
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #' op <- options(contrasts = c("contr.helmert", "contr.poly"))
 #' fit_aov <- stan_aov(yield ~ block + N*P*K, data = npk,
@@ -30,7 +31,7 @@
 #' options(op)
 #' print(fit_aov)
 #' }
-#'             
+#' }
 stan_aov <- function(formula, data, projections = FALSE,
                      contrasts = NULL, ...,
                      prior = R2(stop("'location' must be specified")), 
@@ -52,7 +53,7 @@ stan_aov <- function(formula, data, projections = FALSE,
     lmcall <- Call <- match.call()
     ## need rstanarm:: for non-standard evaluation
     lmcall[[1L]] <- quote(stan_lm)
-    lmcall$singular.ok <- FALSE
+    lmcall$singular.ok <- TRUE
     if (projections) 
       qr <- lmcall$qr <- TRUE
     lmcall$projections <- NULL

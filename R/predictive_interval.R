@@ -50,7 +50,8 @@
 #' @seealso \code{\link{predictive_error}}, \code{\link{posterior_predict}}, 
 #'   \code{\link{posterior_interval}}
 #' 
-#' @examples 
+#' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 300)
 #' predictive_interval(fit)
 #' predictive_interval(fit, newdata = data.frame(wt = range(mtcars$wt)), 
@@ -62,7 +63,7 @@
 #'   predictive_interval(fit, seed = 123),
 #'   predictive_interval(preds)
 #' )
-#' 
+#' }
 predictive_interval.stanreg <-
   function(object,
            prob = 0.9,

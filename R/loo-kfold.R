@@ -21,7 +21,7 @@
 #'   is refit \code{K} times, each time leaving out one of the \code{K} folds.
 #'   If the \code{folds} argument is specified then \code{K} will automatically
 #'   be set to \code{length(unique(folds))}, otherwise the specified value of
-#'   \code{K} is passed to \code{loo::\link[loo]{kfold_split_random}} to
+#'   \code{K} is passed to \code{loo::\link[loo:kfold-helpers]{kfold_split_random}} to
 #'   randomly partition the data into \code{K} subsets of equal (or as close to
 #'   equal as possible) size.
 #' @param save_fits For \code{kfold}, if \code{TRUE}, a component \code{'fits'}
@@ -39,7 +39,7 @@
 #' @param cores The number of cores to use for parallelization. Instead fitting
 #'   separate Markov chains for the same model on different cores, by default
 #'   \code{kfold} will distribute the \code{K} models to be fit across the cores
-#'   (using \code{\link[parallel]{parLapply}} on Windows and
+#'   (using \code{\link[parallel:clusterApply]{parLapply}} on Windows and
 #'   \code{\link[parallel]{mclapply}} otherwise). The Markov chains for each
 #'   model will be run sequentially. This will often be the most efficient
 #'   option, especially if many cores are available, but in some cases it may be
@@ -58,6 +58,7 @@
 #'   comparing models.
 #'   
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #' fit1 <- stan_glm(mpg ~ wt, data = mtcars, refresh = 0)
 #' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, refresh = 0)
@@ -80,7 +81,7 @@
 #' kfold4 <- kfold(fit4, folds = folds_cyl, cores = 2)
 #' print(kfold4)
 #' }
-#' 
+#' }
 #' # Example code demonstrating the different ways to specify the number 
 #' # of cores and how the cores are used
 #' # 

@@ -52,7 +52,7 @@
 #' }
 #' \item{\code{confint}}{
 #' For models fit using optimization, confidence intervals are returned via a 
-#' call to \code{\link[stats]{confint.default}}. If \code{algorithm} is 
+#' call to \code{\link[stats:confint]{confint.default}}. If \code{algorithm} is 
 #' \code{"sampling"}, \code{"meanfield"}, or \code{"fullrank"}, the
 #' \code{confint} will throw an error because the
 #' \code{\link{posterior_interval}} function should be used to compute Bayesian 
@@ -267,14 +267,15 @@ ranef_template <- function(object) {
     new_formula <- as.formula(paste(new_formula_lhs, "~", new_formula_rhs))
   }
   
-  if (stan_fun != "stan_nlmer" && is.gaussian(object$family$family)) {
+  if (stan_fun != "stan_nlmer" && 
+      (is.gaussian(object$family$family) || is.beta(object$family$family))) {
     stan_fun <- "stan_lmer"
   }
   lme4_fun <- switch(
     stan_fun,
     "stan_lmer" = "lmer",
     "stan_nlmer" = "nlmer",
-    "glmer" # for stan_glmer, stan_glmer.nb, stan_gamm4 (unless gaussian)
+    "glmer" # for stan_glmer, stan_glmer.nb, stan_gamm4 (unless gaussian or beta)
   )
   cntrl_args <- list(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 1))
   if (lme4_fun != "nlmer") { # nlmerControl doesn't allow these
@@ -395,7 +396,7 @@ family.stanreg <- function(object, ...) object$family
 #' @keywords internal
 #' @export
 #' @param formula,... See \code{\link[stats]{model.frame}}.
-#' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
+#' @param fixed.only See \code{\link[lme4:merMod-class]{model.frame.merMod}}.
 #' 
 model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
   if (is.mer(formula)) {

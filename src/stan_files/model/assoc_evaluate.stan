@@ -275,7 +275,7 @@
 
       mark2 += 1;
       if (has_assoc[5,m] == 1 || has_assoc[12,m] == 1) {
-        reject("muslope association structure has been removed.")
+        reject("muslope association structure has been removed.");
       }
 
       //----- muauc
@@ -329,8 +329,8 @@
     //-----  shared random effects
 
     if (sum_size_which_b > 0) {
-      reject("shared_b has been removed.")
+      reject("shared_b has been removed.");
     }
     if (sum_size_which_coef > 0) {
-      reject("shared_coef has been removed.")
+      reject("shared_coef has been removed.");
     }

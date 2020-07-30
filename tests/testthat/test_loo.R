@@ -56,21 +56,15 @@ expect_equivalent_loo <- function(fit) {
   expect_equivalent(w, suppressWarnings(waic(log_lik(fit))))
 }
 
-mcmc_only_error <- function(fit) {
-  msg <- "only available for models fit using MCMC"
-  expect_error(loo(fit), regexp = msg)
-  expect_error(waic(fit), regexp = msg)
-}
-
-test_that("loo & waic throw error for non mcmc models", {
+test_that("loo & waic do something for non mcmc models", {
   SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
                       seed = 1234L, prior_intercept = NULL,
                       prior = NULL, prior_aux = NULL))
   capture.output(SW(fitvb1 <- update(fito, algorithm = "meanfield", iter = ITER)))
   capture.output(SW(fitvb2 <- update(fito, algorithm = "fullrank", iter = ITER)))
-  mcmc_only_error(fito)
-  mcmc_only_error(fitvb1)
-  mcmc_only_error(fitvb2)
+  expect_true("importance_sampling_loo" %in% class(loo(fito)))
+  expect_true("importance_sampling_loo" %in% class(loo(fitvb1)))
+  expect_true("importance_sampling_loo" %in% class(loo(fitvb2)))
 })
 
 test_that("loo errors if model has weights", {
@@ -134,12 +128,12 @@ test_that("loo with k_threshold works for edge case(s)", {
 # kfold -------------------------------------------------------------------
 context("kfold")
 
-test_that("kfold throws error for non mcmc models", {
+test_that("kfold does not throw an error for non mcmc models", {
   SW(
     fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
-                     seed = SEED, refresh = 0)
+                     seed = 1234L, refresh = 0)
   )
-  expect_error(kfold(fito), "MCMC")
+  expect_true("kfold" %in% class(kfold(fito)))
 })
 
 test_that("kfold throws error if K <= 1 or K > N", {
@@ -174,8 +168,8 @@ test_that("kfold works on some examples", {
 
   expect_named(kf, c("estimates", "pointwise", "elpd_kfold", "se_elpd_kfold"))
   expect_named(kf2, c("estimates", "pointwise", "elpd_kfold", "se_elpd_kfold"))
-  expect_named(attributes(kf), c("names", "class", "K", "model_name", "discrete", "yhash", "formula"))
-  expect_named(attributes(kf2), c("names", "class", "K", "model_name", "discrete", "yhash", "formula"))
+  expect_named(attributes(kf),  c("names", "class", "K", "dims", "model_name", "discrete", "yhash", "formula"))
+  expect_named(attributes(kf2), c("names", "class", "K", "dims", "model_name", "discrete", "yhash", "formula"))
   expect_s3_class(kf, c("kfold", "loo"))
   expect_s3_class(kf2, c("kfold", "loo"))
 

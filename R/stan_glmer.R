@@ -52,8 +52,8 @@
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
 #'   specified.
 #' @param ... For \code{stan_glmer}, further arguments passed to 
-#'   \code{\link[rstan]{sampling}} (e.g. \code{iter}, \code{chains}, 
-#'   \code{cores}, etc.) or to \code{\link[rstan]{vb}} (if \code{algorithm} is 
+#'   \code{\link[rstan:stanmodel-method-sampling]{sampling}} (e.g. \code{iter}, \code{chains}, 
+#'   \code{cores}, etc.) or to \code{\link[rstan:stanmodel-method-vb]{vb}} (if \code{algorithm} is 
 #'   \code{"meanfield"} or \code{"fullrank"}). For \code{stan_lmer} and 
 #'   \code{stan_glmer.nb}, \code{...} should also contain all relevant arguments
 #'   to pass to \code{stan_glmer} (except \code{family}).
@@ -87,10 +87,11 @@
 #'   Partial Pooling} vignette. \url{http://mc-stan.org/rstanarm/articles/}
 #'    
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' # see help(example_model) for details on the model below
 #' if (!exists("example_model")) example(example_model) 
 #' print(example_model, digits = 1)
-#' 
+#' }
 #' @importFrom lme4 glFormula
 #' @importFrom Matrix Matrix t
 stan_glmer <- 
@@ -103,9 +104,9 @@ stan_glmer <-
            offset,
            contrasts = NULL,
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
-           prior_aux = exponential(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
+           prior_aux = exponential(autoscale=TRUE),
            prior_covariance = decov(),
            prior_PD = FALSE,
            algorithm = c("sampling", "meanfield", "fullrank"),
@@ -202,9 +203,9 @@ stan_lmer <-
            offset,
            contrasts = NULL,
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
-           prior_aux = exponential(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
+           prior_aux = exponential(autoscale=TRUE),
            prior_covariance = decov(),
            prior_PD = FALSE,
            algorithm = c("sampling", "meanfield", "fullrank"),
@@ -244,9 +245,9 @@ stan_glmer.nb <-
            contrasts = NULL,
            link = "log",
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
-           prior_aux = exponential(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
+           prior_aux = exponential(autoscale=TRUE),
            prior_covariance = decov(),
            prior_PD = FALSE,
            algorithm = c("sampling", "meanfield", "fullrank"),

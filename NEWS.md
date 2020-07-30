@@ -1,3 +1,47 @@
+# rstanarm 2.21.1
+
+* Compatible with rstan v2.21.1
+* Consistent with new book [Regression and Other Stories](https://statmodeling.stat.columbia.edu/2020/07/08/regression-and-other-stories-is-available/)
+
+### Backwards incompatible changes
+
+* `stan_jm()` is not available for 32bit Windows
+
+* Some improvements to prior distributions, as described in detail in the
+vignette *Prior Distributions for rstanarm Models* and book 
+*Regression and Other Stories*. These changes shouldn't cause any existing code
+to error, but default priors have changed in some cases:
+  - default prior on intercept is still Gaussian but the way the location and 
+    scale are determined has been updated (#432)
+  - `autoscale` argument to functions like `normal()`, `student_t()`, etc., 
+    now defaults to `FALSE` except when used by default priors (default
+    priors still do autoscalinng). This makes it simpler to specify non-default
+    priors. (#432)
+  
+### Bug fixes
+
+* Fixed error in `kfold()` for `stan_gamm4()` models that used `random` argument (#435)
+* Fixed error in `posterior_predict()` and `posterior_linpred()` when using `newdata` with `family = mgcv::betar` (#406, #407)
+* `singular.ok` now rules out singular design matrices in `stan_lm()` (#402)
+* Fix a potential error when `data` is a `data.table` object (#434, @danschrage)
+
+### New functions
+
+* New method `posterior_epred()` returns the posterior distribution of the
+conditional expectation, which is equivalent to (and may eventually entirely
+replace) setting argument `transform=TRUE` with `posterior_linpred()`. (#432)
+
+* Added convenience functions `logit()` and `invlogit()` that are just wrappers
+for `qlogis()` and `plogis()`. These were previously provided by the `arm`
+package. (#432)
+
+
+# rstanarm 2.19.3
+
+### Bug fixes
+
+* Allow the vignettes to knit on platforms that do not support version 2 of RMarkdown
+
 # rstanarm 2.19.2
 
 ### Bug fixes

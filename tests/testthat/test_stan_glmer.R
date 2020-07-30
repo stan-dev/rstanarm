@@ -29,7 +29,7 @@ REFRESH <- ITER
 set.seed(SEED)
 if (interactive()) options(mc.cores = parallel::detectCores())
 FIXEF_tol <- 0.05
-RANEF_tol <- 0.20 
+RANEF_tol <- 0.25
 
 source(test_path("helpers", "expect_stanreg.R"))
 source(test_path("helpers", "SW.R"))
@@ -241,6 +241,14 @@ test_that("compatible with stan_lmer with offset", {
   expect_warning(posterior_predict(fit, newdata = mtcars[1:2, ], offset = offs),
                  "STATS")
   check_for_error(fit, offset = offs)
+})
+
+test_that("predition with family mgcv::betar doesn't error", {
+  test_data <- data.frame(y = c(0.1, 0.3), x = c(TRUE, FALSE))
+  fit <- SW(stan_glmer(y ~ (1|x), family=mgcv::betar(link="logit"), 
+                       data=test_data,  seed = 101, iter = 200, chains = 1, refresh = 0))
+  expect_silent(posterior_linpred(fit, newdata=test_data))
+  expect_silent(posterior_predict(fit, newdata=test_data))
 })
 
 # compare to lme4 ---------------------------------------------------------

@@ -1,8 +1,13 @@
-#' @param prior The prior distribution for the regression coefficients. 
-#'   \code{prior} should be a call to one of the various functions provided by 
-#'   \pkg{rstanarm} for specifying priors. The subset of these functions that 
-#'   can be used for the prior on the coefficients can be grouped into several 
-#'   "families":
+#' @param prior The prior distribution for the (non-hierarchical) regression
+#'   coefficients.
+#'    
+#'   The default priors are described in the vignette 
+#'   \href{http://mc-stan.org/rstanarm/articles/priors.html}{\emph{Prior
+#'   Distributions for rstanarm Models}}.
+#'   If not using the default, \code{prior} should be a call to one of the
+#'   various functions provided by \pkg{rstanarm} for specifying priors. The
+#'   subset of these functions that can be used for the prior on the
+#'   coefficients can be grouped into several "families":
 #'   
 #'   \tabular{ll}{
 #'     \strong{Family} \tab \strong{Functions} \cr 

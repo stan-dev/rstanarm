@@ -370,14 +370,12 @@ test_that("prior_aux argument is detected properly", {
     fit$prior.info$prior_aux, 
     list(dist = "exponential", 
          location = NULL, scale = NULL, 
-         adjusted_scale = 1/5 * sd(mtcars$mpg),
+         adjusted_scale = NULL, #1/5 * sd(mtcars$mpg),
          df = NULL, rate = 5, 
          aux_name = "sigma")
   )
   expect_output(print(prior_summary(fit)), 
                 "~ exponential(rate = ", fixed = TRUE)
-  expect_output(print(prior_summary(fit)), 
-                "Adjusted prior", fixed = TRUE)
 })
 
 test_that("prior_aux can be NULL", {
@@ -399,11 +397,6 @@ test_that("autoscale works (insofar as it's reported by prior_summary)", {
   out <- capture.output(print(prior_summary(fit)))
   expect_false(any(grepl("adjusted", out)))
   
-  expect_output(
-    print(prior_summary(fit2)), 
-    "Adjusted prior", 
-    fixed = TRUE
-  )
 })
 test_that("prior_options is deprecated", {
   expect_warning(

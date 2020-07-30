@@ -69,6 +69,7 @@
 #'   \code{stan_nlmer} models. \url{http://mc-stan.org/rstanarm/articles/}
 #'   
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #' \donttest{
 #' data("Orange", package = "datasets")
 #' Orange$circumference <- Orange$circumference / 100
@@ -84,6 +85,7 @@
 #' posterior_interval(fit)
 #' plot(fit, regex_pars = "b\\[")
 #' }
+#' }
 #' @importFrom lme4 nlformula
 #' @importFrom stats getInitial
 stan_nlmer <-
@@ -95,8 +97,8 @@ stan_nlmer <-
            offset,
            contrasts = NULL,
            ...,
-           prior = normal(),
-           prior_aux = exponential(),
+           prior = normal(autoscale=TRUE),
+           prior_aux = exponential(autoscale=TRUE),
            prior_covariance = decov(),
            prior_PD = FALSE,
            algorithm = c("sampling", "meanfield", "fullrank"),

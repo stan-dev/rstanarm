@@ -41,9 +41,9 @@ stan_glm.fit <-
            offset = rep(0, NROW(y)), 
            family = gaussian(),
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
-           prior_aux = exponential(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
+           prior_aux = exponential(autoscale = TRUE),
            prior_smooth = exponential(autoscale = FALSE),
            prior_ops = NULL,
            group = list(),
@@ -143,11 +143,19 @@ stan_glm.fit <-
   # global_prior_df, global_prior_scale, slab_df, slab_scale
   for (i in names(prior_stuff))
     assign(i, prior_stuff[[i]])
-  
+
+  if (isTRUE(is.list(prior_intercept)) && 
+      isTRUE(prior_intercept$default)) {
+    m_y <- 0
+    if (family$family == "gaussian" && family$link == "identity") {
+      if (!is.null(y)) m_y <- mean(y) # y can be NULL if prior_PD=TRUE
+    }
+    prior_intercept$location <- m_y
+  }
   prior_intercept_stuff <- handle_glm_prior(
     prior_intercept,
     nvars = 1,
-    default_scale = 10,
+    default_scale = 2.5,
     link = family$link,
     ok_dists = ok_intercept_dists
   )
@@ -250,9 +258,9 @@ stan_glm.fit <-
                           apply(xtemp, 2L, FUN = function(x) {
                             num.categories <- length(unique(x))
                             x.scale <- 1
-                            if (num.categories == 2) {
-                              x.scale <- diff(range(x))
-                            } else if (num.categories > 2) {
+                            if (num.categories == 1) {
+                              x.scale <- 1
+                            } else {
                               x.scale <- sd(x)
                             }
                             return(x.scale)
@@ -443,7 +451,7 @@ stan_glm.fit <-
     }
     standata$y <- y
     standata$weights <- weights
-    standata$offset <- offset
+    standata$offset_ <- offset
     standata$K_smooth <- ncol(S)
     standata$S <- S
     standata$smooth_map <- smooth_map

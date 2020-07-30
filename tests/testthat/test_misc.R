@@ -454,7 +454,7 @@ test_that("collect_pars and grep_for_pars work", {
 
 test_that("posterior_sample_size works", {
   pss <- rstanarm:::posterior_sample_size
-  expect_equal(pss(example_model), 500)
+  expect_equal(pss(example_model), 1000)
   expect_equal(pss(fit), nrow(as.matrix(fit)))
   expect_equal(pss(fit2), ITER * CHAINS / 2)
   expect_equal(pss(fitvb), 1000)
