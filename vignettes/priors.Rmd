@@ -119,20 +119,18 @@ Starting from the bottom up, we can see that:
 
 * __Auxiliary__: `sigma`, the error standard deviation, has a default prior that
 is $\mathsf{exponential}(1)$. However, as a result of the automatic rescaling,
-the actual scale used was `r fr2(priors$prior_aux$adjusted_scale)`.
+the actual scale used was 6.03.
 
 * __Coefficients__: By default the regression coefficients (in this case the 
 coefficients on the `wt` and `am` variables) are treated as a priori independent
 with normal priors centered at 0 and with scale (standard deviation) $2.5$. Like
 for `sigma`, in order for the default to be weakly informative __rstanarm__ will
 adjust the scales of the priors on the coefficients. As a result, the prior
-scales actually used were
-`r fr2(priors$prior$adjusted_scale[1])` and 
-`r fr2(priors$prior$adjusted_scale[2])`. 
+scales actually used were 15.40 and 30.20.
 
 * __Intercept__: For the intercept, the default prior is normal with mean $0$ 
 and standard deviation $2.5$, but in this case the standard deviation was 
-adjusted to `r fr2(priors$prior_intercept$adjusted_scale[1])`. There is also a
+adjusted to 15.07. There is also a
 note in parentheses informing you that the prior applies to the intercept after
 all predictors have been centered (a similar note can be found in the
 documentation of the `prior_intercept` argument). In many cases the value of $y$
