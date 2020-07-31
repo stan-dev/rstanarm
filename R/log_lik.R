@@ -320,8 +320,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     }
     data <- data.frame(y, x)
     draws$beta <- stanmat[, colnames(x), drop = FALSE]
-    patt <- if (length(unique(y)) == 2L) "(Intercept)" else "|"
-    zetas <- grep(patt, colnames(stanmat), fixed = TRUE, value = TRUE)
+    zetas <- grep("|", colnames(stanmat), fixed = TRUE, value = TRUE)
     draws$zeta <- stanmat[, zetas, drop = FALSE]
     draws$max_y <- max(y)
     if ("alpha" %in% colnames(stanmat)) { 
@@ -456,8 +455,8 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 .ll_polr_i <- function(data_i, draws) {
   eta <- linear_predictor(draws$beta, .xdata(data_i), data_i$offset)
   f <- draws$f
-  J <- draws$max_y
   y_i <- data_i$y
+  J <- ncol(draws$zeta) + 1
   linkinv <- polr_linkinv(f)
   if (is.null(draws$alpha)) {
     if (y_i == 1) {
