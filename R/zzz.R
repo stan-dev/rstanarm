@@ -17,8 +17,6 @@
 
 .onLoad <- function(libname, pkgname) {
   modules <- paste0("stan_fit4", names(stanmodels), "_mod")
-  if (.Platform$OS.type == "windows" && .Platform$r_arch =="i386") 
-    modules <- grep("jm", modules, invert = TRUE, value = TRUE)
   for (m in modules) loadModule(m, what = TRUE)
 }
 
