@@ -126,9 +126,9 @@
 #' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, refresh = 0)
 #'
 #' # (for bigger models use as many cores as possible)
-#' loo1 <- loo(fit1, cores = 2)
+#' loo1 <- loo(fit1, cores = 1)
 #' print(loo1)
-#' loo2 <- loo(fit2, cores = 2)
+#' loo2 <- loo(fit2, cores = 1)
 #' print(loo2)
 #'
 #' # when comparing models the loo objects can be passed to loo_compare
