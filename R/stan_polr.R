@@ -141,6 +141,11 @@ stan_polr <- function(formula, data, weights, ..., subset,
                       do_residuals = NULL) {
 
   data <- validate_data(data, if_missing = environment(formula))
+  is_char <- which(sapply(data, is.character))
+  for (j in is_char) {
+    data[[j]] <- as.factor(data[[j]])
+  }
+  
   algorithm <- match.arg(algorithm)
   if (is.null(do_residuals)) 
     do_residuals <- algorithm == "sampling"
