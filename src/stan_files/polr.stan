@@ -49,7 +49,7 @@ functions {
     else for (n in 1:N) {
       if (y[n] == 1) ll[n] = CDF_polr(cutpoints[1] - eta[n], link) ^ alpha;
       else if (y[n] == J) ll[n] = 1 - CDF_polr(cutpoints[J - 1] - eta[n], link) ^ alpha;
-      else reject("alpha not allowed with more than 2 outcome categories")
+      else reject("alpha not allowed with more than 2 outcome categories");
     }
     return log(ll);
   }
@@ -95,29 +95,29 @@ functions {
   /**
    * Randomly draw a value for utility
    *
-   * @param lower A scalar lower bound
-   * @param upper A scalar upper bound
+   * @param low A scalar lower bound
+   * @param high A scalar upper bound
    * @param eta A scalar linear predictor
    * @param link An integer indicating the link function
    * @return A scalar from the appropriate conditional distribution
    */
-  real draw_ystar_rng(real lower, real upper, real eta, int link) {
+  real draw_ystar_rng(real low, real high, real eta, int link) {
     int iter = 0;
     real ystar = not_a_number();
-    if (lower >= upper) 
-      reject("lower must be less than upper");
+    if (low >= high) 
+      reject("low must be less than high");
     
     // links in MASS::polr() are in a different order than binomial() 
     // logistic, probit, loglog, cloglog, cauchit
-    if (link == 1) while(!(ystar > lower && ystar < upper))
+    if (link == 1) while(!(ystar > low && ystar < high))
       ystar = logistic_rng(eta, 1);
-    else if (link == 2) while(!(ystar > lower && ystar < upper))
+    else if (link == 2) while(!(ystar > low && ystar < high))
       ystar = normal_rng(eta, 1);
-    else if (link == 3) while(!(ystar > lower && ystar < upper))
+    else if (link == 3) while(!(ystar > low && ystar < high))
       ystar = gumbel_rng(eta, 1);
-    else if (link == 4) while(!(ystar > lower && ystar < upper))
+    else if (link == 4) while(!(ystar > low && ystar < high))
       ystar = log(-log1m(uniform_rng(0,1)));
-    else if (link == 5) while(!(ystar > lower && ystar < upper))
+    else if (link == 5) while(!(ystar > low && ystar < high))
       ystar = cauchy_rng(eta, 1);
     else reject("invalid link");
     return ystar;
@@ -185,16 +185,18 @@ transformed parameters {
   }
 }
 model {
+  if (prior_PD == 0) {
 #include /model/make_eta.stan
-  if (has_weights == 0 && prior_PD == 0) {  // unweighted log-likelihoods
-    if (is_skewed == 0)
-      target += pw_polr(y, eta, cutpoints, link, 1.0);
-    else target += pw_polr(y, eta, cutpoints, link, alpha[1]);
-  }
-  else if (prior_PD == 0) {  // weighted log-likelihoods
-    if (is_skewed == 0)
-      target += dot_product(weights, pw_polr(y, eta, cutpoints, link, 1.0));
-    else target += dot_product(weights, pw_polr(y, eta, cutpoints, link, alpha[1]));
+    if (has_weights == 0) {  // unweighted log-likelihoods
+      if (is_skewed == 0)
+        target += pw_polr(y, eta, cutpoints, link, 1.0);
+      else target += pw_polr(y, eta, cutpoints, link, alpha[1]);
+    }
+    else {  // weighted log-likelihoods
+      if (is_skewed == 0)
+        target += dot_product(weights, pw_polr(y, eta, cutpoints, link, 1.0));
+      else target += dot_product(weights, pw_polr(y, eta, cutpoints, link, alpha[1]));
+    }
   }
 
   if (is_constant == 0) target += dirichlet_lpdf(pi | prior_counts);

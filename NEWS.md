@@ -1,3 +1,105 @@
+# Items for next release
+
+* Fix bug where `loo()` with `k_threshold` argument specified would error if the model formula was a string instead of a formula object. (#454)
+
+* Fix bug where `loo()` with `k_threshold` argument specified would error for
+models fit with `stan_polr()`. (#450)
+
+* Fix bug where `stan_aov()` would use the wrong `singular.ok` logic. (#448)
+
+
+# rstanarm 2.21.1
+
+* Compatible with rstan v2.21.1
+* Consistent with new book [Regression and Other Stories](https://statmodeling.stat.columbia.edu/2020/07/08/regression-and-other-stories-is-available/)
+
+### Backwards incompatible changes
+
+* `stan_jm()` is not available for 32bit Windows
+
+* Some improvements to prior distributions, as described in detail in the
+vignette *Prior Distributions for rstanarm Models* and book 
+*Regression and Other Stories*. These changes shouldn't cause any existing code
+to error, but default priors have changed in some cases:
+  - default prior on intercept is still Gaussian but the way the location and 
+    scale are determined has been updated (#432)
+  - `autoscale` argument to functions like `normal()`, `student_t()`, etc., 
+    now defaults to `FALSE` except when used by default priors (default
+    priors still do autoscalinng). This makes it simpler to specify non-default
+    priors. (#432)
+  
+### Bug fixes
+
+* Fixed error in `kfold()` for `stan_gamm4()` models that used `random` argument (#435)
+* Fixed error in `posterior_predict()` and `posterior_linpred()` when using `newdata` with `family = mgcv::betar` (#406, #407)
+* `singular.ok` now rules out singular design matrices in `stan_lm()` (#402)
+* Fix a potential error when `data` is a `data.table` object (#434, @danschrage)
+
+### New functions
+
+* New method `posterior_epred()` returns the posterior distribution of the
+conditional expectation, which is equivalent to (and may eventually entirely
+replace) setting argument `transform=TRUE` with `posterior_linpred()`. (#432)
+
+* Added convenience functions `logit()` and `invlogit()` that are just wrappers
+for `qlogis()` and `plogis()`. These were previously provided by the `arm`
+package. (#432)
+
+
+# rstanarm 2.19.3
+
+### Bug fixes
+
+* Allow the vignettes to knit on platforms that do not support version 2 of RMarkdown
+
+# rstanarm 2.19.2
+
+### Bug fixes
+
+* src/Makevars{.win} now uses a more robust way to find StanHeaders
+
+* Fixed bug where `ranef()` and `coef()` methods for `glmer`-style models 
+printed the wrong output for certain combinations of varying intercepts
+and slopes.
+
+* Fixed a bug where `posterior_predict()` failed for `stan_glmer()` models 
+estimated with `family = mgcv::betar`.
+
+* Fixed bug in `bayes_R2()` for bernoulli models. (Thanks to @mcol)
+
+* `loo_R2()` can now be called on the same fitted model object multiple times
+with identical (not just up to rng noise) results. (Thanks to @mcol)
+
+### New features and improvements
+
+* New vignette on doing MRP using rstanarm. (Thanks to @lauken13)
+
+* 4x speedup for most GLMs (`stan_glm()`) and GAMs (`stan_gamm4()` without
+`random` argument). This comes from using Stan's new compound `_glm` functions
+(`normal_id_glm`, `bernoulli_logit_glm`, `poisson_log_glm`,
+`neg_binomial_2_log_glm`) under the hood whenever possible. (Thanks 
+to @avehtari and @VMatthijs)
+
+* `compare_models()` is deprecated in favor of `loo_compare()` to keep up 
+with the loo package ([loo::loo_compare()](http://mc-stan.org/loo/reference/loo_compare))
+
+* The `kfold()` method now has a `cores` argument and parallelizes by fold
+rather than by Markov chain (unless otherwise specified), which should be much
+more efficient when many cores are available.
+
+* For `stan_glm()` with `algorithm='optimizing'`, Pareto smoothed importance
+sampling ([arxiv.org/abs/1507.02646](https://arxiv.org/abs/1507.02646),
+[mc-stan.org/loo/reference/psis.html](https://mc-stan.org/loo/reference/psis.html))
+is now used to diagnose and improve inference (see
+https://avehtari.github.io/RAOS-Examples/BigData/bigdata.html). This also now
+means that we can use PSIS-LOO also when `algorithm='optimizing'`. (Thanks 
+to @avehtari)
+
+* For `stan_glm()` the `"meanfield"` and `"fullrank"` ADVI algorithms also
+include the PSIS diagnostics and adjustments, but so far we have not seen any
+example where these would be better than optimzation or MCMC.
+
+
 # rstanarm 2.18.1
 
 ### Bug fixes

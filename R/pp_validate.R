@@ -81,15 +81,16 @@
 #' \code{\link{posterior_predict}} to draw from the posterior predictive
 #' distribution.
 #'
-#' \code{\link[bayesplot]{color_scheme_set}} to change the color scheme of the
+#' \code{\link[bayesplot:bayesplot-colors]{color_scheme_set}} to change the color scheme of the
 #' plot.
 #'
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \dontrun{
 #' if (!exists("example_model")) example(example_model)
 #' try(pp_validate(example_model)) # fails with default seed / priors
 #' }
-#'
+#' }
 #' @importFrom ggplot2 rel geom_point geom_segment scale_x_continuous element_line
 #'
 pp_validate <- function(object, nreps = 20, seed = 12345, ...) {

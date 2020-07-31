@@ -271,7 +271,7 @@ autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL,
                             assoc = NULL, ...) {
   ps <- prior_stuff
   
-  if (!is.null(response) && is.gaussian(family)) { 
+  if (!identical(NULL, response) && is.gaussian(family$family)) { 
     # use response variable for scaling priors
     if (ps$prior_dist > 0L && ps$prior_autoscale) {
       ss <- sd(response)
@@ -279,7 +279,7 @@ autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL,
     }
   }
   
-  if (!is.null(predictors) && !QR) {
+  if (!identical(NULL, predictors) && !QR) {
     # use predictors for scaling priors
     if (ps$prior_dist > 0L && ps$prior_autoscale) {
       ps$prior_scale <- 
@@ -288,14 +288,14 @@ autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL,
     }      
   }
   
-  if (!is.null(assoc)) {
+  if (!identical(NULL, assoc)) {
     # Evaluate mean and SD of each of the association terms that will go into
     # the linear predictor for the event submodel (as implicit "covariates").
     # (NB the approximate association terms are calculated using coefs
     # from the separate longitudinal submodels estimated using glmer).
     # The mean will be used for centering each association term.
     # The SD will be used for autoscaling the prior for each association parameter.
-    if (is.null(family))
+    if (identical(NULL, family))
       stop("'family' cannot be NULL when autoscaling association parameters.")
     assoc_terms <- make_assoc_terms(family = family, assoc = assoc, ...)
     ps$a_xbar <- as.array(apply(assoc_terms, 2L, mean))

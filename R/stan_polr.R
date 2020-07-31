@@ -119,7 +119,7 @@
 #'   \url{http://mc-stan.org/rstanarm/articles/}
 #'
 #' @examples
-#' if (!grepl("^sparc",  R.version$platform)) {
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #'  fit <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
 #'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345,
 #'           algorithm = "fullrank") # for speed only
@@ -127,6 +127,7 @@
 #'  plot(fit)
 #' }
 #'
+#' @importFrom utils packageVersion
 stan_polr <- function(formula, data, weights, ..., subset,
                       na.action = getOption("na.action", "na.omit"),
                       contrasts = NULL, model = TRUE,
@@ -140,6 +141,11 @@ stan_polr <- function(formula, data, weights, ..., subset,
                       do_residuals = NULL) {
 
   data <- validate_data(data, if_missing = environment(formula))
+  is_char <- which(sapply(data, is.character))
+  for (j in is_char) {
+    data[[j]] <- as.factor(data[[j]])
+  }
+  
   algorithm <- match.arg(algorithm)
   if (is.null(do_residuals)) 
     do_residuals <- algorithm == "sampling"
@@ -260,7 +266,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
                call, formula, terms = Terms,
                prior.info = attr(stanfit, "prior.info"),
                algorithm, stan_summary, stanfit, 
-               rstan_version = utils::packageVersion("rstan"), 
+               rstan_version = packageVersion("rstan"), 
                stan_function = "stan_polr")
   structure(out, class = c("stanreg", "polr"))
 }

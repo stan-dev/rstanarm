@@ -26,11 +26,11 @@ stan_betareg.fit <-
            offset = rep(0, NROW(x)),
            link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
            link.phi = NULL, ...,
-           prior = normal(), 
-           prior_intercept = normal(),
-           prior_z = normal(), 
-           prior_intercept_z = normal(),
-           prior_phi = exponential(),
+           prior = normal(autoscale=TRUE), 
+           prior_intercept = normal(autoscale=TRUE),
+           prior_z = normal(autoscale=TRUE), 
+           prior_intercept_z = normal(autoscale=TRUE),
+           prior_phi = exponential(autoscale=TRUE),
            prior_PD = FALSE, 
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            adapt_delta = NULL, 
@@ -101,7 +101,7 @@ stan_betareg.fit <-
     assign(i, prior_stuff[[i]])
   
   prior_intercept_stuff <- handle_glm_prior(prior_intercept, nvars = 1, 
-                                            default_scale = 10, link = link,
+                                            default_scale = 2.5, link = link,
                                             ok_dists = ok_intercept_dists)
   names(prior_intercept_stuff) <- paste0(names(prior_intercept_stuff), 
                                          "_for_intercept")
@@ -115,7 +115,7 @@ stan_betareg.fit <-
     assign(paste0(i,"_z"), prior_stuff_z[[i]])
   
   prior_intercept_stuff_z <- handle_glm_prior(prior_intercept_z, nvars = 1, 
-                                              link = link.phi, default_scale = 10,
+                                              link = link.phi, default_scale = 2.5,
                                               ok_dists = ok_intercept_dists)
   names(prior_intercept_stuff_z) <- paste0(names(prior_intercept_stuff_z), 
                                            "_for_intercept")
@@ -237,7 +237,7 @@ stan_betareg.fit <-
     prior_df_for_smooth = array(NA_real_, dim = 0), K_smooth = 0L,
     S = matrix(NA_real_, nrow(xtemp), ncol = 0L), smooth_map = integer(),
     has_weights = length(weights) > 0, weights = weights,
-    has_offset = length(offset) > 0, offset = offset,
+    has_offset = length(offset) > 0, offset_ = offset,
     t = 0L, 
     p = integer(), 
     l = integer(), 
@@ -306,12 +306,12 @@ stan_betareg.fit <-
   
 
   if (algorithm == "optimizing") {
-    out <-
-      optimizing(stanfit,
-                 data = standata,
-                 draws = 1000,
-                 constrained = TRUE,
-                 ...)
+    optimizing_args <- list(...)
+    if (is.null(optimizing_args$draws)) optimizing_args$draws <- 1000L
+    optimizing_args$object <- stanfit
+    optimizing_args$data <- standata
+    optimizing_args$constrained <- TRUE
+    out <- do.call(optimizing, args = optimizing_args)
     check_stanfit(out)
     out$par <- out$par[!grepl("eta_z", names(out$par))]
     out$theta_tilde <- out$theta_tilde[, !grepl("eta_z", colnames(out$theta_tilde))]

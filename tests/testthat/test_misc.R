@@ -454,7 +454,7 @@ test_that("collect_pars and grep_for_pars work", {
 
 test_that("posterior_sample_size works", {
   pss <- rstanarm:::posterior_sample_size
-  expect_equal(pss(example_model), 500)
+  expect_equal(pss(example_model), 1000)
   expect_equal(pss(fit), nrow(as.matrix(fit)))
   expect_equal(pss(fit2), ITER * CHAINS / 2)
   expect_equal(pss(fitvb), 1000)
@@ -484,13 +484,22 @@ test_that("last_dimnames works", {
 })
 
 test_that("validate_newdata works", {
-  nd1 <- NULL
-  nd2 <- data.frame(a = 1:4, b = c(NA, 1:3))
+  fit <- example_model
+  newd <- fit$data
   validate_newdata <- rstanarm:::validate_newdata
-  expect_null(validate_newdata(nd1))
-  expect_identical(validate_newdata(nd2[-1,]), nd2[-1, ])
-  expect_error(validate_newdata(nd2), "NAs are not allowed")
-  expect_error(validate_newdata(1:10, "must be a data frame"))
+  
+  expect_error(validate_newdata(fit, newdata = 1:10), "must be a data frame")
+  expect_null(validate_newdata(fit, newdata = NULL))
+  expect_equal(newd, validate_newdata(fit, newdata = newd))
+  
+  # doesn't complain about NAs in unused variables
+  newd2 <- newd
+  newd2$banana <- NA
+  expect_silent(validate_newdata(fit, newdata = newd2))
+  expect_equal(validate_newdata(fit, newdata = newd2), newd2)
+  
+  newd$period[3] <- NA
+  expect_error(validate_newdata(fit, newdata = newd), "NAs are not allowed")
 })
 
 

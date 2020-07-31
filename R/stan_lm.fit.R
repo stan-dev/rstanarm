@@ -23,40 +23,55 @@ stan_lm.wfit <- function(x, y, w, offset = NULL, singular.ok = TRUE, ...,
                          algorithm = c("sampling", "meanfield", "fullrank"),
                          adapt_delta = NULL) {
   algorithm <- match.arg(algorithm)
-  if (NCOL(y) > 1) 
+  if (NCOL(y) > 1) {
     stop("Multivariate responses not supported yet.")
+  }
+  
   if (colnames(x)[1L] == "(Intercept)") {
     has_intercept <- 1L
     x <- x[, -1L, drop = FALSE]
-    if (NCOL(x) == 0L)
+    if (NCOL(x) == 0L) {
       stop("'stan_lm' is not suitable for estimating a mean.",
            "\nUse 'stan_glm' with 'family = gaussian()' instead.", 
            call. = FALSE)
+    }
   } else {
     has_intercept <- 0L
   }
-  if (nrow(x) < ncol(x))
+  
+  if (nrow(x) < ncol(x)) {
     stop("stan_lm with more predictors than data points is not yet enabled.", 
          call. = FALSE)
+  }
+  
+  # allow prior_PD even if no y variable
+  if (is.null(y)) {
+    if (!prior_PD) {
+      stop("Outcome variable must be specified if 'prior_PD' is not TRUE.")
+    } else {
+      y <- fake_y_for_prior_PD(N = NROW(x), family = gaussian())
+    }
+  }
   
   xbar <- colMeans(x)
   x <- sweep(x, 2L, xbar, FUN = "-")
   ybar <- mean(y)
   y <- y - ybar
-  if(length(w) == 0) ols <- lm.fit(x, y)
-  else ols <- lm.wfit(x, y, w)
+  ols <- if (length(w) == 0) lm.fit(x, y) else lm.wfit(x, y, w)
   b <- coef(ols)
   NAs <- is.na(b)
-  if (any(NAs) && !singular.ok) {
+  if (any(NAs) && singular.ok) {
     x <- x[,!NAs, drop = FALSE]
     xbar <- xbar[!NAs]
     ols <- lsfit(x, y, w, intercept = FALSE)
     b <- coef(ols)
+  } else {
+    b[NAs] <- 0.0
   }
-  else b[NAs] <- 0.0
   
-  if (!is.null(w)) 
+  if (!is.null(w)) {
     x <- sqrt(w) * x
+  }
 
   return(stan_biglm.fit(b, R = qr.R(ols$qr), SSR = crossprod(residuals(ols))[1], 
                         N = nrow(x), xbar = xbar, ybar = ybar, s_y = sd(y),

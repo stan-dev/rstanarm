@@ -85,7 +85,8 @@
 #'   modeling rates and proportions. \emph{Journal of Applied Statistics}.
 #'   31(7), 799--815.
 #' 
-#' @examples 
+#' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' ### Simulated data
 #' N <- 200
 #' x <- rnorm(N, 2, 1)
@@ -103,7 +104,7 @@
 #'   algorithm = "optimizing" # just for speed of example
 #'  ) 
 #' print(fit, digits = 2)
-#'
+#' }
 stan_betareg <-
   function(formula,
            data,
@@ -117,18 +118,22 @@ stan_betareg <-
            y = TRUE,
            x = FALSE,
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
-           prior_z = normal(),
-           prior_intercept_z = normal(),
-           prior_phi = exponential(),
+           prior = normal(autoscale=TRUE),
+           prior_intercept = normal(autoscale=TRUE),
+           prior_z = normal(autoscale=TRUE),
+           prior_intercept_z = normal(autoscale=TRUE),
+           prior_phi = exponential(autoscale=TRUE),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            adapt_delta = NULL,
            QR = FALSE) {
     
-    if (!requireNamespace("betareg", quietly = TRUE))
+    if (!requireNamespace("betareg", quietly = TRUE)) {
       stop("Please install the betareg package before using 'stan_betareg'.")
+    }
+    if (!has_outcome_variable(formula)) {
+      stop("LHS of formula must be specified.")
+    }
     
     mc <- match.call(expand.dots = FALSE)
     data <- validate_data(data, if_missing = environment(formula))
@@ -188,6 +193,10 @@ stan_betareg <-
             na.action = attr(mf, "na.action"), contrasts = attr(X, "contrasts"), 
             stan_function = "stan_betareg")
     out <- stanreg(fit)
+    if (algorithm == "optimizing") {
+      out$log_p <- stanfit$log_p
+      out$log_g <- stanfit$log_g
+    }
     out$xlevels <- lapply(mf[,-1], FUN = function(x) {
       xlev <- if (is.factor(x) || is.character(x)) levels(x) else NULL
       xlev[!vapply(xlev, is.null, NA)]

@@ -9,7 +9,7 @@ functions {
 data {
   // dimensions
   int<lower=0> K;        // number of predictors
-  int<lower=1> N[2];     // number of observations where y = 0 and y = 1 respectively
+  int<lower=0> N[2];     // number of observations where y = 0 and y = 1 respectively
   vector[K] xbar;        // vector of column-means of rbind(X0, X1)
   int<lower=0,upper=1> dense_X; // flag for dense vs. sparse
   matrix[N[1],K] X0[dense_X];   // centered (by xbar) predictor matrix | y = 0
@@ -75,6 +75,13 @@ transformed data {
   int<lower=0> successes[clogit ? J : 0];
   int<lower=0> failures[clogit ? J : 0];
   int<lower=0> observations[clogit ? J : 0];
+
+  int can_do_bernoullilogitglm = K != 0 &&  // remove K!=0 after rstan includes this Stan bugfix: https://github.com/stan-dev/math/issues/1398
+                                 link == 1 && clogit == 0 && has_offset == 0 && 
+                                 prior_PD == 0 && dense_X == 1 && has_weights == 0 && t == 0;
+  matrix[can_do_bernoullilogitglm ? NN : 0, can_do_bernoullilogitglm ? K + K_smooth : 0] XS;
+  int y[can_do_bernoullilogitglm ? NN : 0];
+
   // defines hs, len_z_T, len_var_group, delta, pos
 #include /tdata/tdata_glm.stan
   for (j in 1:J) {
@@ -84,6 +91,11 @@ transformed data {
   if (J > 0) for (i in 1:N[2]) successes[strata[i]] += 1;
   if (J > 0) for (i in (N[2] + 1):NN) failures[strata[i]] +=  1;
   for (j in 1:J) observations[j] = failures[j] + successes[j];
+
+  if (can_do_bernoullilogitglm) {
+    XS = K_smooth > 0 ? append_col(append_row(X0[1], X1[1]), append_row(S0, S1)) : append_row(X0[1], X1[1]);
+    y = append_array(rep_array(0, N[1]), rep_array(1, N[2]));
+  }
 }
 parameters {
   real<upper=(link == 4 ? 0.0 : positive_infinity())> gamma[has_intercept];
@@ -112,29 +124,34 @@ transformed parameters {
   }
 }
 model {
-  // defines eta0, eta1
+  if (can_do_bernoullilogitglm) {
+    vector[K + K_smooth] coeff = K_smooth > 0 ? append_row(beta, beta_smooth) : beta;
+    target += bernoulli_logit_glm_lpmf(y | XS, has_intercept ? gamma[1] : 0.0, coeff);
+  } else if (prior_PD == 0) {
+    // defines eta0, eta1
 #include /model/make_eta_bern.stan
-  if (has_intercept == 1) {
-    if (link != 4) {
-      eta0 += gamma[1];
-      eta1 += gamma[1];
+    if (has_intercept == 1) {
+      if (link != 4) {
+        eta0 += gamma[1];
+        eta1 += gamma[1];
+      }
+      else {
+        real shift = fmax(max(eta0), max(eta1));
+        eta0 += gamma[1] - shift;
+        eta1 += gamma[1] - shift;
+      }
     }
-    else {
-      real shift = fmax(max(eta0), max(eta1));
-      eta0 += gamma[1] - shift;
-      eta1 += gamma[1] - shift;
+    // Log-likelihood
+    if (clogit) { 
+      real dummy = ll_clogit_lp(eta0, eta1, successes, failures, observations);
     }
-  }
-  // Log-likelihood
-  if (clogit && prior_PD == 0) { 
-    real dummy = ll_clogit_lp(eta0, eta1, successes, failures, observations);
-  }
-  else if (has_weights == 0 && prior_PD == 0) {
-    real dummy = ll_bern_lp(eta0, eta1, link, N);
-  }
-  else if (prior_PD == 0) {  // weighted log-likelihoods
-    target += dot_product(weights0, pw_bern(0, eta0, link));
-    target += dot_product(weights1, pw_bern(1, eta1, link));
+    else if (has_weights == 0) {
+      real dummy = ll_bern_lp(eta0, eta1, link, N);
+    }
+    else {  // weighted log-likelihoods
+      target += dot_product(weights0, pw_bern(0, eta0, link));
+      target += dot_product(weights1, pw_bern(1, eta1, link));
+    }
   }
   
 #include /model/priors_glm.stan

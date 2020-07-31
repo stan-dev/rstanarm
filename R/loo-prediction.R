@@ -32,6 +32,7 @@
 #'   details on the \code{pareto_k} diagnostic.
 #'   
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \dontrun{
 #' if (!exists("example_model")) example(example_model)
 #' 
@@ -47,7 +48,7 @@
 #' loo_pred_ints <- loo_predictive_interval(example_model, prob = 0.8, psis_object = psis_result)
 #' str(loo_pred_ints)
 #' }
-#' 
+#' }
 loo_predict.stanreg <-
   function(object, 
            type = c("mean", "var", "quantile"), 
@@ -158,6 +159,6 @@ psis.stanreg <- function(object, ...) {
   message("Running PSIS to compute weights...")
   ll <- log_lik(object)
   r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(object))
-  psis1 <- loo::psis(-ll, r_eff = r_eff, ...)
+  loo::psis(-ll, r_eff = r_eff, ...)
 }
 

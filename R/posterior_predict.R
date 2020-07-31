@@ -97,6 +97,7 @@
 #' \code{\link{predictive_error}} and \code{\link{predictive_interval}}.
 #'
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' if (!exists("example_model")) example(example_model)
 #' yrep <- posterior_predict(example_model)
 #' table(yrep)
@@ -106,13 +107,23 @@
 #' counts <- c(18,17,15,20,10,20,25,13,12)
 #' outcome <- gl(3,1,9)
 #' treatment <- gl(3,3)
-#' fit3 <- stan_glm(counts ~ outcome + treatment, family = poisson(link="log"),
-#'                 prior = normal(0, 1), prior_intercept = normal(0, 5))
+#' dat <- data.frame(counts, treatment, outcome)
+#' fit3 <- stan_glm(
+#'   counts ~ outcome + treatment, 
+#'   data = dat,
+#'   family = poisson(link="log"),
+#'   prior = normal(0, 1, autoscale = FALSE), 
+#'   prior_intercept = normal(0, 5, autoscale = FALSE),
+#'   refresh = 0
+#' )
 #' nd <- data.frame(treatment = factor(rep(1,3)), outcome = factor(1:3))
 #' ytilde <- posterior_predict(fit3, nd, draws = 500)
 #' print(dim(ytilde))  # 500 by 3 matrix (draws by nrow(nd))
-#' ytilde <- data.frame(count = c(ytilde),
-#'                      outcome = rep(nd$outcome, each = 500))
+#' 
+#' ytilde <- data.frame(
+#'   count = c(ytilde),
+#'   outcome = rep(nd$outcome, each = 500)
+#' )
 #' ggplot2::ggplot(ytilde, ggplot2::aes(x=outcome, y=count)) +
 #'   ggplot2::geom_boxplot() +
 #'   ggplot2::ylab("predicted count")
@@ -134,15 +145,13 @@
 #' # Using fun argument to transform predictions
 #' mtcars2 <- mtcars
 #' mtcars2$log_mpg <- log(mtcars2$mpg)
-#' fit <- stan_glm(log_mpg ~ wt, data = mtcars2)
+#' fit <- stan_glm(log_mpg ~ wt, data = mtcars2, refresh = 0)
 #' ytilde <- posterior_predict(fit, fun = exp)
 #' }
-#'
+#' }
 posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
                                       re.form = NULL, fun = NULL, seed = NULL,
                                       offset = NULL, ...) {
-  if (used.optimizing(object))
-    STOP_not_optimizing("posterior_predict")
   if (!is.null(seed))
     set.seed(seed)
   if (!is.null(fun))
@@ -159,9 +168,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   } else {
     m <- NULL
     stanmat <- NULL
-  }
-
-  newdata <- validate_newdata(newdata)
+  }  
+  newdata <- validate_newdata(object, newdata = newdata, m = m)
   pp_data_args <- c(list(object,
                          newdata = newdata,
                          re.form = re.form,
@@ -210,8 +218,11 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     ppargs$trials <- object$trials
   ppfun <- pp_fun(object, m = m)
   ytilde <- do.call(ppfun, ppargs)
-  if (!is.null(newdata) && nrow(newdata) == 1L)
+  
+  if ((is.null(newdata) && nobs(object) == 1L) || 
+      (!is.null(newdata) && nrow(newdata) == 1L)) {
     ytilde <- t(ytilde)
+  }
   if (!is.null(fun))
     ytilde <- do.call(fun, list(ytilde))
   if (is_polr(object) && !is_scobit(object))

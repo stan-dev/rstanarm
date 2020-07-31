@@ -1,8 +1,15 @@
-STANHEADERS_SRC = `"$(R_HOME)/bin$(R_ARCH_BIN)/Rscript" --vanilla -e "cat(system.file('include', 'src', package = 'StanHeaders'))"`
+STANHEADERS_SRC = $(shell "$(R_HOME)/bin$(R_ARCH_BIN)/Rscript" -e "message()" -e "cat(system.file('include', 'src', package = 'StanHeaders', mustWork = TRUE))" -e "message()" | grep "StanHeaders")
 PKG_CPPFLAGS = -I"../inst/include" -I"$(STANHEADERS_SRC)" -DBOOST_DISABLE_ASSERTS -DEIGEN_NO_DEBUG
+PKG_CXXFLAGS = `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "RcppParallel::CxxFlags()"` `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "StanHeaders:::CxxFlags()"`
+PKG_LIBS = `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "RcppParallel::RcppParallelLibs()"` `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "StanHeaders:::LdFlags()"`
 
 CXX_STD = CXX14
-SOURCES = $(wildcard stan_files/*.stan)
+ifeq "$(WIN)" "64"
+		SOURCES = $(wildcard stan_files/*.stan)
+else
+		SOURCES = $(filter-out stan_files/jm.stan, $(wildcard stan_files/*.stan))
+endif
+
 OBJECTS = $(SOURCES:.stan=.o) init.o
 
 all: $(SHLIB)
@@ -14,7 +21,7 @@ clean:
 		RM -rf stan_files/*.hpp
 
 %.cc: %.stan
-				"$(R_HOME)/bin$(R_ARCH_BIN)/Rscript" -e "source(file.path('..', 'tools', 'make_cc.R')); make_cc(commandArgs(TRUE))" $<
+		"$(R_HOME)/bin$(R_ARCH_BIN)/Rscript" -e "source(file.path('..', 'tools', 'make_cc.R')); make_cc(commandArgs(TRUE))" $<
 
 
 .phony: clean
