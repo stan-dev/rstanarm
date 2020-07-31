@@ -53,7 +53,7 @@ stan_aov <- function(formula, data, projections = FALSE,
     lmcall <- Call <- match.call()
     ## need rstanarm:: for non-standard evaluation
     lmcall[[1L]] <- quote(stan_lm)
-    lmcall$singular.ok <- FALSE
+    lmcall$singular.ok <- TRUE
     if (projections) 
       qr <- lmcall$qr <- TRUE
     lmcall$projections <- NULL

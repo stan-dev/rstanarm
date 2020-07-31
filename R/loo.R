@@ -641,7 +641,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
         newdata = d[omitted, , drop = FALSE],
         offset = x$offset[omitted],
         newx = get_x(x)[omitted, , drop = FALSE],
-        newz = x$z[omitted, , drop = FALSE], # NULL other than for some stan_betareg models
+        newz = x[["z"]][omitted, , drop = FALSE], # NULL other than for some stan_betareg models
         stanmat = as.matrix.stanreg(fit_j)
       )
   }
@@ -697,7 +697,11 @@ log_mean_exp <- function(x) {
 kfold_and_reloo_data <- function(x) {
   # either data frame or environment
   d <- x[["data"]] 
-  
+  form <- formula(x)
+  if (!inherits(form, "formula")) {
+    # may be a string
+    form <- as.formula(form, env = NULL)
+  }
   sub <- getCall(x)[["subset"]]
   if (!is.null(sub)) {
     keep <- eval(substitute(sub), envir = d)
@@ -705,10 +709,10 @@ kfold_and_reloo_data <- function(x) {
   
   if (is.environment(d)) {
     # make data frame
-    d <- get_all_vars(formula(x), data = d) 
+    d <- get_all_vars(form, data = d) 
   } else {
     # already a data frame
-    all_vars <- all.vars(formula(x))
+    all_vars <- all.vars(form)
     if (isTRUE(x$stan_function == "stan_gamm4")) {
       # see https://github.com/stan-dev/rstanarm/issues/435
       all_vars <- c(all_vars, all.vars(getCall(x)[["random"]]))
