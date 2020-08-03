@@ -18,8 +18,8 @@
 library(testthat)
 library(rstanarm)
 Sys.unsetenv("R_TESTS")
+example(example_model)
 if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
-  example(example_model)
   test_check("rstanarm", invert = FALSE,
              filter = if (Sys.getenv("NOT_CRAN") != "true") "stan_functions")
 }
