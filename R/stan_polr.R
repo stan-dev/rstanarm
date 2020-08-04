@@ -151,7 +151,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
     do_residuals <- algorithm == "sampling"
   }
   call <- match.call(expand.dots = TRUE)
-  call$formula <- eval(call$formula) # https://discourse.mc-stan.org/t/loo-with-k-threshold-error-for-stan-polr/17052/19
+  call$formula <- try(eval(call$formula), silent = TRUE) # https://discourse.mc-stan.org/t/loo-with-k-threshold-error-for-stan-polr/17052/19
   m <- match.call(expand.dots = FALSE)
   method <- match.arg(method)
   if (is.matrix(eval.parent(m$data))) {
