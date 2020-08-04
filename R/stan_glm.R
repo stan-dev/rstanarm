@@ -211,7 +211,7 @@ stan_glm <-
            prior_aux = exponential(autoscale=TRUE),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
-           mean_PPD = algorithm != "optimizing",
+           mean_PPD = algorithm != "optimizing" && !prior_PD,
            adapt_delta = NULL,
            QR = FALSE,
            sparse = FALSE) {
