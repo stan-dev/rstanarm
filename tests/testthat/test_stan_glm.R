@@ -457,3 +457,12 @@ test_that("posterior_predict compatible with glms", {
   expect_linpred_equal(fit_igaus)
   
 })
+
+
+test_that("contrasts attribute isn't dropped", {
+  contrasts <- list(wool = "contr.sum", tension = "contr.sum")
+  fit <- stan_glm(breaks ~ wool * tension, data = warpbreaks,
+                 contrasts = contrasts, 
+                 chains = 1, refresh = 0)
+  expect_equal(fit$contrasts, contrasts)
+})
