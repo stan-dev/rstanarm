@@ -236,6 +236,7 @@ stan_glm <-
   if (is.empty.model(mt))
     stop("No intercept or predictors specified.", call. = FALSE)
   X <- model.matrix(mt, mf, contrasts)
+  contrasts <- attr(X, "contrasts")
   weights <- validate_weights(as.vector(model.weights(mf)))
   offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
   if (binom_y_prop(Y, family, weights)) {
@@ -277,7 +278,7 @@ stan_glm <-
   fit <- nlist(stanfit, algorithm, family, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
-               contrasts = attr(X, "contrasts"), 
+               contrasts = contrasts, 
                stan_function = "stan_glm")
   
   out <- stanreg(fit)
