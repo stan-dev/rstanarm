@@ -27,9 +27,7 @@
   * @return A vector
   */
   vector weibull_log_haz(vector eta, vector t, real shape) {
-    vector[rows(eta)] res;
-    res = log(shape) + (shape - 1) * log(t) + eta;
-    return res;
+    return log(shape) + (shape - 1) * log(t) + eta;
   }
 
   /**
@@ -41,9 +39,7 @@
   * @return A vector
   */
   vector weibullAFT_log_haz(vector af, vector caf, real shape) {
-    vector[rows(af)] res;
-    res = log(shape) + (shape - 1) * log(caf) + log(af);
-    return res;
+    return log(shape) + (shape - 1) * log(caf) + log(af);
   }
 
   /**
@@ -55,9 +51,7 @@
   * @return A vector
   */
   vector gompertz_log_haz(vector eta, vector t, real scale) {
-    vector[rows(eta)] res;
-    res = scale * t + eta;
-    return res;
+    return scale * t + eta;
   }
 
   /**
@@ -69,9 +63,7 @@
   * @return A vector
   */
   vector mspline_log_haz(vector eta, matrix basis, vector coefs) {
-    vector[rows(eta)] res;
-    res = log(basis * coefs) + eta;
-    return res;
+    return log(basis * coefs) + eta;
   }
 
   /**
@@ -83,9 +75,7 @@
   * @return A vector
   */
   vector bspline_log_haz(vector eta, matrix basis, vector coefs) {
-    vector[rows(eta)] res;
-    res = basis * coefs + eta;
-    return res;
+    return basis * coefs + eta;
   }
 
   /**
@@ -99,9 +89,7 @@
   * @return A vector
   */
   real quadrature_log_surv(vector qwts, vector log_hazard) {
-    real res;
-    res = - dot_product(qwts, exp(log_hazard)); // sum across all individuals
-    return res;
+    return - dot_product(qwts, exp(log_hazard)); // sum across all individuals
   }
 
   vector quadrature_log_cdf(vector qwts, vector log_hazard, int qnodes, int N) {
@@ -110,9 +98,7 @@
     matrix[N,qnodes] qwts_mat = to_matrix(qwts,   N, qnodes);
     matrix[N,qnodes] haz_mat  = to_matrix(hazard, N, qnodes);
     vector[N] chaz = rows_dot_product(qwts_mat, haz_mat);
-    vector[N] res;
-    res = log(1 - exp(- chaz));
-    return res;
+    return log(1 - exp(- chaz));
   }
 
   vector quadrature_log_cdf2(vector qwts_lower, vector log_hazard_lower,
@@ -129,9 +115,7 @@
     vector[N] chaz_upper = rows_dot_product(qwts_upper_mat, haz_upper_mat);
     vector[N] surv_lower = exp(- chaz_lower);
     vector[N] surv_upper = exp(- chaz_upper);
-    vector[N] res;
-    res = log(surv_lower - surv_upper);
-    return res;
+    return log(surv_lower - surv_upper);
   }
 
 
@@ -150,6 +134,5 @@
     vector[M] af = exp(-eta); // time-varying acceleration factor
     matrix[N,qnodes] qwts_mat = to_matrix(qwts, N, qnodes);
     matrix[N,qnodes] af_mat   = to_matrix(af,   N, qnodes);
-    vector[N] caf = rows_dot_product(qwts_mat, af_mat);
-    return caf; // cumulative acceleration factor
+    return rows_dot_product(qwts_mat, af_mat); // cumulative acceleration factor
   }
