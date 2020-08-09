@@ -28,7 +28,7 @@
   * @param dist Integer specifying the type of prior distribution
   * @param scale Real specifying the scale for the prior distribution
   * @param df Real specifying the df for the prior distribution
-  * @return Nothing
+  * @return lp__
   */
   real basehaz_lp(vector aux_unscaled, int dist, vector scale, vector df) {
     if (dist > 0) {
