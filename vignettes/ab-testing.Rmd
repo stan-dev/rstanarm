@@ -5,14 +5,13 @@ date: "`r Sys.Date()`"
 output:
   html_vignette:
     toc: yes
-params:
-  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 bibliography: mrp-files/mrp.bib
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(collapse = TRUE)
+knitr::opts_chunk$set(eval = identical(Sys.getenv("NOT_CRAN"), "true"))
 library(rstanarm)
 ```
 
