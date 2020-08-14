@@ -35,9 +35,9 @@ functions {
   * @param b Vector that is multiplied from the left by the CSR matrix
   * @return A vector that is the product of the CSR matrix and b
   */
-  vector test_csr_matrix_times_vector(int m, int n, vector w, 
+  vector test_csr_matrix_times_vector(int m, int n, vector w,
                                       int[] v, int[] u, vector b) {
-    return csr_matrix_times_vector(m, n, w, v, u, b); 
+    return csr_matrix_times_vector(m, n, w, v, u, b);
   }
 }
 data {
@@ -115,7 +115,7 @@ parameters {
 }
 transformed parameters {
   // aux has to be defined first in the hs case
-  real aux = prior_dist_for_aux == 0 ? aux_unscaled : (prior_dist_for_aux <= 2 ? 
+  real aux = prior_dist_for_aux == 0 ? aux_unscaled : (prior_dist_for_aux <= 2 ?
              prior_scale_for_aux * aux_unscaled + prior_mean_for_aux :
              prior_scale_for_aux * aux_unscaled);
 
@@ -123,7 +123,7 @@ transformed parameters {
   // defines beta, b, theta_L
 #include /tparameters/tparameters_glm.stan
 #include /tparameters/tparameters_betareg.stan
-  
+
   if (prior_dist_for_aux == 0) // none
     aux = aux_unscaled;
   else {
@@ -144,7 +144,7 @@ transformed parameters {
       }
     }
     else {
-      theta_L = make_theta_L(len_theta_L, p, 
+      theta_L = make_theta_L(len_theta_L, p,
                              aux, tau, scale, zeta, rho, z_T);
       b = make_b(z_b, theta_L, p, l);
     }
@@ -243,15 +243,6 @@ model {
                             rows_dot_product((1 - mu) , mu_z));
       }
     }
-    else { // weighted log-likelihoods
-      vector[N] summands;
-      if (family == 1) summands = pw_gauss(y, eta, aux, link);
-      else if (family == 2) summands = pw_gamma(y, eta, aux, link);
-      else if (family == 3) summands = pw_inv_gaussian(y, eta, aux, link, log_y, sqrt_y);
-      else if (family == 4 && link_phi == 0) summands = pw_beta(y, eta, aux, link);
-      else if (family == 4 && link_phi > 0) summands = pw_beta_z(y, eta, eta_z, link, link_phi);
-      target += dot_product(weights, summands);
-    }
   }
 
   // Log-priors
@@ -261,14 +252,14 @@ model {
       target += normal_lpdf(aux_unscaled | 0, 1) - log_half;
     else if (prior_dist_for_aux == 2)
       target += student_t_lpdf(aux_unscaled | prior_df_for_aux, 0, 1) - log_half;
-    else 
+    else
      target += exponential_lpdf(aux_unscaled | 1);
   }
-    
+
 #include /model/priors_glm.stan
 #include /model/priors_betareg.stan
   if (t > 0) {
-    real dummy = decov_lp(z_b, z_T, rho, zeta, tau, 
+    real dummy = decov_lp(z_b, z_T, rho, zeta, tau,
                           regularization, delta, shape, t, p);
   }
 }
@@ -276,15 +267,15 @@ generated quantities {
   real mean_PPD = compute_mean_PPD ? 0 : negative_infinity();
   real alpha[has_intercept];
   real omega_int[has_intercept_z];
-  
+
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
   }
-  if (has_intercept_z == 1) { 
-    omega_int[1] = gamma_z[1] - dot_product(zbar, omega);  // adjust betareg intercept 
+  if (has_intercept_z == 1) {
+    omega_int[1] = gamma_z[1] - dot_product(zbar, omega);  // adjust betareg intercept
   }
-  
+
   if (compute_mean_PPD) {
     vector[N] eta_z;
 #include /model/make_eta.stan
@@ -322,10 +313,10 @@ generated quantities {
     else { // has_intercept_z == 0
 #include /model/eta_z_no_intercept.stan
     }
-    
+
     if (SSfun > 0) { // nlmer
       vector[len_y] eta_nlmer;
-      matrix[len_y, K] P;      
+      matrix[len_y, K] P;
       P = reshape_vec(eta, len_y, K);
       if (SSfun < 5) {
         if (SSfun <= 2) {
@@ -361,7 +352,7 @@ generated quantities {
       vector[N] mu = link > 1 ? linkinv_inv_gaussian(eta, link) : eta;
       for (n in 1:len_y) mean_PPD += inv_gaussian_rng(mu[n], aux);
     }
-    else if (family == 4 && link_phi == 0) { 
+    else if (family == 4 && link_phi == 0) {
       vector[N] mu = linkinv_beta(eta, link);
       for (n in 1:N) {
         real mu_n = mu[n];

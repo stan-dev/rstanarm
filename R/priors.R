@@ -565,6 +565,12 @@ R2 <- function(location = NULL, what = c("mode", "mean", "median", "log")) {
 
 #' @rdname priors
 #' @export
+beta <- function(alpha = 2, beta = 2) {
+  validate_parameter_value(alpha)
+  validate_parameter_value(beta)
+  nlist(dist = "beta", alpha, beta)
+}
+
 #' @param family Not currently used.
 default_prior_intercept = function(family) {
   # family arg not used, but we can use in the future to do different things

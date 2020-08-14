@@ -452,7 +452,6 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
     fixed.only <- FALSE
   if (fixed.only && random.only) 
     stop("'fixed.only' and 'random.only' can't both be TRUE.", call. = FALSE)
-  
   Terms <- attr(fr, "terms")
   if (fixed.only) {
     Terms <- terms.formula(formula(x, fixed.only = TRUE))

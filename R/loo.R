@@ -406,9 +406,6 @@ loo_compare.stanreg <-
     .loo_comparison(fits, criterion = criterion, detail = detail)
   }
 
-
-#' @rdname loo.stanreg
-#' @export
 loo_compare.stanreg_list <-
   function(x,
            ...,
@@ -722,7 +719,7 @@ kfold_and_reloo_data <- function(x) {
     }
     d <- d[, all_vars, drop=FALSE]
   }
-  
+
   if (!is.null(sub)) {
     d <- d[keep,, drop=FALSE]
   }
@@ -733,7 +730,7 @@ kfold_and_reloo_data <- function(x) {
     strata_var <- as.character(getCall(x)$strata)
     d[[strata_var]] <- model.weights(model.frame(x))
   }
-  
+
   return(d)
 }
 

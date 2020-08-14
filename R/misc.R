@@ -135,6 +135,11 @@ is_polr <- function(object) {
   is(object, "polr")
 }
 
+# test if a stanreg object has class car (conditional autoregressive) 
+is_car <- function(object) {
+  is(object, "car")
+}
+
 # test if a stanreg object is a scobit model
 is_scobit <- function(object) {
   validate_stanreg_object(object)

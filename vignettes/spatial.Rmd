@@ -1,0 +1,257 @@
+---
+title: "CAR Spatial Models with rstanarm"
+author: "Imad Ali, Jonah Gabry and Ben Goodrich"
+date: "`r Sys.Date()`"
+output: 
+  html_vignette: 
+    toc: yes
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
+---
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteEncoding{UTF-8}
+%\VignetteIndexEntry{stan_spatial: Models for Spatial Data}
+-->
+```{r, child="children/SETTINGS-knitr.txt"}
+```
+```{r, child="children/SETTINGS-gg.txt"}
+```
+```{r, child="children/SETTINGS-rstan.txt"}
+```
+```{r, child="children/SETTINGS-loo.txt"}
+```
+
+## Introduction
+
+This vignette explains how to account for spatial variation with conditional autoregressive (CAR) models when modeling discrete or continuous outcomes using the `stan_besag`, `stan_bym`, and `stan_bym2` functions in the __rstanarm__ package. The `stan_besag` function allows you to model space as an intrinsic conditional autoregressive model (ICAR), the `stan_bym` function allows you to fit the Besag, York, Mollie (1991) CAR model, and the `stan_bym2` is a variant of the BYM model where the priors are more interpretable (see Riebler et al (2016) for details).
+
+```{r, child="children/four_steps.txt"}
+```
+
+Steps 3 and 4 are covered in more depth by the vignette entitled ["How to Use
+the __rstanarm__ Package"](rstanarm.html).
+
+## Likelihood
+
+The likelihoods supported in each CAR modeling function include Gaussian, Binomial, Poisson, Negative Binomial, and Gamma. For details on the link functions available and the contribution to the posterior of each of these likelihoods consult the appropriate [vignette](http://mc-stan.org/rstanarm/articles/index.html). 
+
+The linear predictor takes the following form,
+$$
+\boldsymbol{\eta} = \alpha + \mathbf{X}\boldsymbol{\beta} + \boldsymbol{\psi}
+$$
+where $\alpha$ is the intercept, $\mathbf{X}$ is an $N$-by-$K$ matrix of predictors ($N$ being the number of observations and $K$ being the number of predictors), $\boldsymbol{\beta}$ is a $K$-dimensional vector of regression coefficients, and $\boldsymbol{\psi}$ is a $N$-dimensional vector representing the spatial effect. The construction of $\boldsymbol{\psi}$ depends on the model, which is discussed in the relevant sections below.
+
+Depending on the choice of likelihood there may or may not be an additional auxiliary parameter $\gamma$ in the model (e.g. in a Gaussian likelihood this would be the variation of the data). With all these components, for some probability density/mass function $f$, we can state the general form of the likelihood as,
+
+$$
+\mathcal{L}(\alpha, \boldsymbol{\beta}, \gamma | \mathbf{y}) = \prod_{i=1}^N f(y_i | \alpha, \boldsymbol{\beta}, \gamma )
+$$
+
+## GMRF Hierarchical Component
+
+CAR models require that you define the spatial component as a Gaussian Markov Random Field (GMRF). The random vector $\boldsymbol{\phi}$ is a GMRF with respect to the graph $\mathcal{G} = (\mathcal{V} = \{1,\ldots,n\},\mathcal{E})$ with mean vector $\boldsymbol{\mu}$ and precision matrix $\mathbf{W}$ if its probability density function takes the precision form of the multivariate normal distribution,
+
+$$
+f(\boldsymbol{\phi} | \boldsymbol{\mu}) = (2\pi)^{-n/2} |\mathbf{W}|^{1/2}
+\exp\bigg( -\frac{1}{2}(\boldsymbol{\phi-\mu})^{\top}\mathbf{W}(\boldsymbol{\phi-\mu}) \bigg)
+$$
+
+and $W_{i,j} \neq 0$ when $\{i,j\}\in\mathcal{E}$ for all $i \neq j$. Here, $\mathcal{V}$ refers to the verticies on the graph (i.e. the spatial units) and $\mathcal{E}$ refers to the edges on the graph (i.e. the spatial units that are neighbors). In other words, $\mathbf{W}$ is an $N$-by-$N$ matrix  (with zeros on the diagonal) which describes spatial adjacency. 
+
+Unfortunately there is no guarantee that $\mathbf{W}$ is positive definite so $\mathbf{Q} = \mbox{diag}(\mathbf{W1}) - W$ (which is guaranteed to be positive semi-definite) is used as the precision matrix.
+
+## Besag (ICAR) Spatial Prior
+
+The `stan_besag` modeling function fits the data to an ICAR model. This means that the spatial effect enters the linear predictor as
+
+$$
+\begin{align}
+\boldsymbol{\psi} = \boldsymbol{\phi} \\
+f(\boldsymbol{\phi} | \boldsymbol{\mu}) &= (2\pi)^{-n/2} |\tau\mathbf{Q}|^{1/2}
+\exp\bigg( -\frac{1}{2}\boldsymbol{\phi}^{\top}\tau\mathbf{Q}\boldsymbol{\phi} \bigg)
+\end{align}
+$$
+
+where $\tau$ is a scalar that controls the overall spatial variation and has an appropriate hyperprior distribution. 
+
+## BYM
+
+The ICAR model is limited in that it only accounts for spatial variation among the spatial units. Thus, the random variation is picked up by the spatial variation which may result in misleading parameter estimates and invalid inferences. The `stan_bym` model explains spatial variation as the sum of a structured (spatial) component $\boldsymbol{\phi}$ and an unstructured (random) component $\boldsymbol{\theta}$. Therefore, the spatial effect takes the following form,
+
+$$
+\begin{align}
+\boldsymbol{\psi} &= \rho\boldsymbol{\phi} + \tau\boldsymbol{\theta} \\
+f(\boldsymbol{\phi} | \boldsymbol{\mu}) &= (2\pi)^{-n/2} |\mathbf{Q}|^{1/2}
+\exp\bigg( -\frac{1}{2}\boldsymbol{\phi}^{\top}\mathbf{Q}\boldsymbol{\phi} \bigg) \\
+f(\theta_i) &= (2\pi)^{-1/2}\exp{\bigg( -\frac{\theta_i^2}{2} \bigg)}
+\end{align}
+$$
+
+Note that the unstructured effect $\boldsymbol{\theta}$ is distributed standard normal.
+
+## BYM2 (Variant of the BYM Spatial Prior)
+
+The `stan_bym2` modeling function fits the data to a variant of the BYM model where the spatial effect enters as a convolution of the structured (spatial) effect and the unstructured (random) effect,
+
+$$
+\begin{align}
+\boldsymbol{\psi} &= \tau(\boldsymbol{\theta}\sqrt{1-\rho} + \boldsymbol{\phi}\sqrt{\rho}) \\
+f(\boldsymbol{\phi} | \boldsymbol{\mu}) &= (2\pi)^{-n/2} |\mathbf{Q}|^{1/2}
+\exp\bigg( -\frac{1}{2}\boldsymbol{\phi}^{\top}\mathbf{Q}\boldsymbol{\phi} \bigg) \\
+f(\theta_i) &= (2\pi)^{-1/2}\exp{\bigg( -\frac{\theta_i^2}{2} \bigg)}
+\end{align}
+$$
+
+As in the BYM model $\boldsymbol{\theta}$ is distributed standard normal. However, now the parameter $\rho$ is on the unit interval and is interpreted as the proportion of spatial variation that is contributed to overall variation, and $\tau$ explains the overall (convolved) variation.
+
+Priors on $\rho$ should be chosen carefully as $\rho=0$ reduces to a model that not account for spatial variation and $\rho=1$ reduces to the ICAR model, which does not account for random variation among the spatial units. 
+
+## Posterior
+
+Combining these components yields the following posteriors. For `stan_besag` we have,
+$$
+f(\alpha, \boldsymbol{\beta},\boldsymbol{\phi}, \rho, \gamma | \mathbf{y},\mathbf{X}, \mathbf{Q}) \propto 
+\prod_{i=1}^N f(y_i | \gamma) \times 
+\prod_{k=1}^K f(\beta_k) \times
+f(\boldsymbol{\phi} | \mathbf{Q}, \rho) \times
+f(\rho) \times
+f(\lambda)
+$$
+
+
+and for both `stan_bym` and `stan_bym2` we have,
+$$
+f(\alpha, \boldsymbol{\beta},\boldsymbol{\phi}, \boldsymbol{\theta}, \rho, \tau, \gamma | \mathbf{y},\mathbf{X}, \mathbf{Q}) \propto 
+\prod_{i=1}^N f(y_i | \gamma) \times 
+\prod_{k=1}^K f(\beta_k) \times
+f(\boldsymbol{\phi} | \mathbf{Q}, \rho) \times
+\prod_{i=1}^K f(\theta_i) \times
+f(\rho) \times
+f(\tau) \times
+f(\lambda)
+$$
+
+## An Example Using Simulated Data on a Lattice
+
+As an example we use spatial units defined on a lattice. Below we plot a GMRF of 900 spatial units available in the rstanarm package.
+
+```{r load-lattice, fig.align='center', fig.height=8}
+library(spdep)
+# Load the preconstruced lattice/GMRF
+data("lattice", package = "rstanarm")
+grid_sim <- grid_sim30
+# plot the GMRF
+var_range_gmrf <- seq(min(grid_sim@data$gmrf), max(grid_sim@data$gmrf), length = 50)
+spplot(grid_sim, "gmrf", at = var_range_gmrf, main = expression(paste(phi, " (GMRF)")),
+       col.regions = colorRampPalette(c("#ef8a62", "#f7f7f7", "#67a9cf"))(50))
+```
+
+Now we simulate predictors and a binomial outcome for the ICAR model.
+
+```{r simulate-data}
+# Convert a spatial polygon to an N-by-N weight matrix
+sp2weightmatrix <- function(spatialpolygon) {
+  spdep::nb2mat(spdep::poly2nb(spatialpolygon, queen = TRUE), style = "B", zero.policy = TRUE)
+}
+# Neighborhood matrix
+W <- sp2weightmatrix(grid_sim)
+# Simulate predictors and outcome
+x <- rnorm(nrow(W), 2, 1)
+z <- rnorm(nrow(W), -1, 1)
+trials <- rep(10, nrow(W))
+spatial_data <- data.frame(x, z, phi = grid_sim@data$gmrf, trials)
+eta <- binomial(link="logit")$linkinv(0.5 + 0.4 * x + 0.8 * z + spatial_data$phi)
+spatial_data$y <- rbinom(nrow(W), trials, eta)
+```
+
+Plotting the outcome data on the lattice gives us a better understanding of its spatial variation.
+
+```{r plot-outcome}
+grid_sim@data$y <- spatial_data$y
+var_range_y <- seq(min(grid_sim@data$y), max(grid_sim@data$y) + 1, by = 1)
+spplot(grid_sim, "y", at = var_range_y, main = expression(y),
+       col.regions = colorRampPalette(c("#ef8a62", "#f7f7f7", "#67a9cf"))(max(var_range_y) + 1))
+```
+
+Now we can fit the model with `stan_besag` (we also fit a model that does not match that data generating process for model selection purposes).
+
+```{r fit-besag, results = "hide"}
+library(rstanarm)
+fit_besag <- stan_besag(y ~ 1 + x + z, data = spatial_data, W,
+                        prior_intercept = normal(0,1), prior = normal(0,1), prior_rho = normal(0,1),
+                        family = binomial(link="logit"), trials = spatial_data$trials,
+                        chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
+fit_besag_bad <- stan_besag(y ~ 1 + x + I(x^2), data = spatial_data, W,
+                            prior_intercept = normal(0,1), prior = normal(0,1), prior_rho = normal(0,1),
+                            family = binomial(link="logit"), trials = spatial_data$trials,
+                            chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
+print(fit_besag)
+print(fit_besag_bad)
+```
+
+As a two-dimensional posterior predictive check we can plot the posterior predictions on the lattice using the `posterior_predict` function.
+```{r ppcheck-2d, fig.align='center', fig.height=8}
+grid_sim@data$y_pred <- colMeans(posterior_predict(fit_besag))
+var_range_y_pred <- seq(min(grid_sim@data$y_pred), max(grid_sim@data$y_pred) + 1, by = 1)
+spplot(grid_sim, "y_pred", at = var_range_y_pred, main = expression(y[pred]),
+       col.regions = colorRampPalette(c("#ef8a62", "#f7f7f7", "#67a9cf"))(max(var_range_y_pred) + 1))
+```
+
+Alternatively we can look at the conventional one-dimensional posterior predictive check with the `pp_check` function.
+
+```{r ppcheck-1d, fig.align='center', fig.height=8}
+pp_check(fit_besag)
+```
+
+In order to compare the predictive performance between the models we need to use the [loo](http://mc-stan.org/loo) package. Looking at the results below we can confirm that the correct model outperforms the incorrect model in terms of predictive accuracy.
+
+```{r loo}
+library(loo)
+loo_correct <- loo(fit_besag)
+loo_incorrect <- loo(fit_besag_bad)
+compare(loo_correct, loo_incorrect)
+```
+
+## Smoothing the Spatial Random Walk
+
+In some cases modeling the GMRF spatial component with the precision matrix $\mathbf{Q}$ leads to rough spatial varation. This often occurs when dealing with spatial units on a fine lattice. Using the square of the precision matrix $\mathbf{Q}\mathbf{Q}$ allows us to smooth out the spatial variation across the spatial units using a spatial random walk of order 2. Below we use the `order = 2` argument to fit the model with smoothing of order 2.
+
+```{r smoothing, results="hide"}
+fit_besag_smooth <- stan_besag(y ~ 1 + x + z, data = spatial_data, W, order = 2,
+                               prior_intercept = normal(0,1), prior = normal(0,1),
+                               prior_rho = normal(0,1),
+                               family = binomial(link="logit"), trials = spatial_data$trials,
+                               chains = CHAINS, cores = CORES, seed = SEED, iter = ITER)
+```
+
+Now we plot the results alongside the first fit with `order = 1`.
+
+```{r plot-smoothing, fig.align='center', fig.height=12}
+grid_sim@data$y_pred_smooth <- colMeans(posterior_predict(fit_besag_smooth))
+
+var_range_y_pred <- seq(min(grid_sim@data$y_pred_smooth), max(grid_sim@data$y_pred_smooth) + 1, by = 1)
+gridExtra::grid.arrange(layout_matrix = matrix(1:2, nrow = 1),
+  spplot(grid_sim, "y_pred_smooth", at = var_range_y_pred, main = expression(y[pred_smooth]),
+         col.regions = colorRampPalette(c("#ef8a62", "#f7f7f7", "#67a9cf"))(max(var_range_y_pred) + 1)),
+  spplot(grid_sim, "y_pred", at = var_range_y_pred, main = expression(y[pred]),
+         col.regions = colorRampPalette(c("#ef8a62", "#f7f7f7", "#67a9cf"))(max(var_range_y_pred) + 1))
+)
+```
+
+The `stan_bym` and `stan_bym2` functions can be used in a similar way.
+
+## References
+
+Besag, J. (1974). Spatial Interaction and the Statistical Analysis of Lattice Systems. _Journal of the Royal Statistical Society._ Vol. 36, No. 2, p192-236.
+
+Besag, J., York, J. and Mollié, A. (1991). Bayesian image restoration, with two applications in spatial statistics. _Annals of the Institute of Statistical Mathematics._ Vol. 43, No. 01, p1-20.
+
+Riebler, A., Sorbye, S.H., Simpson, D. and Rue, H. (2016). An intuitive Bayesian spatial model for disease mapping that accounts for scaling. _arXiv_ preprint	arXiv:1601.01180.
+
+Rue, H. and Held, L. (2005) _Gaussian Markov Random Fields: Theory And Applications (Monographs on Statistics and Applied Probability)._ Chapman & Hall/CRC, Boca Raton, FL.
+
+Rue, H. and Martino, S. (2007) Approximate Bayesian inference for hierarchical Gaussian Markov random fields models. _Journal of Statistical Planning and Inference._ Vol. 137, p3177-3192.
+
+Simpson, D., Rue, H., Martins, T.G., Riebler, A. and Sorbye, S.H. (2015). Penalising model component complexity: A principled, practical approach to constructing priors. _arXiv_ preprint	arXiv:1403.4630.
+

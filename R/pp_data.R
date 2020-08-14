@@ -1,17 +1,17 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright 2015 Douglas Bates, Martin Maechler, Ben Bolker, Steve Walker
 # Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
-# 
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 3
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -41,7 +41,7 @@ pp_data <-
     requireNamespace("mgcv", quietly = TRUE)
     if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
     else x <- predict(object$jam, newdata = newdata, type = "lpmatrix")
-    if (is.null(offset)) 
+    if (is.null(offset))
       offset <- object$offset %ORifNULL% rep(0, nrow(x))
     return(nlist(x, offset))
   }
@@ -53,27 +53,29 @@ pp_data <-
     if (inherits(object, "betareg")) {
       return(nlist(x, offset, z_betareg = object$z))
     }
-    
+
     return(nlist(x, offset))
   }
-
+  #if (!is.null(newdata) & is(object, "car")) {
+  #  return(nlist(x))
+  #}
   offset <- .pp_data_offset(object, newdata, offset)
   Terms <- delete.response(terms(object))
   m <- model.frame(Terms, newdata, xlev = object$xlevels)
-  if (!is.null(cl <- attr(Terms, "dataClasses"))) 
+  if (!is.null(cl <- attr(Terms, "dataClasses")))
     .checkMFClasses(cl, m)
   x <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
-  if (is(object, "polr") && !is_scobit(object)) 
+  if (is(object, "polr") && !is_scobit(object))
     x <- x[,colnames(x) != "(Intercept)", drop = FALSE]
-  
+
   if (inherits(object, "betareg")) {
-    mf <- model.frame(delete.response(object$terms$precision), 
-                      data = newdata, na.action = object$na.action, 
+    mf <- model.frame(delete.response(object$terms$precision),
+                      data = newdata, na.action = object$na.action,
                       xlev = object$levels$precision)
     z_betareg <- model.matrix(object$terms$precision, mf, contrasts = object$contrasts$precision)
     return(nlist(x, offset, z_betareg))
   }
-  
+
   return(nlist(x, offset))
 }
 
@@ -134,19 +136,19 @@ pp_data <-
   offset <- .pp_data_offset(object, newdata, offset)
 
   group <- with(nlf$reTrms, pad_reTrms(Ztlist, cnms, flist))
-  if (!is.null(re.form) && !is(re.form, "formula") && is.na(re.form)) 
+  if (!is.null(re.form) && !is(re.form, "formula") && is.na(re.form))
     group$Z@x <- 0
   return(nlist(x = nlf$X, offset = offset, Z = group$Z,
                Z_names = make_b_nms(group), arg1, arg2))
 }
 
-# the functions below are heavily based on a combination of 
-# lme4:::predict.merMod and lme4:::mkNewReTrms, although they do also have 
+# the functions below are heavily based on a combination of
+# lme4:::predict.merMod and lme4:::mkNewReTrms, although they do also have
 # substantial modifications
 .pp_data_mer_x <- function(object, newdata, m = NULL, ...) {
   x <- get_x(object, m = m)
   if (is.null(newdata)) return(x)
-  form <- if (is.null(m)) attr(object$glmod$fr, "formula") else 
+  form <- if (is.null(m)) attr(object$glmod$fr, "formula") else
     formula(object, m = m)
   L <- length(form)
   form[[L]] <- lme4::nobars(form[[L]])
@@ -158,7 +160,7 @@ pp_data <-
   mf <- mf[vars]
   isFac <- vapply(mf, is.factor, FUN.VALUE = TRUE)
   isFac[attr(Terms, "response")] <- FALSE
-  orig_levs <- if (length(isFac) == 0) 
+  orig_levs <- if (length(isFac) == 0)
     NULL else lapply(mf[isFac], levels)
   mfnew <- model.frame(delete.response(Terms), newdata, xlev = orig_levs)
   x <- model.matrix(RHS, data = mfnew, contrasts.arg = attr(x, "contrasts"))
@@ -166,22 +168,22 @@ pp_data <-
 }
 
 .pp_data_mer_z <- function(object, newdata, re.form = NULL,
-                           allow.new.levels = TRUE, na.action = na.pass, 
+                           allow.new.levels = TRUE, na.action = na.pass,
                            m = NULL, ...) {
   NAcheck <- !is.null(re.form) && !is(re.form, "formula") && is.na(re.form)
-  fmla0check <- (is(re.form, "formula") && 
-                   length(re.form) == 2 && 
+  fmla0check <- (is(re.form, "formula") &&
+                   length(re.form) == 2 &&
                    identical(re.form[[2]], 0))
   if (NAcheck || fmla0check) return(list())
   if (is.null(newdata) && is.null(re.form)) {
-    Z <- get_z(object, m = m) 
+    Z <- get_z(object, m = m)
     if (!is.stanmvreg(object)) {
       # Z_names not needed for stanreg with no newdata
       return(list(Zt = t(Z)))
     } else {
       # must supply Z_names for stanmvreg since b pars
       # might be for multiple submodels and Zt will only
-      # be for one submodel, so their elements may not 
+      # be for one submodel, so their elements may not
       # correspond exactly
       ReTrms <- object$glmod[[m]]$reTrms
       Z_names <- make_b_nms(ReTrms, m = m, stub = get_stub(object))
@@ -190,7 +192,7 @@ pp_data <-
   }
   else if (is.null(newdata)) {
     rfd <- mfnew <- model.frame(object, m = m)
-  } 
+  }
   else if (inherits(object, "gamm4")) {
     requireNamespace("mgcv", quietly = TRUE)
     if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
@@ -210,7 +212,7 @@ pp_data <-
     if (!is.null(fixed.na.action))
       attr(rfd,"na.action") <- fixed.na.action
   }
-  if (is.null(re.form)) 
+  if (is.null(re.form))
     re.form <- justRE(formula(object, m = m))
   if (!inherits(re.form, "formula"))
     stop("'re.form' must be NULL, NA, or a formula.")
@@ -242,7 +244,7 @@ null_or_zero <- function(x) {
 .pp_data_offset <- function(object, newdata = NULL, offset = NULL) {
   if (is.null(newdata)) {
     # get offset from model object (should be null if no offset)
-    if (is.null(offset)) 
+    if (is.null(offset))
       offset <- object$offset %ORifNULL% model.offset(model.frame(object))
   } else {
     if (!is.null(offset))
@@ -250,12 +252,12 @@ null_or_zero <- function(x) {
     else {
       # if newdata specified but not offset then confirm that model wasn't fit
       # with an offset (warning, not error)
-      if (!is.null(object$call$offset) || 
-          !null_or_zero(object$offset) || 
+      if (!is.null(object$call$offset) ||
+          !null_or_zero(object$offset) ||
           !null_or_zero(model.offset(model.frame(object)))) {
         warning(
-          "'offset' argument is NULL but it looks like you estimated ", 
-          "the model using an offset term.", 
+          "'offset' argument is NULL but it looks like you estimated ",
+          "the model using an offset term.",
           call. = FALSE
         )
       }
@@ -272,82 +274,82 @@ null_or_zero <- function(x) {
 # log-likelihood in post-estimation functions for a \code{stan_jm} model
 #
 # @param object A stanmvreg object
-# @param newdataLong A data frame or list of data frames with the new 
+# @param newdataLong A data frame or list of data frames with the new
 #   covariate data for the longitudinal submodel
 # @param newdataEvent A data frame with the new covariate data for the
 #   event submodel
 # @param ids An optional vector of subject IDs specifying which individuals
 #   should be included in the returned design matrices.
 # @param etimes An optional vector of times at which the event submodel
-#   design matrices should be evaluated (also used to determine the 
+#   design matrices should be evaluated (also used to determine the
 #   quadrature times). If NULL then times are taken to be the eventimes in
 #   the fitted object (if newdataEvent is NULL) or in newdataEvent.
 # @param long_parts,event_parts A logical specifying whether to return the
 #   design matrices for the longitudinal and/or event submodels.
-# @return A named list (with components M, Npat, ndL, ndE, yX, tZt, 
-#   yZnames, eXq, assoc_parts) 
-.pp_data_jm <- function(object, newdataLong = NULL, newdataEvent = NULL, 
-                        ids = NULL, etimes = NULL, long_parts = TRUE, 
+# @return A named list (with components M, Npat, ndL, ndE, yX, tZt,
+#   yZnames, eXq, assoc_parts)
+.pp_data_jm <- function(object, newdataLong = NULL, newdataEvent = NULL,
+                        ids = NULL, etimes = NULL, long_parts = TRUE,
                         event_parts = TRUE) {
   M <- get_M(object)
   id_var   <- object$id_var
   time_var <- object$time_var
-  
+
   if (!is.null(newdataLong) || !is.null(newdataEvent))
     newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
-  
+
   # prediction data for longitudinal submodels
-  ndL <- if (is.null(newdataLong)) 
+  ndL <- if (is.null(newdataLong))
     get_model_data(object)[1:M] else newdatas[1:M]
-  
+
   # prediction data for event submodel
-  ndE <- if (is.null(newdataEvent)) 
-    get_model_data(object)[["Event"]] else newdatas[["Event"]]   
-  
+  ndE <- if (is.null(newdataEvent))
+    get_model_data(object)[["Event"]] else newdatas[["Event"]]
+
   # possibly subset
   if (!is.null(ids)) {
     ndL <- subset_ids(object, ndL, ids)
     ndE <- subset_ids(object, ndE, ids)
   }
   id_list <- unique(ndE[[id_var]]) # unique subject id list
-  
+
   # evaluate the last known survival time and status
   if (!is.null(newdataEvent) && is.null(etimes)) {
-    # prediction data for the event submodel was provided but  
+    # prediction data for the event submodel was provided but
     # no event times were explicitly specified by the user, so
     # they must be evaluated using the data frame
     surv <- eval(formula(object, m = "Event")[[2L]], ndE)
     etimes  <- unclass(surv)[,"time"]
-    estatus <- unclass(surv)[,"status"]    
+    estatus <- unclass(surv)[,"status"]
   } else if (is.null(etimes)) {
-    # if no prediction data was provided then event times are 
+    # if no prediction data was provided then event times are
     # taken from the fitted model
     etimes  <- object$eventtime[as.character(id_list)]
     estatus <- object$status[as.character(id_list)]
-  } else { 
-    # otherwise, event times ('etimes') are only directly specified for dynamic   
-    # predictions via posterior_survfit in which case the 'etimes' correspond 
+  } else {
+    # otherwise, event times ('etimes') are only directly specified for dynamic
+    # predictions via posterior_survfit in which case the 'etimes' correspond
     # to the last known survival time and therefore we assume everyone has survived
-    # up to that point (ie, set estatus = 0 for all individuals), this is true 
+    # up to that point (ie, set estatus = 0 for all individuals), this is true
     # even if there is an event indicated in the data supplied by the user.
     estatus <- rep(0, length(etimes))
   }
   res <- nlist(M, Npat = length(id_list), ndL, ndE)
-  
+
   if (long_parts && event_parts)
     lapply(ndL, function(x) {
-      if (!time_var %in% colnames(x)) 
+      if (!time_var %in% colnames(x))
         STOP_no_var(time_var)
-      if (!id_var %in% colnames(x)) 
+      if (!id_var %in% colnames(x))
         STOP_no_var(id_var)
       if (any(x[[time_var]] < 0))
         stop2("Values for the time variable (", time_var, ") should not be negative.")
       mt <- tapply(x[[time_var]], factor(x[[id_var]]), max)
       if (any(mt > etimes))
         stop2("There appears to be observation times in the longitudinal data that ",
-              "are later than the event time specified in the 'etimes' argument.")      
-    }) 
-  
+              "are later than the event time specified in the 'etimes' argument.")
+    })
+
   # response and design matrices for longitudinal submodels
   if (long_parts) {
     y <- lapply(1:M, function(m) eval(formula(object, m = m)[[2L]], ndL[[m]]))
@@ -358,7 +360,7 @@ null_or_zero <- function(x) {
     flist <- lapply(ndL, function(x) factor(x[[id_var]]))
     res <- c(res, nlist(y, yX, yZt, yZ_names, flist))
   }
-  
+
   # design matrices for event submodel and association structure
   if (event_parts) {
     qnodes <- object$qnodes
@@ -376,13 +378,13 @@ null_or_zero <- function(x) {
       grp_stuff <- object$grp_stuff[[m]]
       if (grp_stuff$has_grp) {
         grp_stuff <- get_extra_grp_info( # update grp_info with new data
-          grp_stuff, flist = ymf, id_var = id_var, 
+          grp_stuff, flist = ymf, id_var = id_var,
           grp_assoc = grp_stuff$grp_assoc)
       }
       ymf <- prepare_data_table(ymf, id_var = id_var, time_var = time_var,
                                 grp_var = grp_stuff$grp_var)
       make_assoc_parts(
-        ymf, assoc = object$assoc[,m], id_var = id_var, time_var = time_var, 
+        ymf, assoc = object$assoc[,m], id_var = id_var, time_var = time_var,
         ids = id_rep, times = times, grp_stuff = grp_stuff,
         use_function = pp_data, object = object, m = m)
     })
@@ -390,7 +392,7 @@ null_or_zero <- function(x) {
     assoc_parts <- do.call("structure", assoc_attr)
     res <- c(res, nlist(eXq, assoc_parts))
   }
-  
+
   return(res)
 }
 
@@ -398,13 +400,13 @@ null_or_zero <- function(x) {
 # (1) only includes variables used in the model formula
 # (2) only includes rows contained in the glmod/coxmod model frames
 # (3) ensures that additional variables that are required
-#     such as the ID variable or variables used in the 
+#     such as the ID variable or variables used in the
 #     interaction-type association structures, are included.
 #
-# It is necessary to drop unneeded variables though so that 
-# errors are not encountered if the original data contained 
+# It is necessary to drop unneeded variables though so that
+# errors are not encountered if the original data contained
 # NA values for variables unrelated to the model formula.
-# We generate a data frame here for in-sample predictions 
+# We generate a data frame here for in-sample predictions
 # rather than using a model frame, since some quantities will
 # need to be recalculated at quadrature points etc, for example
 # in posterior_survfit.
@@ -418,25 +420,25 @@ get_model_data <- function(object, m = NULL) {
   validate_stanmvreg_object(object)
   M <- get_M(object)
   terms <- terms(object, fixed.only = FALSE)
-  
+
   # identify variables to add to the terms objects
   if (is.jm(object)) {
     extra_vars <- lapply(1:M, function(m) {
-      # for each submodel loop over the four possible assoc  
+      # for each submodel loop over the four possible assoc
       # interaction formulas and collect any variables used
       forms_m <- object$assoc["which_formulas",][[m]]
       uapply(forms_m, function(x) {
         if (length(x)) {
-          rownames(attr(terms.formula(x), "factors")) 
+          rownames(attr(terms.formula(x), "factors"))
         } else NULL
       })
     })
     # also ensure that id_var is in the event data
     extra_vars$Event <- object$id_var
-    
+
     if (!identical(length(terms), length(extra_vars)))
       stop2("Bug found: terms and extra_vars should be same length.")
-    
+
     # add the extra variables to the terms formula for each submodel
     terms <- xapply(terms, extra_vars, FUN = function(x, y) {
       lhs <- x[[2L]]
@@ -445,20 +447,20 @@ get_model_data <- function(object, m = NULL) {
         rhs <- c(rhs, y)
       reformulate(rhs, response = lhs)
     })
-    
+
     datas <- c(object$dataLong, list(object$dataEvent))
   } else {
     datas <- object$data
   }
-  
+
   # identify rows that were in the model frame
   row_nms <- lapply(model.frame(object), rownames)
-  
+
   # drop rows and variables not required for predictions
   mfs <- xapply(w = terms, x = datas, y = row_nms,
-                FUN = function(w, x, y) 
+                FUN = function(w, x, y)
                   get_all_vars(w, x)[y, , drop = FALSE])
-  
+
   mfs <- list_nms(mfs, M, stub = get_stub(object))
   if (is.null(m)) mfs else mfs[[m]]
 }

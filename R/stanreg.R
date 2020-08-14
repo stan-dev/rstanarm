@@ -31,6 +31,7 @@ stanreg <- function(object) {
   nobs <- NROW(y)
   ynames <- if (is.matrix(y)) rownames(y) else names(y)
   
+  is_car <- object$stan_function %in% c("stan_besag", "stan_bym", "stan_bym2")
   is_betareg <- is.beta(family$family)
   if (is_betareg) { 
     family_phi <- object$family_phi  # pull out phi family/link
@@ -44,6 +45,7 @@ stanreg <- function(object) {
   if (opt) {
     stanmat <- stanfit$theta_tilde
     probs <- c(0.025, .975)
+
     stan_summary <- cbind(Median = apply(stanmat, 2L, median), 
                           MAD_SD = apply(stanmat, 2L, mad),
                           t(apply(stanmat, 2L, quantile, probs)))
@@ -90,8 +92,13 @@ stanreg <- function(object) {
   
   # linear predictor, fitted values
   eta <- linear_predictor(coefs, x, object$offset)
+  if (is_car) {
+    psi_indx <- grep("psi", colnames(as.matrix(object$stanfit)))
+    psi <- as.matrix(object$stanfit)[,psi_indx]
+    psi <- unname(colMeans(psi))
+    eta <- eta + psi
+  }
   mu <- family$linkinv(eta)
-
   if (NCOL(y) == 2L) {
     # residuals of type 'response', (glm which does 'deviance' residuals by default)
     residuals <- y[, 1L] / rowSums(y) - mu 
@@ -104,7 +111,7 @@ stanreg <- function(object) {
     eta_z <- linear_predictor(coefs_z, z, object$offset)
     phi <- family_phi$linkinv(eta_z)
   }
-  
+
   out <- nlist(
     coefficients = unpad_reTrms(coefs), 
     ses = unpad_reTrms(ses),
@@ -148,6 +155,10 @@ stanreg <- function(object) {
     out$family_phi <- family_phi
     out$eta_z <- eta_z
     out$phi <- phi
+  }
+  if (is_car) {
+    out$psi <- psi
+    out$trials <- object$trials
   }
   
   structure(out, class = c("stanreg", "glm", "lm"))

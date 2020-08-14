@@ -21,7 +21,7 @@
 #' \eqn{S} by \eqn{N} pointwise log-likelihood matrix, where \eqn{S} is the size
 #' of the posterior sample and \eqn{N} is the number of data points, or in the
 #' case of the \code{stanmvreg} method (when called on \code{\link{stan_jm}}
-#' model objects) an \eqn{S} by \eqn{Npat} matrix where \eqn{Npat} is the number 
+#' model objects) an \eqn{S} by \eqn{Npat} matrix where \eqn{Npat} is the number
 #' of individuals.
 #'
 #' @aliases log_lik
@@ -36,12 +36,11 @@
 #' @param offset A vector of offsets. Only required if \code{newdata} is
 #'   specified and an \code{offset} was specified when fitting the model.
 #'
-#' @return For the \code{stanreg} and \code{stanmvreg} methods an \eqn{S} by 
-#'   \eqn{N} matrix, where \eqn{S} is the size of the posterior sample and 
-#'   \eqn{N} is the number of data points. For the \code{stanjm} method 
+#' @return For the \code{stanreg} and \code{stanmvreg} methods an \eqn{S} by
+#'   \eqn{N} matrix, where \eqn{S} is the size of the posterior sample and
+#'   \eqn{N} is the number of data points. For the \code{stanjm} method
 #'   an \eqn{S} by \eqn{Npat} matrix where \eqn{Npat} is the number of individuals.
-#'   
-#'   
+#'
 #' @examples
 #' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
@@ -75,7 +74,7 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
   dots <- list(...)
   if (is.stanmvreg(object)) {
     m <- dots[["m"]]
-    if (is.null(m)) 
+    if (is.null(m))
       STOP_arg_required_for_stanmvreg(m)
     if (!is.null(offset))
       stop2("'offset' cannot be specified for stanmvreg objects.")
@@ -123,7 +122,7 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
 #' @export
 #' @templateVar mArg m
 #' @template args-m
-#'  
+#'
 log_lik.stanmvreg <- function(object, m = 1, newdata = NULL, ...) {
   validate_stanmvreg_object(object)
   out <- log_lik.stanreg(object, newdata = newdata, m = m, ...)
@@ -132,16 +131,16 @@ log_lik.stanmvreg <- function(object, m = 1, newdata = NULL, ...) {
 
 #' @rdname log_lik.stanreg
 #' @export
-#' @param newdataLong,newdataEvent Optional data frames containing new data 
-#'   (e.g. holdout data) to use when evaluating the log-likelihood for a 
-#'   model estimated using \code{\link{stan_jm}}. If the fitted model 
+#' @param newdataLong,newdataEvent Optional data frames containing new data
+#'   (e.g. holdout data) to use when evaluating the log-likelihood for a
+#'   model estimated using \code{\link{stan_jm}}. If the fitted model
 #'   was a multivariate joint model (i.e. more than one longitudinal outcome),
-#'   then \code{newdataLong} is allowed to be a list of data frames. If supplying 
+#'   then \code{newdataLong} is allowed to be a list of data frames. If supplying
 #'   new data, then \code{newdataEvent} should also include variables corresponding
 #'   to the event time and event indicator as these are required for evaluating the
-#'   log likelihood for the event submodel. For more details, see the description 
+#'   log likelihood for the event submodel. For more details, see the description
 #'   of \code{newdataLong} and \code{newdataEvent} for \code{\link{posterior_survfit}}.
-#' 
+#'
 log_lik.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL, ...) {
   if (!used.sampling(object))
     STOP_sampling_only("Pointwise log-likelihood matrix")
@@ -154,11 +153,11 @@ log_lik.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL, ...)
     stop("Both newdataLong and newdataEvent must be supplied together.")
   if (!is.null(newdataLong)) {
     newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
-    newdataLong  <- newdatas[1:M]      
+    newdataLong  <- newdatas[1:M]
     newdataEvent <- newdatas[["Event"]]
   }
   pars <- extract_pars(object) # full array of draws
-  data <- .pp_data_jm(object, newdataLong, newdataEvent) 
+  data <- .pp_data_jm(object, newdataLong, newdataEvent)
   calling_fun <- as.character(sys.call(-1))[1]
   reloo_or_kfold <- calling_fun %in% c("kfold", "reloo")
   val <- .ll_jm(object, data, pars, reloo_or_kfold = reloo_or_kfold, ...)
@@ -175,11 +174,11 @@ ll_fun <- function(x, m = NULL) {
   f <- family(x, m = m)
   if (!is(f, "family") || is_scobit(x))
     return(.ll_polr_i)
-  else if (is_clogit(x)) 
+  else if (is_clogit(x))
     return(.ll_clogit_i)
-  else if (is.nlmer(x)) 
+  else if (is.nlmer(x))
     return(.ll_nlmer_i)
-  
+
   fun <- paste0(".ll_", family(x, m = m)$family, "_i")
   get(fun, mode = "function")
 }
@@ -191,8 +190,8 @@ ll_fun <- function(x, m = NULL) {
 #   newdata is specified)
 # @param m Integer specifying which submodel for stanmvreg objects
 # @param reloo_or_kfold logical. TRUE if ll_args is for reloo or kfold
-# @param ... For models without group-specific terms (i.e., not stan_[g]lmer), 
-#   if reloo_or_kfold is TRUE and 'newdata' is specified then ... is used to 
+# @param ... For models without group-specific terms (i.e., not stan_[g]lmer),
+#   if reloo_or_kfold is TRUE and 'newdata' is specified then ... is used to
 #   pass 'newx' and 'stanmat' from reloo or kfold (bypassing pp_data). This is a
 #   workaround in case there are issues with newdata containing factors with
 #   only a single level. Or for stanmvreg objects, then ... can be used to pass
@@ -201,15 +200,15 @@ ll_fun <- function(x, m = NULL) {
 # @return a named list with elements data, draws, S (posterior sample size) and
 #   N = number of observations
 ll_args <- function(object, ...) UseMethod("ll_args")
-ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL, 
+ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
                             reloo_or_kfold = FALSE, ...) {
   validate_stanreg_object(object)
   f <- family(object, m = m)
   draws <- nlist(f)
   has_newdata <- !is.null(newdata)
-  
+
   dots <- list(...)
-  
+
   z_betareg <- NULL
   if (has_newdata && reloo_or_kfold && !is.mer(object)) {
     x <- dots$newx
@@ -236,8 +235,8 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   }
   if (is.stanmvreg(object) && !is.null(dots$stanmat)) {
     stanmat <- dots$stanmat # potentially use a stanmat with a single draw
-  }  
-  
+  }
+
   if (!is_polr(object)) { # not polr or scobit model
     fname <- f$family
     if (is.nlmer(object)) {
@@ -250,7 +249,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
       }
       data$i_ <- seq_len(nrow(data))  # for nlmer need access to i inside .ll_nlmer_i
       return(nlist(data, draws, S = NROW(draws$mu), N = nrow(data)))
-      
+
     } else if (!is.binomial(fname)) {
       data <- data.frame(y, x)
       if (!is.null(z_betareg)) {
@@ -270,26 +269,29 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
         trials <- 1L
       } else {
         trials <- 1
-        if (is.factor(y)) 
+        if (is.factor(y))
           y <- fac2bin(y)
-        stopifnot(all(y %in% c(0, 1)))
+        if (!is_car(object))
+          stopifnot(all(y %in% c(0, 1)))
+        else
+          trials <- object$trials
       }
       data <- data.frame(y, trials, x)
     }
-    nms <- if (is.stanmvreg(object)) 
+    nms <- if (is.stanmvreg(object))
       collect_nms(colnames(stanmat),
-                  M = get_M(object), 
-                  stub = get_stub(object)) else NULL  
+                  M = get_M(object),
+                  stub = get_stub(object)) else NULL
     beta_sel <- if (is.null(nms)) seq_len(ncol(x)) else nms$y[[m]]
     draws$beta <- stanmat[, beta_sel, drop = FALSE]
     m_stub <- get_m_stub(m, stub = get_stub(object))
-    if (is.gaussian(fname)) 
+    if (is.gaussian(fname))
       draws$sigma <- stanmat[, paste0(m_stub, "sigma")]
-    if (is.gamma(fname)) 
+    if (is.gamma(fname))
       draws$shape <- stanmat[, paste0(m_stub, "shape")]
-    if (is.ig(fname)) 
+    if (is.ig(fname))
       draws$lambda <- stanmat[, paste0(m_stub, "lambda")]
-    if (is.nb(fname)) 
+    if (is.nb(fname))
       draws$size <- stanmat[, paste0(m_stub, "reciprocal_dispersion")]
     if (is.beta(fname)) {
       draws$f_phi <- object$family_phi
@@ -299,7 +301,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
       } else {
         if (has_newdata) {
           if (!is.null(z_betareg)) {
-          colnames(data) <- c("y", colnames(get_x(object)), 
+          colnames(data) <- c("y", colnames(get_x(object)),
                               paste0("(phi)_", colnames(z_betareg)))
           }
         } else {
@@ -323,21 +325,21 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     zetas <- grep("|", colnames(stanmat), fixed = TRUE, value = TRUE)
     draws$zeta <- stanmat[, zetas, drop = FALSE]
     draws$max_y <- max(y)
-    if ("alpha" %in% colnames(stanmat)) { 
+    if ("alpha" %in% colnames(stanmat)) {
       stopifnot(is_scobit(object))
       # scobit
       draws$alpha <- stanmat[, "alpha"]
       draws$f <- object$method
     }
   }
-  
+
   data$offset <- if (has_newdata) offset else object$offset
   if (model_has_weights(object)) {
-    if (is.stanmvreg(object)) 
+    if (is.stanmvreg(object))
       STOP_if_stanmvreg("posterior_survfit with weights")
     data$weights <- object$weights
   }
-    
+
   if (is.mer(object)) {
     b_sel <- if (is.null(nms)) b_names(colnames(stanmat)) else nms$y_b[[m]]
     b <- stanmat[, b_sel, drop = FALSE]
@@ -356,25 +358,30 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     data <- cbind(data, as.matrix(z)[1:NROW(x),, drop = FALSE])
     draws$beta <- cbind(draws$beta, b)
   }
-  
+  if (is_car(object)) {
+    psi_indx <- grep("^psi\\[[[:digit:]]+\\]", colnames(stanmat))
+    psi <- stanmat[, psi_indx, drop = FALSE]
+    data$psi <- t(psi)
+    out <- nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
+  }
   if (is_clogit(object)) {
     data$strata <- strata
     out <- nlist(data, draws, S = NROW(draws$beta), N = nlevels(strata))
   } else {
-    out <- nlist(data, draws, S = NROW(draws$beta), N = nrow(data)) 
+    out <- nlist(data, draws, S = NROW(draws$beta), N = nrow(data))
   }
   return(out)
 }
 
 
 # check intercept for polr models -----------------------------------------
-# Check if a model fit with stan_polr has an intercept (i.e. if it's actually a 
+# Check if a model fit with stan_polr has an intercept (i.e. if it's actually a
 # bernoulli model). If it doesn't have an intercept then the intercept column in
 # x is dropped. This is only necessary if newdata is specified because otherwise
 # the correct x is taken from the fitted model object.
 .validate_polr_x <- function(object, x) {
   x0 <- get_x(object)
-  has_intercept <- colnames(x0)[1L] == "(Intercept)" 
+  has_intercept <- colnames(x0)[1L] == "(Intercept)"
   if (!has_intercept && colnames(x)[1L] == "(Intercept)")
     x <- x[, -1L, drop = FALSE]
   x
@@ -387,20 +394,25 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     val
   } else {
     val * w
-  } 
+  }
 }
 
 .xdata <- function(data) {
-  sel <- c("y", "weights","offset", "trials","strata")
+  if (!is.null(data$psi))
+    sel <- c("y", "weights","offset", "trials", "psi")
+  else
+    sel <- c("y", "weights","offset", "trials","strata")
   data[, -which(colnames(data) %in% sel)]
 }
 .mu <- function(data, draws) {
   eta <- as.vector(linear_predictor(draws$beta, .xdata(data), data$offset))
+  if (!is.null(data$psi))  # for CAR models (adding spatial effect)
+    eta <- eta + as.vector(data$psi)
   draws$f$linkinv(eta)
 }
 
 # for stan_betareg only
-.xdata_beta <- function(data) { 
+.xdata_beta <- function(data) {
   sel <- c("y", "weights","offset", "trials")
   data[, -c(which(colnames(data) %in% sel), grep("(phi)_", colnames(data), fixed = TRUE))]
 }
@@ -440,15 +452,15 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   .weighted(val, data_i$weights)
 }
 .ll_Gamma_i <- function(data_i, draws) {
-  val <- dgamma(data_i$y, shape = draws$shape, 
+  val <- dgamma(data_i$y, shape = draws$shape,
                 rate = draws$shape / .mu(data_i,draws), log = TRUE)
   .weighted(val, data_i$weights)
 }
 .ll_inverse.gaussian_i <- function(data_i, draws) {
   mu <- .mu(data_i, draws)
-  val <- 0.5 * log(draws$lambda / (2 * pi)) - 
+  val <- 0.5 * log(draws$lambda / (2 * pi)) -
     1.5 * log(data_i$y) -
-    0.5 * draws$lambda * (data_i$y - mu)^2 / 
+    0.5 * draws$lambda * (data_i$y - mu)^2 /
     (data_i$y * mu^2)
   .weighted(val, data_i$weights)
 }
@@ -464,7 +476,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     } else if (y_i == J) {
       val <- log1p(-linkinv(draws$zeta[, J-1] - eta))
     } else {
-      val <- log(linkinv(draws$zeta[, y_i] - eta) - 
+      val <- log(linkinv(draws$zeta[, y_i] - eta) -
                    linkinv(draws$zeta[, y_i - 1L] - eta))
     }
   } else {
@@ -505,7 +517,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 # @param pars Output from extract_pars
 # @param m Integer specifying which submodel
 # @param reloo_or_kfold logical. TRUE if ll_args is for reloo or kfold
-ll_args.stanjm <- function(object, data, pars, m = 1, 
+ll_args.stanjm <- function(object, data, pars, m = 1,
                            reloo_or_kfold = FALSE, ...) {
   validate_stanjm_object(object)
   if (model_has_weights(object))
@@ -521,8 +533,8 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     y <- data$y[[m]]
     x <- data$yX[[m]]
     z <- t(data$yZt[[m]])
-    Z_names <- data$yZ_names[[m]]    
-  } else { 
+    Z_names <- data$yZ_names[[m]]
+  } else {
     # for stan_mvmer models, log_lik is only ever called for
     # one submodel at a time, so data is for one submodel
     y <- data$y
@@ -538,22 +550,22 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
       y <- y[, 1L]
     } else {
       trials <- 1
-      if (is.factor(y)) 
+      if (is.factor(y))
         y <- fac2bin(y)
       stopifnot(all(y %in% c(0, 1)))
     }
     dat <- data.frame(y, trials, x)
-  }  
+  }
   dat <- cbind(dat, as.matrix(z))
   draws$beta <- stanmat[, nms$y[[m]], drop = FALSE]
   m_stub <- get_m_stub(m)
-  if (is.gaussian(fname)) 
+  if (is.gaussian(fname))
     draws$sigma <- stanmat[, paste0(m_stub, "sigma")]
-  if (is.gamma(fname)) 
+  if (is.gamma(fname))
     draws$shape <- stanmat[, paste0(m_stub, "shape")]
-  if (is.ig(fname)) 
+  if (is.ig(fname))
     draws$lambda <- stanmat[, paste0(m_stub, "lambda")]
-  if (is.nb(fname)) 
+  if (is.nb(fname))
     draws$size <- stanmat[, paste0(m_stub, "reciprocal_dispersion")]
   b <- stanmat[, nms$y_b[[m]], drop = FALSE]
   b <- pp_b_ord(b, Z_names)
@@ -567,9 +579,9 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
 #   with elements $basehaz, $family, $assoc
 # @param data Output from .pp_data_jm
 # @param pars Output from extract_pars
-# @param include_long A logical, if TRUE then the log likelihood for the  
+# @param include_long A logical, if TRUE then the log likelihood for the
 #   longitudinal submodels are included in the log likelihood calculation.
-# @param include_b A logical, if TRUE then the log likelihood for the random 
+# @param include_b A logical, if TRUE then the log likelihood for the random
 #   effects distribution is also included in the log likelihood calculation.
 # @param sum A logical. If TRUE then the log likelihood is summed across all
 #   individuals. If FALSE then the log likelihood is returned for each
@@ -579,20 +591,20 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
 #   a logical specifying whether the function calling ll_jm was reloo or kfold.
 # @return Either a matrix, a vector or a scalar, depending on the input types
 #   and whether sum is set to TRUE.
-.ll_jm <- function(object, data, pars, include_long = TRUE, 
+.ll_jm <- function(object, data, pars, include_long = TRUE,
                    include_b = FALSE, sum = FALSE, ...) {
-  
+
   M <- get_M(object)
-  
+
   # Log likelihood for event submodel
   ll_event <- .ll_survival(object, data, pars)
-  
+
   # Log likelihoods for longitudinal submodels
   if (include_long) {
-    ll_long <- lapply(1:M, function(m) 
+    ll_long <- lapply(1:M, function(m)
       .ll_long(object, data, pars, m = m, ...))
   }
-  
+
   # Log likelihood for random effects submodel
   # NB this is only used in the Metropolis algorithm in 'posterior_survfit'
   #   when drawing random effects for new individuals. But it is not used
@@ -614,7 +626,7 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     b <- as.vector(pp_b_ord(b, Z_names))
     Sigma_id <- VarCorr(object, stanmat = pars$stanmat)[[id_var]]
     if (length(cnms) > 1L) {
-      b2_var <- grep(utils::glob2rx(id_var), names(cnms), 
+      b2_var <- grep(utils::glob2rx(id_var), names(cnms),
                      value = TRUE, invert = TRUE)
       Sigma_b2 <- VarCorr(object, stanmat = pars$stanmat)[[b2_var]]
       Sigma_list <- rep(list(Sigma_b2), data$Ni)
@@ -628,17 +640,17 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     } else {
       Sigma <- Sigma_id
     }
-    ll_b <- -0.5 * (c(determinant(Sigma, logarithm = TRUE)$modulus) + 
+    ll_b <- -0.5 * (c(determinant(Sigma, logarithm = TRUE)$modulus) +
       (b %*% chol2inv(chol(Sigma)) %*% b)[1] + length(b) * log(2 * pi))
   } else {
     ll_b <- NULL
   }
-  
+
   # Check the dimensions of the various components
   if (is.matrix(ll_event)) { # S * Npat matrices
     if (include_long) {
       mats <- unique(sapply(c(ll_long, list(ll_event)), is.matrix))
-      dims <- unique(lapply(c(ll_long, list(ll_event)), dim)) 
+      dims <- unique(lapply(c(ll_long, list(ll_event)), dim))
       if ((length(dims) > 1L) || (length(mats) > 1L))
         stop("Bug found: elements of 'll_long' should be same class and ",
              "dimension as 'll_event'.")
@@ -654,8 +666,8 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     }
     if (include_b && !identical(length(ll_b), length(ll_event)))
       stop("Bug found: length of 'll_b' should be equal to length of 'll_event'.")
-  }  
-  
+  }
+
   # Sum the various components (long + event + random effects)
   if (include_long) {
     val <- Reduce('+', c(ll_long, list(ll_event)))
@@ -663,18 +675,18 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     val <- ll_event
   }
   if (include_b && is.matrix(val)) {
-    val <- sweep(val, 2L, ll_b, `+`) 
+    val <- sweep(val, 2L, ll_b, `+`)
   } else if (include_b && is.vector(val)) {
     val <- val + ll_b
   }
-  
+
   # Return log likelihood for joint model
   if (!sum) {
     return(val)             # S * Npat matrix or length Npat vector
   } else if (is.matrix(val)) {
     return(rowSums(val))    # length S vector
   } else {
-    return(sum(val))        # scalar 
+    return(sum(val))        # scalar
   }
 }
 
@@ -684,11 +696,11 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
 # @param data Output from .pp_data_jm.
 # @param pars Output from extract_pars.
 # @param m Integer specifying the longitudinal submodel.
-# @param reloo_or_kfold Logical specifying whether the call came from 
+# @param reloo_or_kfold Logical specifying whether the call came from
 #   reloo or kfold.
 # @return An S*Npat matrix.
 .ll_long <- function(object, data, pars, m = 1, reloo_or_kfold = FALSE) {
-  args <- ll_args.stanjm(object, data, pars, m = m, 
+  args <- ll_args.stanjm(object, data, pars, m = m,
                          reloo_or_kfold = reloo_or_kfold)
   fun  <- ll_fun(object, m = m)
   ll <- lapply(seq_len(args$N), function(j) as.vector(
@@ -697,7 +709,7 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
   # return S*Npat matrix by summing log-lik for y within each individual
   res <- apply(ll, 1L, function(row) tapply(row, data$flist[[m]], sum))
   res <- if (is.vector(res) & (args$S > 1L)) cbind(res) else t(res)
-  return(res) 
+  return(res)
 }
 
 # Return survival probability or log-likelihood for event submodel
@@ -705,34 +717,34 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
 # @param object A stanjm object.
 # @param data Output from .pp_data_jm.
 # @param pars Output from extract_pars.
-# @param one_draw A logical specifying whether the parameters provided in the 
+# @param one_draw A logical specifying whether the parameters provided in the
 #   pars argument are vectors for a single realisation of the parameter (e.g.
 #   a single MCMC draw, or a posterior mean) (TRUE) or a stanmat array (FALSE).
-# @param survprob A logical specifying whether to return the survival probability 
+# @param survprob A logical specifying whether to return the survival probability
 #   (TRUE) or the log likelihood for the event submodel (FALSE).
 # @param An S by Npat matrix, or a length Npat vector, depending on the inputs
-#   (where S is the size of the posterior sample and Npat is the number of 
+#   (where S is the size of the posterior sample and Npat is the number of
 #   individuals).
 .ll_survival <- function(object, data, pars, one_draw = FALSE, survprob = FALSE) {
   basehaz <- object$basehaz
   family  <- object$family
-  assoc   <- object$assoc          
+  assoc   <- object$assoc
   etimes  <- attr(data$assoc_parts, "etimes")
   estatus <- attr(data$assoc_parts, "estatus")
   qnodes  <- attr(data$assoc_parts, "qnodes")
   qtimes  <- attr(data$assoc_parts, "qtimes")
-  qwts    <- attr(data$assoc_parts, "qwts") 
+  qwts    <- attr(data$assoc_parts, "qwts")
   times   <- c(etimes, qtimes)
-  
-  # To avoid an error in log(times) replace times equal to zero with a small 
+
+  # To avoid an error in log(times) replace times equal to zero with a small
   # non-zero value. Note that these times correspond to individuals where the,
-  # event time (etimes) was zero, and therefore the cumhaz (at baseline) will 
-  # be forced to zero for these individuals further down in the code anyhow.  
-  times[times == 0] <- 1E-10 
-  
+  # event time (etimes) was zero, and therefore the cumhaz (at baseline) will
+  # be forced to zero for these individuals further down in the code anyhow.
+  times[times == 0] <- 1E-10
+
   # Linear predictor for the survival submodel
-  e_eta <- linear_predictor(pars$ebeta, data$eXq) 
-  
+  e_eta <- linear_predictor(pars$ebeta, data$eXq)
+
   # Add on contribution from assoc structure
   if (length(pars$abeta)) {
     M <- get_M(object)
@@ -747,26 +759,26 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
       pp_b_ord(if (is.matrix(b_m)) b_m else t(b_m), Z_names_m)
     })
     if (one_draw) {
-      aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
+      aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc,
                               family = family, beta = pars$beta, b = pars$b)
       e_eta <- e_eta + linear_predictor.default(pars$abeta, aXq)
     } else {
-      aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
+      aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc,
                               family = family, beta = pars$beta, b = pars$b)
       for (k in 1:length(aXq)) {
         e_eta <- e_eta + sweep(aXq[[k]], 1L, pars$abeta[,k], `*`)
       }
-    }    
+    }
   }
-  
+
   # Log baseline hazard at etimes (if not NULL) and qtimes
-  log_basehaz <- evaluate_log_basehaz(times = times, 
-                                      basehaz = basehaz, 
+  log_basehaz <- evaluate_log_basehaz(times = times,
+                                      basehaz = basehaz,
                                       coefs = pars$bhcoef)
-  
+
   # Log hazard at etimes (if not NULL) and qtimes
-  log_haz <- log_basehaz + e_eta  
-  
+  log_haz <- log_basehaz + e_eta
+
   # Extract log hazard at qtimes only
   if (is.vector(log_haz)) {
     q_log_haz <- tail(log_haz, length(qtimes))
@@ -774,19 +786,19 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     sel_cols <- tail(1:ncol(log_haz), length(qtimes))
     q_log_haz <- log_haz[, sel_cols, drop = FALSE]
   }
-  
+
   # Evaluate log survival
   log_surv <- evaluate_log_survival(log_haz = q_log_haz,
                                     qnodes = qnodes, qwts = qwts)
-  
+
   # Force surv prob to 1 (ie. log surv prob to 0) if evaluating
   # at time t = 0; this avoids possible numerical errors
   log_surv[etimes == 0] <- 0
-  
+
   # Possibly return surv prob at time t (upper limit of integral)
   if (survprob)
-    return(exp(log_surv)) 
-  
+    return(exp(log_surv))
+
   # Otherwise return log likelihood at time t
   if (is.null(etimes) || is.null(estatus))
     stop("'etimes' and 'estatus' cannot be NULL if 'survprob = FALSE'.")
@@ -802,7 +814,7 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     e_log_haz <- log_haz[, 1:length(etimes), drop = FALSE]
     return(sweep(e_log_haz, 2L, estatus, `*`) + log_surv)
   }
-} 
+}
 
 # Evaluate the log baseline hazard at the specified times
 # given the vector or matrix of MCMC draws for the baseline
@@ -814,12 +826,12 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
 # @return A vector or matrix, depending on the input type of coefs.
 evaluate_log_basehaz <- function(times, basehaz, coefs) {
   type <- basehaz$type_name
-  if (type == "weibull") { 
+  if (type == "weibull") {
     X  <- log(times) # log times
     B1 <- log(coefs) # log shape
     B2 <- coefs - 1  # shape - 1
     log_basehaz <- as.vector(B1) + linear_predictor(B2,X)
-  } else if (type == "bs") { 
+  } else if (type == "bs") {
     X <- predict(basehaz$bs_basis, times) # b-spline basis
     B <- coefs                            # b-spline coefs
     log_basehaz <- linear_predictor(B,X)
@@ -837,7 +849,7 @@ evaluate_log_basehaz <- function(times, basehaz, coefs) {
 #   individual, evaluated at each of the quadrature points. The
 #   vector should be ordered such that the first N elements contain
 #   the log_haz evaluated for each individual at quadrature point 1,
-#   then the next N elements are the log_haz evaluated for each 
+#   then the next N elements are the log_haz evaluated for each
 #   individual at quadrature point 2, and so on.
 # @param qnodes Integer specifying the number of quadrature nodes
 #   at which the log hazard was evaluated for each individual.
@@ -851,7 +863,7 @@ evaluate_log_survival.default <- function(log_haz, qnodes, qwts) {
   # convert log hazard to hazard
   haz <- exp(log_haz)
   # apply GK quadrature weights
-  weighted_haz <- qwts * haz 
+  weighted_haz <- qwts * haz
   # sum quadrature points for each individual to get cum_haz
   splitting_vec <- rep(1:qnodes, each = length(haz) / qnodes)
   cum_haz <- Reduce('+', split(weighted_haz, splitting_vec))
@@ -868,4 +880,4 @@ evaluate_log_survival.matrix <- function(log_haz, qnodes, qwts) {
   cum_haz <- Reduce('+', array2list(weighted_haz, nsplits = qnodes))
   # return: -cum_haz == log survival probability
   -cum_haz
-} 
+}
