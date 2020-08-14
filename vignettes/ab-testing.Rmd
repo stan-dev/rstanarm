@@ -459,8 +459,9 @@ compute the overlap proportion of these two sets of predictions.
 # below doesn't work as expected (predictions are bigger than the number of trials)
 # pp_c <- posterior_predict(fit_group_bin, newdata = data.frame(group = factor("C"), trials = 19))
 # pp_d <- posterior_predict(fit_group_bin, newdata = data.frame(group = factor("D"), trials = 22))
-pp_c <- posterior_predict(fit_group_bin)[,1]
-pp_d <- posterior_predict(fit_group_bin)[,2]
+pp <- posterior_predict(fit_group_bin)
+pp_c <- pp[,1]
+pp_d <- pp[,2]
 pp_c_quant <- quantile(pp_c, probs = c(0.05,0.95))
 pp_d_quant <- quantile(pp_d, probs = c(0.05,0.95))
 
