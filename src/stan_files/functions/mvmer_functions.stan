@@ -236,9 +236,9 @@
   * @param prior_dist Integer, the type of prior distribution
   * @param prior_mean,prior_scale Vectors of mean and scale parameters
   *   for the prior distributions
-  * @return A vector containing the population level parameters (coefficients)
+  * @return lp__
   */
-  void glm_lp(vector y_real, int[] y_integer, vector eta, real[] aux,
+  real glm_lp(vector y_real, int[] y_integer, vector eta, real[] aux,
               int family, int link, real sum_log_y, vector sqrt_y, vector log_y) {
     if (family == 1) {  // gaussian
       if (link == 1) target += normal_lpdf(y_real | eta, aux[1]);
@@ -268,6 +268,7 @@
       else target += neg_binomial_2_lpmf(y_integer | linkinv_count(eta, link), aux[1]);
     }
     else reject("Invalid family.");
+    return target();
   }
 
   /**
@@ -282,9 +283,9 @@
   * @param global Real, the global parameter
   * @param mix Vector of shrinkage parameters
   * @param one_over_lambda Real
-  * @return nothing
+  * @return lp__
   */
-  void beta_lp(vector z_beta, int prior_dist, vector prior_scale,
+  real beta_lp(vector z_beta, int prior_dist, vector prior_scale,
                vector prior_df, real global_prior_df, vector[] local,
                real[] global, vector[] mix, real[] one_over_lambda,
                real slab_df, real[] caux) {
@@ -322,6 +323,7 @@
       target += normal_lpdf(z_beta | 0, 1);
     }
     /* else prior_dist is 0 and nothing is added */
+    return target();
   }
 
   /**
@@ -332,14 +334,15 @@
   * @param mean_ Real, mean of prior distribution
   * @param scale Real, scale for the prior distribution
   * @param df Real, df for the prior distribution
-  * @return nothing
+  * @return lp__
   */
-  void gamma_lp(real gamma, int dist, real mean_, real scale, real df) {
+  real gamma_lp(real gamma, int dist, real mean_, real scale, real df) {
     if (dist == 1)  // normal
       target += normal_lpdf(gamma | mean_, scale);
     else if (dist == 2)  // student_t
       target += student_t_lpdf(gamma | df, mean_, scale);
     /* else dist is 0 and nothing is added */
+    return target();
   }
 
   /**
@@ -350,9 +353,9 @@
   * @param dist Integer specifying the type of prior distribution
   * @param scale Real specifying the scale for the prior distribution
   * @param df Real specifying the df for the prior distribution
-  * @return nothing
+  * @return lp__
   */
-  void aux_lp(real aux_unscaled, int dist, real scale, real df) {
+  real aux_lp(real aux_unscaled, int dist, real scale, real df) {
     if (dist > 0 && scale > 0) {
       if (dist == 1)
         target += normal_lpdf(aux_unscaled | 0, 1);
@@ -361,6 +364,7 @@
       else
         target += exponential_lpdf(aux_unscaled | 1);
     }
+    return target();
   }
 
   /**

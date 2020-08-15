@@ -21,8 +21,8 @@ data {
   //   family, link, y{1,2,3}_Z{1,2}, y{1,2,3}_Z{1,2}_id,
   //   y_prior_dist{_for_intercept,_for_aux,_for_cov}, prior_PD
 #include /data/data_mvmer.stan
-  
-  // declares: y_prior_{mean,scale,df}{1,2,3,_for_intercept,_for_aux}, 
+
+  // declares: y_prior_{mean,scale,df}{1,2,3,_for_intercept,_for_aux},
   //   y_global_prior_{df,scale}, len_{concentration,regularization},
   //   b_prior_{shape,scale,concentration,regularization},
   //   b{1,2}_prior_{scale,df,regularization}
@@ -36,12 +36,12 @@ transformed data {
 parameters {
   // declares: yGamma{1,2,3}, z_yBeta{1,2,3}, z_b, z_T, rho,
   //   zeta, tau, bSd{1,2}, z_bMat{1,2}, bCholesky{1,2},
-  //   yAux{1,2,3}_unscaled, yGlobal{1,2,3}, yLocal{1,2,3}, 
+  //   yAux{1,2,3}_unscaled, yGlobal{1,2,3}, yLocal{1,2,3},
   //   yOol{1,2,3}, yMix{1,2,3}
 #include /parameters/parameters_mvmer.stan
 }
-transformed parameters { 
-  // declares and defines: yBeta{1,2,3}, yAux{1,2,3}, yAuxMaximum, 
+transformed parameters {
+  // declares and defines: yBeta{1,2,3}, yAux{1,2,3}, yAuxMaximum,
   //   theta_L, bMat{1,2}
 #include /tparameters/tparameters_mvmer.stan
 }
