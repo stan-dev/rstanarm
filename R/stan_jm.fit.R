@@ -24,10 +24,9 @@
 #
 stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL, 
                         dataEvent = NULL, time_var, id_var,  family = gaussian, 
-                        assoc = "etavalue", lag_assoc = 0, grp_assoc,
+                        assoc = "etavalue", lag_assoc = 0, grp_assoc, scale_assoc = NULL,
                         epsilon = 1E-5, basehaz = c("bs", "weibull", "piecewise"),
                         basehaz_ops, qnodes = 15, init = "prefit", weights,
-                        offset = NULL, scale_assoc = NULL,
                         priorLong = normal(autoscale=TRUE), priorLong_intercept = normal(autoscale=TRUE), 
                         priorLong_aux = cauchy(0, 5, autoscale=TRUE), priorEvent = normal(autoscale=TRUE), 
                         priorEvent_intercept = normal(autoscale=TRUE), priorEvent_aux = cauchy(autoscale=TRUE),
@@ -93,11 +92,6 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   
   # Observation weights
   has_weights <- !is.null(weights)
-  
-  # Association scaling parameter
-  scale_assoc <- if (is.null(scale_assoc)) rep(1, M) else validate_arg(scale_assoc, 'numeric')
-  if (length(scale_assoc) < M)
-    stop("'scale_assoc' must be specified for each longitudinal submodel.")
   
   # Priors
   priorLong <- broadcast_prior(priorLong, M)
@@ -623,6 +617,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # Number of association parameters
     a_K <- get_num_assoc_pars(assoc, a_mod)
     
+    # Association scaling parameter
+    a_scale <- validate_scale_assoc(scale_assoc, assoc_as_list)
+    
     # Use a stan_mvmer variational bayes model fit for:
     # - obtaining initial values for joint model parameters
     # - obtaining appropriate scaling for priors on association parameters
@@ -705,7 +702,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     if (a_K) {
       e_prior_assoc_stuff <- autoscale_prior(e_prior_assoc_stuff, family = family, 
                                              assoc = assoc, parts = a_mod,
-                                             beta = init_beta, b = init_b)
+                                             beta = init_beta, b = init_b, 
+                                             scale_assoc = a_scale)
     }   
     
     #----------- Data for export to Stan -----------# 
@@ -792,7 +790,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
             Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
             Z2_tmp_id <- as.array(integer(0))
           }
-          y_offset_tmp <- rep(0, length(tmp_stuff$offset)) + log(scale_assoc[[m]])
+          y_offset_tmp <- if (has_offset[m]) tmp_stuff$offset else as.array(integer(0))
         } else {
           X_tmp  <- matrix(0,0,standata$yK[m])
           Z1_tmp <- matrix(0,standata$bK1_len[m],0) 
@@ -863,6 +861,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     
     # Centering for association terms
     standata$a_xbar <- if (a_K) e_prior_assoc_stuff$a_xbar else numeric(0)    
+    
+    # Scaling for association terms
+    standata$a_scale <- if (a_K) as.array(a_scale) else numeric(0)
 
   } # end jm block
   
@@ -991,7 +992,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   stanfit_str <- nlist(.Data = stanfit, prior_info, y_mod, cnms, flevels)
   if (is_jm)
     stanfit_str <- c(stanfit_str, nlist(e_mod, a_mod, assoc, basehaz, 
-                                        id_var, grp_stuff))
+                                        id_var, grp_stuff, scale_assoc))
   
   do.call("structure", stanfit_str)
 }

@@ -745,7 +745,8 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
   e_eta <- linear_predictor(pars$ebeta, data$eXq) 
   
   # Scaling parameter for linear predictor
-  scale_assoc <- ifelse(is.null(object$scale_assoc), 1, object$scale_assoc)
+  assoc_as_list <- apply(assoc, 2L, c)
+  scale_assoc <- validate_scale_assoc(object$scale_assoc, assoc_as_list)
   
   # Add on contribution from assoc structure
   if (length(pars$abeta)) {
@@ -768,7 +769,7 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
       aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
                               family = family, beta = pars$beta, b = pars$b)
       for (k in 1:length(aXq)) {
-        e_eta <- e_eta + sweep(aXq[[k]], 1L, pars$abeta[,k] * scale_assoc, `*`)
+        e_eta <- e_eta + scale_assoc[k] * sweep(aXq[[k]], 1L, pars$abeta[,k], `*`)
       }
     }    
   }

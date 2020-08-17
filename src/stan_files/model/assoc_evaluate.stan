@@ -35,7 +35,7 @@
             val = collapse_within_groups(eta_tmp, grp_idx, grp_assoc);
           }
           mark += 1;
-          e_eta_q += a_beta[mark] * (val - a_xbar[mark]);
+          e_eta_q += a_beta[mark] * a_scale[mark] * (val - a_xbar[mark]);
         }
         if (has_assoc[9,m] == 1) { // etavalue*data
           int J = a_K_data[mark2];
@@ -52,7 +52,7 @@
                 grp_idx, grp_assoc);
             }
             mark += 1;
-            e_eta_q += a_beta[mark] * (val - a_xbar[mark]);
+            e_eta_q += a_beta[mark] * a_scale[mark] * (val - a_xbar[mark]);
           }
         }
         mark3 += 1; // count even if assoc type isn't used
@@ -64,7 +64,7 @@
 #include /model/make_eta_tmp2.stan
             val = eta_tmp .* eta_tmp2;
             mark += 1;
-            e_eta_q += a_beta[mark] * (val - a_xbar[mark]);
+            e_eta_q += a_beta[mark] * a_scale[mark] * (val - a_xbar[mark]);
           }
         }
         mark3 += 1; // count even if assoc type isn't used
@@ -78,7 +78,7 @@
             mu_tmp2 = evaluate_mu(eta_tmp2, family[sel], link[sel]);
             val = eta_tmp .* mu_tmp2;
             mark += 1;
-            e_eta_q += a_beta[mark] * (val - a_xbar[mark]);
+            e_eta_q += a_beta[mark] * a_scale[mark] * (val - a_xbar[mark]);
           }
         }
       }
@@ -131,7 +131,7 @@
             val = collapse_within_groups(dydt_eta_q, grp_idx, grp_assoc);
           }
           mark += 1;
-          e_eta_q += a_beta[mark] * (val - a_xbar[mark]);
+          e_eta_q += a_beta[mark] * a_scale[mark] * (val - a_xbar[mark]);
         }
         if (has_assoc[10,m] == 1) { // etaslope*data
           int J = a_K_data[mark2];
@@ -148,7 +148,7 @@
                       grp_idx, grp_assoc);
             }
             mark += 1;
-            e_eta_q += a_beta[mark] * (val - a_xbar[mark]);
+            e_eta_q += a_beta[mark] * a_scale[mark] * (val - a_xbar[mark]);
           }
         }
       }
@@ -194,7 +194,7 @@
           wgt_tmp = auc_qwts[((r-1) * auc_qnodes + 1):(r * auc_qnodes)];
           val[r] = sum(wgt_tmp .* val_tmp);
         }
-        e_eta_q += a_beta[mark] * (val - a_xbar[mark]);
+        e_eta_q += a_beta[mark] * a_scale[mark] * (val - a_xbar[mark]);
       }
 
       //----- muvalue and any interactions
@@ -220,7 +220,7 @@
             val = collapse_within_groups(mu_tmp, grp_idx, grp_assoc);
           }
           mark += 1;
-          e_eta_q += a_beta[mark] * (val - a_xbar[mark]);
+          e_eta_q += a_beta[mark] * a_scale[mark] * (val - a_xbar[mark]);
         }
         if (has_assoc[11,m] == 1) { // muvalue*data
           int tmp = a_K_data[mark2];
@@ -237,7 +237,7 @@
                 grp_idx, grp_assoc);
             }
             mark += 1;
-            e_eta_q += a_beta[mark] * (val - a_xbar[mark]);
+            e_eta_q += a_beta[mark] * a_scale[mark] * (val - a_xbar[mark]);
           }
         }
         mark3 += 1; // count even if assoc type isn't used
@@ -249,7 +249,7 @@
 #include /model/make_eta_tmp2.stan
             val = mu_tmp .* eta_tmp2;
             mark += 1;
-            e_eta_q += a_beta[mark] * (val - a_xbar[mark]);
+            e_eta_q += a_beta[mark] * a_scale[mark] * (val - a_xbar[mark]);
           }
         }
         mark3 += 1; // count even if assoc type isn't used
@@ -263,7 +263,7 @@
             mu_tmp2 = evaluate_mu(eta_tmp2, family[sel], link[sel]);
             val = mu_tmp .* mu_tmp2;
             mark += 1;
-            e_eta_q += a_beta[mark] * (val - a_xbar[mark]);
+            e_eta_q += a_beta[mark] * a_scale[mark] * (val - a_xbar[mark]);
           }
         }
       }
@@ -321,7 +321,7 @@
           wgt_tmp = auc_qwts[((r-1) * auc_qnodes + 1):(r * auc_qnodes)];
           val[r] = sum(wgt_tmp .* val_tmp);
         }
-        e_eta_q += a_beta[mark] * (val - a_xbar[mark]);
+        e_eta_q += a_beta[mark] * a_scale[mark] * (val - a_xbar[mark]);
       }
 
     }

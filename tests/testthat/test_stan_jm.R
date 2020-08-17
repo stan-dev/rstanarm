@@ -302,10 +302,13 @@ test_that("scale_assoc argument works", {
   # Univariate joint model
   expect_output(update(jm1, scale_assoc = NULL))
   expect_output(update(jm1, scale_assoc = 10))
+  expect_error(update(jm1, scale_assoc = 0), "'scale_assoc' must be non-zero.")
+  expect_error(update(jm1, scale_assoc = c(10,10)), "'scale_assoc' can only be specified once for each longitudinal submodel.")
+  expect_error(update(jm1, scale_assoc = "10"), "'scale_assoc' must be numeric.")
   
   # Multivariate joint model
   expect_error(update(jm2, scale_assoc = 10), "'scale_assoc' must be specified for each longitudinal submodel")
-  expect_output(update(jm2, scale_assoc = list(0.5, 10)))
+  expect_output(update(jm2, scale_assoc = c(0.5, 10)))
   
 })
 

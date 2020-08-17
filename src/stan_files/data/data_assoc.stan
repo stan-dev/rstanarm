@@ -9,6 +9,9 @@
 
     // used for centering assoc terms
     vector[a_K] a_xbar;
+    
+    // used for scaling assoc terms
+    vector[a_K] a_scale;
 
     // 0 = no assoc structure, 1 = any assoc structure
     int<lower=0,upper=1> assoc;
