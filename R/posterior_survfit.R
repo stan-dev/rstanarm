@@ -204,6 +204,7 @@
 #'   \strong{67}, 819.
 #'      
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'   # Run example model if not already loaded
 #'   if (!exists("example_jm")) example(example_jm)
@@ -260,7 +261,7 @@
 #'                            times = 0, extrapolate = TRUE)
 #'   plot(ps4)
 #' }
-#'  
+#' }
 posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
                               extrapolate = TRUE, control = list(), 
                               condition = NULL, last_time = NULL, prob = 0.95, 
@@ -552,7 +553,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'   (often known as a credible interval); or \code{"none"} for no interval 
 #'   limits.
 #' @param ... Optional arguments passed to 
-#'   \code{\link[ggplot2]{geom_line}} and used to control features
+#'   \code{\link[ggplot2:geom_path]{geom_line}} and used to control features
 #'   of the plotted survival function.
 #'      
 #' @return The plot method returns a \code{ggplot} object, also of class
@@ -563,7 +564,8 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #' @seealso \code{\link{posterior_survfit}}, \code{\link{plot_stack_jm}},
 #'   \code{\link{posterior_traj}}, \code{\link{plot.predict.stanjm}}      
 #'   
-#' @examples 
+#' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'   # Run example model if not already loaded
 #'   if (!exists("example_jm")) example(example_jm)
@@ -606,7 +608,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'                           control = list(epoints = 20))
 #'   plot(ps2)   
 #' }
-#'    
+#' }
 plot.survfit.stanjm <- function(x, ids = NULL, 
                                 limits = c("ci", "none"),  
                                 xlab = NULL, ylab = NULL, facet_scales = "free", 
@@ -700,6 +702,7 @@ plot.survfit.stanjm <- function(x, ids = NULL,
 #'   \code{\link{posterior_predict}}, \code{\link{posterior_survfit}}
 #'    
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'   if (!exists("example_jm")) example(example_jm)
 #'   ps1 <- posterior_survfit(example_jm, ids = c(7,13,15))
@@ -708,7 +711,7 @@ plot.survfit.stanjm <- function(x, ids = NULL,
 #'   plot_traj <- plot(pt1, vline = TRUE, plot_observed = TRUE)
 #'   plot_stack_jm(plot_traj, plot_surv)
 #' }
-#'  
+#' }
 plot_stack_jm <- function(yplot, survplot) {
   
   if (!is(yplot, "list")) yplot <- list(yplot)

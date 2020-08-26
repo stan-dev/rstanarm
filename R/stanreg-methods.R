@@ -23,7 +23,7 @@
 #' those pages are provided in the \strong{See Also} section, below.
 #' 
 #' @name stanreg-methods
-#' @aliases VarCorr fixef ranef ngrps sigma
+#' @aliases VarCorr fixef ranef ngrps sigma nsamples
 #' 
 #' @templateVar stanregArg object,x
 #' @template args-stanreg-object
@@ -52,7 +52,7 @@
 #' }
 #' \item{\code{confint}}{
 #' For models fit using optimization, confidence intervals are returned via a 
-#' call to \code{\link[stats]{confint.default}}. If \code{algorithm} is 
+#' call to \code{\link[stats:confint]{confint.default}}. If \code{algorithm} is 
 #' \code{"sampling"}, \code{"meanfield"}, or \code{"fullrank"}, the
 #' \code{confint} will throw an error because the
 #' \code{\link{posterior_interval}} function should be used to compute Bayesian 
@@ -237,10 +237,12 @@ ranef.stanreg <- function(object, ...) {
   point_estimates <- object$stan_summary[, select_median(object$algorithm)]
   out <- ranef_template(object)
   group_vars <- names(out)
+  
   for (j in seq_along(out)) {
     tmp <- out[[j]]
     pars <- colnames(tmp) 
     levs <- rownames(tmp)
+    levs <- gsub(" ", "_", levs) 
     for (p in seq_along(pars)) {
       stan_pars <- paste0("b[", pars[p], " ", group_vars[j],  ":", levs, "]")
       tmp[[pars[p]]] <- unname(point_estimates[stan_pars])
@@ -254,11 +256,26 @@ ranef.stanreg <- function(object, ...) {
 #' @importFrom lme4 lmerControl glmerControl nlmerControl lmer glmer nlmer
 ranef_template <- function(object) {
   stan_fun <- object$stan_function %ORifNULL% "stan_glmer"
+  
+  if (stan_fun != "stan_gamm4") {
+    new_formula <- formula(object)
+  } else {
+    # remove the part of the formula with s() terms just so we can call lme4
+    # to get the ranef template without error
+    new_formula_rhs <- as.character(object$call$random)[2]
+    new_formula_lhs <- as.character(formula(object))[2]
+    new_formula <- as.formula(paste(new_formula_lhs, "~", new_formula_rhs))
+  }
+  
+  if (stan_fun != "stan_nlmer" && 
+      (is.gaussian(object$family$family) || is.beta(object$family$family))) {
+    stan_fun <- "stan_lmer"
+  }
   lme4_fun <- switch(
     stan_fun,
     "stan_lmer" = "lmer",
     "stan_nlmer" = "nlmer",
-    "glmer" # for both stan_glmer and stan_glmer.nb
+    "glmer" # for stan_glmer, stan_glmer.nb, stan_gamm4 (unless gaussian or beta)
   )
   cntrl_args <- list(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 1))
   if (lme4_fun != "nlmer") { # nlmerControl doesn't allow these
@@ -277,7 +294,7 @@ ranef_template <- function(object) {
   cntrl <- do.call(paste0(lme4_fun, "Control"), cntrl_args)
   
   fit_args <- list(
-    formula = formula(object),
+    formula = new_formula,
     data = object$data,
     control = cntrl
   )
@@ -296,6 +313,8 @@ ranef_template <- function(object) {
     if (fam == "neg_binomial_2") {
       family <- stats::poisson()
     } else if (fam == "beta_binomial") {
+      family <- stats::binomial()
+    } else if (fam == "binomial" && family$link == "clogit") {
       family <- stats::binomial()
     }
     fit_args$family <- family
@@ -377,7 +396,7 @@ family.stanreg <- function(object, ...) object$family
 #' @keywords internal
 #' @export
 #' @param formula,... See \code{\link[stats]{model.frame}}.
-#' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
+#' @param fixed.only See \code{\link[lme4:merMod-class]{model.frame.merMod}}.
 #' 
 model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
   if (is.mer(formula)) {

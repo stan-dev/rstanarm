@@ -44,7 +44,7 @@
 #'   draws is the size of the posterior sample.
 #' @param seed An optional \code{\link[=set.seed]{seed}} to use.
 #' @param ... Optional arguments passed to 
-#'   \code{\link[ggplot2]{geom_line}} and used to control features
+#'   \code{\link[ggplot2:geom_path]{geom_line}} and used to control features
 #'   of the plotted trajectory.
 #' 
 #' @return A ggplot object that can be further customized using the
@@ -58,6 +58,7 @@
 #'   \code{\link{pp_check}} for graphical checks of the longitudinal submodel.
 #'    
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #' if (!exists("example_jm")) example(example_jm)
 #' # Compare estimated survival function to Kaplan-Meier curve
@@ -66,6 +67,7 @@
 #'  ggplot2::scale_color_manual(values = c("red", "black")) + # change colors
 #'  ggplot2::scale_size_manual(values = c(0.5, 3)) + # change line sizes 
 #'  ggplot2::scale_fill_manual(values = c(NA, NA)) # remove fill
+#' }
 #' }
 #' @importFrom ggplot2 ggplot aes_string geom_step
 #' 

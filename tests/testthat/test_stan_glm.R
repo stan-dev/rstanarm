@@ -198,7 +198,7 @@ test_that("stan_glm returns expected result for glm poisson example", {
     # if (links[i] == "identity") expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
     if (links[i] == "sqrt") { # this is weird
       if (coef(ans)[1] > 0)
-        expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.04)
+        expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.1)
       else
         expect_equal(-coef(fit)[-1], coef(ans)[-1], tol = 0.04)
     }
@@ -273,7 +273,7 @@ test_that("stan_glm returns expected result for bernoulli", {
     val <- coef(fit)
     if (links[i] != "log") {
       ans <- coef(glm(y ~ x, family = fam, etastart = theta))
-      expect_equal(val, ans, 0.06, info = links[i])
+      expect_equal(val, ans, 0.09, info = links[i])
     }
     # else expect_equal(val[-1], ans[-1], 0.06, info = links[i])
   }
@@ -320,8 +320,8 @@ test_that("stan_glm returns expected result for binomial example", {
     expect_stanreg(fit2)
     
     val2 <- coef(fit2)
-    if (links[i] != "log") expect_equal(val2, ans, 0.018, info = links[i])
-    else expect_equal(val2[-1], ans[-1], 0.01, info = links[i])
+    if (links[i] != "log") expect_equal(val2, ans, 0.02, info = links[i])
+    else expect_equal(val2[-1], ans[-1], 0.02, info = links[i])
   }
 })
 
@@ -370,14 +370,12 @@ test_that("prior_aux argument is detected properly", {
     fit$prior.info$prior_aux, 
     list(dist = "exponential", 
          location = NULL, scale = NULL, 
-         adjusted_scale = 1/5 * sd(mtcars$mpg),
+         adjusted_scale = NULL, #1/5 * sd(mtcars$mpg),
          df = NULL, rate = 5, 
          aux_name = "sigma")
   )
   expect_output(print(prior_summary(fit)), 
                 "~ exponential(rate = ", fixed = TRUE)
-  expect_output(print(prior_summary(fit)), 
-                "Adjusted prior", fixed = TRUE)
 })
 
 test_that("prior_aux can be NULL", {
@@ -399,11 +397,6 @@ test_that("autoscale works (insofar as it's reported by prior_summary)", {
   out <- capture.output(print(prior_summary(fit)))
   expect_false(any(grepl("adjusted", out)))
   
-  expect_output(
-    print(prior_summary(fit2)), 
-    "Adjusted prior", 
-    fixed = TRUE
-  )
 })
 test_that("prior_options is deprecated", {
   expect_warning(
@@ -463,4 +456,13 @@ test_that("posterior_predict compatible with glms", {
   expect_linpred_equal(fit_gamma)
   expect_linpred_equal(fit_igaus)
   
+})
+
+
+test_that("contrasts attribute isn't dropped", {
+  contrasts <- list(wool = "contr.sum", tension = "contr.sum")
+  fit <- stan_glm(breaks ~ wool * tension, data = warpbreaks,
+                 contrasts = contrasts, 
+                 chains = 1, refresh = 0)
+  expect_equal(fit$contrasts, contrasts)
 })

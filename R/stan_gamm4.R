@@ -45,9 +45,9 @@
 #'   \code{loo}, \code{kfold}) are not guaranteed to work properly.
 #' @param subset,weights,na.action Same as \code{\link[stats]{glm}}, 
 #'   but rarely specified.
-#' @param ... Further arguments passed to \code{\link[rstan]{sampling}} (e.g. 
+#' @param ... Further arguments passed to \code{\link[rstan:stanmodel-method-sampling]{sampling}} (e.g. 
 #'   \code{iter}, \code{chains}, \code{cores}, etc.) or to
-#'   \code{\link[rstan]{vb}} (if \code{algorithm} is \code{"meanfield"} or
+#'   \code{\link[rstan:stanmodel-method-vb]{vb}} (if \code{algorithm} is \code{"meanfield"} or
 #'   \code{"fullrank"}).
 #' @param prior_covariance Cannot be \code{NULL}; see \code{\link{decov}} for
 #'   more information about the default arguments.
@@ -90,7 +90,7 @@
 #'   (credible intervals) rather than confidence intervals and the inner line
 #'   is the posterior median of the function rather than the function implied
 #'   by a point estimate. To change the colors used in the plot see 
-#'   \code{\link[bayesplot]{color_scheme_set}}.
+#'   \code{\link[bayesplot:bayesplot-colors]{color_scheme_set}}.
 #'   
 #' @references 
 #' Crainiceanu, C., Ruppert D., and Wand, M. (2005). Bayesian analysis for 
@@ -102,6 +102,7 @@
 #'   \code{stan_gamm4}. \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' # from example(gamm4, package = "gamm4"), prefixing gamm4() call with stan_
 #' \donttest{
 #' dat <- mgcv::gamSim(1, n = 400, scale = 2) ## simulate 4 term additive truth
@@ -110,12 +111,12 @@
 #' dat$y <- dat$y + model.matrix(~ fac - 1) %*% rnorm(20) * .5
 #'
 #' br <- stan_gamm4(y ~ s(x0) + x1 + s(x2), data = dat, random = ~ (1 | fac), 
-#'                  chains = 1, iter = 200) # for example speed
+#'                  chains = 1, iter = 500) # for example speed
 #' print(br)
 #' plot_nonlinear(br)
 #' plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #' }
-#' 
+#' }
 stan_gamm4 <-
   function(formula,
            random = NULL,
@@ -127,10 +128,10 @@ stan_gamm4 <-
            knots = NULL,
            drop.unused.levels = TRUE,
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
            prior_smooth = exponential(autoscale = FALSE),
-           prior_aux = exponential(),
+           prior_aux = exponential(autoscale=TRUE),
            prior_covariance = decov(),
            prior_PD = FALSE,
            algorithm = c("sampling", "meanfield", "fullrank"),

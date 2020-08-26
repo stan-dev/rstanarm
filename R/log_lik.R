@@ -42,7 +42,8 @@
 #'   an \eqn{S} by \eqn{Npat} matrix where \eqn{Npat} is the number of individuals.
 #'   
 #'   
-#' @examples 
+#' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'  roaches$roach100 <- roaches$roach1 / 100
 #'  fit <- stan_glm(
@@ -52,7 +53,8 @@
 #'     family = poisson(link = "log"),
 #'     prior = normal(0, 2.5),
 #'     prior_intercept = normal(0, 10),
-#'     iter = 500 # to speed up example
+#'     iter = 500, # just to speed up example,
+#'     refresh = 0
 #'  )
 #'  ll <- log_lik(fit)
 #'  dim(ll)
@@ -66,7 +68,7 @@
 #'  dim(ll2)
 #'  all.equal(ncol(ll2), nrow(nd))
 #' }
-#'
+#' }
 log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
   newdata <- validate_newdata(object, newdata, m = NULL)
   calling_fun <- as.character(sys.call(-1))[1]
@@ -318,8 +320,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     }
     data <- data.frame(y, x)
     draws$beta <- stanmat[, colnames(x), drop = FALSE]
-    patt <- if (length(unique(y)) == 2L) "(Intercept)" else "|"
-    zetas <- grep(patt, colnames(stanmat), fixed = TRUE, value = TRUE)
+    zetas <- grep("|", colnames(stanmat), fixed = TRUE, value = TRUE)
     draws$zeta <- stanmat[, zetas, drop = FALSE]
     draws$max_y <- max(y)
     if ("alpha" %in% colnames(stanmat)) { 
@@ -454,8 +455,8 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 .ll_polr_i <- function(data_i, draws) {
   eta <- linear_predictor(draws$beta, .xdata(data_i), data_i$offset)
   f <- draws$f
-  J <- draws$max_y
   y_i <- data_i$y
+  J <- ncol(draws$zeta) + 1
   linkinv <- polr_linkinv(f)
   if (is.null(draws$alpha)) {
     if (y_i == 1) {

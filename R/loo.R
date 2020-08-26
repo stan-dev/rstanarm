@@ -75,7 +75,7 @@
 #'   distributional assumption and integrate over uncertainty in the parameters.
 #'   This only assumes that any one observation can be omitted without having a
 #'   major effect on the posterior distribution, which can be judged using the
-#'   diagnostic plot provided by the \code{\link[loo]{plot.loo}} method and the
+#'   diagnostic plot provided by the \code{\link[loo:pareto-k-diagnostic]{plot.loo}} method and the
 #'   warnings provided by the \code{\link[loo]{print.loo}} method (see the
 #'   \emph{How to Use the rstanarm Package} vignette for an example of this
 #'   process).
@@ -120,14 +120,15 @@
 #' }
 #'
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
-#' fit1 <- stan_glm(mpg ~ wt, data = mtcars)
-#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars)
+#' fit1 <- stan_glm(mpg ~ wt, data = mtcars, refresh = 0)
+#' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, refresh = 0)
 #'
 #' # (for bigger models use as many cores as possible)
-#' loo1 <- loo(fit1, cores = 2)
+#' loo1 <- loo(fit1, cores = 1)
 #' print(loo1)
-#' loo2 <- loo(fit2, cores = 2)
+#' loo2 <- loo(fit2, cores = 1)
 #' print(loo2)
 #'
 #' # when comparing models the loo objects can be passed to loo_compare
@@ -153,7 +154,7 @@
 #' model_list <- stanreg_list(fit1, fit2, model_names = c("Fewer predictors", "More predictors"))
 #' loo_compare(model_list)
 #'
-#' fit3 <- stan_glm(mpg ~ disp * as.factor(cyl), data = mtcars)
+#' fit3 <- stan_glm(mpg ~ disp * as.factor(cyl), data = mtcars, refresh = 0)
 #' loo3 <- loo(fit3, cores = 2, k_threshold = 0.7)
 #' loo_compare(loo1, loo2, loo3)
 #'
@@ -176,7 +177,7 @@
 #' loo_list <- list(A = loo1, B = loo2, C = loo3) # names optional (affects printing)
 #' loo_model_weights(loo_list)
 #' }
-#'
+#' }
 loo.stanreg <-
   function(x,
            ...,
@@ -640,7 +641,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
         newdata = d[omitted, , drop = FALSE],
         offset = x$offset[omitted],
         newx = get_x(x)[omitted, , drop = FALSE],
-        newz = x$z[omitted, , drop = FALSE], # NULL other than for some stan_betareg models
+        newz = x[["z"]][omitted, , drop = FALSE], # NULL other than for some stan_betareg models
         stanmat = as.matrix.stanreg(fit_j)
       )
   }
@@ -696,7 +697,11 @@ log_mean_exp <- function(x) {
 kfold_and_reloo_data <- function(x) {
   # either data frame or environment
   d <- x[["data"]] 
-  
+  form <- formula(x)
+  if (!inherits(form, "formula")) {
+    # may be a string
+    form <- as.formula(form, env = NULL)
+  }
   sub <- getCall(x)[["subset"]]
   if (!is.null(sub)) {
     keep <- eval(substitute(sub), envir = d)
@@ -704,10 +709,14 @@ kfold_and_reloo_data <- function(x) {
   
   if (is.environment(d)) {
     # make data frame
-    d <- get_all_vars(formula(x), data = d) 
+    d <- get_all_vars(form, data = d) 
   } else {
     # already a data frame
-    all_vars <- all.vars(formula(x))
+    all_vars <- all.vars(form)
+    if (isTRUE(x$stan_function == "stan_gamm4")) {
+      # see https://github.com/stan-dev/rstanarm/issues/435
+      all_vars <- c(all_vars, all.vars(getCall(x)[["random"]]))
+    }
     if ("." %in% all_vars) {
       all_vars <- seq_len(ncol(d))
     }

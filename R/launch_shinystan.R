@@ -32,7 +32,7 @@
 #'   \code{FALSE} as drawing from the posterior predictive distribution can be 
 #'   time consuming. If \code{ppd} is \code{TRUE} then graphical posterior 
 #'   predictive checks are available when ShinyStan is launched.
-#' @param seed Passed to \code{\link[rstanarm]{pp_check}} (\pkg{rstanarm}) if 
+#' @param seed Passed to \link[=pp_check]{pp_check} if 
 #'   \code{ppd} is \code{TRUE}.
 #' @param model_name,note Optional arguments passed to
 #'   \code{\link[shinystan]{as.shinystan}}.
@@ -84,6 +84,7 @@
 #' @template reference-muth
 #'   
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \dontrun{
 #' if (!exists("example_model")) example(example_model) 
 #' 
@@ -103,7 +104,7 @@
 #' sso <- shinystan::as.shinystan(example_model, ppd = FALSE)
 #' if (interactive()) launch_shinystan(sso)
 #' }
-#' 
+#' }
 launch_shinystan.stanreg <-
   function(object,
            ppd = TRUE, 

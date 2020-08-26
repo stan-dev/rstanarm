@@ -18,7 +18,7 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code
 
-if (.Platform$OS.type == "windows") Sys.setenv(USE_CXX11 = 1) else Sys.setenv(USE_CXX14 = 1)
+Sys.setenv(USE_CXX14 = 1)
 set.seed(12345)
 
 MODELS_HOME <- "stan_files"
@@ -31,6 +31,16 @@ test_that("Stan programs are available", {
 
 library(rstan)
 Sys.unsetenv("R_TESTS")
+TBB <- system.file("lib", .Platform$r_arch, package = "RcppParallel", mustWork = TRUE)
+SH  <- system.file(ifelse(.Platform$OS.type == "windows", "libs", "lib"), 
+                   .Platform$r_arch, package = "StanHeaders",  mustWork = TRUE)
+Sys.setenv(LOCAL_LIBS = paste0("-L", shQuote(TBB), " -tbb -tbbmalloc ",
+                               "-L", shQuote(SH) , " -lStanHeaders"))
+# Sys.setenv(PKG_LIBS = Sys.getenv("LOCAL_LIBS"))
+Eigen <- dir(system.file("include", "stan", "math", "prim",
+                         package = "StanHeaders", mustWork = TRUE),
+             pattern = "Eigen.hpp$", full.names = TRUE, recursive = TRUE)[1]
+Sys.setenv(PKG_CXXFLAGS = paste("-include", shQuote(Eigen)))
 
 functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
   mc <- readLines(f)
@@ -57,8 +67,8 @@ functions <- c(unlist(lapply(file.path(MODELS_HOME, "functions",
 model_code <- paste(c("functions {", functions, "}"), collapse = "\n")
 stanc_ret <- stanc(model_code = model_code, model_name = "Stan Functions",
                    allow_undefined = TRUE)
-expose_stan_functions(stanc_ret, rebuild = TRUE)
-Rcpp::sourceCpp(file.path(INCLUDE_DIR, "tests.cpp"), rebuild = TRUE)
+expose_stan_functions(stanc_ret, rebuild = TRUE, verbose = TRUE)
+Rcpp::sourceCpp(file.path(INCLUDE_DIR, "tests.cpp"), rebuild = TRUE, verbose = TRUE)
 N <- 99L
 
 # bernoulli

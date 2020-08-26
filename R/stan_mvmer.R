@@ -99,6 +99,7 @@
 #'   \code{\link{posterior_predict}}, \code{\link{posterior_interval}}.
 #'    
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #' \donttest{
 #' #####
 #' # A multivariate GLM with two submodels. For the grouping factor 'id', the 
@@ -127,11 +128,11 @@
 #'         family = list(binomial, gaussian),
 #'         chains = 1, cores = 1, seed = 12345, iter = 1000)
 #' }
-#' 
+#' }
 stan_mvmer <- function(formula, data, family = gaussian, weights,				          
-                       prior = normal(), prior_intercept = normal(), 
-                       prior_aux = cauchy(0, 5),
-                       prior_covariance = lkj(), prior_PD = FALSE, 
+                       prior = normal(autoscale=TRUE), prior_intercept = normal(autoscale=TRUE), 
+                       prior_aux = cauchy(0, 5, autoscale=TRUE),
+                       prior_covariance = lkj(autoscale=TRUE), prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"), 
                        adapt_delta = NULL, max_treedepth = 10L, 
                        init = "random", QR = FALSE, sparse = FALSE, ...) {
