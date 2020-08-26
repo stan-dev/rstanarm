@@ -7,6 +7,7 @@ Encoding: UTF-8
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
              person("Sam", "Brilleman", role = "ctb"),
+             person("Lauren", "Kennedy", role = "ctb"),
              person(given = "Jacqueline Buros", family = "Novik", 
                     role = "ctb", comment = "R/stan_jm.R"),
              person("AstraZeneca", role = "ctb", comment = "R/stan_jm.R"),
