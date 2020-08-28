@@ -310,6 +310,11 @@ test_that("scale_assoc argument works", {
   expect_error(update(jm2, scale_assoc = 10), "'scale_assoc' must be specified for each longitudinal submodel")
   expect_output(update(jm2, scale_assoc = c(0.5, 10)))
   
+  # Test scaling functionality
+  scale_assoc = 0.5
+  jm1_scaled = update(jm1, scale_assoc = scale_assoc)
+  expect_equal(coef(jm1)$Event, c(rep(1,3),scale_assoc) * coef(jm1_scaled)$Event)
+  
 })
 
 test_that("init argument works", {
