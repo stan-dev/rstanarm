@@ -52,3 +52,9 @@
 
   // flag indicating whether to draw from the prior
   int<lower=0,upper=1> prior_PD;  // 1 = yes
+  
+  // offset
+  int<lower=0,upper=1> has_offset[3];  // 0 = No, 1 = Yes
+  vector[has_offset[1] ? yNeta[1] : 0] y1_offset;
+  vector[has_offset[2] ? yNeta[2] : 0] y2_offset;
+  vector[has_offset[3] ? yNeta[3] : 0] y3_offset;

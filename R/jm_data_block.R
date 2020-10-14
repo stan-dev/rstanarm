@@ -268,7 +268,7 @@ split_cov_prior <- function(prior_stuff, cnms, submodel_cnms) {
 # @return A named list with the same structure as returned by handle_glm_prior
 autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL, 
                             family = NULL, QR = FALSE, min_prior_scale = 1e-12, 
-                            assoc = NULL, ...) {
+                            assoc = NULL, scale_assoc = NULL, ...) {
   ps <- prior_stuff
   
   if (!identical(NULL, response) && is.gaussian(family$family)) { 
@@ -300,6 +300,8 @@ autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL,
     assoc_terms <- make_assoc_terms(family = family, assoc = assoc, ...)
     ps$a_xbar <- as.array(apply(assoc_terms, 2L, mean))
     if (ps$prior_dist > 0L && ps$prior_autoscale) {
+      if (!identical(NULL, scale_assoc))
+        assoc_terms <- assoc_terms * scale_assoc
       a_beta_scale <- apply(assoc_terms, 2L, get_scale_value)
       ps$prior_scale <- pmax(min_prior_scale, ps$prior_scale / a_beta_scale)
     }
@@ -605,8 +607,12 @@ handle_y_mod <- function(formula, data, family) {
   has_aux <- check_for_aux(family)
   family <- append_mvmer_famlink(family, is_bernoulli)
   
+  # Offset
+  offset <- model.offset(mf)
+  has_offset <- as.numeric(!is.null(offset))
+  
   nlist(y, x, z, reTrms, model_frame = mf, formula, terms, 
-        family, intercept_type, has_aux)
+        family, intercept_type, has_aux, offset, has_offset)
 }
 
 # Return the response vector for passing to Stan
@@ -1490,6 +1496,56 @@ validate_lag_assoc <- function(lag_assoc, M) {
   lag_assoc
 }
 
+# Validate the user input to the scale_assoc argument of stan_jm
+#
+# @param scale_assoc The user input to the scale_assoc argument
+# @param assoc_as_list A list with information about the association structure for 
+#   the longitudinal submodels
+# @return A numeric vector of scaling parameters for all assoc terms
+validate_scale_assoc <- function(scale_assoc, assoc_as_list) {
+  M <- length(assoc_as_list)
+  
+  if (is.null(scale_assoc)) 
+    scale_assoc <-  rep(1,M)
+  if (length(scale_assoc) < M)
+    stop2("'scale_assoc' must be specified for each longitudinal submodel.")
+  if (length(scale_assoc) > M)
+    stop2("'scale_assoc' can only be specified once for each longitudinal submodel.")
+  if (!is.numeric(scale_assoc))
+    stop2("'scale_assoc' must be numeric.")
+  
+  sel_shared <- c("shared_b", "shared_coef")
+  sel_terms <- c("etavalue", "etaslope", "etaauc", 
+                 "muvalue", "muslope", "muauc")
+  sel_data <- c("which_formulas")
+  sel_itx <- c("which_interactions")
+  
+  scale_list <- list()
+  for (m in 1:M) {
+    a = assoc_as_list[[m]]
+    
+    if (a[["null"]]) {
+      scale_list[[m]] = as.array(integer(0))
+    } else {
+      if (scale_assoc[m] == 0)
+        stop2("'scale_assoc' must be non-zero.")
+      if (any(unlist(a[sel_shared])))
+        stop2("'scale_assoc' is not yet implemented for the following association structures: ", 
+              paste(sel_shared, collapse = ", "))
+      
+      # calculate scale for each assoc term
+      scale_terms <- rep(scale_assoc[m], length(which(unlist(a[sel_terms]))))
+      scale_data <- rep(scale_assoc[m], length(unlist(a[[sel_data]])))
+      scale_itx <- scale_assoc[m] * scale_assoc[unlist(a[[sel_itx]])]
+      
+      scale_list[[m]] <- c(scale_terms, scale_data, scale_itx)
+    }
+  }
+  
+  # return vector of scaling parameters
+  return(unlist(scale_list))
+}
+
 # Remove suffixes from the user inputted assoc argument
 #
 # @param x A character vector, being the user input to the 
@@ -1685,6 +1741,8 @@ handle_assocmod <- function(data, assoc, y_mod, grp_stuff, ids, times,
   form_new <- reformulate(rhs, response = NULL)
   df <- get_all_vars(form_new, data)
   df <- df[complete.cases(df), , drop = FALSE]
+  
+  df$offset <- 0 # force offset to zero for assoc term
 
   # Declare df as a data.table for merging with quadrature points
   dt <- prepare_data_table(df, id_var = id_var, time_var = time_var, 
