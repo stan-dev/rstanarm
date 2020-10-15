@@ -87,10 +87,11 @@
 #'   Partial Pooling} vignette. \url{http://mc-stan.org/rstanarm/articles/}
 #'    
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' # see help(example_model) for details on the model below
 #' if (!exists("example_model")) example(example_model) 
 #' print(example_model, digits = 1)
-#' 
+#' }
 #' @importFrom lme4 glFormula
 #' @importFrom Matrix Matrix t
 stan_glmer <- 

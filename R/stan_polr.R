@@ -119,7 +119,7 @@
 #'   \url{http://mc-stan.org/rstanarm/articles/}
 #'
 #' @examples
-#' if (!grepl("^sparc",  R.version$platform)) {
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #'  fit <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
 #'           prior = R2(0.2, "mean"), init_r = 0.1, seed = 12345,
 #'           algorithm = "fullrank") # for speed only
@@ -141,10 +141,17 @@ stan_polr <- function(formula, data, weights, ..., subset,
                       do_residuals = NULL) {
 
   data <- validate_data(data, if_missing = environment(formula))
+  is_char <- which(sapply(data, is.character))
+  for (j in is_char) {
+    data[[j]] <- as.factor(data[[j]])
+  }
+  
   algorithm <- match.arg(algorithm)
-  if (is.null(do_residuals)) 
+  if (is.null(do_residuals)) {
     do_residuals <- algorithm == "sampling"
+  }
   call <- match.call(expand.dots = TRUE)
+  call$formula <- try(eval(call$formula), silent = TRUE) # https://discourse.mc-stan.org/t/loo-with-k-threshold-error-for-stan-polr/17052/19
   m <- match.call(expand.dots = FALSE)
   method <- match.arg(method)
   if (is.matrix(eval.parent(m$data))) {

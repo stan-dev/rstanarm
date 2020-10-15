@@ -95,8 +95,14 @@ pp_data <-
     z <- .pp_data_mer_z(object, newdata, re.form, m = m, ...)
   }
   offset <- model.offset(model.frame(object, m = m))
-  if (!missing(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
-    offset <- try(eval(object$call$offset, newdata), silent = TRUE)
+  if (!is.null(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
+    if (is.jm(object)) {
+      mf <- stats::model.frame(lme4::subbars(object$formula[[m]]), data = newdata)
+      offset <- model.offset(mf)
+    } else {
+      offset <- offset %ORifNULL% object$call$offset
+      offset <- try(eval(offset, newdata), silent = TRUE)
+    }
     if (!is.numeric(offset)) offset <- NULL
   }
   return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names))
@@ -355,8 +361,9 @@ null_or_zero <- function(x) {
     yX <- fetch(ydat, "x")
     yZt <- fetch(ydat, "Zt")
     yZ_names <- fetch(ydat, "Z_names")
+    yOffset <- fetch(ydat, "offset")
     flist <- lapply(ndL, function(x) factor(x[[id_var]]))
-    res <- c(res, nlist(y, yX, yZt, yZ_names, flist))
+    res <- c(res, nlist(y, yX, yZt, yZ_names, yOffset, flist))
   }
   
   # design matrices for event submodel and association structure

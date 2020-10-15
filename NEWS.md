@@ -1,3 +1,13 @@
+# Items for next release
+
+* Fix bug where `loo()` with `k_threshold` argument specified would error if the model formula was a string instead of a formula object. (#454)
+
+* Fix bug where `loo()` with `k_threshold` argument specified would error for
+models fit with `stan_polr()`. (#450)
+
+* Fix bug where `stan_aov()` would use the wrong `singular.ok` logic. (#448)
+
+
 # rstanarm 2.21.1
 
 * Compatible with rstan v2.21.1

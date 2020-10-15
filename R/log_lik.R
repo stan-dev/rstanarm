@@ -42,7 +42,8 @@
 #'   an \eqn{S} by \eqn{Npat} matrix where \eqn{Npat} is the number of individuals.
 #'   
 #'   
-#' @examples 
+#' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'  roaches$roach100 <- roaches$roach1 / 100
 #'  fit <- stan_glm(
@@ -67,7 +68,7 @@
 #'  dim(ll2)
 #'  all.equal(ncol(ll2), nrow(nd))
 #' }
-#'
+#' }
 log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
   newdata <- validate_newdata(object, newdata, m = NULL)
   calling_fun <- as.character(sys.call(-1))[1]
@@ -319,8 +320,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     }
     data <- data.frame(y, x)
     draws$beta <- stanmat[, colnames(x), drop = FALSE]
-    patt <- if (length(unique(y)) == 2L) "(Intercept)" else "|"
-    zetas <- grep(patt, colnames(stanmat), fixed = TRUE, value = TRUE)
+    zetas <- grep("|", colnames(stanmat), fixed = TRUE, value = TRUE)
     draws$zeta <- stanmat[, zetas, drop = FALSE]
     draws$max_y <- max(y)
     if ("alpha" %in% colnames(stanmat)) { 
@@ -455,8 +455,8 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 .ll_polr_i <- function(data_i, draws) {
   eta <- linear_predictor(draws$beta, .xdata(data_i), data_i$offset)
   f <- draws$f
-  J <- draws$max_y
   y_i <- data_i$y
+  J <- ncol(draws$zeta) + 1
   linkinv <- polr_linkinv(f)
   if (is.null(draws$alpha)) {
     if (y_i == 1) {
@@ -521,7 +521,8 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     y <- data$y[[m]]
     x <- data$yX[[m]]
     z <- t(data$yZt[[m]])
-    Z_names <- data$yZ_names[[m]]    
+    Z_names <- data$yZ_names[[m]] 
+    offset <- data$yOffset[[m]]
   } else { 
     # for stan_mvmer models, log_lik is only ever called for
     # one submodel at a time, so data is for one submodel
@@ -529,9 +530,14 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     x <- data$X
     z <- t(data$Zt)
     Z_names <- data$Z_names
+    offset <- data$yOffset
   }
   if (!is.binomial(fname)) {
-    dat <- data.frame(y, x)
+    if (!is.null(offset)) {
+      dat <- data.frame(y, x, offset)
+    } else {
+      dat <- data.frame(y, x)
+    }
   } else {
     if (NCOL(y) == 2L) {
       trials <- rowSums(y)
@@ -542,7 +548,11 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
         y <- fac2bin(y)
       stopifnot(all(y %in% c(0, 1)))
     }
-    dat <- data.frame(y, trials, x)
+    if (!is.null(offset)) {
+      dat <- data.frame(y, trials, x, offset)
+    } else {
+      dat <- data.frame(y, trials, x)
+    }
   }  
   dat <- cbind(dat, as.matrix(z))
   draws$beta <- stanmat[, nms$y[[m]], drop = FALSE]
@@ -733,6 +743,10 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
   # Linear predictor for the survival submodel
   e_eta <- linear_predictor(pars$ebeta, data$eXq) 
   
+  # Scaling parameter for linear predictor
+  assoc_as_list <- apply(assoc, 2L, c)
+  scale_assoc <- validate_scale_assoc(object$scale_assoc, assoc_as_list)
+  
   # Add on contribution from assoc structure
   if (length(pars$abeta)) {
     M <- get_M(object)
@@ -749,12 +763,12 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     if (one_draw) {
       aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
                               family = family, beta = pars$beta, b = pars$b)
-      e_eta <- e_eta + linear_predictor.default(pars$abeta, aXq)
+      e_eta <- e_eta + scale_assoc * linear_predictor.default(pars$abeta, aXq)
     } else {
       aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
                               family = family, beta = pars$beta, b = pars$b)
       for (k in 1:length(aXq)) {
-        e_eta <- e_eta + sweep(aXq[[k]], 1L, pars$abeta[,k], `*`)
+        e_eta <- e_eta + scale_assoc[k] * sweep(aXq[[k]], 1L, pars$abeta[,k], `*`)
       }
     }    
   }

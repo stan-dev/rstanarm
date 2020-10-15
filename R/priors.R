@@ -376,6 +376,7 @@
 #' @template reference-stan-manual
 #' 
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' fmla <- mpg ~ wt + qsec + drat + am
 #' 
 #' # Draw from prior predictive distribution (by setting prior_PD = TRUE)
@@ -431,7 +432,7 @@
 #' # If you use a prior like normal(0, 1000) to be "non-informative" you are 
 #' # actually saying that a coefficient value of e.g. -500 is quite plausible
 #' compare_priors(scale = 1000, xlim = c(-1000,1000))
-#' 
+#' }
 NULL
 
 #' @rdname priors

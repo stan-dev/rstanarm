@@ -174,7 +174,7 @@
   vector evaluate_eta(matrix X, vector[] Z1, vector[] Z2, int[] Z1_id, int[] Z2_id,
                       real[] gamma, vector beta, matrix b1Mat, matrix b2Mat,
                       int b1Mat_colshift, int b2Mat_colshift,
-                      int intercept_type) {
+                      int intercept_type, vector Ti) {
     int N = rows(X);    // num rows in design matrix
     int K = rows(beta); // num predictors
     int p1 = size(Z1);  // num group level params for group factor 1
@@ -200,6 +200,8 @@
         for (n in 1:N)
           eta[n] += (b2Mat[Z2_id[n], k+b2Mat_colshift]) * Z2[k,n];
     }
+    
+    if (rows(Ti) > 0) eta = eta + Ti; // add offset value
 
     return eta;
   }

@@ -21,6 +21,7 @@
 #' \href{https://avehtari.github.io/bayes_R2/bayes_R2.html}{Notebook})
 #' 
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' fit <- stan_glm(
 #'   mpg ~ wt + cyl, 
 #'   data = mtcars, 
@@ -40,7 +41,7 @@
 #' print(example_model)
 #' median(bayes_R2(example_model))
 #' median(bayes_R2(example_model, re.form = NA)) # exclude group-level
-#' 
+#' }
 bayes_R2.stanreg <- function(object, ..., re.form = NULL) {
     
     if (!used.sampling(object))

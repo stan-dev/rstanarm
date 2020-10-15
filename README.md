@@ -216,11 +216,12 @@ To install from GitHub, first make sure that you can install the **rstan**
 package and C++ toolchain by following these
 [instructions](https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started).
 Once **rstan** is successfully installed, you can install **rstanarm** from
-GitHub using the **devtools** package by executing the following in R:
+GitHub using the **remotes** package by executing the following in R:
 
 ```r
-# install.packages("devtools")
-devtools::install_github("stan-dev/rstanarm", build_vignettes = FALSE)
+Sys.setenv(MAKEFLAGS = "-j4") # change 4 to however many cores you can/want to use to parallelize install 
+Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
+remotes::install_github("stan-dev/rstanarm", INSTALL_opts = "--no-multiarch", force = TRUE)
 ```
 
 You can switch `build_vignettes` to `TRUE` but it takes a lot longer to install and the 

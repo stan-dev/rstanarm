@@ -39,6 +39,7 @@
 #'   when specifying the random-effects parts of the formula, and neither
 #'   are nested grouping factors (e.g. \code{(1 | g1/g2))} or 
 #'   \code{(1 | g1:g2)}, where \code{g1}, \code{g2} are grouping factors. 
+#'   Offset terms can also be included in the model formula.
 #'   For a multivariate joint model (i.e. more than one longitudinal marker) 
 #'   this should be a list of such formula objects, with each element
 #'   of the list providing the formula for one of the longitudinal submodels.
@@ -113,6 +114,16 @@
 #'   the expected values at time \emph{t} for each of the lower level 
 #'   units (which may be for example tumor lesions) clustered within that 
 #'   individual. 
+#' @param scale_assoc A non-zero numeric value specifying an optional scaling 
+#'   parameter for the association structure. This multiplicatively scales the 
+#'   value/slope/auc of the longitudinal marker by \code{scale_assoc} within the 
+#'   event submodel. When fitting a multivariate joint model, a scaling parameter 
+#'   must be specified for each longitudinal submodel using a vector of numeric 
+#'   values. Note that only one scaling parameter can be specified for each 
+#'   longitudinal submodel, and it will be used for all association structure 
+#'   types (e.g. \code{"etavalue"}, \code{"etaslope"}, \code{"etaauc"}, 
+#'   \code{"muvalue"}, etc) that are specified for that longitudinal marker in
+#'   the \code{assoc} argument.
 #' @param basehaz A character string indicating which baseline hazard to use
 #'   for the event submodel. Options are a B-splines approximation estimated 
 #'   for the log baseline hazard (\code{"bs"}, the default), a Weibull 
@@ -408,8 +419,8 @@
 #'   \code{\link{pp_check}}, \code{\link{ps_check}}, \code{\link{stan_mvmer}}.
 #' 
 #' @examples
-#' \donttest{
 #' if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
+#' \donttest{
 #' 
 #' #####
 #' # Univariate joint model, with association structure based on the 
@@ -523,8 +534,8 @@
 #' 
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 
                     id_var, family = gaussian, assoc = "etavalue", 
-                    lag_assoc = 0, grp_assoc, epsilon = 1E-5,
-                    basehaz = c("bs", "weibull", "piecewise"), basehaz_ops, 
+                    lag_assoc = 0, grp_assoc, scale_assoc = NULL, epsilon = 1E-5,
+                    basehaz = c("bs", "weibull", "piecewise"), basehaz_ops,
                     qnodes = 15, init = "prefit", weights,	
                     priorLong = normal(autoscale=TRUE), priorLong_intercept = normal(autoscale=TRUE), 
                     priorLong_aux = cauchy(0, 5, autoscale=TRUE), priorEvent = normal(autoscale=TRUE), 
@@ -596,7 +607,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                          time_var = time_var, id_var = id_var, family = family,
                          assoc = assoc, lag_assoc = lag_assoc, grp_assoc = grp_assoc, 
                          epsilon = epsilon, basehaz = basehaz, basehaz_ops = basehaz_ops, 
-                         qnodes = qnodes, init = init, weights = weights, 
+                         qnodes = qnodes, init = init, weights = weights, scale_assoc = scale_assoc,
                          priorLong = priorLong, 
                          priorLong_intercept = priorLong_intercept, 
                          priorLong_aux = priorLong_aux, 
@@ -614,13 +625,14 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   cnms  <- attr(stanfit, "cnms")
   flevels <- attr(stanfit, "flevels")
   assoc <- attr(stanfit, "assoc")
+  scale_assoc <- attr(stanfit, "scale_assoc")
   id_var <- attr(stanfit, "id_var")
   basehaz    <- attr(stanfit, "basehaz")
   grp_stuff  <- attr(stanfit, "grp_stuff")
   prior_info <- attr(stanfit, "prior_info")
   stanfit <- drop_attributes(stanfit, "y_mod", "e_mod", "a_mod", "cnms", 
                              "flevels", "assoc", "id_var", "basehaz", 
-                             "grp_stuff", "prior_info")
+                             "grp_stuff", "prior_info","scale_assoc")
   
   terms <- c(fetch(y_mod, "terms"), list(terms(e_mod$mod)))
   n_yobs <- fetch_(y_mod, "x", "N")
@@ -628,7 +640,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   n_subjects <- e_mod$Npat
 
   fit <- nlist(stanfit, formula = c(formulaLong, formulaEvent), family,
-               id_var, time_var, weights, qnodes, basehaz, assoc,
+               id_var, time_var, weights, scale_assoc, qnodes, basehaz, assoc,
                M, cnms, flevels, n_grps, n_subjects, n_yobs, epsilon,
                algorithm, terms, glmod = y_mod, survmod = e_mod, 
                assocmod = a_mod, grp_stuff, dataLong, dataEvent,

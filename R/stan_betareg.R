@@ -85,7 +85,8 @@
 #'   modeling rates and proportions. \emph{Journal of Applied Statistics}.
 #'   31(7), 799--815.
 #' 
-#' @examples 
+#' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' ### Simulated data
 #' N <- 200
 #' x <- rnorm(N, 2, 1)
@@ -103,7 +104,7 @@
 #'   algorithm = "optimizing" # just for speed of example
 #'  ) 
 #' print(fit, digits = 2)
-#'
+#' }
 stan_betareg <-
   function(formula,
            data,

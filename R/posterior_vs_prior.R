@@ -40,7 +40,7 @@
 #' @template reference-bayesvis
 #' 
 #' @examples
-#' 
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \dontrun{
 #' if (!exists("example_model")) example(example_model)
 #' # display non-varying (i.e. not group-level) coefficients
@@ -90,7 +90,7 @@
 #' # flip the x and y axes
 #' gg_polr + ggplot2::coord_flip()
 #' }
-#' 
+#' }
 #' @importFrom ggplot2 geom_pointrange facet_wrap aes_string labs
 #'   scale_x_discrete element_line element_text
 #' 

@@ -346,6 +346,7 @@ print.stanmvreg <- function(x, digits = 3, ...) {
 #'   priors used for a particular model.
 #' 
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' if (!exists("example_model")) example(example_model) 
 #' summary(example_model, probs = c(0.1, 0.9))
 #' 
@@ -358,7 +359,7 @@ print.stanmvreg <- function(x, digits = 3, ...) {
 #' # Only show parameters varying by group
 #' summary(example_model, pars = "varying")
 #' as.data.frame(summary(example_model, pars = "varying"))
-#' 
+#' }
 #' @importMethodsFrom rstan summary
 summary.stanreg <- function(object,
                             pars = NULL,

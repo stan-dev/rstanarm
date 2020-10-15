@@ -87,7 +87,7 @@
 #'   \url{http://mc-stan.org/rstanarm/articles/}.
 #' 
 #' @examples
-#' if (!grepl("^sparc",  R.version$platform)) {
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' ### Linear regression
 #' mtcars$mpg10 <- mtcars$mpg / 10
 #' fit <- stan_glm(
@@ -102,7 +102,6 @@
 #' plot(fit, prob = 0.5)
 #' plot(fit, prob = 0.5, pars = "beta")
 #' plot(fit, "hist", pars = "sigma")
-#' }
 #' \donttest{
 #' ### Logistic regression
 #' head(wells)
@@ -193,7 +192,7 @@
 #' posterior_interval(fit6, pars = "reciprocal_dispersion", prob = 0.8)
 #' plot(fit6, "areas", pars = "reciprocal_dispersion", prob = 0.8)
 #' }
-#'
+#' }
 stan_glm <-
   function(formula,
            family = gaussian(),
@@ -212,7 +211,7 @@ stan_glm <-
            prior_aux = exponential(autoscale=TRUE),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
-           mean_PPD = algorithm != "optimizing",
+           mean_PPD = algorithm != "optimizing" && !prior_PD,
            adapt_delta = NULL,
            QR = FALSE,
            sparse = FALSE) {
@@ -237,6 +236,7 @@ stan_glm <-
   if (is.empty.model(mt))
     stop("No intercept or predictors specified.", call. = FALSE)
   X <- model.matrix(mt, mf, contrasts)
+  contrasts <- attr(X, "contrasts")
   weights <- validate_weights(as.vector(model.weights(mf)))
   offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
   if (binom_y_prop(Y, family, weights)) {
@@ -278,7 +278,7 @@ stan_glm <-
   fit <- nlist(stanfit, algorithm, family, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
-               contrasts = attr(X, "contrasts"), 
+               contrasts = contrasts, 
                stan_function = "stan_glm")
   
   out <- stanreg(fit)

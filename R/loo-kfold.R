@@ -58,6 +58,7 @@
 #'   comparing models.
 #'   
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #' fit1 <- stan_glm(mpg ~ wt, data = mtcars, refresh = 0)
 #' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, refresh = 0)
@@ -80,7 +81,7 @@
 #' kfold4 <- kfold(fit4, folds = folds_cyl, cores = 2)
 #' print(kfold4)
 #' }
-#' 
+#' }
 #' # Example code demonstrating the different ways to specify the number 
 #' # of cores and how the cores are used
 #' # 
