@@ -82,6 +82,7 @@ articles:
     contents:
     - mrp
     - pooling
+    - ab-testing
 
 reference:
   - title: "About rstanarm"
