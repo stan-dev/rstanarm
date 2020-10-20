@@ -1189,8 +1189,10 @@ generated quantities {
   // transformed intercept
   real alpha;
   if (has_intercept == 1) {
-    alpha = log_crude_event_rate - dot_product(x_bar, beta) + gamma[1];
+    if (prior_PD) alpha = gamma[1];
+    else alpha = log_crude_event_rate - dot_product(x_bar, beta) + gamma[1];
   } else {
-    alpha = log_crude_event_rate - dot_product(x_bar, beta);
+    if (prior_PD) alpha = 0;
+    else alpha = log_crude_event_rate - dot_product(x_bar, beta);
   }
 }
