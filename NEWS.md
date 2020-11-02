@@ -14,6 +14,8 @@ models fit with `stan_polr()`. (#450)
 * Fix bug where contrasts info was dropped when subsetting the model matrix in
 `stan_glm()`. (#459)
 
+* Fix bug where `stan_glmer()` would error if `prior_aux=NULL`. (#482)
+
 
 # rstanarm 2.21.1
 
