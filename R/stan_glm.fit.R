@@ -513,10 +513,8 @@ stan_glm.fit <-
         standata$weights1 <- double(0)
       }
       if (length(offset)) {
-        # nocov start
         standata$offset0 <- offset[y0]
         standata$offset1 <- offset[y1]
-        # nocov end
       } else {
         standata$offset0 <- double(0)
         standata$offset1 <- double(0)
@@ -542,10 +540,9 @@ stan_glm.fit <-
     stanfit <- stanmodels$count
   } else if (is_gamma) {
     # nothing
-  } else { # nocov start
-    # family already checked above
+  } else {
     stop(paste(famname, "is not supported."))
-  } # nocov end
+  }
   
   prior_info <- summarize_glm_prior(
     user_prior = prior_stuff,
