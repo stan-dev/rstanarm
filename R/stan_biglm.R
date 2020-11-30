@@ -70,7 +70,7 @@ stan_biglm <- function(biglm, xbar, ybar, s_y, ...,
       !inherits(biglm$qr, "bigqr") || is.null(biglm$terms))
     stop("'biglm' must be of S3 class biglm as defined by the biglm package.")
 
-  b <- coef(biglm)
+  b <- biglm::coef(biglm)
   R <- diag(length(b))
   R[upper.tri(R)] <- biglm$qr$rbar
   R <- sqrt(biglm$qr$D) * R
