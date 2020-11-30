@@ -1,8 +1,6 @@
 # Items for next release
 
-* New vignette on AB testing. (#409)
-
-* `stan_jm()` gains an offset term for the longitudinal submodel. (#415, @pamelanluna)
+### Bug fixes
 
 * Fix bug where `loo()` with `k_threshold` argument specified would error if the model formula was a string instead of a formula object. (#454)
 
@@ -16,6 +14,13 @@ models fit with `stan_polr()`. (#450)
 
 * Fix bug where `stan_glmer()` would error if `prior_aux=NULL`. (#482)
 
+### New features
+
+* New vignette on AB testing. (#409)
+
+* `stan_jm()` gains an offset term for the longitudinal submodel. (#415, @pamelanluna)
+
+* Effective number of parameters are computed for K-fold CV not just LOO CV. (#462)
 
 # rstanarm 2.21.1
 
