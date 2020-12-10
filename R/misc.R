@@ -814,7 +814,9 @@ validate_newdata <- function(object, newdata = NULL, m = NULL) {
     stop("NAs are not allowed in 'newdata'.", call. = FALSE)
   }
   
-  newdata <- drop_redundant_dims(newdata)
+  if (ncol(newdata) > 0) {
+    newdata <- drop_redundant_dims(newdata)
+  }
   return(newdata)
 }
 
