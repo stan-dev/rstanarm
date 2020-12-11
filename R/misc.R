@@ -806,6 +806,9 @@ validate_newdata <- function(object, newdata = NULL, m = NULL) {
   
   # drop other classes (e.g. 'tbl_df', 'tbl')
   newdata <- as.data.frame(newdata)
+  if (nrow(newdata) == 0) {
+    stop("If 'newdata' is specified it must have more than 0 rows.", call. = FALSE)
+  }
   
   # only check for NAs in used variables
   vars <- all.vars(formula(object, m = m))

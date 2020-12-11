@@ -225,6 +225,21 @@ test_that("posterior_linpred with spaces in factor levels ok with complicated fo
                posterior_linpred(fit2, newdata = nd6))
 })
 
+test_that("posterior_predict/epred with newdata works for intercept only model", {
+  fit_intercept <- SW(stan_glm(mpg ~ 1, data = mtcars, refresh = 0, iter = 200, chains = 1))
+  
+  nd0 <- data.frame()
+  nd1 <- data.frame(row.names = 1)
+  nd2 <- data.frame(row.names = 1:2)
+  expect_equal(ncol(posterior_predict(fit_intercept, newdata = nd1)), 1)
+  expect_equal(ncol(posterior_predict(fit_intercept, newdata = nd2)), 2)
+  expect_error(posterior_predict(fit_intercept, data.frame()), "must have more than 0 rows")
+  
+  expect_equal(ncol(posterior_epred(fit_intercept, newdata = nd1)), 1)
+  expect_equal(ncol(posterior_epred(fit_intercept, newdata = nd2)), 2)
+  expect_error(posterior_epred(fit_intercept, data.frame()), "must have more than 0 rows")
+})
+
 
 # helper functions --------------------------------------------------------
 context("posterior_predict helper functions")
