@@ -232,7 +232,7 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   if (!is.null(fn) && grepl("posterior_traj", deparse(fn), fixed = TRUE))
     return(structure(ytilde, mu = ppargs$mu, class = class(ytilde)))
   
-  structure(ytilde, class = class(ytilde))
+  ytilde
 }
 
 #' @rdname posterior_predict.stanreg
