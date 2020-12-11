@@ -28,17 +28,8 @@ REFRESH <- 0
 
 SW <- suppressWarnings
 
-test_that("posterior_predict returns object with correct classes", {
-  expect_s3_class(posterior_predict(example_model), 
-                  c("ppd", "matrix"))
-})
 
 # Error messages ----------------------------------------------------------
-context("posterior_predict (error messages)")
-test_that("posterior_predict errors if not a stanreg object", {
-  expect_error(posterior_predict(example_model$stanfit), "no applicable method")
-  expect_error(posterior_predict(summary(example_model)), "no applicable method")
-})
 test_that("posterior_predict does not error if model fit using optimization", {
   fit1 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", 
                    seed = SEED, refresh = 0)
