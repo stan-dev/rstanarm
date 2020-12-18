@@ -66,6 +66,7 @@ jobs:
         run: |
           remotes::install_deps(dependencies = TRUE)
           remotes::install_cran("rcmdcheck")
+          remotes::install_cran("hexbin")
         shell: Rscript {0}
 
       - name: Check
