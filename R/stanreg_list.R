@@ -78,6 +78,7 @@ names.stanreg_list <- function(x) {
 
 #' @rdname stanreg_list
 #' @export
+#' @method print stanreg_list
 #' @param x The object to print.
 print.stanreg_list <- function(x, ...) {
   cl <- class(x)
