@@ -71,7 +71,6 @@ test_that("plot.stanreg returns correct object", {
   
   # requires exactly 2 parameters
   expect_gg(plot(fit, "scat", pars = c("period2", "period3")))
-  expect_gg(plot(fit, "hex", pars = c("period2", "period3")))
 })
 
 test_that("plot method returns correct object for nuts diagnostic plots", {
