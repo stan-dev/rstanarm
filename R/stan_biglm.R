@@ -67,9 +67,13 @@ stan_biglm <- function(biglm, xbar, ybar, s_y, ...,
                        algorithm = c("sampling", "meanfield", "fullrank"),
                        adapt_delta = NULL) {
   if (!inherits(biglm, "biglm")    || is.null(biglm$qr) ||
-      !inherits(biglm$qr, "bigqr") || is.null(biglm$terms))
+      !inherits(biglm$qr, "bigqr") || is.null(biglm$terms)) {
     stop("'biglm' must be of S3 class biglm as defined by the biglm package.")
+  }
 
+  if (!requireNamespace("biglm", quietly = TRUE)) {
+    stop("Please install the biglm package to use this function.")
+  }
   b <- biglm::coef(biglm)
   R <- diag(length(b))
   R[upper.tri(R)] <- biglm$qr$rbar
