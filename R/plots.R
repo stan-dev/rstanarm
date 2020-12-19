@@ -370,15 +370,6 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' # above the diagonal. default is to split by accept_stat__.
 #' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
 #' 
-#' if (requireNamespace("hexbin", quietly = TRUE)) {
-#' pairs(
-#'   example_model, 
-#'   regex_pars = "herd:[2,7,9]", 
-#'   diag_fun = "dens",
-#'   off_diag_fun = "hex"
-#' )
-#' }
-#' 
 #' # for demonstration purposes, intentionally fit a model that
 #' # will (almost certainly) have some divergences
 #' fit <- stan_glm(
@@ -392,15 +383,13 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' 
 #' pairs(fit, pars = c("wt", "sigma", "log-posterior"))
 #'
-#' if (requireNamespace("hexbin", quietly = TRUE)) {
-#' pairs(
-#'   fit, 
-#'   pars = c("wt", "sigma", "log-posterior"), 
-#'   transformations = list(sigma = "log"), # show log(sigma) instead of sigma
-#'   off_diag_fun = "hex" # use hexagonal heatmaps instead of scatterplots
-#' )
-#' }
-#' 
+#' # requires hexbin package
+#' # pairs(
+#' # fit, 
+#' #   pars = c("wt", "sigma", "log-posterior"), 
+#' #   transformations = list(sigma = "log"), # show log(sigma) instead of sigma
+#' #  off_diag_fun = "hex" # use hexagonal heatmaps instead of scatterplots
+#' # )
 #' 
 #' bayesplot::color_scheme_set("brightblue")
 #' pairs(
