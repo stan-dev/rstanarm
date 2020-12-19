@@ -270,7 +270,7 @@
 #'   # example for pt5).
 #'   
 #'   #pt8 <- posterior_traj(example_jm, newdataLong = nd, dynamic = FALSE, 
-#'                         re.form = NA)
+#'   #                      re.form = NA)
 #'   #head(pt8)  # note the much narrower ci, compared with pt5
 #' }
 #' }
