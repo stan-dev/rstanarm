@@ -190,6 +190,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   })
   
   test_that("heavy tailed priors work with stan_betareg", {
+    skip_on_ci()
     expect_stanreg(stan_betareg(y ~ x | z, data = dat, 
                                prior = product_normal(), prior_z = product_normal(), 
                                chains = 1, iter = 1, refresh = 0))
