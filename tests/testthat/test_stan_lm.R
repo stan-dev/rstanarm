@@ -19,7 +19,7 @@
 # package and then running the code below possibly with options(mc.cores = 4).
 
 library(rstanarm)
-SEED <- 1234
+SEED <- 12345
 CHAINS <- 2
 ITER <- 400
 threshold <- 0.21
