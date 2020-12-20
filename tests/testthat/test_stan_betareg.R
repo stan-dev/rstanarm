@@ -155,7 +155,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   
   # sqrt link is unstable so only testing that the model runs. 
   test_that("stan_betareg ok when modeling x and z (link.phi = 'sqrt')", {
-    skip_on_ci() # seems to segfault sometimes: https://github.com/stan-dev/rstanarm/pull/496/checks?check_run_id=1582276935#step:9:397
+    # skip_on_ci() # seems to segfault sometimes: https://github.com/stan-dev/rstanarm/pull/496/checks?check_run_id=1582276935#step:9:397
     for (i in 1:length(link1)) {  # FIXME!
       N <- 1000
       dat <- data.frame(x = rnorm(N, 2, 1), z = rep(1, N))
@@ -190,7 +190,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   })
   
   test_that("heavy tailed priors work with stan_betareg", {
-    skip_on_ci()
+    # skip_on_ci()
     expect_stanreg(stan_betareg(y ~ x | z, data = dat, 
                                prior = product_normal(), prior_z = product_normal(), 
                                chains = 1, iter = 1, refresh = 0))
