@@ -247,8 +247,8 @@
 #'   # variation associated with the random effects.
 #'   
 #'   nd <- data.frame(id = rep("new1", 11), year = (0:10 / 2))
-#'   #pt7 <- posterior_traj(example_jm, newdataLong = nd, dynamic = FALSE)
-#'   #head(pt7)  # note the greater width of the uncertainty interval compared 
+#'   pt7 <- posterior_traj(example_jm, newdataLong = nd, dynamic = FALSE)
+#'   head(pt7)  # note the greater width of the uncertainty interval compared 
 #'              # with the subject-specific predictions in pt1, pt2, etc
 #'   
 #'   # Alternatively, we could have estimated the "marginal" trajectory by 
@@ -269,9 +269,9 @@
 #'   # (We will use the same covariate values as used in the prediction for 
 #'   # example for pt5).
 #'   
-#'   #pt8 <- posterior_traj(example_jm, newdataLong = nd, dynamic = FALSE, 
-#'   #                      re.form = NA)
-#'   #head(pt8)  # note the much narrower ci, compared with pt5
+#'   pt8 <- posterior_traj(example_jm, newdataLong = nd, dynamic = FALSE, 
+#'                         re.form = NA)
+#'   head(pt8)  # note the much narrower ci, compared with pt5
 #' }
 #' }
 posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
