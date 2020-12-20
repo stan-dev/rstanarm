@@ -31,6 +31,12 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
+      - uses: n1hility/cancel-previous-runs@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: R-CMD-check.yaml
+        if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/master'"
+        
       - uses: actions/checkout@v2
 
       - uses: r-lib/actions/setup-r@v1
