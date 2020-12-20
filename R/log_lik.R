@@ -320,7 +320,9 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
     }
     data <- data.frame(y, x)
     draws$beta <- stanmat[, colnames(x), drop = FALSE]
-    zetas <- grep("|", colnames(stanmat), fixed = TRUE, value = TRUE)
+    zetas <- grep(pattern = if (length(unique(y)) == 2L) "(Intercept)" else "|", 
+                  x = colnames(stanmat), 
+                  fixed = TRUE, value = TRUE)
     draws$zeta <- stanmat[, zetas, drop = FALSE]
     draws$max_y <- max(y)
     if ("alpha" %in% colnames(stanmat)) { 
