@@ -19,6 +19,7 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code below possibly with options(mc.cores = 4).
 
+if (!isTRUE(as.logical(Sys.getenv("CI")))) {
 library(rstanarm)
 library(lme4)
 library(survival)
@@ -553,4 +554,6 @@ for (j in c(1:30)) {
       expect_survfit(ps)
     })
   }
+}
+
 }
