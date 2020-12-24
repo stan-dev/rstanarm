@@ -3,6 +3,7 @@
 <!-- badges: start -->
 [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm?color=blue)](http://cran.r-project.org/package=rstanarm)
 [![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=blue)](http://cran.rstudio.com/package=rstanarm)
+[![R-CMD-check](https://github.com/stan-dev/rstanarm/workflows/R-CMD-check/badge.svg)](https://github.com/stan-dev/rstanarm/actions)
 <!-- badges: end -->
 
 ### Bayesian applied regression modeling (arm) via Stan

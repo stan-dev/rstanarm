@@ -245,6 +245,7 @@
 #'   # effects distribution, and then integrating (ie, averaging) over these. 
 #'   # Our marginal prediction will therefore capture the between-individual 
 #'   # variation associated with the random effects.
+#'   
 #'   nd <- data.frame(id = rep("new1", 11), year = (0:10 / 2))
 #'   pt7 <- posterior_traj(example_jm, newdataLong = nd, dynamic = FALSE)
 #'   head(pt7)  # note the greater width of the uncertainty interval compared 
@@ -267,6 +268,7 @@
 #'   # the fixed effect component of the model, we simply specify 're.form = NA'. 
 #'   # (We will use the same covariate values as used in the prediction for 
 #'   # example for pt5).
+#'   
 #'   pt8 <- posterior_traj(example_jm, newdataLong = nd, dynamic = FALSE, 
 #'                         re.form = NA)
 #'   head(pt8)  # note the much narrower ci, compared with pt5
