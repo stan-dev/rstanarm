@@ -49,6 +49,7 @@ Imports:
     RcppParallel (>= 5.0.1),
     utils
 Suggests:
+    biglm,
     betareg,
     data.table (>= 1.10.0),
     digest,

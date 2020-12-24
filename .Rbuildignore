@@ -21,3 +21,4 @@ configure.ac
 dev-notes/*
 revdep/*
 
+^\.github$
