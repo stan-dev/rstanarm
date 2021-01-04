@@ -523,12 +523,12 @@ for (j in c(1:30)) {
     test_that("posterior_traj works with new data with and without offset", {
       pbcLong2 <- pbcLong
       nd <- pbcLong2[1:2, c("id", "year")]
-      expect_s3_class(posterior_traj(f1, newdataLong = nd, dynamic = FALSE), "predict.stanjm")
+      expect_s3_class(posterior_traj(mod, newdataLong = nd, dynamic = FALSE), "predict.stanjm")
       
       pbcLong2$off <- 1
-      o <- SW(f1_off <- update(f1, dataLong = pbcLong2, formulaLong. = logBili ~ offset(off) + year + (year | id)))
+      o <- SW(mod_off <- update(mod, dataLong = pbcLong2, formulaLong. = logBili ~ offset(off) + year + (year | id)))
       nd <- pbcLong2[1:2, c("id", "year", "off")]
-      expect_s3_class(posterior_traj(f1_off, newdataLong = nd, dynamic = FALSE), "predict.stanjm")
+      expect_s3_class(posterior_traj(mod_off, newdataLong = nd, dynamic = FALSE), "predict.stanjm")
     })
     
     test_that("posterior_traj works with new data (one individual)", {
