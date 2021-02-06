@@ -530,10 +530,11 @@ The fitted model is returned as an object of the S3 class `stanjm`. We have a va
 
 ```{r print, echo = FALSE}
 alpha_mod1 <- as.data.frame(mod1)[["Assoc|Long1|etavalue"]]
+alpha_median <- round(median(alpha_mod1), 3)
 print(mod1)
 ```
 
-The "Long1|etavalue" row under "Event submodel:" is our $\alpha_{mq}$ parameter ($m = 1$, $q = 1$). The estimated median tells us that for each one unit increase in an individual's underlying level of log serum bilirubin, their estimated log hazard of death increases by `r round(median(alpha_mod1), 3)` (equivalent to a `r round(exp(median(alpha_mod1)), 3)`-fold increase in the hazard of death). The mean absolute deviation (MAD) is provided as a more robust estimate of the standard deviation of the posterior distribution. In this case the MAD_SD for the association parameter is `round(mad(alpha_mod1), 3)`, indicating there is quite large uncertainty around the estimated association between log serum bilirubin and risk of death (recall this is a small dataset containing only `r length(unique(pbcLong$id))` patients!).
+The "Long1|etavalue" row under "Event submodel" is our $\alpha_{mq}$ parameter ($m = 1$, $q = 1$). The estimated median of `r alpha_median` tells us that for each one unit increase in an individual's underlying level of log serum bilirubin, their estimated log hazard of death increases by `r alpha_median` (equivalent to a `r round(exp(alpha_median), 3)`-fold increase in the hazard of death). The mean absolute deviation (MAD) is provided as a more robust estimate of the standard deviation of the posterior distribution. In this case the MAD_SD for the association parameter is `round(mad(alpha_mod1), 3)`, indicating there is quite large uncertainty around the estimated association between log serum bilirubin and risk of death (recall this is a small dataset containing only `r length(unique(pbcLong$id))` patients!).
 
 If we wanted some slightly more detailed output for each of the model parameters, as well as further details regarding the model estimation (for example computation time, number of longitudinal observations, number of individuals, type of baseline hazard, etc) we can instead use the `summary` method:
 
