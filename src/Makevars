@@ -1,6 +1,6 @@
 STANHEADERS_SRC = $(shell "$(R_HOME)/bin$(R_ARCH_BIN)/Rscript" -e "message()" -e "cat(system.file('include', 'src', package = 'StanHeaders', mustWork = TRUE))" -e "message()" | grep "StanHeaders")
 TBB_LIB = $(shell "$(R_HOME)/bin$(R_ARCH_BIN)/Rscript" -e "message()" -e "cat(system.file('lib', .Platform[['r_arch']], package = 'RcppParallel', mustWork = TRUE))" -e "message()" | grep "RcppParallel")
-PKG_CPPFLAGS = -I"../inst/include" -I"$(STANHEADERS_SRC)" -DBOOST_DISABLE_ASSERTS -DEIGEN_NO_DEBUG
+PKG_CPPFLAGS = -I"../inst/include" -I"$(STANHEADERS_SRC)" -DBOOST_DISABLE_ASSERTS -DEIGEN_NO_DEBUG -DUSE_STANC3
 PKG_CXXFLAGS = `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "RcppParallel::CxxFlags()"` `"${R_HOME}/bin$(R_ARCH_BIN)/Rscript" -e "StanHeaders:::CxxFlags()"`
 SHLIB_LDFLAGS = $(SHLIB_CXXLDFLAGS)
 SHLIB_LD = $(SHLIB_CXXLD)
