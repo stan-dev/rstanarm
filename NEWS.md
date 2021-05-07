@@ -14,6 +14,9 @@ models fit with `stan_polr()`. (#450)
 
 * Fix bug where `stan_glmer()` would error if `prior_aux=NULL`. (#482)
 
+* `posterior_predict()` and `posterior_epred()` don't error  with `newdata` for 
+intercept only models by allowing data frames with 0 columns and multiple rows. (#492)
+
 ### New features
 
 * New vignette on AB testing. (#409)

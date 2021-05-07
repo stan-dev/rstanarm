@@ -3,6 +3,7 @@
 <!-- badges: start -->
 [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm?color=blue)](http://cran.r-project.org/package=rstanarm)
 [![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=blue)](http://cran.rstudio.com/package=rstanarm)
+[![R-CMD-check](https://github.com/stan-dev/rstanarm/workflows/R-CMD-check/badge.svg)](https://github.com/stan-dev/rstanarm/actions)
 <!-- badges: end -->
 
 ### Bayesian applied regression modeling (arm) via Stan
@@ -219,7 +220,9 @@ Once **rstan** is successfully installed, you can install **rstanarm** from
 GitHub using the **remotes** package by executing the following in R:
 
 ```r
-Sys.setenv(MAKEFLAGS = "-j4") # change 4 to however many cores you can/want to use to parallelize install 
+# Change 2 to however many cores you can/want to use to parallelize install
+# If you experience crashes or run out RAM during installation, try changing this to 1
+Sys.setenv(MAKEFLAGS = "-j2")
 Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
 remotes::install_github("stan-dev/rstanarm", INSTALL_opts = "--no-multiarch", force = TRUE)
 ```
@@ -230,6 +233,16 @@ vignettes are already separately available from the
 and 
 [CRAN](https://cran.r-project.org/package=rstanarm/vignettes). 
 If installation fails, please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
+
+#### Survival Analysis Version
+
+The `feature/survival` branch on GitHub contains a development version of **rstanarm** that includes survival analysis functionality (via the `stan_surv` modelling function). Until this functionality is available in the CRAN release of **rstanarm**, users who wish to use the survival analysis functionality can install a binary version of the survival branch of **rstanarm** from the Stan R packages repository with:
+
+```
+install.packages("rstanarm", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+```
+
+Note that this binary is static (i.e. it is not automatically updated) and is only hosted so that users can access the (experimental) survival analysis functionality without needing to go through the time consuming (and sometimes painful) task of installing the development version of **rstanarm** from source.
 
 ### Contributing 
 
