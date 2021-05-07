@@ -166,12 +166,14 @@ test_that("kfold works on some examples", {
   SW(kf <- kfold(fit_gaus, 4))
   SW(kf2 <- kfold(example_model, 2))
 
-  expect_named(kf, c("estimates", "pointwise", "elpd_kfold", "se_elpd_kfold"))
-  expect_named(kf2, c("estimates", "pointwise", "elpd_kfold", "se_elpd_kfold"))
+  expect_named(kf, c("estimates", "pointwise", "elpd_kfold", "se_elpd_kfold", "p_kfold", "se_p_kfold"))
+  expect_named(kf2, c("estimates", "pointwise", "elpd_kfold", "se_elpd_kfold", "p_kfold", "se_p_kfold"))
   expect_named(attributes(kf),  c("names", "class", "K", "dims", "model_name", "discrete", "yhash", "formula"))
   expect_named(attributes(kf2), c("names", "class", "K", "dims", "model_name", "discrete", "yhash", "formula"))
   expect_s3_class(kf, c("kfold", "loo"))
   expect_s3_class(kf2, c("kfold", "loo"))
+  expect_false(is.na(kf$p_kfold))
+  expect_false(is.na(kf2$p_kfold))
 
   SW(kf <- kfold(fit_gaus, K = 2, save_fits = TRUE))
 

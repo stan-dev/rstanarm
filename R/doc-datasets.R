@@ -129,7 +129,7 @@
 #' \item \code{y} Number of roaches caught
 #' \item \code{roach1} Pretreatment number of roaches
 #' \item \code{treatment} Treatment indicator
-#' \item \code{senior} Indicator for only eldery residents in building
+#' \item \code{senior} Indicator for only elderly residents in building
 #' \item \code{exposure2} Number of days for which the roach traps were used
 #' }
 #' }

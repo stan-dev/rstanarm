@@ -150,12 +150,7 @@ stan_glmer <-
     y <- cbind(y1, y0 = weights - y1)
     weights <- double(0)
   }
-  if (is.null(prior)) 
-    prior <- list()
-  if (is.null(prior_intercept)) 
-    prior_intercept <- list()
-  if (is.null(prior_aux)) 
-    prior_aux <- list()
+  
   if (is.null(prior_covariance))
     stop("'prior_covariance' can't be NULL.", call. = FALSE)
   group <- glmod$reTrms

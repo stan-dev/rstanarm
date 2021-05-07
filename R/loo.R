@@ -34,6 +34,7 @@
 #' @aliases loo
 #' @importFrom loo loo loo.function loo.matrix is.loo
 #' @export
+#' @method loo stanreg
 #' @template reference-loo
 #' @template reference-bayesvis
 #'

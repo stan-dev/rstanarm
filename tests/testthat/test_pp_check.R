@@ -51,11 +51,13 @@ test_that("pp_check.stanreg creates ggplot object", {
                "ppc_loo_intervals", 
                "ppc_loo_ribbon", 
                "ppc_rootogram", 
-               "ppc_error_binned")
+               "ppc_error_binned", 
+               "ppc_km_overlay")
   for (f in ppc_funs_not_grouped) for (j in 1:2) {
-    if (!f %in% exclude)
+    if (!f %in% exclude) {
       expect_gg(suppressWarnings(pp_check(fit, plotfun = f, nreps = j)), 
                 info = f)
+    }
   }
 })
 
