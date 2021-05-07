@@ -337,13 +337,16 @@ is_binomial_ppc <- function(object, ...) {
   switch(fun,
     # DISTRIBUTIONS
     "dens_overlay" = nreps %ORifNULL% 50,
+    "dens_overlay_grouped" = nreps %ORifNULL% 50,
     "ecdf_overlay" = nreps %ORifNULL% 50,
+    "ecdf_overlay_grouped" = nreps %ORifNULL% 50,
     "hist" = nreps %ORifNULL% 8,
     "dens" = nreps %ORifNULL% 8,
     "boxplot" = nreps %ORifNULL% 8,
     "freqpoly" = nreps %ORifNULL% 8,
     "freqpoly_grouped" = nreps %ORifNULL% 3,
     "violin_grouped" = nreps, # NULL ok
+    "km_overlay" = nreps %ORifNULL% 50,
     
     # PREDICTIVE ERRORS
     "error_binned" = nreps %ORifNULL% 3,
