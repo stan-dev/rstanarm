@@ -4,20 +4,14 @@
 /*
  * This works exactly like csr_matrix_times_vector but faster and less safe
  */
-template <typename T2__, typename T5__>
-inline
-Eigen::Matrix<typename boost::math::tools::promote_args<T2__, T5__>::type,
-              Eigen::Dynamic, 1>
-csr_matrix_times_vector2(const int& m,
-                         const int& n,
-                         const Eigen::Matrix<T2__, Eigen::Dynamic, 1>& w,
-                         const std::vector<int>& v,
-                         const std::vector<int>& u,
-                         const Eigen::Matrix<T5__, Eigen::Dynamic, 1>& b,
-                         std::ostream* pstream__) {
-  Eigen::Map<const Eigen::SparseMatrix<T2__,Eigen::RowMajor> >
-    sm(m, n, w.size(), &u[0], &v[0], &w[0]);
-  return sm * b;
+ template <typename T2__, typename T5__>
+ Eigen::Matrix<stan::promote_args_t<stan::value_type_t<T2__>,
+ stan::value_type_t<T5__>>, -1, 1>
+ csr_matrix_times_vector2(const int& m, const int& n, const T2__& w_arg__,
+                          const std::vector<int>& v,
+                          const std::vector<int>& u, const T5__& b_arg__,
+                          std::ostream* pstream__) {
+  return stan::math::csr_matrix_times_vector(m, n, w_arg__, v, u, b_arg__);
 }
 
 /* This specialization is slower than the above templated version
