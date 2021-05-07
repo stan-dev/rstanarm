@@ -38,7 +38,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">rstanarm</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">2.21.2</span>
       </span>
     </div>
 
@@ -46,7 +46,7 @@
       <ul class="nav navbar-nav">
 <li>
   <a href="../index.html">
-    <span class="fa fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -102,19 +102,19 @@
 <ul class="nav navbar-nav navbar-right">
 <li>
   <a href="https://twitter.com/mcmc_stan">
-    <span class="fa fa-twitter"></span>
+    <span class="fas fa-twitter"></span>
      
   </a>
 </li>
 <li>
   <a href="https://github.com/stan-dev/rstanarm">
-    <span class="fa fa-github"></span>
+    <span class="fas fa-github"></span>
      
   </a>
 </li>
 <li>
   <a href="https://discourse.mc-stan.org/">
-    <span class="fa fa-users"></span>
+    <span class="fas fa-users"></span>
      
   </a>
 </li>
@@ -128,13 +128,13 @@
 
       
 
-      </header><script src="glmer_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
+      </header><script src="glmer_files/header-attrs-2.6/header-attrs.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Estimating Generalized (Non-)Linear Models with Group-Specific Terms with rstanarm</h1>
                         <h4 class="author">Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 class="date">2020-07-20</h4>
+            <h4 class="date">2021-05-07</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/glmer.Rmd"><code>vignettes/glmer.Rmd</code></a></small>
       <div class="hidden name"><code>glmer.Rmd</code></div>
@@ -202,7 +202,7 @@
 <li>If <span class="math inline">\(\gamma &gt; 1\)</span>, then the prior mode corresponds to all variables having the same (proportion of total) variance, which can be used to ensure that the posterior variances are not zero. As the concentration parameter approaches infinity, this mode becomes more pronounced.</li>
 <li>If <span class="math inline">\(0 &lt; \gamma &lt; 1\)</span>, then the variances are more polarized.</li>
 </ul>
-<p>If all the elements of <span class="math inline">\(\boldsymbol{\theta}\)</span> were multiplied by the same number <span class="math inline">\(k\)</span>, the trace of their covariance matrix would increase by a factor of <span class="math inline">\(k^2\)</span>. For this reason, it is sensible to use a scale-invariant prior for <span class="math inline">\(\tau\)</span>. We choose a Gamma distribution, with shape and scale parameters both set to <span class="math inline">\(1\)</span> by default, implying a unit-exponential distribution. Users can set the shape hyperparameter to some value greater than one to ensure that the posterior trace is not zero. In the case where <span class="math inline">\(\boldsymbol{\Sigma}\)</span> is <span class="math inline">\(1\times 1\)</span>, this shape parameter is the cross-group standard deviation in the parameters and its square is the variance.</p>
+<p>If all the elements of <span class="math inline">\(\boldsymbol{\theta}\)</span> were multiplied by the same number <span class="math inline">\(k\)</span>, the trace of their covariance matrix would increase by a factor of <span class="math inline">\(k^2\)</span>. For this reason, it is sensible to use a scale-invariant prior for <span class="math inline">\(\tau\)</span>. We choose a Gamma distribution, with shape and scale parameters both set to <span class="math inline">\(1\)</span> by default, implying a unit-exponential distribution. Users can set the shape hyperparameter to some value greater than one to ensure that the posterior trace is not zero. In the case where <span class="math inline">\(\boldsymbol{\Sigma}\)</span> is <span class="math inline">\(1\times 1\)</span>, <span class="math inline">\(\tau\)</span> is the cross-group standard deviation in the parameters and its square is the variance (so the Gamma prior with its shape and scale directly applies to the cross-group standard deviation in the parameters).</p>
 </div>
 </div>
 <div id="comparison-with-lme4" class="section level1">
@@ -320,7 +320,7 @@ scal 0.362 0.762</code></pre>
 ------
      Median MAD_SD
 Asym 1.9    0.1   
-xmid 7.2    0.4   
+xmid 7.1    0.4   
 scal 3.4    0.3   
 
 Auxiliary parameter(s):
@@ -329,8 +329,8 @@ sigma 0.1    0.0
 
 Error terms:
  Groups   Name Std.Dev.
- Tree     Asym 0.311   
- Residual      0.089   
+ Tree     Asym 0.31    
+ Residual      0.09    
 Num. levels: Tree 5 
 
 ------
