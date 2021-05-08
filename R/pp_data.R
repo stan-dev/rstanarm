@@ -97,7 +97,9 @@ pp_data <-
   offset <- model.offset(model.frame(object, m = m))
   if (!is.null(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
     if (is.jm(object)) {
-      mf <- stats::model.frame(lme4::subbars(object$formula[[m]]), data = newdata)
+      form <- lme4::subbars(object$formula[[m]])
+      form[2] <- NULL # get rid of response to avoid error that it isn't found in newdata
+      mf <- stats::model.frame(form, data = newdata)
       offset <- model.offset(mf)
     } else {
       offset <- offset %ORifNULL% object$call$offset
