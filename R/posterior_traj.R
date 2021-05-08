@@ -401,7 +401,16 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
     }
   }
     
-  newOffset <- model.offset(model.frame(terms(glmod), newX))
+  if (isTRUE(as.logical(glmod$has_offset))) {
+    # create a temporary data frame with a fake outcome to avoid error
+    response_name <- as.character(formula(object)[[m]])[2]
+    newX_temp <- cbind(0, newX)
+    colnames(newX_temp) <- c(response_name, colnames(newX))
+    newOffset <- model.offset(model.frame(terms(glmod), newX_temp))
+  } else {
+    newOffset <- NULL
+  }
+  
   ytilde <- posterior_predict(object, newdata = newX, m = m, stanmat = stanmat, offset = newOffset, ...)
   if (return_matrix) {
     attr(ytilde, "mu") <- NULL # remove attribute mu
