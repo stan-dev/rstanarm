@@ -124,9 +124,9 @@
     matrix[assoc_uses[3,3] == 1 ? nrow_y_Xq_auc : 0, yK[3]] y3_xq_auc;
     
     // offset values at quadpoints
-    vector[has_offset[1] && assoc_uses[3,1] == 1 ? nrow_y_Xq[1] : 0] y1_offset_auc;
-    vector[has_offset[2] && assoc_uses[3,2] == 1 ? nrow_y_Xq[2] : 0] y2_offset_auc;
-    vector[has_offset[3] && assoc_uses[3,3] == 1 ? nrow_y_Xq[3] : 0] y3_offset_auc;
+    vector[has_offset[1] && assoc_uses[3,1] == 1 ? nrow_y_Xq_auc : 0] y1_offset_auc;
+    vector[has_offset[2] && assoc_uses[3,2] == 1 ? nrow_y_Xq_auc : 0] y2_offset_auc;
+    vector[has_offset[3] && assoc_uses[3,3] == 1 ? nrow_y_Xq_auc : 0] y3_offset_auc;
 
     // re design matrix at quadpoints, group factor 1
     vector[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? nrow_y_Xq_auc : 0] y1_z1q_auc[bK1_len[1]];
