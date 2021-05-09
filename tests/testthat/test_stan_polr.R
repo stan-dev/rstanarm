@@ -29,8 +29,6 @@ REFRESH <- 0
 
 threshold <- 0.03
 
-source(test_path("helpers", "expect_stanreg.R"))
-
 context("stan_polr")
 
 
@@ -90,7 +88,6 @@ test_that("gumbel functions ok", {
 })
 
 test_that("loo/waic for stan_polr works", {
-  source(test_path("helpers", "expect_equivalent_loo.R"))
   ll_fun <- rstanarm:::ll_fun
   expect_equivalent_loo(fit1)
   expect_identical(ll_fun(fit1), rstanarm:::.ll_polr_i)
@@ -104,7 +101,6 @@ test_that("loo/waic for stan_polr works", {
 
 context("posterior_predict (stan_polr)")
 test_that("compatible with stan_polr", {
-  source(test_path("helpers", "check_for_error.R"))
   check_for_error(fit1)
   check_for_error(fit2)
   check_for_error(fit3)

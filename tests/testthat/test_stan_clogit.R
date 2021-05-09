@@ -30,9 +30,6 @@ REFRESH <- 0
 
 threshold <- 0.03
 
-source(test_path("helpers", "expect_stanreg.R"))
-source(test_path("helpers", "SW.R"))
-
 context("stan_clogit")
 
 SW(fit <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NULL,
@@ -54,7 +51,6 @@ test_that("stan_clogit throws error if data are not sorted", {
 })
 
 test_that("loo/waic for stan_clogit works", {
-  source(file.path("helpers", "expect_equivalent_loo.R"))
   ll_fun <- rstanarm:::ll_fun
   expect_equivalent_loo(fit)
   expect_identical(ll_fun(fit), rstanarm:::.ll_clogit_i)

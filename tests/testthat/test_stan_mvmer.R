@@ -36,16 +36,6 @@ TOLSCALES <- list(
   glmer_ranef = 0.1 # how many SDs can stan_jm ranefs be from glmer ranefs
 )
 
-source(test_path("helpers", "expect_matrix.R"))
-source(test_path("helpers", "expect_stanreg.R"))
-source(test_path("helpers", "expect_stanmvreg.R"))
-source(test_path("helpers", "expect_survfit.R"))
-source(test_path("helpers", "expect_ppd.R"))
-source(test_path("helpers", "expect_identical_sorted_stanmats.R"))
-source(test_path("helpers", "SW.R"))
-source(test_path("helpers", "get_tols.R"))
-source(test_path("helpers", "recover_pars.R"))
-
 context("stan_mvmer")
 
 #----  Data (for non-Gaussian families)

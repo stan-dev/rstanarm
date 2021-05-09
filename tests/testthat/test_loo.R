@@ -23,8 +23,6 @@ CHAINS <- 2
 ITER <- 40 # small iter for speed but large enough for psis
 REFRESH <- 0
 
-source(test_path("helpers", "SW.R"))
-
 if (!exists("example_model")) {
   example_model <- run_example_model()
 }

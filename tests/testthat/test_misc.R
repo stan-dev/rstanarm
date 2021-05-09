@@ -26,7 +26,6 @@ CHAINS <- 2L
 REFRESH <- 0
 
 SW <- suppressWarnings
-source(test_path("helpers", "expect_stanreg.R"))
 
 if (!exists("example_model")) {
   example_model <- run_example_model()

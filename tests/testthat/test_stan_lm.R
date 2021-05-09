@@ -27,9 +27,6 @@ ITER <- 400
 threshold <- 0.21
 REFRESH <- 0
 
-source(test_path("helpers", "expect_stanreg.R"))
-source(test_path("helpers", "SW.R"))
-
 SW(fit <- stan_lm(mpg ~ ., data = mtcars, prior = R2(location = 0.75), 
                   chains = CHAINS, iter = ITER, seed = SEED, refresh = 0))
 
@@ -149,16 +146,12 @@ test_that("stan_lm throws error if glmer syntax used", {
 
 
 test_that("loo/waic for stan_lm works", {
-  source(test_path("helpers", "expect_equivalent_loo.R"))
   ll_fun <- rstanarm:::ll_fun
   expect_equivalent_loo(fit)
   expect_identical(ll_fun(fit), rstanarm:::.ll_gaussian_i)
 })
 
 test_that("posterior_predict compatible with stan_lm", {
-  source(test_path("helpers", "check_for_error.R"))
-  source(test_path("helpers", "expect_linpred_equal.R"))
-  
   check_for_error(fit)
   expect_linpred_equal(fit)
 })

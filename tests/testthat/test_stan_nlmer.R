@@ -29,9 +29,6 @@ REFRESH <- 0
 
 threshold <- 0.05
 
-source(test_path("helpers", "expect_stanreg.R"))
-source(test_path("helpers", "SW.R"))
-
 context("stan_nlmer")
 
 data("Orange", package = "datasets")
@@ -60,12 +57,10 @@ test_that("stan_nlmer throws error if formula includes an unknown function", {
 })
 
 test_that("loo/waic for stan_nlmer works", {
-  source(test_path("helpers", "expect_equivalent_loo.R"))
   expect_equivalent_loo(fit)
 })
 
 context("posterior_predict (stan_nlmer)")
 test_that("compatible with stan_nlmer", {
-  source(test_path("helpers", "check_for_error.R"))
   check_for_error(fit)
 })

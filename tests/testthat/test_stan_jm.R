@@ -38,16 +38,6 @@ TOLSCALES <- list(
   event = 0.3        # how many SEs can stan_jm fixefs be from coxph fixefs
 )
 
-source(test_path("helpers", "expect_matrix.R"))
-source(test_path("helpers", "expect_stanreg.R"))
-source(test_path("helpers", "expect_stanmvreg.R"))
-source(test_path("helpers", "expect_survfit.R"))
-source(test_path("helpers", "expect_ppd.R"))
-source(test_path("helpers", "expect_equivalent_loo.R"))
-source(test_path("helpers", "SW.R"))
-source(test_path("helpers", "get_tols.R"))
-source(test_path("helpers", "recover_pars.R"))
-
 context("stan_jm")
 
 #----  Data (for non-Gaussian families)

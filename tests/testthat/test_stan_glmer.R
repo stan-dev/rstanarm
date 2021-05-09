@@ -31,9 +31,6 @@ if (interactive()) options(mc.cores = parallel::detectCores())
 FIXEF_tol <- 0.05
 RANEF_tol <- 0.25
 
-source(test_path("helpers", "expect_stanreg.R"))
-source(test_path("helpers", "SW.R"))
-
 if (!exists("example_model")) {
   example_model <- run_example_model()
 }
@@ -126,7 +123,6 @@ test_that("stan_lmer returns an error when 'family' specified", {
 
 
 context("stan_gamm4")
-source(test_path("helpers", "expect_gg.R"))
 test_that("stan_gamm4 returns stanreg object", {
   skip_if_not_installed("mgcv")
   sleepstudy$y <- sleepstudy$Reaction / 10
@@ -176,7 +172,6 @@ test_that("stan_gamm4 doesn't error when bs='cc", {
 
 test_that("loo/waic for stan_glmer works", {
   ll_fun <- rstanarm:::ll_fun
-  source(test_path("helpers", "expect_equivalent_loo.R"))
   
   # gaussian
   expect_equivalent_loo(fit)
@@ -204,8 +199,6 @@ test_that("stan_gamm4 returns expected result for sleepstudy example", {
 
 
 context("posterior_predict (stan_(g)lmer)")
-source(test_path("helpers", "check_for_error.R"))
-source(test_path("helpers", "expect_linpred_equal.R"))
 test_that("compatible with stan_lmer", {
   check_for_error(fit)
   expect_linpred_equal(fit)

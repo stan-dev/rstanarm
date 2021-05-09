@@ -28,9 +28,6 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   
   context("stan_betareg")
   
-  source(test_path("helpers", "expect_stanreg.R"))
-  source(test_path("helpers", "SW.R"))
-  
   simple_betareg_data <- function(N, draw_z = FALSE) {
     x <- rnorm(N, 2, 1)
     z <- if (draw_z) rnorm(N, 0, 1) else rep(0, N)
