@@ -231,9 +231,9 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   test_that("compatible with betareg with offset", {
     GasolineYield2 <- GasolineYield
     GasolineYield2$offs <- runif(nrow(GasolineYield2))
-    fit <- SW(stan_betareg(yield ~ temp, data = GasolineYield2, offset = offs,
+    SW(fit <- stan_betareg(yield ~ temp, data = GasolineYield2, offset = offs,
                            iter = ITER*5, chains = CHAINS, seed = SEED, refresh = 0))
-    fit2 <- SW(stan_betareg(yield ~ temp + offset(offs), data = GasolineYield2,
+    SW(fit2 <- stan_betareg(yield ~ temp + offset(offs), data = GasolineYield2,
                             iter = ITER*5, chains = CHAINS, seed = SEED, refresh = 0))
     
     expect_warning(posterior_predict(fit, newdata = GasolineYield), 
