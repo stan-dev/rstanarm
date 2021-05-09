@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 library(lme4)
 library(MASS)
 SEED <- 12345
@@ -25,6 +25,10 @@ CHAINS <- 2
 REFRESH <- 0
 
 SW <- suppressWarnings
+
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 
 N <- 200
 x <- rnorm(N, 2, 1)
@@ -38,9 +42,9 @@ remove(N, x, y, z, mu, phi)
 capture.output(
   stan_glm1 <- SW(stan_glm(mpg ~ wt + cyl, data = mtcars, iter = ITER,
                            chains = CHAINS, seed = SEED, refresh = 0)),
-  stan_glm_opt1 <- stan_glm(mpg ~ wt + cyl, data = mtcars, algorithm = "optimizing",
-                            seed = SEED, refresh = 0),
-  stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", QR = TRUE, iter = 10000),
+  stan_glm_opt1 <- SW(stan_glm(mpg ~ wt + cyl, data = mtcars, algorithm = "optimizing",
+                            seed = SEED, refresh = 0)),
+  stan_glm_vb1 <- SW(update(stan_glm_opt1, algorithm = "meanfield", QR = TRUE, iter = 10000)),
   glm1 <- glm(mpg ~ wt + cyl, data = mtcars),
   
   lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin),
@@ -646,8 +650,8 @@ test_that("print and summary methods ok for optimization", {
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)  
   capture.output(
-    fit <- stan_glm.nb(counts ~ outcome + treatment, algorithm = "optimizing",
-                       seed = SEED, refresh = 0)
+    fit <- SW(stan_glm.nb(counts ~ outcome + treatment, algorithm = "optimizing",
+                       seed = SEED, refresh = 0))
   )
   expect_output(print(fit), "reciprocal_dispersion")
 
@@ -655,9 +659,9 @@ test_that("print and summary methods ok for optimization", {
                          lot1 = c(118,58,42,35,27,25,21,19,18),
                          lot2 = c(69,35,26,21,18,16,13,12,12))
   capture.output(
-    fit2 <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma(link="log"),
-                     algorithm = "optimizing", seed = SEED, refresh = 0),
-    fit3 <- update(fit2, family = inverse.gaussian(link = "log"))
+    fit2 <- SW(stan_glm(lot1 ~ log_u, data = clotting, family = Gamma(link="log"),
+                     algorithm = "optimizing", seed = SEED, refresh = 0)),
+    fit3 <- SW(update(fit2, family = inverse.gaussian(link = "log")))
   )
   expect_output(print(fit2), "shape")
   expect_output(print(fit3), "lambda")

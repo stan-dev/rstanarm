@@ -66,15 +66,15 @@ stan_biglm <- function(biglm, xbar, ybar, s_y, ...,
                        prior_intercept = NULL, prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"),
                        adapt_delta = NULL) {
+  if (!requireNamespace("biglm", quietly = TRUE)) {
+    stop("Please install the biglm package to use this function.")
+  }
   if (!inherits(biglm, "biglm")    || is.null(biglm$qr) ||
       !inherits(biglm$qr, "bigqr") || is.null(biglm$terms)) {
     stop("'biglm' must be of S3 class biglm as defined by the biglm package.")
   }
 
-  if (!requireNamespace("biglm", quietly = TRUE)) {
-    stop("Please install the biglm package to use this function.")
-  }
-  b <- biglm::coef(biglm)
+  b <- coef(biglm)
   R <- diag(length(b))
   R[upper.tri(R)] <- biglm$qr$rbar
   R <- sqrt(biglm$qr$D) * R
@@ -82,13 +82,14 @@ stan_biglm <- function(biglm, xbar, ybar, s_y, ...,
     b <- b[-1]
     R <- R[-1,-1]
     has_intercept <- TRUE
+  } else {
+    has_intercept <- FALSE
   }
-  else has_intercept <- FALSE
 
-  return(stan_biglm.fit(b, R, SSR = biglm$qr$ss, N = biglm$n, xbar, ybar, s_y, 
-                        has_intercept, ...,
-                        prior = prior, prior_intercept = prior_intercept,
-                        prior_PD = prior_PD, algorithm = algorithm, 
-                        adapt_delta = adapt_delta))
+  stan_biglm.fit(b, R, SSR = biglm$qr$ss, N = biglm$n, xbar, ybar, s_y, 
+                 has_intercept, ...,
+                 prior = prior, prior_intercept = prior_intercept,
+                 prior_PD = prior_PD, algorithm = match.arg(algorithm), 
+                 adapt_delta = adapt_delta)
 }
 
