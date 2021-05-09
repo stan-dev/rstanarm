@@ -15,12 +15,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat 
-# package and then running the code below possibly with options(mc.cores = 4).
-
 # this mostly goes through same code as a logit model so only testing the unique stuff
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 
 SEED <- 123
 ITER <- 100
@@ -30,14 +27,12 @@ REFRESH <- 0
 
 threshold <- 0.03
 
-source(test_path("helpers", "expect_stanreg.R"))
-
 context("stan_clogit")
 
-fit <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NULL,
+SW(fit <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NULL,
                    data = infert[order(infert$stratum), ], 
                    QR = TRUE, init_r = 0.5,
-                   chains = CHAINS, iter = ITER, seed = SEED, refresh = 0)
+                   chains = CHAINS, iter = ITER, seed = SEED, refresh = 0))
 
 test_that("stan_clogit is similar to survival::clogit", {
   expect_equal(c(spontaneous = 1.985876, induced = 1.409012), coef(fit), tol = threshold)
@@ -53,7 +48,6 @@ test_that("stan_clogit throws error if data are not sorted", {
 })
 
 test_that("loo/waic for stan_clogit works", {
-  source(file.path("helpers", "expect_equivalent_loo.R"))
   ll_fun <- rstanarm:::ll_fun
   expect_equivalent_loo(fit)
   expect_identical(ll_fun(fit), rstanarm:::.ll_clogit_i)
