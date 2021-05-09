@@ -15,10 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat 
-# package and then running the code below possibly with options(mc.cores = 4).
-
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 stopifnot(require(lme4))
 # stopifnot(require(gamm4))
 stopifnot(require(HSAUR3))
@@ -27,12 +24,12 @@ CHAINS <- 2
 SEED <- 123
 REFRESH <- ITER
 set.seed(SEED)
-if (interactive()) options(mc.cores = parallel::detectCores())
 FIXEF_tol <- 0.05
 RANEF_tol <- 0.25
 
-source(test_path("helpers", "expect_stanreg.R"))
-source(test_path("helpers", "SW.R"))
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 
 SW(fit <- stan_lmer(Reaction / 10 ~ Days + (Days | Subject), 
                     data = sleepstudy, refresh = 0,
@@ -122,7 +119,6 @@ test_that("stan_lmer returns an error when 'family' specified", {
 
 
 context("stan_gamm4")
-source(test_path("helpers", "expect_gg.R"))
 test_that("stan_gamm4 returns stanreg object", {
   skip_if_not_installed("mgcv")
   sleepstudy$y <- sleepstudy$Reaction / 10
@@ -172,7 +168,6 @@ test_that("stan_gamm4 doesn't error when bs='cc", {
 
 test_that("loo/waic for stan_glmer works", {
   ll_fun <- rstanarm:::ll_fun
-  source(test_path("helpers", "expect_equivalent_loo.R"))
   
   # gaussian
   expect_equivalent_loo(fit)
@@ -200,14 +195,12 @@ test_that("stan_gamm4 returns expected result for sleepstudy example", {
 
 
 context("posterior_predict (stan_(g)lmer)")
-source(test_path("helpers", "check_for_error.R"))
-source(test_path("helpers", "expect_linpred_equal.R"))
 test_that("compatible with stan_lmer", {
-  check_for_error(fit)
+  check_for_pp_errors(fit)
   expect_linpred_equal(fit)
 })
 test_that("compatible with stan_glmer (binomial)", {
-  check_for_error(example_model)
+  check_for_pp_errors(example_model)
   expect_linpred_equal(example_model)
   predprob <- posterior_linpred(example_model, transform = TRUE)
   expect_true(all(predprob > 0) && all(predprob < 1))
@@ -240,7 +233,7 @@ test_that("compatible with stan_lmer with offset", {
   
   expect_warning(posterior_predict(fit, newdata = mtcars[1:2, ], offset = offs),
                  "STATS")
-  check_for_error(fit, offset = offs)
+  check_for_pp_errors(fit, offset = offs)
 })
 
 test_that("predition with family mgcv::betar doesn't error", {
@@ -260,14 +253,14 @@ test_that("posterior_predict close to predict.merMod for gaussian", {
   mod4 <- as.formula(log(mpg) ~ wt + (1 + wt|cyl) + (1 + wt + am|gear))
   
   lfit1 <- lmer(mod1, data = mtcars)
-  sfit1 <- stan_glmer(mod1, data = mtcars, iter = 400,
-                      chains = CHAINS, seed = SEED, refresh = 0)
+  SW(sfit1 <- stan_glmer(mod1, data = mtcars, iter = 400,
+                      chains = CHAINS, seed = SEED, refresh = 0))
   lfit2 <- update(lfit1, formula = mod2)
-  sfit2 <- update(sfit1, formula = mod2)
+  SW(sfit2 <- update(sfit1, formula = mod2))
   lfit3 <- update(lfit1, formula = mod3)
-  sfit3 <- update(sfit1, formula = mod3)
+  SW(sfit3 <- update(sfit1, formula = mod3))
   lfit4 <- update(lfit1, formula = mod4)
-  sfit4 <- update(sfit1, formula = mod4)
+  SW(sfit4 <- update(sfit1, formula = mod4))
   
   nd <- nd2 <- mtcars[1:5, ]
   nd2$cyl[2] <- 5 # add new levels

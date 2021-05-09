@@ -38,7 +38,7 @@
 #' @template args-sparse
 #' @template args-dots
 #' 
-#' @param formula,data,subset,na.action Same as for \code{\link[lme4]{glmer}},
+#' @param formula,data,subset,na.action,contrasts Same as for \code{\link[lme4]{glmer}},
 #'   except that any global intercept included in the formula will be dropped.
 #'   \emph{We strongly advise against omitting the \code{data} argument}. Unless
 #'   \code{data} is specified (and is a data frame) many post-estimation
@@ -91,7 +91,8 @@
 #' all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr)) 
 #' }
 #' @importFrom lme4 findbars
-stan_clogit <- function(formula, data, subset, na.action = NULL, ..., 
+stan_clogit <- function(formula, data, subset, na.action = NULL, contrasts = NULL,
+                        ..., 
                         strata, prior = normal(autoscale=TRUE), 
                         prior_covariance = decov(), prior_PD = FALSE, 
                         algorithm = c("sampling", "optimizing", 
@@ -135,6 +136,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
     X <- model.matrix(mt, mf, contrasts)
     Y <- array1D_check(model.response(mf, type = "any"))
   }
+  contrasts <- attr(X, "contrasts")
   
   ord <- order(group$strata)
   if (any(diff(ord) <= 0)) {
@@ -175,7 +177,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
   fit <- nlist(stanfit, algorithm, family = f, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
-               contrasts = attr(X, "contrasts"), 
+               contrasts = contrasts, 
                stan_function = "stan_clogit", 
                glmod = if(has_bars) glmod)
   out <- stanreg(fit)

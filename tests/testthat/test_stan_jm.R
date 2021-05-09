@@ -16,10 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat 
-# package and then running the code below possibly with options(mc.cores = 4).
-
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 library(lme4)
 library(survival)
 ITER <- 1000
@@ -27,8 +24,6 @@ CHAINS <- 1
 SEED <- 12345
 REFRESH <- 0L
 set.seed(SEED)
-if (interactive()) 
-  options(mc.cores = parallel::detectCores())
 
 TOLSCALES <- list(
   lmer_fixef = 0.25, # how many SEs can stan_jm fixefs be from lmer fixefs
@@ -37,17 +32,6 @@ TOLSCALES <- list(
   glmer_ranef = 0.1, # how many SDs can stan_jm ranefs be from glmer ranefs
   event = 0.3        # how many SEs can stan_jm fixefs be from coxph fixefs
 )
-
-source(test_path("helpers", "expect_matrix.R"))
-source(test_path("helpers", "expect_stanreg.R"))
-source(test_path("helpers", "expect_stanmvreg.R"))
-source(test_path("helpers", "expect_survfit.R"))
-source(test_path("helpers", "expect_ppd.R"))
-source(test_path("helpers", "expect_equivalent_loo.R"))
-source(test_path("helpers", "SW.R"))
-# SW <- function(expr) eval(expr)
-source(test_path("helpers", "get_tols.R"))
-source(test_path("helpers", "recover_pars.R"))
 
 context("stan_jm")
 
@@ -67,45 +51,48 @@ pbcLong$xgamm <- as.numeric(pbcLong$logBili)
 # univariate joint model
 fmLong1 <- logBili ~ year + (year | id)
 fmSurv1 <- Surv(futimeYears, death) ~ sex + trt
-jm1 <- stan_jm(
+o<-SW(jm1 <- stan_jm(
   fmLong1, pbcLong, fmSurv1, pbcSurv, time_var = "year", 
-  iter = 1, refresh = 0, chains = 1, seed = SEED)
+  iter = 1, refresh = 0, chains = 1, seed = SEED))
 
 # multivariate joint model
 fmLong2 <- list(
   logBili ~ year + (year | id),
   albumin ~ year + (year | id))
 fmSurv2 <- Surv(futimeYears, death) ~ sex + trt
-jm2 <- stan_jm(
+o<-SW(jm2 <- stan_jm(
   fmLong2, pbcLong, fmSurv2, pbcSurv, time_var = "year", 
-  iter = 1, refresh = 0, chains = 1, seed = SEED)
+  iter = 1, refresh = 0, chains = 1, seed = SEED))
 
 #----  Tests for stan_jm arguments
 
 test_that("formula argument works", {
-  expect_identical(as.matrix(jm1), as.matrix(update(jm1, formulaLong. = list(fmLong1)))) # fm as list
+  SW(fit <- update(jm1, formulaLong. = list(fmLong1)))
+  expect_identical(as.matrix(jm1), as.matrix(fit)) # fm as list
   
   # Longitudiinal model without offset
   expect_null(jm1$glmod$Long1$offset)
   
   # Longitudinal model with offset 
   fmLong1_offset <- logBili ~ year + (year | id) + offset(log(ypois))
-  jm_offset <- update(jm1, formulaLong. = fmLong1_offset)
+  SW(jm_offset <- update(jm1, formulaLong. = fmLong1_offset))
   expect_equal(jm_offset$glmod$Long1$offset, log(pbcLong$ypois))
   expect_equal(jm_offset$glmod$Long1$has_offset, 1)
 })
 
 test_that("data argument works", {
+  SW(fit <- update(jm1, dataLong = list(pbcLong)))
   expect_identical(as.matrix(jm1), 
-                   as.matrix(update(jm1, dataLong = list(pbcLong)))) # data as list
+                   as.matrix(fit)) # data as list
+  SW(fit <- update(jm2, dataLong = list(pbcLong, pbcLong)))
   expect_identical(as.matrix(jm2), 
-                   as.matrix(update(jm2, dataLong = list(pbcLong, pbcLong))))
+                   as.matrix(fit))
 })
 
 test_that("id_var argument works", {
   
   # Models with a single grouping factor
-  expect_output(update(jm1, id_var = "id"))
+  expect_output(suppressWarnings(update(jm1, id_var = "id")))
   expect_output(expect_warning(update(jm1, id_var = "year"), 
                                "are not the same; 'id_var' will be ignored"))
   
@@ -113,7 +100,7 @@ test_that("id_var argument works", {
   tmpdat <- pbcLong
   tmpdat$practice <- cut(pbcLong$id, c(0,10,20,30,40))
   tmpfm <- logBili ~ year + (year | id) + (1 | practice)
-  ok_mod <- update(jm1, formulaLong. = tmpfm, dataLong = tmpdat, id_var = "id", init = 0)
+  SW(ok_mod <- update(jm1, formulaLong. = tmpfm, dataLong = tmpdat, id_var = "id", init = 0))
   expect_stanmvreg(ok_mod)
   expect_error(update(ok_mod, id_var = NULL), "'id_var' must be specified")
   expect_error(update(ok_mod, id_var = "year"), "'id_var' must be included as a grouping factor")
@@ -121,16 +108,16 @@ test_that("id_var argument works", {
 
 test_that("family argument works", {
   
-  expect_output(ret <- update(jm1, family = "gaussian"))
-  expect_output(ret <- update(jm1, family = gaussian))
-  expect_output(ret <- update(jm1, family = gaussian(link = identity)))
+  expect_output(suppressWarnings(update(jm1, family = "gaussian")))
+  expect_output(suppressWarnings(update(jm1, family = gaussian)))
+  expect_output(suppressWarnings(update(jm1, family = gaussian(link = identity))))
   
-  expect_output(ret <- update(jm1, formulaLong. = ypois ~ ., family = poisson, init = 0))
-  expect_output(ret <- update(jm1, formulaLong. = ynbin ~ ., family = neg_binomial_2))
-  #expect_output(ret <- update(jm1, formulaLong. = ygamm ~ ., family = Gamma))
-  #expect_output(ret <- update(jm1, formulaLong. = ygamm ~ ., family = inverse.gaussian))
+  expect_output(suppressWarnings(update(jm1, formulaLong. = ypois ~ ., family = poisson, init = 0)))
+  expect_output(suppressWarnings(update(jm1, formulaLong. = ynbin ~ ., family = neg_binomial_2)))
+  #expect_output(suppressWarnings(update(jm1, formulaLong. = ygamm ~ ., family = Gamma)))
+  #expect_output(suppressWarnings(update(jm1, formulaLong. = ygamm ~ ., family = inverse.gaussian)))
 
-  expect_error(ret <- update(jm1, formulaLong. = ybino ~ ., family = binomial))
+  expect_error(suppressWarnings(update(jm1, formulaLong. = ybino ~ ., family = binomial)))
 })
 
 test_that("assoc argument works", {
@@ -144,56 +131,56 @@ test_that("assoc argument works", {
       
   # Univariate joint models
   
-  expect_output(ret <- update(jm1, assoc = NULL))
-  expect_output(ret <- update(jm1, assoc = "null"))
-  expect_output(ret <- update(jm1, assoc = "etavalue"))
-  expect_output(ret <- update(jm1, assoc = "muvalue"))
-  expect_output(ret <- update(jm1, assoc = "etaslope"))
-  #expect_output(ret <- update(jm1, assoc = "muslope"))
-  expect_output(ret <- update(jm1, assoc = "etaauc"))
-  expect_output(ret <- update(jm1, assoc = "muauc"))
-  expect_output(ret <- update(jm1, assoc = c("etavalue", "etaslope"))) 
-  #expect_output(ret <- update(jm1, assoc = c("etavalue", "muslope"))) 
-  expect_output(ret <- update(jm1, assoc = c("etavalue", "etaauc"))) 
-  expect_output(ret <- update(jm1, assoc = c("etavalue", "muauc"))) 
-  expect_output(ret <- update(jm1, assoc = c("muvalue", "etaslope"))) 
-  #expect_output(ret <- update(jm1, assoc = c("muvalue", "muslope")))
-  expect_output(ret <- update(jm1, assoc = c("muvalue", "etaauc"))) 
-  expect_output(ret <- update(jm1, assoc = c("muvalue", "muauc"))) 
+  expect_output(suppressWarnings(update(jm1, assoc = NULL)))
+  expect_output(suppressWarnings(update(jm1, assoc = "null")))
+  expect_output(suppressWarnings(update(jm1, assoc = "etavalue")))
+  expect_output(suppressWarnings(update(jm1, assoc = "muvalue")))
+  expect_output(suppressWarnings(update(jm1, assoc = "etaslope")))
+  #expect_output(suppressWarnings(update(jm1, assoc = "muslope")))
+  expect_output(suppressWarnings(update(jm1, assoc = "etaauc")))
+  expect_output(suppressWarnings(update(jm1, assoc = "muauc")))
+  expect_output(suppressWarnings(update(jm1, assoc = c("etavalue", "etaslope"))))
+  #expect_output(suppressWarnings(update(jm1, assoc = c("etavalue", "muslope"))))
+  expect_output(suppressWarnings(update(jm1, assoc = c("etavalue", "etaauc"))))
+  expect_output(suppressWarnings(update(jm1, assoc = c("etavalue", "muauc")))) 
+  expect_output(suppressWarnings(update(jm1, assoc = c("muvalue", "etaslope")))) 
+  #expect_output(suppressWarnings(update(jm1, assoc = c("muvalue", "muslope"))))
+  expect_output(suppressWarnings(update(jm1, assoc = c("muvalue", "etaauc"))))
+  expect_output(suppressWarnings(update(jm1, assoc = c("muvalue", "muauc"))))
   
-  expect_error(ret <- update(jm1, assoc = c("etavalue", "muvalue")), "cannot be specified together")
-  #expect_error(ret <- update(jm1, assoc = c("etaslope", "muslope")), "cannot be specified together")
-  expect_error(ret <- update(jm1, assoc = c("etaauc", "muauc")), "cannot be specified together")
+  expect_error(update(jm1, assoc = c("etavalue", "muvalue")), "cannot be specified together")
+  #expect_error(update(jm1, assoc = c("etaslope", "muslope")), "cannot be specified together")
+  expect_error(update(jm1, assoc = c("etaauc", "muauc")), "cannot be specified together")
   
-  #expect_output(ret <- update(jm1, assoc = "shared_b"))
-  #expect_output(ret <- update(jm1, assoc = "shared_b(1)"))
-  #expect_output(ret <- update(jm1, assoc = "shared_b(2)"))
-  #expect_output(ret <- update(jm1, assoc = "shared_b(1:2)"))
-  #expect_output(ret <- update(jm1, assoc = "shared_b(1,2)"))
+  #expect_output(suppressWarnings(update(jm1, assoc = "shared_b")))
+  #expect_output(suppressWarnings(update(jm1, assoc = "shared_b(1)")))
+  #expect_output(suppressWarnings(update(jm1, assoc = "shared_b(2)")))
+  #expect_output(suppressWarnings(update(jm1, assoc = "shared_b(1:2)")))
+  #expect_output(suppressWarnings(update(jm1, assoc = "shared_b(1,2)")))
   
-  #expect_output(ret <- update(jm1, assoc = "shared_coef"))
-  #expect_output(ret <- update(jm1, assoc = "shared_coef(1)"))
-  #expect_output(ret <- update(jm1, assoc = "shared_coef(2)"))
-  #expect_output(ret <- update(jm1, assoc = "shared_coef(1:2)"))
-  #expect_output(ret <- update(jm1, assoc = "shared_coef(1,2)"))
+  #expect_output(suppressWarnings(update(jm1, assoc = "shared_coef")))
+  #expect_output(suppressWarnings(update(jm1, assoc = "shared_coef(1)")))
+  #expect_output(suppressWarnings(update(jm1, assoc = "shared_coef(2)")))
+  #expect_output(suppressWarnings(update(jm1, assoc = "shared_coef(1:2)")))
+  #expect_output(suppressWarnings(update(jm1, assoc = "shared_coef(1,2)")))
   
   #expect_error(ret <- update(jm1, assoc = "shared_b(10)"), "greater than the number of")
   #expect_error(ret <- update(jm1, assoc = "shared_coef(10)"), "greater than the number of")
   #expect_error(ret <- update(jm1, assoc = c("shared_b(1)", "shared_coef(1)")), "should not be specified in both")
   #expect_error(ret <- update(jm1, assoc = c("shared_b", "shared_coef")), "should not be specified in both")
   
-  expect_output(ret <- update(jm1, assoc = list(NULL)))
-  expect_output(ret <- update(jm1, assoc = list("null")))
-  expect_output(ret <- update(jm1, assoc = list("etavalue")))
-  expect_output(ret <- update(jm1, assoc = list("muvalue")))
-  expect_output(ret <- update(jm1, assoc = list("etaslope")))
-  #expect_output(ret <- update(jm1, assoc = list("muslope")))
-  expect_output(ret <- update(jm1, assoc = list("etaauc")))
-  expect_output(ret <- update(jm1, assoc = list("muauc")))
-  expect_output(ret <- update(jm1, assoc = list(c("etavalue", "etaslope")))) 
-  #expect_output(ret <- update(jm1, assoc = list(c("etavalue", "muslope")))) 
-  expect_output(ret <- update(jm1, assoc = list(c("muvalue", "etaslope")))) 
-  #expect_output(ret <- update(jm1, assoc = list(c("muvalue", "muslope"))))  
+  expect_output(suppressWarnings(update(jm1, assoc = list(NULL))))
+  expect_output(suppressWarnings(update(jm1, assoc = list("null"))))
+  expect_output(suppressWarnings(update(jm1, assoc = list("etavalue"))))
+  expect_output(suppressWarnings(update(jm1, assoc = list("muvalue"))))
+  expect_output(suppressWarnings(update(jm1, assoc = list("etaslope"))))
+  #expect_output(suppressWarnings(update(jm1, assoc = list("muslope"))))
+  expect_output(suppressWarnings(update(jm1, assoc = list("etaauc"))))
+  expect_output(suppressWarnings(update(jm1, assoc = list("muauc"))))
+  expect_output(suppressWarnings(update(jm1, assoc = list(c("etavalue", "etaslope")))))
+  #expect_output(suppressWarnings(update(jm1, assoc = list(c("etavalue", "muslope"))))) 
+  expect_output(suppressWarnings(update(jm1, assoc = list(c("muvalue", "etaslope")))))
+  #expect_output(suppressWarnings(update(jm1, assoc = list(c("muvalue", "muslope")))))  
   
   expect_error(ret <- update(jm1, assoc = NA), "'assoc' should be") 
   expect_error(ret <- update(jm1, assoc = 123), "'assoc' should be") 
@@ -208,21 +195,21 @@ test_that("assoc argument works", {
   
   # Multivariate joint models
   
-  expect_output(ret <- update(jm2, assoc = "etavalue"))
-  expect_output(ret <- update(jm2, assoc = "muvalue"))
-  expect_output(ret <- update(jm2, assoc = "etaslope"))
-  #expect_output(ret <- update(jm2, assoc = "muslope"))
-  expect_output(ret <- update(jm2, assoc = "etaauc"))
-  expect_output(ret <- update(jm2, assoc = "muauc"))
-  expect_output(ret <- update(jm2, assoc = c("etavalue", "etaslope"))) 
-  expect_output(ret <- update(jm2, assoc = c("etavalue", "etaauc"))) 
-  expect_output(ret <- update(jm2, assoc = c("etaslope", "etaauc"))) 
+  expect_output(suppressWarnings(update(jm2, assoc = "etavalue")))
+  expect_output(suppressWarnings(update(jm2, assoc = "muvalue")))
+  expect_output(suppressWarnings(update(jm2, assoc = "etaslope")))
+  #expect_output(suppressWarnings(update(jm2, assoc = "muslope")))
+  expect_output(suppressWarnings(update(jm2, assoc = "etaauc")))
+  expect_output(suppressWarnings(update(jm2, assoc = "muauc")))
+  expect_output(suppressWarnings(update(jm2, assoc = c("etavalue", "etaslope"))))
+  expect_output(suppressWarnings(update(jm2, assoc = c("etavalue", "etaauc"))))
+  expect_output(suppressWarnings(update(jm2, assoc = c("etaslope", "etaauc"))))
 
-  expect_output(ret <- update(jm2, assoc = list("etavalue")))
-  expect_output(ret <- update(jm2, assoc = list("etavalue", "etavalue")))
-  expect_output(ret <- update(jm2, assoc = list(c("etavalue", "etaslope"), "etavalue")))
-  expect_output(ret <- update(jm2, assoc = list("etavalue", c("etavalue", "etaslope"))))
-  expect_output(ret <- update(jm2, assoc = list(c("etavalue", "etaslope"), c("muvalue", "muauc"))))
+  expect_output(suppressWarnings(update(jm2, assoc = list("etavalue"))))
+  expect_output(suppressWarnings(update(jm2, assoc = list("etavalue", "etavalue"))))
+  expect_output(suppressWarnings(update(jm2, assoc = list(c("etavalue", "etaslope"), "etavalue"))))
+  expect_output(suppressWarnings(update(jm2, assoc = list("etavalue", c("etavalue", "etaslope")))))
+  expect_output(suppressWarnings(update(jm2, assoc = list(c("etavalue", "etaslope"), c("muvalue", "muauc")))))
   
   expect_error(ret <- update(jm2, assoc = list("wrong", "etavalue")), "unsupported association type")
   expect_error(ret <- update(jm2, assoc = list("null", "etavalue", "etaslope")), "incorrect length")
@@ -232,19 +219,19 @@ test_that("assoc argument works", {
 
 test_that("basehaz argument works", {
   
-  expect_output(update(jm1, basehaz = "weibull"))
-  expect_output(update(jm1, basehaz = "bs"))
-  expect_output(update(jm1, basehaz = "piecewise"))
+  expect_output(suppressWarnings(update(jm1, basehaz = "weibull")))
+  expect_output(suppressWarnings(update(jm1, basehaz = "bs")))
+  expect_output(suppressWarnings(update(jm1, basehaz = "piecewise")))
   
-  expect_output(update(jm1, basehaz = "bs", basehaz_ops = list(df = 5)))
-  expect_output(update(jm1, basehaz = "bs", basehaz_ops = list(knots = c(1,3,5))))
-  expect_output(update(jm1, basehaz = "piecewise", basehaz_ops = list(df = 5)))
-  expect_output(update(jm1, basehaz = "piecewise", basehaz_ops = list(knots = c(1,3,5))))
+  expect_output(suppressWarnings(update(jm1, basehaz = "bs", basehaz_ops = list(df = 5))))
+  expect_output(suppressWarnings(update(jm1, basehaz = "bs", basehaz_ops = list(knots = c(1,3,5)))))
+  expect_output(suppressWarnings(update(jm1, basehaz = "piecewise", basehaz_ops = list(df = 5))))
+  expect_output(suppressWarnings(update(jm1, basehaz = "piecewise", basehaz_ops = list(knots = c(1,3,5)))))
   
   expect_output(expect_warning(update(jm1, basehaz = "weibull", basehaz_ops = list(df = 1)), "'df' will be ignored"))
   expect_output(expect_warning(update(jm1, basehaz = "weibull", basehaz_ops = list(knots = 1)), "'knots' will be ignored"))
   
-  expect_output(update(jm1, basehaz = "piecewise", basehaz_ops = list(knots = c(1,3,5))))
+  expect_output(suppressWarnings(update(jm1, basehaz = "piecewise", basehaz_ops = list(knots = c(1,3,5)))))
   
   expect_error(update(jm1, basehaz = "bs", basehaz_ops = list(df = 1)), "must be at least 3")
   expect_error(update(jm1, basehaz = "bs", basehaz_ops = list(knots = -1)), "'knots' must be non-negative")
@@ -255,9 +242,9 @@ test_that("basehaz argument works", {
 
 test_that("qnodes argument works", {
   
-  expect_output(update(jm1, qnodes = 7))
-  expect_output(update(jm1, qnodes = 11))
-  expect_output(update(jm1, qnodes = 15))
+  expect_output(suppressWarnings(update(jm1, qnodes = 7)))
+  expect_output(suppressWarnings(update(jm1, qnodes = 11)))
+  expect_output(suppressWarnings(update(jm1, qnodes = 15)))
   
   expect_error(update(jm1, qnodes = 1), "'qnodes' must be either 7, 11 or 15")
   expect_error(update(jm1, qnodes = c(1,2)), "should be a numeric vector of length 1")
@@ -300,46 +287,46 @@ test_that("weights argument works", {
 test_that("scale_assoc argument works", {
   
   # Univariate joint model
-  expect_output(update(jm1, scale_assoc = NULL))
-  expect_output(update(jm1, scale_assoc = 10))
-  expect_error(update(jm1, scale_assoc = 0), "'scale_assoc' must be non-zero.")
-  expect_error(update(jm1, scale_assoc = c(10,10)), "'scale_assoc' can only be specified once for each longitudinal submodel.")
-  expect_error(update(jm1, scale_assoc = "10"), "'scale_assoc' must be numeric.")
+  expect_output(suppressWarnings(update(jm1, scale_assoc = NULL)))
+  expect_output(suppressWarnings(update(jm1, scale_assoc = 10)))
+  expect_error(suppressWarnings(update(jm1, scale_assoc = 0), "'scale_assoc' must be non-zero."))
+  expect_error(suppressWarnings(update(jm1, scale_assoc = c(10,10)), "'scale_assoc' can only be specified once for each longitudinal submodel."))
+  expect_error(suppressWarnings(update(jm1, scale_assoc = "10"), "'scale_assoc' must be numeric."))
   
   # Multivariate joint model
   expect_error(update(jm2, scale_assoc = 10), "'scale_assoc' must be specified for each longitudinal submodel")
-  expect_output(update(jm2, scale_assoc = c(0.5, 10)))
+  expect_output(suppressWarnings(update(jm2, scale_assoc = c(0.5, 10))))
   
   # Test scaling functionality
-  scale_assoc = 0.5
-  jm1_scaled = update(jm1, scale_assoc = scale_assoc)
+  scale_assoc <- 0.5
+  SW(jm1_scaled <- update(jm1, scale_assoc = scale_assoc))
   expect_equal(coef(jm1)$Event, c(rep(1,3),scale_assoc) * coef(jm1_scaled)$Event)
   
 })
 
 test_that("init argument works", {
-  expect_output(update(jm1, init = "prefit"))
-  expect_output(update(jm1, init = "0"))
-  expect_output(update(jm1, init = 0))
-  expect_output(update(jm1, init = "random"))
+  expect_output(suppressWarnings(update(jm1, init = "prefit")))
+  expect_output(suppressWarnings(update(jm1, init = "0")))
+  expect_output(suppressWarnings(update(jm1, init = 0)))
+  expect_output(suppressWarnings(update(jm1, init = "random")))
 })
 
 test_that("prior_PD argument works", {
-  expect_output(update(jm1, prior_PD = TRUE))
+  expect_output(suppressWarnings(update(jm1, prior_PD = TRUE)))
 })
 
 test_that("adapt_delta argument works", {
-  expect_output(update(jm1, adapt_delta = NULL))
-  expect_output(update(jm1, adapt_delta = 0.8))
-  expect_output(update(jm1, control = list(adapt_delta = NULL)))
-  expect_output(update(jm1, control = list(adapt_delta = 0.8)))
+  expect_output(suppressWarnings(update(jm1, adapt_delta = NULL)))
+  expect_output(suppressWarnings(update(jm1, adapt_delta = 0.8)))
+  expect_output(suppressWarnings(update(jm1, control = list(adapt_delta = NULL))))
+  expect_output(suppressWarnings(update(jm1, control = list(adapt_delta = 0.8))))
 })
 
 test_that("max_treedepth argument works", {
-  expect_output(update(jm1, max_treedepth = NULL))
-  expect_output(update(jm1, max_treedepth = 5))
-  expect_output(update(jm1, control = list(max_treedepth = NULL)))
-  expect_output(update(jm1, control = list(max_treedepth = 5)))
+  expect_output(suppressWarnings(update(jm1, max_treedepth = NULL)))
+  expect_output(suppressWarnings(update(jm1, max_treedepth = 5)))
+  expect_output(suppressWarnings(update(jm1, control = list(max_treedepth = NULL))))
+  expect_output(suppressWarnings(update(jm1, control = list(max_treedepth = 5))))
 })
 
 test_that("error message occurs for arguments not implemented", {
@@ -388,8 +375,9 @@ o<-SW(f1 <- stan_jm(formulaLong = logBili ~ year + (year | id),
                     formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
                     dataEvent = pbcSurv,
                     time_var = "year",
+                    refresh = 0,
                     # this next line is only to keep the example small in size!
-                    chains = 1, cores = 1, seed = 12345, iter = 10))
+                    chains = 1, cores = 1, seed = 12345, iter = 5))
 
 # Functions on LHS of formula
 o<-SW(f2 <- update(f1, formulaLong. = exp(logBili) ~ year + (year | id)))
@@ -423,7 +411,7 @@ o<-SW(f18 <- update(f1, assoc = c("etavalue", "etaauc")))
 o<-SW(f19 <- update(f5, assoc = NULL))
 o<-SW(f20 <- update(f5, assoc = "etavalue"))
 o<-SW(f21 <- update(f5, assoc = "etaslope"))
-o<-SW(f22 <- update(f5, assoc = "etaauc", iter = 100))
+o<-SW(f22 <- update(f5, assoc = "etaauc"))
 o<-SW(f23 <- update(f5, assoc = "muvalue"))
 #o<-SW(f24 <- update(f5, assoc = "muslope"))
 o<-SW(f25 <- update(f5, assoc = "muauc"))
@@ -441,8 +429,9 @@ o<-SW(f31 <- stan_jm(formulaLong = list(logBili ~ year + (year | id),
                      formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
                      dataEvent = pbcSurv,
                      time_var = "year",
+                     refresh = 0,
                      # this next line is only to keep the example small in size!
-                     chains = 1, cores = 1, seed = 12345, iter = 50))
+                     chains = 1, cores = 1, seed = 12345, iter = 5))
 o<-SW(f32 <- update(f31, assoc = list("etaslope", c("etavalue", "etaauc"))))  
 
 # New data for predictions
