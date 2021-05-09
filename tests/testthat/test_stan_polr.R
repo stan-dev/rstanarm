@@ -18,7 +18,7 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code below possibly with options(mc.cores = 4).
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 library(MASS)
 
 SEED <- 123

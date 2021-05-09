@@ -18,7 +18,7 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code below possibly with options(mc.cores = 4).
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 library(lme4)
 SEED <- 123
 set.seed(SEED)
@@ -27,6 +27,10 @@ CHAINS <- 2
 REFRESH <- 0
 
 SW <- suppressWarnings
+
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 
 test_that("posterior_predict returns object with correct classes", {
   expect_s3_class(posterior_predict(example_model), 
@@ -60,10 +64,10 @@ test_that("posterior_predict errors if draws > posterior sample size", {
 
 # VB ----------------------------------------------------------------------
 context("posterior_predict ok for vb")
-test_that("errors for optimizing and silent for vb", {
-  fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "meanfield", 
-                   seed = SEED, refresh = 0)
-  fit2 <- update(fit1, algorithm = "fullrank", refresh = 0)
+test_that("silent for vb", {
+  fit1 <- SW(stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "meanfield", 
+                   seed = SEED, refresh = 0))
+  fit2 <- SW(update(fit1, algorithm = "fullrank", refresh = 0))
   expect_silent(posterior_predict(fit1))
   expect_silent(posterior_predict(fit2))
   expect_silent(posterior_linpred(fit1))

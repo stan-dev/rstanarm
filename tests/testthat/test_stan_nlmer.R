@@ -18,7 +18,7 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code below possibly with options(mc.cores = 4).
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 library(lme4)
 
 SEED <- 12345
@@ -30,15 +30,16 @@ REFRESH <- 0
 threshold <- 0.05
 
 source(test_path("helpers", "expect_stanreg.R"))
+source(test_path("helpers", "SW.R"))
 
 context("stan_nlmer")
 
 data("Orange", package = "datasets")
 Orange$circumference <- Orange$circumference / 100
 Orange$age <- Orange$age / 100
-fit <- stan_nlmer(circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree, 
+SW(fit <- stan_nlmer(circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree, 
                   data = Orange, prior = NULL, cores = CORES, init_r = 1,
-                  chains = CHAINS, seed = SEED, refresh = 0, QR = TRUE)
+                  chains = CHAINS, seed = SEED, refresh = 0, QR = TRUE))
 startvec <- c(Asym = 200, xmid = 725, scal = 350) / 100
 ml <- nlmer(circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree,
             data = Orange, start = startvec)
@@ -60,7 +61,7 @@ test_that("stan_nlmer throws error if formula includes an unknown function", {
 
 test_that("loo/waic for stan_nlmer works", {
   source(test_path("helpers", "expect_equivalent_loo.R"))
-  # expect_equivalent_loo(fit)
+  expect_equivalent_loo(fit)
 })
 
 context("posterior_predict (stan_nlmer)")

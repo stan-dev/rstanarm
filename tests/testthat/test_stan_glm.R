@@ -18,7 +18,9 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code below possibly with options(mc.cores = 4).
 
-library(rstanarm)
+context("stan_glm")
+
+suppressPackageStartupMessages(library(rstanarm))
 SEED <- 12345
 set.seed(SEED)
 CHAINS <- 2
@@ -91,7 +93,6 @@ test_that("loo/waic for stan_glm works", {
   expect_identical(ll_fun(fit_igaus), rstanarm:::.ll_inverse.gaussian_i)
 })
 
-context("stan_glm (errors, warnings, messages)")
 test_that("stan_glm throws appropriate errors, warnings, and messages", {
   counts <- c(18,17,15,20,10,20,25,13,12)
   outcome <- gl(3,1,9)
@@ -154,7 +155,6 @@ test_that("stan_glm throws appropriate errors, warnings, and messages", {
                "'prior_aux' cannot be NULL if 'prior_PD' is TRUE")
 })
 
-context("stan_glm (gaussian)")
 test_that("gaussian returns expected result for trees example", {
   # example using trees dataset
   links <- c("identity", "log", "inverse")
@@ -181,15 +181,14 @@ test_that("gaussian returns expected result for trees example", {
                regexp = "should be one of")
 })
 
-context("stan_glm (poisson)")
 links <- c("log", "identity", "sqrt")
 test_that("stan_glm returns expected result for glm poisson example", {
   # example from help("glm")
   for (i in 1:length(links)) {
-    fit <- stan_glm(counts ~ outcome + treatment, data = d.AD,
+    SW(fit <- stan_glm(counts ~ outcome + treatment, data = d.AD,
                     family = poisson(links[i]), refresh = 0,
                     prior = NULL, prior_intercept = NULL, QR = TRUE,
-                    algorithm = "optimizing", tol_rel_grad = 1e-16, seed = SEED)
+                    algorithm = "optimizing", tol_rel_grad = 1e-16, seed = SEED))
     expect_stanreg(fit)
     
     ans <- glm(counts ~ outcome + treatment, data = d.AD,
@@ -205,20 +204,19 @@ test_that("stan_glm returns expected result for glm poisson example", {
   }
 })
 
-context("stan_glm (negative binomial)")
-if (require(MASS)) 
-  test_that("stan_glm returns something for glm negative binomial example", {
-  # example from MASS::glm.nb
+
+test_that("stan_glm returns something for glm negative binomial example", {
+  skip_if_not_installed("MASS")
   
   for (i in 1:length(links)) {
-    fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
+    SW(fit1 <- stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, 
                      family = neg_binomial_2(links[i]), 
                      seed = SEED, chains = 1, iter = 100,
-                     QR = TRUE, refresh = 0)
-    fit2 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = quine, 
+                     QR = TRUE, refresh = 0))
+    SW(fit2 <- stan_glm.nb(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, 
                         link = links[i],
                         seed = SEED, chains = 1, iter = 100,
-                        QR = TRUE, refresh = 0)
+                        QR = TRUE, refresh = 0))
     expect_stanreg(fit1)
     expect_stanreg(fit2)
     expect_equal(as.matrix(fit1), as.matrix(fit2))
@@ -226,9 +224,7 @@ if (require(MASS))
   # testing results against MASS::glm.nb is unreliable
 })
 
-context("stan_glm (gaussian)")
 test_that("stan_glm returns expected result for cars example", {
-  # example using cars dataset
   fit <- stan_glm(log(dist) ~ log(speed), data = cars, sparse = TRUE,
                   family = gaussian(link = "identity"), seed  = SEED,
                   prior = NULL, prior_intercept = NULL, refresh = 0,
@@ -250,7 +246,6 @@ test_that("stan_glm returns expected result with no intercept for mtcars example
   expect_equal(coef(fit), coef(ans), tol = 0.04)
 })
 
-context("stan_glm (bernoulli)")
 links <- c("logit", "probit", "cauchit", "log", "cloglog")
 test_that("stan_glm returns expected result for bernoulli", {
   # bernoulli example
@@ -263,7 +258,7 @@ test_that("stan_glm returns expected result for bernoulli", {
     theta <- fam$linkinv(-1 + x %*% b)
     y <- rbinom(length(theta), size = 1, prob = theta)
     dat <- data.frame(y, x)
-    capture.output(
+    SW(
       fit <- stan_glm(y ~ x, data = dat, family = fam, seed  = SEED, QR = TRUE,
                     prior = NULL, prior_intercept = NULL, refresh = 0,
                     tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
@@ -279,7 +274,6 @@ test_that("stan_glm returns expected result for bernoulli", {
   }
 })
 
-context("stan_glm (binomial)")
 test_that("stan_glm returns expected result for binomial example", {
   # example using simulated data
   N <- 200
@@ -325,47 +319,46 @@ test_that("stan_glm returns expected result for binomial example", {
   }
 })
 
-context("stan_glm (other tests)")
 test_that("model with hs prior doesn't error", {
-  fit <- stan_glm(mpg ~ ., data = mtcars, prior = hs(4, 2, .5), 
-                         seed = SEED, algorithm = "meanfield", QR = TRUE, refresh = 0)
+  SW(fit <- stan_glm(mpg ~ ., data = mtcars, prior = hs(4, 2, .5), 
+                         seed = SEED, algorithm = "meanfield", QR = TRUE, refresh = 0))
   expect_output(print(prior_summary(fit)), "~ hs(df = ", fixed = TRUE)
 })
 
-context("stan_glm (other tests)")
-# test_that("model with hs_plus prior doesn't error", { # this works except on 32bit Windows 
-#   expect_output(fit <- stan_glm(mpg ~ ., data = mtcars, prior = hs_plus(4, 1, 2, .5), 
-#                                 seed = SEED, algorithm = "meanfield", QR = TRUE), 
-#                 regexp = "approximate posterior")
-#   expect_output(print(prior_summary(fit)), "~ hs_plus(df1 = ", fixed = TRUE)
-# })
+test_that("model with hs_plus prior doesn't error", { 
+  # this works except on 32bit Windows
+  skip_on_os("windows")
+  SW(fit <- stan_glm(mpg ~ ., data = mtcars, prior = hs_plus(4, 1, 2, .5),
+                                seed = SEED, algorithm = "meanfield", QR = TRUE))
+  expect_output(print(prior_summary(fit)), "~ hs_plus(df1 = ", fixed = TRUE)
+})
 
 test_that("model with laplace prior doesn't error", {
-  fit <- stan_glm(mpg ~ ., data = mtcars, prior = laplace(), 
-                  seed = SEED, algorithm = "meanfield", refresh = 0)
+  SW(fit <- stan_glm(mpg ~ ., data = mtcars, prior = laplace(), 
+                  seed = SEED, algorithm = "meanfield", refresh = 0))
   expect_output(print(prior_summary(fit)), 
                 "~ laplace(", fixed = TRUE)
 })
 
 test_that("model with lasso prior doesn't error", {
-  fit <- stan_glm(mpg ~ ., data = mtcars, prior = lasso(), 
-                  seed = SEED, algorithm = "meanfield", refresh = 0)
+  SW(fit <- stan_glm(mpg ~ ., data = mtcars, prior = lasso(), 
+                  seed = SEED, algorithm = "meanfield", refresh = 0))
   expect_output(print(prior_summary(fit)), 
                 "~ lasso(", fixed = TRUE)
 }) 
 
 test_that("model with product_normal prior doesn't error", {
-  fit <- stan_glm(mpg ~ ., data = mtcars, 
+  SW(fit <- stan_glm(mpg ~ ., data = mtcars, 
                   prior = product_normal(df = 3, scale = 0.5), 
-                  seed = SEED, algorithm = "meanfield", refresh = 0)
+                  seed = SEED, algorithm = "meanfield", refresh = 0))
   expect_output(print(prior_summary(fit)), "~ product_normal(df = ", fixed = TRUE)
 })
 
 test_that("prior_aux argument is detected properly", {
-  fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
+  SW(fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
                   refresh = 0, prior_aux = exponential(5), 
                   prior = normal(autoscale=FALSE), 
-                  prior_intercept = normal(autoscale=FALSE))
+                  prior_intercept = normal(autoscale=FALSE)))
   expect_identical(
     fit$prior.info$prior_aux, 
     list(dist = "exponential", 
@@ -379,25 +372,25 @@ test_that("prior_aux argument is detected properly", {
 })
 
 test_that("prior_aux can be NULL", {
-  fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
-                  refresh = 0, prior_aux = NULL)
+  SW(fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 10, chains = 1, seed = SEED, 
+                  refresh = 0, prior_aux = NULL))
   expect_output(print(prior_summary(fit)), 
                 "~ flat", fixed = TRUE)
 })
 
 test_that("autoscale works (insofar as it's reported by prior_summary)", {
-  suppressWarnings(capture.output(
-    fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 5, 
+  SW(fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 5, 
                     prior = normal(autoscale=FALSE), 
                     prior_intercept = normal(autoscale=FALSE), 
-                    prior_aux = cauchy(autoscale=FALSE)), 
-    fit2 <- update(fit, prior = normal())
-  ))
-  
+                    prior_aux = cauchy(autoscale=FALSE)))
   out <- capture.output(print(prior_summary(fit)))
   expect_false(any(grepl("adjusted", out)))
   
+  SW(fit2 <- update(fit, prior = normal(autoscale=TRUE)))
+  out <- capture.output(print(prior_summary(fit2)))
+  expect_true(any(grepl("Adjusted", out)))
 })
+
 test_that("prior_options is deprecated", {
   expect_warning(
     ops <- prior_options(scaled = FALSE, prior_scale_for_dispersion = 3), 
@@ -424,7 +417,6 @@ test_that("empty interaction levels dropped", {
                  regexp = "Dropped empty interaction levels")
 })
 
-context("posterior_predict (stan_glm)")
 
 test_that("posterior_predict compatible with glms", {
   source(test_path("helpers", "check_for_error.R"))

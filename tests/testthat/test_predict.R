@@ -18,7 +18,7 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code below possibly with options(mc.cores = 4).
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 library(betareg)
 SEED <- 123
 set.seed(SEED)
@@ -27,6 +27,10 @@ ITER <- 100
 REFRESH <- 0
 
 SW <- suppressWarnings
+
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 
 plink <- function(fit, nd = NULL, sef = TRUE) 
   predict(fit, newdata = nd, type = "link", se.fit = sef)

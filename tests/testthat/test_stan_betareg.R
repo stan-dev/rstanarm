@@ -19,7 +19,7 @@
 # package and then running the code below possibly with options(mc.cores = 4).
 
 if (.Platform$OS.type != "windows" && require(betareg)) {
-  library(rstanarm)
+  suppressPackageStartupMessages(library(rstanarm))
   SEED <- 12345
   set.seed(SEED)
   ITER <- 10
@@ -191,15 +191,18 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   
   test_that("heavy tailed priors work with stan_betareg", {
     # skip_on_ci()
-    expect_stanreg(stan_betareg(y ~ x | z, data = dat, 
-                               prior = product_normal(), prior_z = product_normal(), 
-                               chains = 1, iter = 1, refresh = 0))
-    expect_stanreg(stan_betareg(y ~ x | z, data = dat, 
+    SW(fit1 <- stan_betareg(y ~ x | z, data = dat, 
+                           prior = product_normal(), prior_z = product_normal(), 
+                           chains = 1, iter = 1, refresh = 0))
+    expect_stanreg(fit1)
+    SW(fit2 <- stan_betareg(y ~ x | z, data = dat, 
                                prior = laplace(), prior_z = laplace(), 
                                chains = 1, iter = 1, refresh = 0))
-    expect_stanreg(stan_betareg(y ~ x | z, data = dat, 
+    expect_stanreg(fit2)
+    SW(fit3 <- stan_betareg(y ~ x | z, data = dat, 
                                prior = lasso(), prior_z = lasso(), 
                                chains = 1, iter = 1, refresh = 0))
+    expect_stanreg(fit3)
   })
   
   test_that("loo/waic for stan_betareg works", {
@@ -217,11 +220,10 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
 
   source(test_path("helpers", "check_for_error.R"))
   source(test_path("helpers", "expect_linpred_equal.R"))
-  SW <- suppressWarnings
-  context("posterior_predict (stan_betareg)")
+
   test_that("compatible with stan_betareg with z", {
     data("GasolineYield", package = "betareg")
-    fit <- SW(stan_betareg(yield ~ pressure + temp | temp, data = GasolineYield,
+    SW(fit <- stan_betareg(yield ~ pressure + temp | temp, data = GasolineYield,
                            iter = ITER*5, chains = 2*CHAINS, seed = SEED, 
                            refresh = 0))
     check_for_error(fit)
@@ -230,7 +232,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   
   test_that("compatible with stan_betareg without z", {
     data("GasolineYield", package = "betareg")
-    fit <- SW(stan_betareg(yield ~ temp, data = GasolineYield, 
+    SW(fit <- stan_betareg(yield ~ temp, data = GasolineYield, 
                            iter = ITER, chains = CHAINS, seed = SEED, refresh = 0))
     check_for_error(fit)
     # expect_linpred_equal(fit)

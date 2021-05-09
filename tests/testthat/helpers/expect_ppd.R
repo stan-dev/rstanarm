@@ -1,1 +1,3 @@
-expect_ppd <- function(x) expect_s3_class(x, "ppd")
+expect_ppd <- function(x) {
+  expect_true(inherits(x, "ppd") || is.matrix(x))
+}

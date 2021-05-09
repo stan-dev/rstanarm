@@ -18,7 +18,7 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code below possibly with options(mc.cores = 4).
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 SEED <- 12345
 set.seed(SEED)
 ITER <- 10L
@@ -27,6 +27,10 @@ REFRESH <- 0
 
 SW <- suppressWarnings
 source(test_path("helpers", "expect_stanreg.R"))
+
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 
 context("helper functions")
 
@@ -155,8 +159,8 @@ test_that("validate_offset works", {
   expect_error(validate_offset(rep(1, 5), rnorm(10)), 
                regexp = "number of offsets", ignore.case = TRUE)
   capture.output(
-    fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED),
-    fito2 <- update(fito, offset = rep(5, nrow(mtcars)))
+    fito <- SW(stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)),
+    fito2 <- SW(update(fito, offset = rep(5, nrow(mtcars))))
   )
   expect_equal(coef(fito)[1], 5 + coef(fito2)[1], tol = 0.2)
 })
@@ -226,9 +230,9 @@ test_that("check_constant_vars works", {
   expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
 
   capture.output(
-    fit1 <- stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED, refresh = 0),
-    fit2 <- stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)), seed = SEED,
-                     offset = rep(1, nrow(mf)), algorithm = "optimizing", refresh = 0)
+    fit1 <- SW(stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED, refresh = 0)),
+    fit2 <- SW(stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)), seed = SEED,
+                     offset = rep(1, nrow(mf)), algorithm = "optimizing", refresh = 0))
   )
   expect_stanreg(fit1)
   expect_stanreg(fit2)
@@ -264,9 +268,9 @@ capture.output(
                      chains = CHAINS, seed = SEED, refresh = 0)),
   fit2 <- SW(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
                         iter = ITER, chains = CHAINS, seed = SEED, refresh = 0)),
-  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED),
-  fitvb <- update(fito, algorithm = "meanfield", seed = SEED),
-  fitvb2 <- update(fitvb, algorithm = "fullrank", seed = SEED)
+  fito <- SW(stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)),
+  fitvb <- SW(update(fito, algorithm = "meanfield", seed = SEED)),
+  fitvb2 <- SW(update(fitvb, algorithm = "fullrank", seed = SEED))
 )
 
 test_that("validate_stanreg_object works", {

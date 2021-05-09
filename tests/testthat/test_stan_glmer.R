@@ -18,7 +18,7 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code below possibly with options(mc.cores = 4).
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 stopifnot(require(lme4))
 # stopifnot(require(gamm4))
 stopifnot(require(HSAUR3))
@@ -33,6 +33,10 @@ RANEF_tol <- 0.25
 
 source(test_path("helpers", "expect_stanreg.R"))
 source(test_path("helpers", "SW.R"))
+
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 
 SW(fit <- stan_lmer(Reaction / 10 ~ Days + (Days | Subject), 
                     data = sleepstudy, refresh = 0,
@@ -260,14 +264,14 @@ test_that("posterior_predict close to predict.merMod for gaussian", {
   mod4 <- as.formula(log(mpg) ~ wt + (1 + wt|cyl) + (1 + wt + am|gear))
   
   lfit1 <- lmer(mod1, data = mtcars)
-  sfit1 <- stan_glmer(mod1, data = mtcars, iter = 400,
-                      chains = CHAINS, seed = SEED, refresh = 0)
+  SW(sfit1 <- stan_glmer(mod1, data = mtcars, iter = 400,
+                      chains = CHAINS, seed = SEED, refresh = 0))
   lfit2 <- update(lfit1, formula = mod2)
-  sfit2 <- update(sfit1, formula = mod2)
+  SW(sfit2 <- update(sfit1, formula = mod2))
   lfit3 <- update(lfit1, formula = mod3)
-  sfit3 <- update(sfit1, formula = mod3)
+  SW(sfit3 <- update(sfit1, formula = mod3))
   lfit4 <- update(lfit1, formula = mod4)
-  sfit4 <- update(sfit1, formula = mod4)
+  SW(sfit4 <- update(sfit1, formula = mod4))
   
   nd <- nd2 <- mtcars[1:5, ]
   nd2$cyl[2] <- 5 # add new levels

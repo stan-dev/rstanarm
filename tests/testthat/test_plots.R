@@ -18,7 +18,7 @@
 # tests can be run using devtools::test() or manually by loading testthat 
 # package and then running the code below possibly with options(mc.cores = 4).
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 SEED <- 123
 ITER <- 10
 CHAINS <- 2
@@ -27,6 +27,9 @@ CORES <- 1
 source(test_path("helpers", "SW.R"))
 source(test_path("helpers", "expect_gg.R"))
 
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 fit <- example_model
 SW(fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED, refresh = 0))
 SW(fitvb <- update(fito, algorithm = "meanfield"))

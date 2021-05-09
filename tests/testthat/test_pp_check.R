@@ -22,7 +22,7 @@
 context("pp_check")
 
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 SEED <- 123
 set.seed(SEED)
 ITER <- 10
@@ -31,6 +31,10 @@ REFRESH <- 0
 
 source(test_path("helpers", "SW.R"))
 source(test_path("helpers", "expect_gg.R"))
+
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 
 fit <- example_model
 SW(fit2 <- stan_glm(mpg ~ wt + am, data = mtcars, iter = ITER, chains = CHAINS,
@@ -91,7 +95,7 @@ test_that("pp_check.stanreg creates ggplot object for count & ordinal outcomes",
 
 test_that("pp_check ok for vb", {
   SW(fit3 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "meanfield", 
-                      seed = SEED, iter = 10000))
+                      seed = SEED, iter = 10000, refresh = 0))
   expect_gg(pp_check(fit3))
   expect_gg(pp_check(fit3, plotfun = "error_hist"))
 })

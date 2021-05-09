@@ -20,7 +20,7 @@
 
 # this mostly goes through same code as a logit model so only testing the unique stuff
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 
 SEED <- 123
 ITER <- 100
@@ -31,13 +31,14 @@ REFRESH <- 0
 threshold <- 0.03
 
 source(test_path("helpers", "expect_stanreg.R"))
+source(test_path("helpers", "SW.R"))
 
 context("stan_clogit")
 
-fit <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NULL,
+SW(fit <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NULL,
                    data = infert[order(infert$stratum), ], 
                    QR = TRUE, init_r = 0.5,
-                   chains = CHAINS, iter = ITER, seed = SEED, refresh = 0)
+                   chains = CHAINS, iter = ITER, seed = SEED, refresh = 0))
 
 test_that("stan_clogit is similar to survival::clogit", {
   expect_equal(c(spontaneous = 1.985876, induced = 1.409012), coef(fit), tol = threshold)
