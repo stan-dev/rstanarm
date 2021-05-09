@@ -284,7 +284,7 @@ test_that("stan_glm returns expected result for binomial example", {
     yes <- rbinom(N, size = trials, prob = fam$linkinv(X %*% b))
     y <- cbind(yes, trials - yes)
     dat <- data.frame(yes, trials, x1 = X[,2], x2 = X[,3], x3 = X[,4])
-    capture.output(
+    SW(
       fit <- stan_glm(cbind(yes, trials - yes) ~ x1 + x2 + x3, data = dat, 
                       family = fam, seed  = SEED, QR = TRUE,
                       prior = NULL, prior_intercept = NULL, refresh = 0,
@@ -299,7 +299,7 @@ test_that("stan_glm returns expected result for binomial example", {
 
     prop <- yes / trials
     dat$prop <- prop
-    capture.output(
+    SW(
       fit2 <- stan_glm(prop ~ x1 + x2 + x3, data = dat, weights = trials, family = fam, 
                        seed  = SEED, refresh = 0, prior = NULL, prior_intercept = NULL,
                        tol_rel_obj = .Machine$double.eps, algorithm = "optimizing")
@@ -412,7 +412,7 @@ test_that("empty interaction levels dropped", {
 
 
 test_that("posterior_predict compatible with glms", {
-  check_for_error(fit_gaus)
+  check_for_pp_errors(fit_gaus)
   expect_linpred_equal(fit_gaus)
   
   mtcars2 <- mtcars
@@ -422,18 +422,18 @@ test_that("posterior_predict compatible with glms", {
                       iter = ITER, chains = CHAINS, seed = SEED, refresh = 0))
   expect_warning(posterior_predict(fit2, newdata = mtcars2[1:5, ]), 
                  "offset")
-  check_for_error(fit_gaus, data = mtcars2, offset = mtcars2$offs)
-  check_for_error(fit2, data = mtcars2, offset = mtcars2$offs)
+  check_for_pp_errors(fit_gaus, data = mtcars2, offset = mtcars2$offs)
+  check_for_pp_errors(fit2, data = mtcars2, offset = mtcars2$offs)
   expect_linpred_equal(fit_gaus)
   # expect_linpred_equal(fit2)
   
-  check_for_error(fit_pois)
-  check_for_error(fit_negbin)
+  check_for_pp_errors(fit_pois)
+  check_for_pp_errors(fit_negbin)
   expect_linpred_equal(fit_pois)
   expect_linpred_equal(fit_negbin)
 
-  check_for_error(fit_gamma)
-  check_for_error(fit_igaus)
+  check_for_pp_errors(fit_gamma)
+  check_for_pp_errors(fit_igaus)
   expect_linpred_equal(fit_gamma)
   expect_linpred_equal(fit_igaus)
   

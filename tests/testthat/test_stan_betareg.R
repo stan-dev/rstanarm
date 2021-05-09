@@ -216,7 +216,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     SW(fit <- stan_betareg(yield ~ pressure + temp | temp, data = GasolineYield,
                            iter = ITER*5, chains = 2*CHAINS, seed = SEED, 
                            refresh = 0))
-    check_for_error(fit)
+    check_for_pp_errors(fit)
     # expect_linpred_equal(fit)
   })
   
@@ -224,7 +224,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     data("GasolineYield", package = "betareg")
     SW(fit <- stan_betareg(yield ~ temp, data = GasolineYield, 
                            iter = ITER, chains = CHAINS, seed = SEED, refresh = 0))
-    check_for_error(fit)
+    check_for_pp_errors(fit)
     # expect_linpred_equal(fit)
   })
   
@@ -238,8 +238,8 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     
     expect_warning(posterior_predict(fit, newdata = GasolineYield), 
                    "offset")
-    check_for_error(fit, data = GasolineYield2, offset = GasolineYield2$offs)
-    check_for_error(fit2, data = GasolineYield2, offset = GasolineYield2$offs)
+    check_for_pp_errors(fit, data = GasolineYield2, offset = GasolineYield2$offs)
+    check_for_pp_errors(fit2, data = GasolineYield2, offset = GasolineYield2$offs)
     expect_linpred_equal(fit)
     expect_linpred_equal(fit2)
   })

@@ -196,11 +196,11 @@ test_that("stan_gamm4 returns expected result for sleepstudy example", {
 
 context("posterior_predict (stan_(g)lmer)")
 test_that("compatible with stan_lmer", {
-  check_for_error(fit)
+  check_for_pp_errors(fit)
   expect_linpred_equal(fit)
 })
 test_that("compatible with stan_glmer (binomial)", {
-  check_for_error(example_model)
+  check_for_pp_errors(example_model)
   expect_linpred_equal(example_model)
   predprob <- posterior_linpred(example_model, transform = TRUE)
   expect_true(all(predprob > 0) && all(predprob < 1))
@@ -233,7 +233,7 @@ test_that("compatible with stan_lmer with offset", {
   
   expect_warning(posterior_predict(fit, newdata = mtcars[1:2, ], offset = offs),
                  "STATS")
-  check_for_error(fit, offset = offs)
+  check_for_pp_errors(fit, offset = offs)
 })
 
 test_that("predition with family mgcv::betar doesn't error", {

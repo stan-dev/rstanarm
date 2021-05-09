@@ -12,7 +12,7 @@ run_example_model <- function() {
 
 # These tests just make sure that posterior_predict doesn't throw errors and
 # that result has correct dimensions
-check_for_error <- function(fit, data = NULL, offset = NULL) {
+check_for_pp_errors <- function(fit, data = NULL, offset = NULL) {
   nsims <- nrow(as.data.frame(fit))
   mf <- if (!is.null(data)) 
     data else model.frame(fit)
