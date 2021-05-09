@@ -59,5 +59,5 @@ test_that("loo/waic for stan_nlmer works", {
 
 context("posterior_predict (stan_nlmer)")
 test_that("compatible with stan_nlmer", {
-  check_for_error(fit)
+  check_for_pp_errors()(fit)
 })

@@ -98,7 +98,7 @@ test_that("loo/waic for stan_polr works", {
 
 context("posterior_predict (stan_polr)")
 test_that("compatible with stan_polr", {
-  check_for_error(fit1)
-  check_for_error(fit2)
-  check_for_error(fit3)
+  check_for_pp_errors(fit1)
+  check_for_pp_errors(fit2)
+  check_for_pp_errors(fit3)
 })
