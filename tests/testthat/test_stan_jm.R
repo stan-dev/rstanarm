@@ -16,9 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat 
-# package and then running the code below possibly with options(mc.cores = 4).
-
 suppressPackageStartupMessages(library(rstanarm))
 library(lme4)
 library(survival)
@@ -27,8 +24,6 @@ CHAINS <- 1
 SEED <- 12345
 REFRESH <- 0L
 set.seed(SEED)
-if (interactive()) 
-  options(mc.cores = parallel::detectCores())
 
 TOLSCALES <- list(
   lmer_fixef = 0.25, # how many SEs can stan_jm fixefs be from lmer fixefs

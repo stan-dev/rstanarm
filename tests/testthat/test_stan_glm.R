@@ -15,9 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat 
-# package and then running the code below possibly with options(mc.cores = 4).
-
 context("stan_glm")
 
 suppressPackageStartupMessages(library(rstanarm))
@@ -409,20 +406,18 @@ test_that("empty interaction levels dropped", {
   x1[x2 == 1] <- 1
   x1[x2 == 2] <- 1
   y <- rnorm(100)
-  expect_warning(stan_glm(y ~ x1*x2, chains = 2, iter = 20, refresh = 0), 
+  expect_warning(stan_glm(y ~ x1*x2, chains = 1, iter = 20, refresh = 0), 
                  regexp = "Dropped empty interaction levels")
 })
 
 
 test_that("posterior_predict compatible with glms", {
-  SW <- suppressWarnings
-  
   check_for_error(fit_gaus)
   expect_linpred_equal(fit_gaus)
   
   mtcars2 <- mtcars
   mtcars2$offs <- runif(nrow(mtcars))
-  fit2 <- SW(stan_glm(mpg ~ wt + offset(offs), data = mtcars2,
+  SW(fit2 <- stan_glm(mpg ~ wt + offset(offs), data = mtcars2,
                       prior_intercept = NULL, prior = NULL, prior_aux = NULL,
                       iter = ITER, chains = CHAINS, seed = SEED, refresh = 0))
   expect_warning(posterior_predict(fit2, newdata = mtcars2[1:5, ]), 
@@ -447,8 +442,8 @@ test_that("posterior_predict compatible with glms", {
 
 test_that("contrasts attribute isn't dropped", {
   contrasts <- list(wool = "contr.sum", tension = "contr.sum")
-  fit <- stan_glm(breaks ~ wool * tension, data = warpbreaks,
+  SW(fit <- stan_glm(breaks ~ wool * tension, data = warpbreaks,
                  contrasts = contrasts, 
-                 chains = 1, refresh = 0)
+                 chains = 1, refresh = 0))
   expect_equal(fit$contrasts, contrasts)
 })

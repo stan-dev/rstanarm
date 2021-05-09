@@ -15,9 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat 
-# package and then running the code below possibly with options(mc.cores = 4).
-
 if (.Platform$OS.type != "windows" && require(betareg)) {
   suppressPackageStartupMessages(library(rstanarm))
   SEED <- 12345
@@ -203,7 +200,6 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   })
   
   test_that("loo/waic for stan_betareg works", {
-    source(test_path("helpers", "expect_equivalent_loo.R"))
     ll_fun <- rstanarm:::ll_fun
     
     data("GasolineYield", package = "betareg")
@@ -214,9 +210,6 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     expect_equivalent_loo(fit_logit)
     expect_identical(ll_fun(fit_logit), rstanarm:::.ll_beta_i)
   })
-
-  source(test_path("helpers", "check_for_error.R"))
-  source(test_path("helpers", "expect_linpred_equal.R"))
 
   test_that("compatible with stan_betareg with z", {
     data("GasolineYield", package = "betareg")
