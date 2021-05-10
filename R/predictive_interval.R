@@ -17,20 +17,20 @@
 
 #' Predictive intervals
 #' 
-#' For models fit using MCMC (\code{algorithm="sampling"}) or one of the 
-#' variational approximations (\code{"meanfield"} or \code{"fullrank"}), the 
-#' \code{predictive_interval} function computes Bayesian predictive intervals. 
+#' For models fit using MCMC (\code{algorithm="sampling"}) or one of the
+#' variational approximations (\code{"meanfield"} or \code{"fullrank"}), the
+#' \code{predictive_interval} function computes Bayesian predictive intervals.
 #' The method for stanreg objects calls \code{\link{posterior_predict}}
-#' internally, whereas the method for objects of class \code{"ppd"} accepts the
-#' matrix returned by \code{posterior_predict} as input and can be used to avoid
-#' multiple calls to \code{posterior_predict}.
+#' internally, whereas the method for matrices accepts the matrix returned by
+#' \code{posterior_predict} as input and can be used to avoid multiple calls to
+#' \code{posterior_predict}.
 #' 
 #' @export
 #' @aliases predictive_interval
 #' 
 #' @param object Either a fitted model object returned by one of the 
 #'   \pkg{rstanarm} modeling functions (a \link[=stanreg-objects]{stanreg 
-#'   object}) or, for the \code{"ppd"} method, a matrix of draws from the 
+#'   object}) or, for the matrix method, a matrix of draws from the 
 #'   posterior predictive distribution returned by 
 #'   \code{\link{posterior_predict}}.
 #' @template args-dots-ignored
@@ -57,7 +57,7 @@
 #' predictive_interval(fit, newdata = data.frame(wt = range(mtcars$wt)), 
 #'                     prob = 0.5)
 #' 
-#' # stanreg vs ppd methods
+#' # stanreg vs matrix methods
 #' preds <- posterior_predict(fit, seed = 123)
 #' all.equal(
 #'   predictive_interval(fit, seed = 123),
@@ -88,12 +88,17 @@ predictive_interval.stanreg <-
       offset = offset,
       fun = fun
     )
-    predictive_interval.ppd(ytilde, prob = prob)
+    predictive_interval(ytilde, prob = prob)
   }
 
 #' @rdname predictive_interval.stanreg
 #' @export
+predictive_interval.matrix <- function(object, prob = 0.9, ...) {
+  NextMethod("predictive_interval")
+}
+
+#' @rdname predictive_interval.stanreg
+#' @export
 predictive_interval.ppd <- function(object, prob = 0.9, ...) {
-  ytilde <- unclass(object)
-  rstantools::predictive_interval(ytilde, prob = prob)
+  predictive_interval(unclass(object), prob = prob, ...)
 }
