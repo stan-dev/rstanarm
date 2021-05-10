@@ -23,8 +23,6 @@ ITER <- 100
 CHAINS <- 2
 REFRESH <- 0
 
-SW <- suppressWarnings
-
 if (!exists("example_model")) {
   example_model <- run_example_model()
 }
@@ -62,9 +60,9 @@ test_that("posterior_predict errors if draws > posterior sample size", {
 # VB ----------------------------------------------------------------------
 context("posterior_predict ok for vb")
 test_that("silent for vb", {
-  fit1 <- SW(stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "meanfield", 
-                   seed = SEED, refresh = 0))
-  fit2 <- SW(update(fit1, algorithm = "fullrank", refresh = 0))
+  SW(fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "meanfield", 
+                   refresh = 0))
+  SW(fit2 <- update(fit1, algorithm = "fullrank", refresh = 0))
   expect_silent(posterior_predict(fit1))
   expect_silent(posterior_predict(fit2))
   expect_silent(posterior_linpred(fit1))
@@ -125,7 +123,7 @@ test_that("lme4 tests work similarly", {
   
   # multiple groups
   lfit <- lmer(diameter ~ (1|plate) + (1|sample), Penicillin)
-  sfit <- SW(stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin, 
+  SW(sfit <- stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin, 
                     iter = 400, chains = CHAINS, seed = SEED, refresh = 0))
  
   nd <- with(Penicillin, expand.grid(plate=unique(plate), sample=unique(sample)))
@@ -153,16 +151,16 @@ test_that("posterior_linpred not sensitive to spaces in factor levels", {
     char_mix = rep(c("level one", "leveltwo"), each = 5),
     int = rep(1:2, each = 5)
   )
-  SW(capture.output(
+  SW({
     fit1 <- stan_lmer(y ~ (1 | fac_nospace), data = df, seed = 123, 
-                      chains = 2, iter = 25, refresh = 0),
-    fit2 <- update(fit1, formula. = . ~ (1 | char_nospace)),
-    fit3 <- update(fit1, formula. = . ~ (1 | fac_space)),
-    fit4 <- update(fit1, formula. = . ~ (1 | char_space)),
-    fit5 <- update(fit1, formula. = . ~ (1 | fac_mix)),
-    fit6 <- update(fit1, formula. = . ~ (1 | char_mix)),
+                      chains = 2, iter = 25, refresh = 0)
+    fit2 <- update(fit1, formula. = . ~ (1 | char_nospace))
+    fit3 <- update(fit1, formula. = . ~ (1 | fac_space))
+    fit4 <- update(fit1, formula. = . ~ (1 | char_space))
+    fit5 <- update(fit1, formula. = . ~ (1 | fac_mix))
+    fit6 <- update(fit1, formula. = . ~ (1 | char_mix))
     fit7 <- update(fit1, formula. = . ~ (1 | int))
-  ))
+  })
   
   # not adding a new level
   nd1 <- df[c(1, 10), ]
@@ -200,11 +198,11 @@ test_that("posterior_linpred with spaces in factor levels ok with complicated fo
   d$cyl_fac <- factor(d$cyl, labels = c("cyl 4", "cyl 6", "cyl 8"))
   d$gear_fac <- factor(d$gear, labels = c("gear 3", "gear 4", "gear 5"))
   
-  SW(capture.output(
+  SW({
     fit1 <- stan_lmer(mpg ~ (1 + wt|cyl/gear), data = d,
-                      iter = 50, chains = 1, seed = 123, refresh = 0),
+                      iter = 50, chains = 1, seed = 123, refresh = 0)
     fit2 <- update(fit1, formula. = . ~ (1 + wt|cyl_fac/gear_fac))
-  ))
+  })
   expect_equal(posterior_linpred(fit1), posterior_linpred(fit2))
   
   # no new levels, all orig levels present in newdata
@@ -227,7 +225,7 @@ test_that("posterior_linpred with spaces in factor levels ok with complicated fo
 })
 
 test_that("posterior_predict/epred with newdata works for intercept only model", {
-  fit_intercept <- SW(stan_glm(mpg ~ 1, data = mtcars, refresh = 0, iter = 200, chains = 1))
+  SW(fit_intercept <- stan_glm(mpg ~ 1, data = mtcars, refresh = 0, iter = 50, chains = 1))
   
   nd0 <- data.frame()
   nd1 <- data.frame(row.names = 1)
@@ -252,7 +250,7 @@ test_that("pp_binomial_trials works", {
   expect_equal(ppbt(example_model, newdata = cbpp[1:5, ]), cbpp[1:5, "size"])
   
   # bernoulli
-  fit <- SW(stan_glm(I(mpg > 25) ~ wt, data = mtcars, family = binomial, 
+  SW(fit <- stan_glm(I(mpg > 25) ~ wt, data = mtcars, family = binomial, 
                      iter = ITER, refresh = 0, chains = CHAINS, 
                      seed = SEED))
   expect_equal(ppbt(fit), rep(1, nrow(mtcars)))

@@ -23,8 +23,6 @@ CHAINS <- 2
 ITER <- 100
 REFRESH <- 0
 
-SW <- suppressWarnings
-
 if (!exists("example_model")) {
   example_model <- run_example_model()
 }
@@ -49,14 +47,14 @@ test_that("predict ok for binomial", {
   SF <- cbind(numdead, numalive = 20-numdead)
   
   glmfit <- glm(SF ~ sex*ldose, family = binomial)
-  SW(capture.output(
+  SW({
     stanfit <- stan_glm(SF ~ sex*ldose, family = binomial, chains = CHAINS, 
-                        iter = ITER, seed = SEED, refresh = 0),
+                        iter = ITER, seed = SEED, refresh = 0)
     stanfit_opt <- stan_glm(SF ~ sex*ldose, family = binomial, 
                             prior = NULL, prior_intercept = NULL, 
                             seed = SEED, refresh = 0, QR = TRUE,
                             algorithm = "optimizing")
-  ))
+  })
   
   
   pg <- plink(glmfit)
@@ -83,14 +81,14 @@ test_that("predict ok for binomial", {
 
 test_that("predict ok for gaussian", {
   glmfit <- glm(mpg ~ wt, data = mtcars)
-  SW(capture.output(
+  SW({
     stanfit <- stan_glm(mpg ~ wt, data = mtcars, chains = CHAINS,
-                        iter = 2 * ITER, seed = SEED, refresh = 0),
+                        iter = 2 * ITER, seed = SEED, refresh = 0)
     stanfit_opt <- stan_glm(mpg ~ wt, data = mtcars,
                             prior = NULL, prior_intercept = NULL,
                             iter = 2 * ITER, seed = SEED, refresh = 0, 
                             algorithm = "optimizing")
-  ))
+  })
   
   pg <- plink(glmfit)
   ps <- plink(stanfit)
@@ -117,12 +115,12 @@ test_that("predict ok for Poisson", {
                     outcome = gl(3,1,9), treatment = gl(3,3))
 
   glmfit <- glm(counts ~ outcome + treatment, data = dat, family = poisson())
-  SW(capture.output(
+  SW({
     stanfit <- stan_glm(counts ~ outcome + treatment, data = dat, family = poisson(), 
-                        chains = CHAINS, iter = ITER, seed = SEED, refresh = 0),
+                        chains = CHAINS, iter = ITER, seed = SEED, refresh = 0)
     stanfit_opt <- stan_glm(counts ~ outcome + treatment, data = dat, family = poisson(), 
                             iter = ITER, seed = SEED, refresh = 0, algorithm = "optimizing")
-  ))
+  })
   pg <- plink(glmfit)
   ps <- plink(stanfit)
   pso <- plink(stanfit_opt)

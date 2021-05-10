@@ -1718,15 +1718,6 @@ stop2 <- function(...) {
   stop(..., call. = FALSE)
 }
 
-warning2 <- function(...) {
-  warning(..., call. = FALSE)
-}
-
-SW <- function(expr) {
-  # just a short form for suppressWarnings
-  base::suppressWarnings(expr)
-}
-
 is_null <- function(x) {
   # check if an object is NULL
   is.null(x) || ifelse(is.vector(x), all(sapply(x, is.null)), FALSE)
@@ -1739,23 +1730,4 @@ rm_null <- function(x, recursive = TRUE) {
     x <- lapply(x, function(x) if (is.list(x)) rm_null(x) else x)
   }
   x
-}
-
-isFALSE <- function(x) {
-  identical(FALSE, x)
-}
-
-is_equal <- function(x, y, ...) {
-  isTRUE(all.equal(x, y, ...))
-}
-
-is_like_factor <- function(x) {
-  # check if x behaves like a factor in design matrices
-  is.factor(x) || is.character(x) || is.logical(x)
-}
-
-# @param x numeric vector
-log_sum_exp <- function(x) {
-  max_x <- max(x)
-  max_x + log(sum(exp(x - max_x)))
 }
