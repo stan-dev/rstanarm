@@ -23,16 +23,19 @@
 # @param warn Should warning be thrown if columns are dropped? 
 # @return A list with updated x and xbar.
 drop_empty_levels <- function(x, xbar = NULL, warn = TRUE) {
-  sel <- apply(x, 2L, function(w) !all(w == 1) && length(unique(w)) < 2)
+  sel <- apply(x, 2L, function(w) length(w) > 1 && !all(w == 1) && length(unique(w)) < 2)
   if (any(sel)) {
+    dropped_cols <- colnames(x)[sel]
     if (warn) {
-      warning("Dropped empty interaction levels: ", paste(colnames(x)[sel], collapse = ", "), 
+      warning("Dropped empty interaction levels: ", paste(dropped_cols, collapse = ", "), 
               call. = FALSE)
     }
     x <- x[, !sel, drop = FALSE]
     xbar <- xbar[!sel]
+  } else {
+    dropped_cols <- NULL
   }
-  nlist(x, xbar)
+  nlist(x, xbar, dropped_cols)
 }
 
 # Center a matrix x and return extra stuff
@@ -53,7 +56,10 @@ center_x <- function(x, sparse) {
   }
   
   dropped <- drop_empty_levels(xtemp, xbar)
-  nlist(xtemp = dropped$x, xbar = dropped$xbar, has_intercept)
+  nlist(xtemp = dropped$x, 
+        xbar = dropped$xbar, 
+        has_intercept, 
+        dropped_cols = dropped$dropped_cols)
 }
 
 # Deal with priors

@@ -244,6 +244,13 @@ test_that("posterior_predict can handle empty interaction levels", {
                                refresh = 0, iter = 20, chains = 1))
   expect_silent(posterior_predict(fit))
   expect_silent(posterior_predict(fit, newdata = d1))
+  
+  # make sure it doesn't drop repeated rows in newdata
+  nd <- data.frame(group1 = c("A", "A"), group2 = c("a", "a"))
+  expect_silent(ppd <- posterior_predict(fit, newdata = nd))
+  expect_equal(ncol(ppd), nrow(nd))
+  expect_silent(ppd <- posterior_predict(fit, newdata = nd[1, ]))
+  expect_equal(ncol(ppd), 1)
 })
 
 
