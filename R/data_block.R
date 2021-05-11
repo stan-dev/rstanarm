@@ -19,7 +19,9 @@
 # drop any column of x with < 2 unique values (empty interaction levels)
 # exception is column of 1s isn't dropped 
 # @param x A design matrix
-# @param xbar Optionally a vector of column means
+# @param xbar Optionally a vector of column means for compatibility with center_x(). 
+# @param warn Should warning be thrown if columns are dropped? 
+# @return A list with updated x and xbar.
 drop_empty_levels <- function(x, xbar = NULL, warn = TRUE) {
   sel <- apply(x, 2L, function(w) !all(w == 1) && length(unique(w)) < 2)
   if (any(sel)) {
