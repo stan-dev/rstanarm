@@ -42,6 +42,16 @@ test_that("stan_clogit runs for infert example", {
   expect_stanreg(fit)
 })
 
+test_that("stan_clogit works when y is a factor", {
+  d <- infert[order(infert$stratum), ]
+  d$case <- factor(d$case, labels = c("A", "B"))
+  SW(fit_factor <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NULL,
+                        data = infert[order(infert$stratum), ], 
+                        QR = TRUE, init_r = 0.5,
+                        chains = CHAINS, iter = ITER, seed = SEED, refresh = 0))
+  expect_equal(coef(fit_factor), coef(fit))
+})
+
 test_that("stan_clogit throws error if data are not sorted", {
   expect_error(update(fit, data = infert), 
                regexp = "Data must be sorted")

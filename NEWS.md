@@ -25,6 +25,8 @@ intercept only models by allowing data frames with 0 columns and multiple rows. 
 
 * Effective number of parameters are computed for K-fold CV not just LOO CV. (#462)
 
+* `stan_clogit()` now allows outcome variable to be a factor. (#520)
+
 # rstanarm 2.21.1
 
 * Compatible with rstan v2.21.1

@@ -125,8 +125,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, contrasts = NUL
     group <- glmod$reTrms
     group$strata <- glmod$strata <- as.factor(mf[,"(weights)"])
     group$decov <- prior_covariance
-  }
-  else {
+  } else {
     validate_glm_formula(formula)
     mf[[1L]] <- as.name("model.frame")
     mf$drop.unused.levels <- TRUE
@@ -137,6 +136,9 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, contrasts = NUL
     Y <- array1D_check(model.response(mf, type = "any"))
   }
   contrasts <- attr(X, "contrasts")
+  if (is.factor(Y)) {
+    Y <- fac2bin(Y)
+  }
   
   ord <- order(group$strata)
   if (any(diff(ord) <= 0)) {
