@@ -463,13 +463,13 @@ print.summary.stanreg <-
     if (!is.null(atts$npreds)) {
       cat("\n predictors:  ", atts$npreds)
     }
+    if (!is.null(atts$call$subset)) {
+      cat("\n subset:      ", deparse(atts$call$subset))
+    }
     if (!is.null(atts$ngrps)) {
       cat("\n groups:      ", paste0(names(atts$ngrps), " (", 
                                      unname(atts$ngrps), ")", 
                                      collapse = ", "))
-    }
-    if (!is.null(atts$call$subset)) {
-      cat("\n subset:      ", deparse(atts$call$subset))
     }
     
     cat("\n\nEstimates:\n")
