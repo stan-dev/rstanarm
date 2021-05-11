@@ -48,11 +48,11 @@ pbcLong$xgamm <- as.numeric(pbcLong$logBili)
 
 # univariate GLM
 fm1 <- logBili ~ year + (year | id)
-o<-SW(m1 <- stan_mvmer(fm1, pbcLong, iter = 100, chains = 1, seed = SEED, refresh = 0))
+o<-SW(m1 <- stan_mvmer(fm1, pbcLong, iter = 5, chains = 1, seed = SEED, refresh = 0))
 
 # multivariate GLM
 fm2 <- list(logBili ~ year + (year | id), albumin ~ year + (year | id))
-o<-SW(m2 <- stan_mvmer(fm2, pbcLong, iter = 100, chains = 1, seed = SEED, refresh = 0))
+o<-SW(m2 <- stan_mvmer(fm2, pbcLong, iter = 5, chains = 1, seed = SEED, refresh = 0))
 
 #----  Tests for stan_mvmer arguments
 
@@ -60,6 +60,14 @@ test_that("formula argument works", {
   SW(m991 <- update(m1, formula. = list(fm1)))
   expect_identical(as.matrix(m1), as.matrix(m991)) # fm as list
 })
+
+test_that("error if outcome is character", {
+  expect_error(
+    update(m1, formula. = as.character(logBili) ~ year + (year | id)), 
+    "Outcome variable can't be type 'character'"
+  )
+})
+
 
 test_that("data argument works", {
   SW(m991 <- update(m1, data = list(pbcLong)))
