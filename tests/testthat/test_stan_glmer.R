@@ -160,6 +160,18 @@ test_that("stan_gamm4 doesn't error when bs='cc", {
   expect_stanreg(fit3)
 })
 
+test_that("stan_gamm4 errors if no smooth terms in formula", {
+  dat <- data.frame(
+    y = rnorm(100), 
+    x = rnorm(100), 
+    id = gl(5, 20)
+  )
+  expect_error(
+    stan_gamm4(y ~ x, random = ~(1 | id), data = dat),
+    "Formula must have at least one smooth term to use stan_gamm4"
+  )
+})
+
 
 test_that("loo/waic for stan_glmer works", {
   ll_fun <- rstanarm:::ll_fun
