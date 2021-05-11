@@ -106,6 +106,32 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     expect_equal(val, ans, tol = 0.1)
   })
   
+  test_that("QR recommended if VB and at least 2 predictors", {
+    expect_message(
+      stan_betareg(y ~ x + z, data = dat, 
+                   link = "logit", algorithm = "meanfield",
+                   prior = NULL, prior_intercept = NULL, 
+                   prior_phi = NULL, refresh = 0),
+      "Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms"
+    )
+    # no message if QR already specified
+    expect_message(
+      stan_betareg(y ~ x + z, data = dat, QR = TRUE,
+                   link = "logit", algorithm = "meanfield",
+                   prior = NULL, prior_intercept = NULL, 
+                   prior_phi = NULL, refresh = 0),
+      NA
+    )
+    # no message if only 1 predictor
+    expect_message(
+      stan_betareg(y ~ x, data = dat,
+                   link = "logit", algorithm = "meanfield",
+                   prior = NULL, prior_intercept = NULL, 
+                   prior_phi = NULL, refresh = 0),
+      NA
+    )
+  })
+  
   test_that("stan_betareg ok when modeling x and z (link.phi = 'log')", {
     N <- 200
     dat <- data.frame(x = rnorm(N, 2, 1), z = rnorm(N, 2, 1))
