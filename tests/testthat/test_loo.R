@@ -82,6 +82,16 @@ test_that("loo errors if model has weights", {
   expect_error(loo(fit), "'kfold'")
 })
 
+test_that("loo can handle empty interaction levels", {
+  d <- expand.grid(group1 = c("A", "B"), group2 = c("a", "b", "c"))[1:5,]
+  d$y <- c(0, 1, 0, 1, 0)
+  SW(fit <- rstanarm::stan_glm(y ~ group1:group2, data = d, family = "binomial",
+                               refresh = 0, iter = 20, chains = 1))
+  expect_warning(loo1 <- loo(fit), "Dropped empty interaction levels: group1B:group2c")
+  expect_output(print(loo1), "Computed from 10 by 5 log-likelihood matrix")
+})
+
+
 # loo with refitting ------------------------------------------------------
 context("loo then refitting")
 

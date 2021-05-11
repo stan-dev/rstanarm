@@ -237,6 +237,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   if (is.stanmvreg(object) && !is.null(dots$stanmat)) {
     stanmat <- dots$stanmat # potentially use a stanmat with a single draw
   }  
+  x <- drop_empty_levels(x)$x
   
   if (!is_polr(object)) { # not polr or scobit model
     fname <- f$family

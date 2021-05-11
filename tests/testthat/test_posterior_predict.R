@@ -229,6 +229,23 @@ test_that("posterior_predict/epred with newdata works for intercept only model",
   expect_error(posterior_epred(fit_intercept, data.frame()), "must have more than 0 rows")
 })
 
+test_that("posterior_predict can handle empty interaction levels", {
+  d1 <- expand.grid(group1 = c("A", "B"), group2 = c("a", "b", "c"))[1:5,]
+  d1$y <- c(0, 1, 0, 1, 0)
+  SW(fit <- rstanarm::stan_glm(y ~ group1:group2, data = d1, family = "binomial",
+                               refresh = 0, iter = 20, chains = 1))
+  expect_warning(ppd <- posterior_predict(fit), "Dropped empty interaction levels: group1B:group2c")
+  expect_equal(dim(ppd), c(10, 5))
+  
+  # make sure it can handle this in newdata even if not a problem in original data
+  d2 <- expand.grid(group1 = c("A", "B"), group2 = c("a", "b", "c"))[1:6,]
+  d2$y <- c(0, 1, 0, 1, 0, 0)
+  SW(fit <- rstanarm::stan_glm(y ~ group1:group2, data = d2, family = "binomial",
+                               refresh = 0, iter = 20, chains = 1))
+  expect_silent(posterior_predict(fit))
+  expect_warning(posterior_predict(fit, newdata = d1), "Dropped empty interaction levels: group1B:group2c")
+})
+
 
 # helper functions --------------------------------------------------------
 context("posterior_predict helper functions")

@@ -397,6 +397,7 @@ pp_args <- function(object, data, m = NULL) {
 #   some stan_betareg models "" is also included in the list.
 pp_eta <- function(object, data, draws = NULL, m = NULL, stanmat = NULL) {
   x <- data$x
+  x <- drop_empty_levels(x)$x
   S <- if (is.null(stanmat)) posterior_sample_size(object) else nrow(stanmat)
   if (is.null(draws))
     draws <- S
