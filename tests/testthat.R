@@ -16,11 +16,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 library(testthat)
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 Sys.unsetenv("R_TESTS")
-# options(error = function() traceback(2))
-example(example_model)
-if (!grepl("^sparc",  R.version$platform)) 
-  test_check("rstanarm", invert = TRUE,
-             filter = if (Sys.getenv("NOT_CRAN") != "true") "jm|mvmer")
+o <- utils::capture.output(example(example_model, echo = FALSE))
+if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+  test_check("rstanarm", invert = FALSE,
+             filter = if (Sys.getenv("NOT_CRAN") != "true") "stan_functions")
+}
 

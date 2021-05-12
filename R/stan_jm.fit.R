@@ -24,13 +24,13 @@
 #
 stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL, 
                         dataEvent = NULL, time_var, id_var,  family = gaussian, 
-                        assoc = "etavalue", lag_assoc = 0, grp_assoc, 
-                        epsilon = 1E-5, basehaz = c("bs", "weibull", "piecewise"), 
-                        basehaz_ops, qnodes = 15, init = "prefit", weights,					          
-                        priorLong = normal(), priorLong_intercept = normal(), 
-                        priorLong_aux = cauchy(0, 5), priorEvent = normal(), 
-                        priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
-                        priorEvent_assoc = normal(), prior_covariance = lkj(), prior_PD = FALSE, 
+                        assoc = "etavalue", lag_assoc = 0, grp_assoc, scale_assoc = NULL,
+                        epsilon = 1E-5, basehaz = c("bs", "weibull", "piecewise"),
+                        basehaz_ops, qnodes = 15, init = "prefit", weights,
+                        priorLong = normal(autoscale=TRUE), priorLong_intercept = normal(autoscale=TRUE), 
+                        priorLong_aux = cauchy(0, 5, autoscale=TRUE), priorEvent = normal(autoscale=TRUE), 
+                        priorEvent_intercept = normal(autoscale=TRUE), priorEvent_aux = cauchy(autoscale=TRUE),
+                        priorEvent_assoc = normal(autoscale=TRUE), prior_covariance = lkj(autoscale=TRUE), prior_PD = FALSE,
                         algorithm = c("sampling", "meanfield", "fullrank"), 
                         adapt_delta = NULL, max_treedepth = 10L, 
                         QR = FALSE, sparse = FALSE, ...) {
@@ -193,6 +193,14 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     weights = as.array(numeric(0)), # not yet implemented
     prior_PD = as.integer(prior_PD)
   )  
+  
+  # Offset
+  Y_offset <- fetch(y_mod, "offset", pad_length = 3)
+  standata$has_offset <- has_offset <-
+    fetch_array(y_mod, "has_offset", pad_length = 3)
+  standata$y1_offset <- if (has_offset[1]) Y_offset[[1]] else as.array(integer(0))  
+  standata$y2_offset <- if (has_offset[2]) Y_offset[[2]] else as.array(integer(0))  
+  standata$y3_offset <- if (has_offset[3]) Y_offset[[3]] else as.array(integer(0)) 
   
   # Dimensions
   standata$has_aux <- 
@@ -609,17 +617,20 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     # Number of association parameters
     a_K <- get_num_assoc_pars(assoc, a_mod)
     
+    # Association scaling parameter
+    a_scale <- validate_scale_assoc(scale_assoc, assoc_as_list)
+    
     # Use a stan_mvmer variational bayes model fit for:
     # - obtaining initial values for joint model parameters
     # - obtaining appropriate scaling for priors on association parameters
     vbdots <- list(...)
-    dropargs <- c("chains", "cores", "iter", "refresh", "test_grad", "control")
+    dropargs <- c("chains", "cores", "iter", "refresh", "thin", "test_grad", "control")
     for (i in dropargs) 
       vbdots[[i]] <- NULL
     vbpars <- pars_to_monitor(standata, is_jm = FALSE)
     vbargs <- c(list(stanmodels$mvmer, pars = vbpars, data = standata, 
                      algorithm = "meanfield"), vbdots)
-    utils::capture.output(init_fit <- do.call(rstan::vb, vbargs))
+    utils::capture.output(init_fit <- suppressWarnings(do.call(rstan::vb, vbargs)))
     init_new_nms <- c(y_intercept_nms, y_beta_nms,
                       if (length(standata$q)) c(paste0("b[", b_nms, "]")),
                       y_aux_nms, paste0("Sigma[", Sigma_nms, "]"),
@@ -691,7 +702,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     if (a_K) {
       e_prior_assoc_stuff <- autoscale_prior(e_prior_assoc_stuff, family = family, 
                                              assoc = assoc, parts = a_mod,
-                                             beta = init_beta, b = init_b)
+                                             beta = init_beta, b = init_b, 
+                                             scale_assoc = a_scale)
     }   
     
     #----------- Data for export to Stan -----------# 
@@ -778,18 +790,21 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
             Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
             Z2_tmp_id <- as.array(integer(0))
           }
+          y_offset_tmp <- if (has_offset[m]) tmp_stuff$offset else as.array(integer(0))
         } else {
           X_tmp  <- matrix(0,0,standata$yK[m])
           Z1_tmp <- matrix(0,standata$bK1_len[m],0) 
           Z2_tmp <- matrix(0,standata$bK2_len[m],0) 
           Z1_tmp_id <- as.array(integer(0)) 
           Z2_tmp_id <- as.array(integer(0)) 
+          y_offset_tmp <- as.array(integer(0))
         }
         standata[[paste0("y", m, "_xq_", i)]] <- X_tmp
         standata[[paste0("y", m, "_z1q_", i)]] <- Z1_tmp
         standata[[paste0("y", m, "_z2q_", i)]] <- Z2_tmp
         standata[[paste0("y", m, "_z1q_id_", i)]] <- Z1_tmp_id
         standata[[paste0("y", m, "_z2q_id_", i)]] <- Z2_tmp_id
+        standata[[paste0("y", m, "_offset_", i)]] <- y_offset_tmp
       }
     }
   
@@ -846,6 +861,9 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     
     # Centering for association terms
     standata$a_xbar <- if (a_K) e_prior_assoc_stuff$a_xbar else numeric(0)    
+    
+    # Scaling for association terms
+    standata$a_scale <- if (a_K) as.array(a_scale) else numeric(0)
 
   } # end jm block
   
@@ -862,6 +880,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     if (is_jm) user_priorEvent_aux = e_user_prior_aux_stuff,
     if (is_jm) user_priorEvent_assoc = e_user_prior_assoc_stuff,
     user_prior_covariance = prior_covariance,
+    b_user_prior_stuff = b_user_prior_stuff,
+    b_prior_stuff = b_prior_stuff,
     y_has_intercept = fetch_(y_mod, "x", "has_intercept"),
     y_has_predictors = fetch_(y_mod, "x", "K") > 0,
     if (is_jm) e_has_intercept = standata$e_has_intercept,
@@ -875,7 +895,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     if (is_jm) adjusted_priorEvent_aux_scale = e_prior_aux_stuff$prior_scale,
     if (is_jm) adjusted_priorEvent_assoc_scale = e_prior_assoc_stuff$prior_scale,
     family = family, 
-    if (is_jm) basehaz = basehaz
+    if (is_jm) basehaz = basehaz,
+    stub_for_names = if (is_jm) "Long" else "y"
   )  
   
   #-----------
@@ -889,6 +910,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     cat("Fitting a univariate", if (is_jm) "joint" else "glmer", "model.\n\n")
   if (M  > 1L) 
     cat("Fitting a multivariate", if (is_jm) "joint" else "glmer", "model.\n\n")
+  
   if (algorithm == "sampling") {
     cat("Please note the warmup may be much slower than later iterations!\n")             
     sampling_args <- set_jm_sampling_args(
@@ -907,7 +929,8 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
     stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                          algorithm = algorithm, ...)    
   }
-  check_stanfit(stanfit)
+  check <- check_stanfit(stanfit)
+  if (!isTRUE(check)) return(standata)
 
   # Sigma values in stanmat
   if (prior_covariance$dist == "decov" && standata$len_theta_L)
@@ -969,7 +992,7 @@ stan_jm.fit <- function(formulaLong = NULL, dataLong = NULL, formulaEvent = NULL
   stanfit_str <- nlist(.Data = stanfit, prior_info, y_mod, cnms, flevels)
   if (is_jm)
     stanfit_str <- c(stanfit_str, nlist(e_mod, a_mod, assoc, basehaz, 
-                                        id_var, grp_stuff))
+                                        id_var, grp_stuff, scale_assoc))
   
   do.call("structure", stanfit_str)
 }

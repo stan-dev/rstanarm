@@ -17,6 +17,7 @@
 
 #' Bayesian generalized linear models with group-specific terms via Stan
 #' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Bayesian inference for GLMs with group-specific coefficients that have 
 #' unknown covariance matrices with flexible priors.
 #' 
@@ -37,18 +38,22 @@
 #' @template args-QR
 #' @template args-sparse
 #' @template reference-gelman-hill
+#' @template reference-muth
 #' 
-#' @param formula,data,family Same as for \code{\link[lme4]{glmer}}. \emph{We
+#' @param formula,data Same as for \code{\link[lme4]{glmer}}. \emph{We
 #'   strongly advise against omitting the \code{data} argument}. Unless 
 #'   \code{data} is specified (and is a data frame) many post-estimation 
 #'   functions (including \code{update}, \code{loo}, \code{kfold}) are not 
 #'   guaranteed to work properly.
+#' @param family Same as for \code{\link[lme4]{glmer}} except it is also
+#'   possible to use \code{family=mgcv::betar} to estimate a Beta regression
+#'   with \code{stan_glmer}.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
 #' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
 #'   specified.
 #' @param ... For \code{stan_glmer}, further arguments passed to 
-#'   \code{\link[rstan]{sampling}} (e.g. \code{iter}, \code{chains}, 
-#'   \code{cores}, etc.) or to \code{\link[rstan]{vb}} (if \code{algorithm} is 
+#'   \code{\link[rstan:stanmodel-method-sampling]{sampling}} (e.g. \code{iter}, \code{chains}, 
+#'   \code{cores}, etc.) or to \code{\link[rstan:stanmodel-method-vb]{vb}} (if \code{algorithm} is 
 #'   \code{"meanfield"} or \code{"fullrank"}). For \code{stan_lmer} and 
 #'   \code{stan_glmer.nb}, \code{...} should also contain all relevant arguments
 #'   to pass to \code{stan_glmer} (except \code{family}).
@@ -69,17 +74,26 @@
 #'   \code{link}, is a wrapper for \code{stan_glmer} with \code{family = 
 #'   \link{neg_binomial_2}(link)}.
 #'   
-#'   
+#' @return A list with classes \code{stanreg}, \code{glm}, \code{lm}, 
+#'   and \code{lmerMod}. The conventions for the parameter names are the
+#'   same as in the lme4 package with the addition that the standard
+#'   deviation of the errors is called \code{sigma} and the variance-covariance
+#'   matrix of the group-specific deviations from the common parameters is
+#'   called \code{Sigma}, even if this variance-covariance matrix only has
+#'   one row and one column (in which case it is just the group-level variance).
+#' 
+#' 
 #' @seealso The vignette for \code{stan_glmer} and the \emph{Hierarchical 
-#'   Partial Pooling} vignette.
+#'   Partial Pooling} vignette. \url{http://mc-stan.org/rstanarm/articles/}
 #'    
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' # see help(example_model) for details on the model below
 #' if (!exists("example_model")) example(example_model) 
 #' print(example_model, digits = 1)
-#' 
+#' }
 #' @importFrom lme4 glFormula
-#' @importFrom Matrix Matrix t cBind
+#' @importFrom Matrix Matrix t
 stan_glmer <- 
   function(formula,
            data = NULL,
@@ -90,9 +104,9 @@ stan_glmer <-
            offset,
            contrasts = NULL,
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
-           prior_aux = exponential(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
+           prior_aux = exponential(autoscale=TRUE),
            prior_covariance = decov(),
            prior_PD = FALSE,
            algorithm = c("sampling", "meanfield", "fullrank"),
@@ -105,24 +119,38 @@ stan_glmer <-
   data <- validate_data(data) #, if_missing = environment(formula))
   family <- validate_family(family)
   mc[[1]] <- quote(lme4::glFormula)
-  mc$control <- make_glmerControl()
+  mc$control <- make_glmerControl(
+    ignore_lhs = prior_PD,  
+    ignore_x_scale = prior$autoscale %ORifNULL% FALSE
+  )
+  mc$data <- data
   mc$prior <- mc$prior_intercept <- mc$prior_covariance <- mc$prior_aux <-
     mc$prior_PD <- mc$algorithm <- mc$scale <- mc$concentration <- mc$shape <-
     mc$adapt_delta <- mc$... <- mc$QR <- mc$sparse <- NULL
   glmod <- eval(mc, parent.frame())
   X <- glmod$X
-  y <- glmod$fr[, as.character(glmod$formula[2L])]
-  if (is.matrix(y) && ncol(y) == 1L)
-    y <- as.vector(y)
+  if ("b" %in% colnames(X)) {
+    stop("stan_glmer does not allow the name 'b' for predictor variables.", 
+         call. = FALSE)
+  }
+  
+  if (prior_PD && !has_outcome_variable(formula)) {
+    y <- NULL
+  } else {
+    y <- glmod$fr[, as.character(glmod$formula[2L])]  
+    if (is.matrix(y) && ncol(y) == 1L) {
+      y <- as.vector(y)
+    }
+  }
 
   offset <- model.offset(glmod$fr) %ORifNULL% double(0)
-  weights <- validate_weights(weights)
-  if (is.null(prior)) 
-    prior <- list()
-  if (is.null(prior_intercept)) 
-    prior_intercept <- list()
-  if (is.null(prior_aux)) 
-    prior_aux <- list()
+  weights <- validate_weights(as.vector(model.weights(glmod$fr)))
+  if (binom_y_prop(y, family, weights)) {
+    y1 <- as.integer(as.vector(y) * weights)
+    y <- cbind(y1, y0 = weights - y1)
+    weights <- double(0)
+  }
+  
   if (is.null(prior_covariance))
     stop("'prior_covariance' can't be NULL.", call. = FALSE)
   group <- glmod$reTrms
@@ -133,8 +161,15 @@ stan_glmer <-
                           prior = prior, prior_intercept = prior_intercept,
                           prior_aux = prior_aux, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
-                          group = group, QR = QR, sparse = sparse, ...)
-  if (family$family == "Beta regression") family$family <- "beta"
+                          group = group, QR = QR, sparse = sparse, 
+                          mean_PPD = !prior_PD,
+                          ...)
+  
+  add_classes <- "lmerMod" # additional classes to eventually add to stanreg object
+  if (family$family == "Beta regression") {
+    add_classes <- c(add_classes, "betareg")
+    family$family <- "beta"
+  }
   sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
   X <- X[ , !sel, drop = FALSE]
   Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
@@ -142,12 +177,11 @@ stan_glmer <-
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
   
   fit <- nlist(stanfit, family, formula, offset, weights, 
-               x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
-               y = y, data, call, terms = NULL, model = NULL, 
+               x = cbind(X, Z), y = y, data, call, terms = NULL, model = NULL,
                na.action = attr(glmod$fr, "na.action"), contrasts, algorithm, glmod, 
                stan_function = "stan_glmer")
   out <- stanreg(fit)
-  class(out) <- c(class(out), "lmerMod")
+  class(out) <- c(class(out), add_classes)
   
   return(out)
 }
@@ -164,16 +198,20 @@ stan_lmer <-
            offset,
            contrasts = NULL,
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
-           prior_aux = exponential(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
+           prior_aux = exponential(autoscale=TRUE),
            prior_covariance = decov(),
            prior_PD = FALSE,
            algorithm = c("sampling", "meanfield", "fullrank"),
            adapt_delta = NULL,
            QR = FALSE) {
-  if ("family" %in% names(list(...)))
-    stop("'family' should not be specified.")
+  if ("family" %in% names(list(...))) {
+    stop(
+      "'family' should not be specified. ", 
+      "To specify a family use stan_glmer instead of stan_lmer."
+    )
+  }
   mc <- call <- match.call(expand.dots = TRUE)
   if (!"formula" %in% names(call))
     names(call)[2L] <- "formula"
@@ -202,9 +240,9 @@ stan_glmer.nb <-
            contrasts = NULL,
            link = "log",
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
-           prior_aux = exponential(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
+           prior_aux = exponential(autoscale=TRUE),
            prior_covariance = decov(),
            prior_PD = FALSE,
            algorithm = c("sampling", "meanfield", "fullrank"),

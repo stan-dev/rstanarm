@@ -497,7 +497,7 @@ family.stanmvreg <- function(object, m = NULL, ...) {
 #' @templateVar mArg m
 #' @template args-m
 #' @param formula,... See \code{\link[stats]{model.frame}}.
-#' @param fixed.only See \code{\link[lme4]{model.frame.merMod}}.
+#' @param fixed.only See \code{\link[lme4:merMod-class]{model.frame.merMod}}.
 #' 
 model.frame.stanmvreg <- function(formula, fixed.only = FALSE, m = NULL, ...) {
   if (is.stanmvreg(formula)) {
@@ -515,6 +515,12 @@ model.frame.stanmvreg <- function(formula, fixed.only = FALSE, m = NULL, ...) {
       return(list_nms(fr, M, stub = get_stub(formula))) else return(fr[[m]])
   } 
   NextMethod("model.frame")
+}
+
+#' @rdname stanreg-methods
+#' @export 
+nobs.stanmvreg <- function(object, ...) {
+  nrow(model.frame(object, m = 1))
 }
 
 

@@ -5,8 +5,6 @@ date: "`r Sys.Date()`"
 output: 
   html_vignette: 
     toc: yes
-params:
-  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
 ---
 <!--
 %\VignetteEngine{knitr::rmarkdown}
@@ -15,10 +13,6 @@ params:
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
 ```{r, child="children/SETTINGS-gg.txt"}
-```
-```{r, child="children/SETTINGS-rstan.txt"}
-```
-```{r, child="children/SETTINGS-loo.txt"}
 ```
 
 # Introduction
@@ -112,7 +106,7 @@ model parameters, but other times such work may not exist or several studies may
 make contradictory claims. Regardless, we nearly always have _some_ knowledge 
 that should be reflected in our choice of prior distributions. For example, no 
 one believes a logistic regression coefficient will be greater than five in 
-absoluate value if the predictors are scaled reasonably. You may also have seen 
+absolute value if the predictors are scaled reasonably. You may also have seen
 examples of so-called "non-informative" (or "vague", "diffuse", etc.) priors 
 like a normal distribution with a variance of 1000. When data are reasonably 
 scaled, these priors are almost always a bad idea for various reasons (they give
@@ -131,7 +125,7 @@ $$g^{-1}\left(\eta_i \right)^{y_i}
   \left(1 - g^{-1}\left(\eta_i \right)\right)^{n_i-y_i},$$
 which can be maximized over $\alpha$, $\beta_1$, and $\beta_2$ to obtain 
 frequentist estimates by calling
-```{r rstanarm-mle}
+```{r rstanarm-mle, eval = TRUE}
 data("womensrole", package = "HSAUR3")
 womensrole$total <- womensrole$agree + womensrole$disagree
 womensrole_glm_1 <- glm(cbind(agree, disagree) ~ education + gender,
@@ -143,24 +137,24 @@ p-value for the null hypothesis that $\beta_2 = 0$ is very large. However,
 frequentist p-values are awkward because they do not pertain to the probability 
 that a scientific hypothesis is true but rather to the probability of observing 
 a $z$-statistic that is so large (in magnitude) if the null hypothesis were
-true. The desire to make probabalistic statements about a scientific hypothesis
+true. The desire to make probabilistic statements about a scientific hypothesis
 is one reason why many people are drawn to the Bayesian approach.
 
 A model with the same likelihood but Student t priors with seven degrees of 
 freedom can be specified using the __rstanarm__ package in a similar way by 
 prepending `stan_` to the `glm` call and specifying priors (and optionally the
 number of cores on your computer to utilize):
-```{r rstanarm-mcmc, results="hide"}
+```{r rstanarm-mcmc, results="hide", eval = TRUE}
 library(rstanarm)
 womensrole_bglm_1 <- stan_glm(cbind(agree, disagree) ~ education + gender,
                               data = womensrole,
                               family = binomial(link = "logit"), 
-                              prior = student_t(df = 7), 
-                              prior_intercept = student_t(df = 7),
-                              chains = CHAINS, cores = CORES, seed = SEED)
+                              prior = student_t(df = 7, 0, 5), 
+                              prior_intercept = student_t(df = 7, 0, 5),
+                              cores = 2, seed = 12345)
 womensrole_bglm_1
 ```
-```{r, echo=FALSE}
+```{r, echo=FALSE, eval = TRUE}
 print(womensrole_bglm_1)
 ```
 As can be seen, the "Bayesian point estimates" --- which are represented by the 
@@ -172,7 +166,7 @@ distributions, which are based on a scaling of the Median Absolute Deviation
 (MAD) from the posterior medians to obtain a robust estimator of the posterior 
 standard deviation. In addition, we can use the `posterior_interval` function to
 obtain a Bayesian uncertainty interval for $\beta_1$:
-```{r rstanarm-ci}
+```{r rstanarm-ci, eval = TRUE}
 ci95 <- posterior_interval(womensrole_bglm_1, prob = 0.95, pars = "education")
 round(ci95, 2)
 ```
@@ -183,10 +177,10 @@ $\beta_2$ is between `ci95[1,1]` and `ci95[1,2]`. Alternatively, we could say
 that there is essentially zero probability that $\beta_2 > 0$, although
 frequentists cannot make such a claim coherently.
 
-Many of the postestimation methods that are available for a model that is 
+Many of the post-estimation methods that are available for a model that is
 estimated by `glm` are also available for a model that is estimated by 
 `stan_glm`. For example,
-```{r rstanarm-methods}
+```{r rstanarm-methods, eval = TRUE}
 cbind(Median = coef(womensrole_bglm_1), MAD_SD = se(womensrole_bglm_1))
 summary(residuals(womensrole_bglm_1)) # not deviance residuals
 cov2cor(vcov(womensrole_bglm_1))
@@ -204,18 +198,18 @@ The `launch_shinystan` function in the __shinystan__ package provides almost all
 the tools you need to visualize the posterior distribution and diagnose any
 problems with the Markov chains. In this case, the results are fine and to
 verify that, you can call
-```{r rstanarm-shinystan,eval=FALSE}
-launch_shinystan(womensrole_bglm_1)
+```{r rstanarm-shinystan, eval = FALSE}
+launch_shinystan(womensrole_bglm_1, ppd = FALSE)
 ```
 which will open a web browser that drives the visualizations. 
 
-For the rest of this subsection, we focus on what users can do programatically 
-to evaluate whether a model is adequate. A minimal requirement for a Bayesian 
+For the rest of this subsection, we focus on what users can do programmatically
+to evaluate whether a model is adequate. A minimal requirement for Bayesian
 estimates is that the model should fit the data that the estimates conditioned 
 on. The key function here is `posterior_predict`, which can be passed a new 
 `data.frame` to predict out-of-sample, but in this case is omitted to obtain 
 in-sample posterior predictions:
-```{r rstanarm-posterior_predict}
+```{r rstanarm-posterior_predict, eval = TRUE}
 y_rep <- posterior_predict(womensrole_bglm_1)
 dim(y_rep)
 ```
@@ -226,7 +220,7 @@ element of this matrix is a predicted number of respondents with that value of
 education and gender who agreed with the survey question and thus should be
 reasonably close to the observed proportion of agreements in the data. We can
 create a plot to check this:
-```{r rstanarm-criticism-plot, fig.width=8, out.width="90%", fig.cap="Posterior predictive boxplots vs. observed datapoints"}
+```{r rstanarm-criticism-plot, fig.width=8, out.width="90%", fig.cap="Posterior predictive boxplots vs. observed datapoints", eval = TRUE}
 par(mfrow = 1:2, mar = c(5,3.7,1,0) + 0.1, las = 3)
 boxplot(sweep(y_rep[,womensrole$gender == "Male"], 2, STATS = 
                womensrole$total[womensrole$gender == "Male"], FUN = "/"), 
@@ -257,7 +251,7 @@ where there are less data.
 
 Consequently, we might consider a model where education has a quadratic effect 
 on agreement, which is easy to specify using R's formula-based syntax.
-```{r, rstanarm-update, results="hide"}
+```{r, rstanarm-update, results="hide", eval = TRUE}
 (womensrole_bglm_2 <- update(womensrole_bglm_1, formula. = . ~ . + I(education^2)))
 ```
 ```{r, echo=FALSE}
@@ -269,14 +263,14 @@ to produce better out-of-sample predictions than a model with only the level of
 education. The latter question can be answered using leave-one-out
 cross-validation or the approximation thereof provided by the `loo` function in
 the __loo__ package, for which a method is provided by the __rstanarm__ package.
-```{r rstanarm-loo}
+```{r rstanarm-loo, eval = TRUE}
 loo_bglm_1 <- loo(womensrole_bglm_1)
 loo_bglm_2 <- loo(womensrole_bglm_2)
 ```
 First, we verify that the posterior is not too sensitive to any particular 
 observation in the dataset.
 
-```{r rstanarm-loo-plot, fig.width=7, out.width="70%"}
+```{r rstanarm-loo-plot, fig.width=7, out.width="70%", eval = TRUE}
 par(mfrow = 1:2, mar = c(5,3.8,1,0) + 0.1, las = 3)
 plot(loo_bglm_1, label_points = TRUE)
 plot(loo_bglm_2, label_points = TRUE)
@@ -285,17 +279,17 @@ plot(loo_bglm_2, label_points = TRUE)
 There are only one or two moderate outliers (whose statistics are greater than
 $0.5$), which should not have too much of an effect on the resulting model 
 comparison:
-```{r, rstanarm-loo-compare}
-compare_models(loo_bglm_1, loo_bglm_2)
+```{r, rstanarm-loo-compare, eval = TRUE}
+loo_compare(loo_bglm_1, loo_bglm_2)
 ```
 In this case, there is little difference in the expected log pointwise deviance
 between the two models, so we are essentially indifferent between them after
 taking into account that the second model estimates an additional parameter. The
 "LOO Information Criterion (LOOIC)"
-```{r, rstanarm-loo-print}
+```{r, rstanarm-loo-print, eval = TRUE}
 loo_bglm_1
 ```
-has the same purpose as the Aikaike Information Criterion (AIC) that is used by 
+has the same purpose as the Akaike Information Criterion (AIC) that is used by
 frequentists. Both are intended to estimate the expected log predicted density 
 (ELPD) for a new dataset. However, the AIC ignores priors and assumes that the 
 posterior distribution is multivariate normal, whereas the functions from the 
@@ -311,8 +305,8 @@ except when the model is linear, has no inverse link function, and contains no
 interaction terms. Bayesians can avoid this difficulty simply by inspecting the
 posterior predictive distribution at different levels of the predictors. For
 example,
-```{r, rstanarm-posterior_predict-manipulate}
-# note: in newdata we want agree and disgree to sum to the number of people we
+```{r, rstanarm-posterior_predict-manipulate, eval = TRUE}
+# note: in newdata we want agree and disagree to sum to the number of people we
 # want to predict for. the values of agree and disagree don't matter so long as
 # their sum is the desired number of trials. we need to explicitly imply the
 # number of trials like this because our original data are aggregate. if we had
@@ -370,32 +364,29 @@ To illustrate how to check the Rhat values after fitting a model using
 __rstanarm__ we'll fit two models and run them for different numbers of 
 iterations.
 
-```{r, rstanarm-rhat-fit, results='hide', warning=TRUE}
-bad_rhat <- stan_glm(mpg ~ ., data = mtcars, iter = 20, 
-                     chains = CHAINS, cores = CORES, seed = SEED)
-good_rhat <- update(bad_rhat, iter = 500, 
-                    chains = CHAINS, cores = CORES, seed = SEED)
+```{r, rstanarm-rhat-fit, results='hide', warning=TRUE, eval = TRUE}
+bad_rhat <- stan_glm(mpg ~ ., data = mtcars, iter = 20, chains = 2, seed = 12345)
+good_rhat <- update(bad_rhat, iter = 1000, chains = 2, seed = 12345)
 ```
 
 Here the first model leads to the warning message about convergence but the 
-second model does not. Indeed, we can see that not all Rhat values are less than
-1.1 for the first model:
+second model does not. Indeed, we can see that many Rhat values are much bigger
+than 1 for the first model:
 
-```{r, rstasnarm-rhat-bad}
+```{r, rstasnarm-rhat-bad, eval = TRUE}
 rhat <- summary(bad_rhat)[, "Rhat"]
 rhat[rhat > 1.1]
 ```
 
 Since we didn't get a warning for the second model we shouldn't find any 
-parameters with an Rhat greater than 1.1:
+parameters with an Rhat far from 1:
 
-```{r, rstasnarm-rhat-good}
+```{r, rstasnarm-rhat-good, eval = TRUE}
 any(summary(good_rhat)[, "Rhat"] > 1.1)
 ```
 
-Details on the computatation of Rhat and some of its limitations can be found in
-the  chapter of the [Stan Modeling Language User's Guide and Reference
-Manual](http://mc-stan.org/documentation/).
+Details on the computation of Rhat and some of its limitations can be found in
+[Stan Modeling Language User's Guide and Reference Manual](https://mc-stan.org/users/documentation/).
 
 ### Divergent transitions
 
@@ -468,8 +459,8 @@ If the posterior distribution that you specify in the first step cannot be
 sampled from using the __rstanarm__ package, then it is often possible to create
 a hand-written program in the the Stan language so that the posterior 
 distribution can be drawn from using the __rstan__ package. See the 
-documentation for the __rstan__ package or http://mc-stan.org for more details
-about this more advanced useage of Stan. However, many relatively simple models
+documentation for the __rstan__ package or https://mc-stan.org for more details
+about this more advanced usage of Stan. However, many relatively simple models
 can be fit using the __rstanarm__ package without writing any code in the Stan
 language, which is illustrated for each estimating function in the __rstanarm__
 package in the other [vignettes](index.html).

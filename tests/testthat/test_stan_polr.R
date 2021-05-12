@@ -15,10 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat 
-# package and then running the code below possibly with options(mc.cores = 4).
-
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 library(MASS)
 
 SEED <- 123
@@ -29,8 +26,6 @@ REFRESH <- 0
 
 threshold <- 0.03
 
-source(test_path("helpers", "expect_stanreg.R"))
-
 context("stan_polr")
 
 
@@ -38,20 +33,20 @@ f <- tobgp ~ agegp + alcgp
 suppressWarnings(capture.output(
   fit1 <- stan_polr(f, data = esoph, method = "logistic", prior_PD = TRUE,
                     prior = R2(location = 0.4, what = "median"),
-                    chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH),
+                    chains = CHAINS, iter = ITER, seed = SEED, refresh = 0),
   fit1vb <- stan_polr(f, data = esoph, method = "loglog",
                       prior = R2(location = 0.4, what = "median"),
                       seed = SEED, algorithm = "fullrank"),
   fit2 <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, data = esoph, 
                     prior = R2(location = 0.4), method = "logistic", shape = 2, rate = 2,
-                    chains = CHAINS, iter = ITER, seed = SEED, refresh = REFRESH),
+                    chains = CHAINS, iter = ITER, seed = SEED, refresh = 0),
   fit2vb <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, data = esoph, 
                       method = "probit", seed = SEED, algorithm = "fullrank",
                       prior = NULL, prior_counts = NULL), # test with NULL priors
   fit3 <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp,
                     data = esoph, prior = R2(location = 0.4),
                     shape = 2, rate = 2, chains = CHAINS, iter = ITER,
-                    seed = SEED, refresh = REFRESH)
+                    seed = SEED, refresh = 0)
 ))
 
 test_that("stan_polr runs for esoph example", {
@@ -64,7 +59,7 @@ test_that("stan_polr runs for esoph example", {
 test_that("stan_polr throws error if formula excludes intercept", {
   expect_error(stan_polr(tobgp ~ 0 + agegp + alcgp, data = esoph, 
                          method = "loglog", prior = R2(0.4, "median")), 
-               regexp = "formula not allowed")
+               regexp = "an intercept is needed and assumed")
 })
 
 test_that("stan_polr throws error if shape,rate specified with >2 outcome levels", {
@@ -90,7 +85,6 @@ test_that("gumbel functions ok", {
 })
 
 test_that("loo/waic for stan_polr works", {
-  source(test_path("helpers", "expect_equivalent_loo.R"))
   ll_fun <- rstanarm:::ll_fun
   expect_equivalent_loo(fit1)
   expect_identical(ll_fun(fit1), rstanarm:::.ll_polr_i)
@@ -104,8 +98,7 @@ test_that("loo/waic for stan_polr works", {
 
 context("posterior_predict (stan_polr)")
 test_that("compatible with stan_polr", {
-  source(test_path("helpers", "check_for_error.R"))
-  check_for_error(fit1)
-  check_for_error(fit2)
-  check_for_error(fit3)
+  check_for_pp_errors(fit1)
+  check_for_pp_errors(fit2)
+  check_for_pp_errors(fit3)
 })

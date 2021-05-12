@@ -31,7 +31,7 @@
       if (nc == 1) { // "block" is just a standard deviation
         theta_L[theta_L_mark] = tau[i] * scale[i] * dispersion;
         // unlike lme4, theta[theta_L_mark] includes the dispersion term in it
-        theta_L_mark = theta_L_mark + 1;
+        theta_L_mark += 1;
       }
       else { // block is lower-triangular               
         matrix[nc,nc] T_i; 
@@ -39,17 +39,17 @@
         real T21;
         real trace_T_i = square(tau[i] * scale[i] * dispersion) * nc;
         vector[nc] pi = segment(zeta, zeta_mark, nc); // gamma(zeta | shape, 1)
-        pi = pi / sum(pi);                            // thus dirichlet(pi | shape)
+        pi /= sum(pi);                            // thus dirichlet(pi | shape)
         
         // unlike lme4, T_i includes the dispersion term in it
-        zeta_mark = zeta_mark + nc;
+        zeta_mark += nc;
         std_dev = sqrt(pi[1] * trace_T_i);
         T_i[1,1] = std_dev;
         
         // Put a correlation into T_i[2,1] and scale by std_dev
         std_dev = sqrt(pi[2] * trace_T_i);
         T21 = 2.0 * rho[rho_mark] - 1.0;
-        rho_mark = rho_mark + 1;
+        rho_mark += 1;
         T_i[2,2] = std_dev * sqrt(1.0 - square(T21));
         T_i[2,1] = std_dev * T21;
         
@@ -57,17 +57,17 @@
           int rp1 = r + 1;
           vector[r] T_row = segment(z_T, z_T_mark, r);
           real scale_factor = sqrt(rho[rho_mark] / dot_self(T_row)) * std_dev;
-          z_T_mark = z_T_mark + r;
+          z_T_mark += r;
           std_dev = sqrt(pi[rp1] * trace_T_i);
           for(c in 1:r) T_i[rp1,c] = T_row[c] * scale_factor;
           T_i[rp1,rp1] = sqrt(1.0 - rho[rho_mark]) * std_dev;
-          rho_mark = rho_mark + 1;
+          rho_mark += 1;
         }
         
         // now vech T_i
         for (c in 1:nc) for (r in c:nc) {
           theta_L[theta_L_mark] = T_i[r,c];
-          theta_L_mark = theta_L_mark + 1;
+          theta_L_mark += 1;
         }
       }
     }
@@ -95,24 +95,24 @@
         real theta_L_start = theta_L[theta_L_mark];
         for (s in b_mark:(b_mark + l[i] - 1)) 
           b[s] = theta_L_start * z_b[s];
-        b_mark = b_mark + l[i];
-        theta_L_mark = theta_L_mark + 1;
+        b_mark += l[i];
+        theta_L_mark += 1;
       }
       else {
         matrix[nc,nc] T_i = rep_matrix(0, nc, nc);
         for (c in 1:nc) {
           T_i[c,c] = theta_L[theta_L_mark];
-          theta_L_mark = theta_L_mark + 1;
+          theta_L_mark += 1;
           for(r in (c+1):nc) {
             T_i[r,c] = theta_L[theta_L_mark];
-            theta_L_mark = theta_L_mark + 1;
+            theta_L_mark += 1;
           }
         }
         for (j in 1:l[i]) {
           vector[nc] temp = T_i * segment(z_b, b_mark, nc);
-          b_mark = b_mark - 1;
+          b_mark -= 1;
           for (s in 1:nc) b[b_mark + s] = temp[s];
-          b_mark = b_mark + nc + 1;
+          b_mark += nc + 1;
         }
       }
     }
@@ -132,9 +132,9 @@
    * @param shape A vector of shape parameters
    * @param t An integer indicating the number of group-specific terms
    * @param p An integer array with the number variables on the LHS of each |
-   * @return nothing
+   * @return target()
    */
-  void decov_lp(vector z_b, vector z_T, vector rho, vector zeta, vector tau,
+  real decov_lp(vector z_b, vector z_T, vector rho, vector zeta, vector tau,
                 real[] regularization, real[] delta, vector shape,
                 int t, int[] p) {
     int pos_reg = 1;
@@ -145,19 +145,20 @@
       vector[p[i] - 1] shape1;
       vector[p[i] - 1] shape2;
       real nu = regularization[pos_reg] + 0.5 * (p[i] - 2);
-      pos_reg = pos_reg + 1;
+      pos_reg += 1;
       shape1[1] = nu;
       shape2[1] = nu;
       for (j in 2:(p[i]-1)) {
-        nu = nu - 0.5;
+        nu -= 0.5;
         shape1[j] = 0.5 * j;
         shape2[j] = nu;
       }
       target += beta_lpdf(rho[pos_rho:(pos_rho + p[i] - 2)] | shape1, shape2);
-      pos_rho = pos_rho + p[i] - 1;
+      pos_rho += p[i] - 1;
     }
     target += gamma_lpdf(zeta | delta, 1);
     target += gamma_lpdf(tau  | shape, 1);
+    return target();
   }
   
   /**
@@ -241,7 +242,7 @@
     int pos = 1;
     if (t > 0) for (j in 1:N) for (i in 1:t) {
       V[i,j] = v[pos] + 1;
-      pos = pos + 1;
+      pos += 1;
     }
     return V;
   }

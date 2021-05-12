@@ -47,8 +47,13 @@ pp_data <-
   }
   if (is.null(newdata)) {
     x <- get_x(object)
-    if (is.null(offset)) 
+    if (is.null(offset)) {
       offset <- object$offset %ORifNULL% rep(0, nrow(x))
+    }
+    if (inherits(object, "betareg")) {
+      return(nlist(x, offset, z_betareg = object$z))
+    }
+    
     return(nlist(x, offset))
   }
 
@@ -61,7 +66,15 @@ pp_data <-
   if (is(object, "polr") && !is_scobit(object)) 
     x <- x[,colnames(x) != "(Intercept)", drop = FALSE]
   
-  nlist(x, offset)
+  if (inherits(object, "betareg")) {
+    mf <- model.frame(delete.response(object$terms$precision), 
+                      data = newdata, na.action = object$na.action, 
+                      xlev = object$levels$precision)
+    z_betareg <- model.matrix(object$terms$precision, mf, contrasts = object$contrasts$precision)
+    return(nlist(x, offset, z_betareg))
+  }
+  
+  return(nlist(x, offset))
 }
 
 
@@ -82,8 +95,16 @@ pp_data <-
     z <- .pp_data_mer_z(object, newdata, re.form, m = m, ...)
   }
   offset <- model.offset(model.frame(object, m = m))
-  if (!missing(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
-    offset <- try(eval(object$call$offset, newdata), silent = TRUE)
+  if (!is.null(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
+    if (is.jm(object)) {
+      form <- lme4::subbars(object$formula[[m]])
+      form[2] <- NULL # get rid of response to avoid error that it isn't found in newdata
+      mf <- stats::model.frame(form, data = newdata)
+      offset <- model.offset(mf)
+    } else {
+      offset <- offset %ORifNULL% object$call$offset
+      offset <- try(eval(offset, newdata), silent = TRUE)
+    }
     if (!is.numeric(offset)) offset <- NULL
   }
   return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names))
@@ -183,7 +204,7 @@ pp_data <-
     if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
     else x <- predict(object$jam, newdata = newdata, type = "lpmatrix")
     NAs <- apply(is.na(x), 1, any)
-    rfd <- mfnew <- newdata[!NAs,]
+    rfd <- mfnew <- newdata[!NAs,, drop=FALSE]
     attr(rfd,"na.action") <- "na.omit"
   } else {
     terms_fixed <- delete.response(terms(object, fixed.only = TRUE, m = m))
@@ -342,8 +363,9 @@ null_or_zero <- function(x) {
     yX <- fetch(ydat, "x")
     yZt <- fetch(ydat, "Zt")
     yZ_names <- fetch(ydat, "Z_names")
+    yOffset <- fetch(ydat, "offset")
     flist <- lapply(ndL, function(x) factor(x[[id_var]]))
-    res <- c(res, nlist(y, yX, yZt, yZ_names, flist))
+    res <- c(res, nlist(y, yX, yZt, yZ_names, yOffset, flist))
   }
   
   # design matrices for event submodel and association structure

@@ -17,6 +17,7 @@
 
 #' Bayesian nonlinear models with group-specific terms via Stan
 #' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Bayesian inference for NLMMs with group-specific coefficients that have 
 #' unknown covariance matrices with flexible priors.
 #'
@@ -65,9 +66,10 @@
 #'   
 #'   
 #' @seealso The vignette for \code{stan_glmer}, which also discusses 
-#'   \code{stan_nlmer} models.
+#'   \code{stan_nlmer} models. \url{http://mc-stan.org/rstanarm/articles/}
 #'   
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #' \donttest{
 #' data("Orange", package = "datasets")
 #' Orange$circumference <- Orange$circumference / 100
@@ -83,6 +85,7 @@
 #' posterior_interval(fit)
 #' plot(fit, regex_pars = "b\\[")
 #' }
+#' }
 #' @importFrom lme4 nlformula
 #' @importFrom stats getInitial
 stan_nlmer <-
@@ -94,21 +97,25 @@ stan_nlmer <-
            offset,
            contrasts = NULL,
            ...,
-           prior = normal(),
-           prior_aux = exponential(),
+           prior = normal(autoscale=TRUE),
+           prior_aux = exponential(autoscale=TRUE),
            prior_covariance = decov(),
            prior_PD = FALSE,
            algorithm = c("sampling", "meanfield", "fullrank"),
            adapt_delta = NULL,
            QR = FALSE,
            sparse = FALSE) {
-    
+
+  if (!has_outcome_variable(formula[[2]])) {
+    stop("LHS of formula must be specified.")
+  }
   f <- as.character(formula[-3])
   SSfunctions <- grep("^SS[[:lower:]]+", ls("package:stats"), value = TRUE) 
   SSfun <- sapply(SSfunctions, function(ss) 
     grepl(paste0(ss, "("), x = f[2], fixed = TRUE))
-  if (!any(SSfun))
+  if (!any(SSfun)) {
     stop("'stan_nlmer' requires a named self-starting nonlinear function.")
+  }
   SSfun <- which(SSfun)
   SSfun_char <- names(SSfun)
   
@@ -147,6 +154,9 @@ stan_nlmer <-
                           prior_aux = prior_aux, prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta,
                           group = nlf$reTrms, QR = QR, sparse = sparse, ...)
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) {
+    return(stanfit)
+  }
   
   if (SSfun_char == "SSfpl") { # SSfun = 6
     stanfit@sim$samples <- lapply(stanfit@sim$samples, FUN = function(x) {
@@ -167,9 +177,8 @@ stan_nlmer <-
   fit <- nlist(stanfit, 
                family = make_nlf_family(SSfun_char, nlf), 
                formula, offset, weights, 
-               x = if (getRversion() < "3.2.0") cBind(X, Z) else cbind2(X, Z), 
-               y = y, data, call = match.call(), terms = NULL, model = NULL, 
-               na.action = na.omit, contrasts, algorithm, 
+               x = cbind(X, Z), y = y, data, call = match.call(), terms = NULL, 
+               model = NULL, na.action = na.omit, contrasts, algorithm, 
                glmod = nlf, stan_function = "stan_nlmer")
   out <- stanreg(fit)
   class(out) <- c(class(out), "nlmerMod", "lmerMod")

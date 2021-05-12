@@ -18,6 +18,7 @@
 
 #' Bayesian joint longitudinal and time-to-event models via Stan
 #' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' Fits a shared parameter joint model for longitudinal and time-to-event 
 #' (e.g. survival) data under a Bayesian framework using Stan.
 #' 
@@ -31,10 +32,16 @@
 #' @template args-sparse
 #' 
 #' @param formulaLong A two-sided linear formula object describing both the 
-#'   fixed-effects and random-effects parts of the longitudinal submodel  
-#'   (see \code{\link[lme4]{glmer}} for details). For a multivariate joint 
-#'   model (i.e. more than one longitudinal marker) this should 
-#'   be a list of such formula objects, with each element
+#'   fixed-effects and random-effects parts of the longitudinal submodel,
+#'   similar in vein to formula specification in the \strong{lme4} package
+#'   (see \code{\link[lme4]{glmer}} or the \strong{lme4} vignette for details). 
+#'   Note however that the double bar (\code{||}) notation is not allowed 
+#'   when specifying the random-effects parts of the formula, and neither
+#'   are nested grouping factors (e.g. \code{(1 | g1/g2))} or 
+#'   \code{(1 | g1:g2)}, where \code{g1}, \code{g2} are grouping factors. 
+#'   Offset terms can also be included in the model formula.
+#'   For a multivariate joint model (i.e. more than one longitudinal marker) 
+#'   this should be a list of such formula objects, with each element
 #'   of the list providing the formula for one of the longitudinal submodels.
 #' @param dataLong A data frame containing the variables specified in
 #'   \code{formulaLong}. If fitting a multivariate joint model, then this can
@@ -107,10 +114,20 @@
 #'   the expected values at time \emph{t} for each of the lower level 
 #'   units (which may be for example tumor lesions) clustered within that 
 #'   individual. 
+#' @param scale_assoc A non-zero numeric value specifying an optional scaling 
+#'   parameter for the association structure. This multiplicatively scales the 
+#'   value/slope/auc of the longitudinal marker by \code{scale_assoc} within the 
+#'   event submodel. When fitting a multivariate joint model, a scaling parameter 
+#'   must be specified for each longitudinal submodel using a vector of numeric 
+#'   values. Note that only one scaling parameter can be specified for each 
+#'   longitudinal submodel, and it will be used for all association structure 
+#'   types (e.g. \code{"etavalue"}, \code{"etaslope"}, \code{"etaauc"}, 
+#'   \code{"muvalue"}, etc) that are specified for that longitudinal marker in
+#'   the \code{assoc} argument.
 #' @param basehaz A character string indicating which baseline hazard to use
 #'   for the event submodel. Options are a B-splines approximation estimated 
 #'   for the log baseline hazard (\code{"bs"}, the default), a Weibull 
-#'   baseline hazard (\code{"weibull"}, the default), or a piecewise
+#'   baseline hazard (\code{"weibull"}), or a piecewise
 #'   constant baseline hazard (\code{"piecewise"}). (Note however that there  
 #'   is currently limited post-estimation functionality available for
 #'   models estimated using a piecewise constant baseline hazard).
@@ -210,6 +227,7 @@
 #'   the output for the fitted model, but this just corresponds to the 
 #'   necessary post-estimation adjustment in the linear predictor due to the
 #'   centering of the predictiors in the event submodel.
+#'   
 #' @param priorLong_aux The prior distribution for the "auxiliary" parameters
 #'   in the longitudinal submodels (if applicable). 
 #'   The "auxiliary" parameter refers to a different parameter 
@@ -217,11 +235,11 @@
 #'   controls \code{"sigma"}, the error 
 #'   standard deviation. For negative binomial models \code{priorLong_aux} controls 
 #'   \code{"reciprocal_dispersion"}, which is similar to the 
-#'   \code{"size"} parameter of \code{\link[stats]{rnbinom}}:
+#'   \code{"size"} parameter of \code{\link[stats:NegBinomial]{rnbinom}}:
 #'   smaller values of \code{"reciprocal_dispersion"} correspond to 
 #'   greater dispersion. For gamma models \code{priorLong_aux} sets the prior on 
 #'   to the \code{"shape"} parameter (see e.g., 
-#'   \code{\link[stats]{rgamma}}), and for inverse-Gaussian models it is the 
+#'   \code{\link[stats:GammaDist]{rgamma}}), and for inverse-Gaussian models it is the 
 #'   so-called \code{"lambda"} parameter (which is essentially the reciprocal of
 #'   a scale parameter). Binomial and Poisson models do not have auxiliary 
 #'   parameters. 
@@ -401,7 +419,9 @@
 #'   \code{\link{pp_check}}, \code{\link{ps_check}}, \code{\link{stan_mvmer}}.
 #' 
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #' \donttest{
+#' 
 #' #####
 #' # Univariate joint model, with association structure based on the 
 #' # current value of the linear predictor
@@ -510,16 +530,17 @@
 #'         time_var = "year", 
 #'         chains = 1, cores = 1, seed = 12345, iter = 1000)
 #' }
+#' }
 #' 
 stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var, 
                     id_var, family = gaussian, assoc = "etavalue", 
-                    lag_assoc = 0, grp_assoc, epsilon = 1E-5,
-                    basehaz = c("bs", "weibull", "piecewise"), basehaz_ops, 
+                    lag_assoc = 0, grp_assoc, scale_assoc = NULL, epsilon = 1E-5,
+                    basehaz = c("bs", "weibull", "piecewise"), basehaz_ops,
                     qnodes = 15, init = "prefit", weights,	
-                    priorLong = normal(), priorLong_intercept = normal(), 
-                    priorLong_aux = cauchy(0, 5), priorEvent = normal(), 
-                    priorEvent_intercept = normal(), priorEvent_aux = cauchy(),
-                    priorEvent_assoc = normal(), prior_covariance = lkj(), 
+                    priorLong = normal(autoscale=TRUE), priorLong_intercept = normal(autoscale=TRUE), 
+                    priorLong_aux = cauchy(0, 5, autoscale=TRUE), priorEvent = normal(autoscale=TRUE), 
+                    priorEvent_intercept = normal(autoscale=TRUE), priorEvent_aux = cauchy(autoscale=TRUE),
+                    priorEvent_assoc = normal(autoscale=TRUE), prior_covariance = lkj(autoscale=TRUE), 
                     prior_PD = FALSE, algorithm = c("sampling", "meanfield", "fullrank"), 
                     adapt_delta = NULL, max_treedepth = 10L, QR = FALSE, 
                     sparse = FALSE, ...) {
@@ -554,6 +575,8 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
 
   # Formula
   formulaLong <- validate_arg(formulaLong, "formula"); M <- length(formulaLong)
+	if (M > 3L)
+	  stop("'stan_jm' is currently limited to a maximum of 3 longitudinal outcomes.")
   
   # Data
   dataLong <- validate_arg(dataLong, "data.frame", validate_length = M)  
@@ -584,7 +607,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                          time_var = time_var, id_var = id_var, family = family,
                          assoc = assoc, lag_assoc = lag_assoc, grp_assoc = grp_assoc, 
                          epsilon = epsilon, basehaz = basehaz, basehaz_ops = basehaz_ops, 
-                         qnodes = qnodes, init = init, weights = weights, 
+                         qnodes = qnodes, init = init, weights = weights, scale_assoc = scale_assoc,
                          priorLong = priorLong, 
                          priorLong_intercept = priorLong_intercept, 
                          priorLong_aux = priorLong_aux, 
@@ -595,20 +618,21 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
                          prior_covariance = prior_covariance, prior_PD = prior_PD, 
                          algorithm = algorithm, adapt_delta = adapt_delta, 
                          max_treedepth = max_treedepth, QR = QR, sparse = sparse, ...)
-
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   y_mod <- attr(stanfit, "y_mod")
   e_mod <- attr(stanfit, "e_mod")
   a_mod <- attr(stanfit, "a_mod")
   cnms  <- attr(stanfit, "cnms")
   flevels <- attr(stanfit, "flevels")
   assoc <- attr(stanfit, "assoc")
+  scale_assoc <- attr(stanfit, "scale_assoc")
   id_var <- attr(stanfit, "id_var")
   basehaz    <- attr(stanfit, "basehaz")
   grp_stuff  <- attr(stanfit, "grp_stuff")
   prior_info <- attr(stanfit, "prior_info")
   stanfit <- drop_attributes(stanfit, "y_mod", "e_mod", "a_mod", "cnms", 
                              "flevels", "assoc", "id_var", "basehaz", 
-                             "grp_stuff", "prior_info")
+                             "grp_stuff", "prior_info","scale_assoc")
   
   terms <- c(fetch(y_mod, "terms"), list(terms(e_mod$mod)))
   n_yobs <- fetch_(y_mod, "x", "N")
@@ -616,7 +640,7 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   n_subjects <- e_mod$Npat
 
   fit <- nlist(stanfit, formula = c(formulaLong, formulaEvent), family,
-               id_var, time_var, weights, qnodes, basehaz, assoc,
+               id_var, time_var, weights, scale_assoc, qnodes, basehaz, assoc,
                M, cnms, flevels, n_grps, n_subjects, n_yobs, epsilon,
                algorithm, terms, glmod = y_mod, survmod = e_mod, 
                assocmod = a_mod, grp_stuff, dataLong, dataEvent,

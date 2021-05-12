@@ -15,20 +15,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat 
-# package and then running the code below possibly with options(mc.cores = 4).
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 SEED <- 123
 ITER <- 10
 CHAINS <- 2
 CORES <- 1
 
-source(test_path("helpers", "SW.R"))
-source(test_path("helpers", "expect_gg.R"))
-
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 fit <- example_model
-SW(fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED))
+SW(fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEED, refresh = 0))
 SW(fitvb <- update(fito, algorithm = "meanfield"))
 
 # plot.stanreg ------------------------------------------------------------
@@ -38,7 +36,7 @@ test_that("plot.stanreg errors if chains = 1 but needs multiple", {
                             "hist_by_chain",
                             "dens_overlay",
                             "violin")
-  SW(fit_1chain <- stan_glm(mpg ~ wt, data = mtcars, chains = 1, iter = 100))
+  SW(fit_1chain <- stan_glm(mpg ~ wt, data = mtcars, chains = 1, iter = 100, refresh = 0))
   for (f in multiple_chain_plots) {
     expect_error(plot(fit_1chain, plotfun = f), info = f, 
                  regexp = "requires multiple chains")
@@ -71,7 +69,6 @@ test_that("plot.stanreg returns correct object", {
   
   # requires exactly 2 parameters
   expect_gg(plot(fit, "scat", pars = c("period2", "period3")))
-  expect_gg(plot(fit, "hex", pars = c("period2", "period3")))
 })
 
 test_that("plot method returns correct object for nuts diagnostic plots", {

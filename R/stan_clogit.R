@@ -15,8 +15,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#' Conditional logistic (clogit) models via Stan
+#' Conditional logistic (clogit) regression models via Stan
 #'
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' A model for case-control studies with optional prior distributions for the
 #' coefficients, intercept, and auxiliary parameters.
 #'
@@ -37,11 +38,11 @@
 #' @template args-sparse
 #' @template args-dots
 #' 
-#' @param formula,data,subset,na.action Same as for \code{\link[lme4]{glmer}}, 
-#'   except that any intercept included in the formula will be dropped. \emph{We
-#'   strongly advise against omitting the \code{data} argument}. Unless 
-#'   \code{data} is specified (and is a data frame) many post-estimation 
-#'   functions (including \code{update}, \code{loo}, \code{kfold}) are not 
+#' @param formula,data,subset,na.action,contrasts Same as for \code{\link[lme4]{glmer}},
+#'   except that any global intercept included in the formula will be dropped.
+#'   \emph{We strongly advise against omitting the \code{data} argument}. Unless
+#'   \code{data} is specified (and is a data frame) many post-estimation
+#'   functions (including \code{update}, \code{loo}, \code{kfold}) are not
 #'   guaranteed to work properly.
 #' @param strata A factor indicating the groups in the data where the number of 
 #'   successes (possibly one) is fixed by the research design. It may be useful 
@@ -63,30 +64,36 @@
 #'   The \code{data.frame} passed to the \code{data} argument must be sorted by 
 #'   the variable passed to the \code{strata} argument.
 #'   
-#'   The \code{formula} may have group-specific terms like in 
+#'   The \code{formula} may have group-specific terms like in
 #'   \code{\link{stan_glmer}} but should not allow the intercept to vary by the
 #'   stratifying variable, since there is no information in the data with which
 #'   to estimate such deviations in the intercept.
 #'   
-#' @seealso The vignette for Bernoulli and binomial models.
+#' @seealso The vignette for Bernoulli and binomial models, which has more
+#'   details on using \code{stan_clogit}.
+#'   \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' dat <- infert[order(infert$stratum), ] # order by strata
 #' post <- stan_clogit(case ~ spontaneous + induced + (1 | education), 
 #'                     strata = stratum,
-#'                     data = infert[order(infert$stratum), ],
+#'                     data = dat,
 #'                     subset = parity <= 2,
 #'                     QR = TRUE,
 #'                     chains = 2, iter = 500) # for speed only
 #'
-#' nd <- infert[infert$parity > 2, c("case", "spontaneous", "induced", 
-#'                                   "education", "stratum")]
+#' nd <- dat[dat$parity > 2, c("case", "spontaneous", "induced", "education", "stratum")]
 #' # next line would fail without case and stratum variables                                 
-#' pr <- posterior_linpred(post, newdata = nd, transform = TRUE)
-#' all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr)) # not a random variable
-#'             
+#' pr <- posterior_epred(post, newdata = nd) # get predicted probabilities
+#' 
+#' # not a random variable b/c probabilities add to 1 within strata
+#' all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr)) 
+#' }
 #' @importFrom lme4 findbars
-stan_clogit <- function(formula, data, subset, na.action = NULL, ..., 
-                        strata, prior = normal(), 
+stan_clogit <- function(formula, data, subset, na.action = NULL, contrasts = NULL,
+                        ..., 
+                        strata, prior = normal(autoscale=TRUE), 
                         prior_covariance = decov(), prior_PD = FALSE, 
                         algorithm = c("sampling", "optimizing", 
                                       "meanfield", "fullrank"),
@@ -100,6 +107,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
              table = names(mf), nomatch = 0L)
   mf <- mf[c(1L, m)]
   names(mf)[length(mf)] <- "weights"
+  mf$data <- data
   err <- try(eval(mf$weights, data, enclos = NULL), silent = TRUE)
   if (inherits(err, "try-error")) {
     stop("the 'stratum' argument must be evaluatable solely within 'data'")
@@ -117,8 +125,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
     group <- glmod$reTrms
     group$strata <- glmod$strata <- as.factor(mf[,"(weights)"])
     group$decov <- prior_covariance
-  }
-  else {
+  } else {
     validate_glm_formula(formula)
     mf[[1L]] <- as.name("model.frame")
     mf$drop.unused.levels <- TRUE
@@ -128,8 +135,15 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
     X <- model.matrix(mt, mf, contrasts)
     Y <- array1D_check(model.response(mf, type = "any"))
   }
+  contrasts <- attr(X, "contrasts")
+  if (is.factor(Y)) {
+    Y <- fac2bin(Y)
+  }
+  
   ord <- order(group$strata)
-  if (any(diff(ord) <= 0)) stop("data must be sorted by 'strata'")
+  if (any(diff(ord) <= 0)) {
+    stop("Data must be sorted by 'strata' (in increasing order).")
+  }
   offset <- model.offset(mf) %ORifNULL% double(0)
   weights <- double(0)
   mf <- check_constant_vars(mf)
@@ -139,6 +153,8 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
   xint <- match("(Intercept)", colnames(X), nomatch = 0L)
   if (xint > 0L) {
     X <- X[, -xint, drop = FALSE]
+    # I cannot remember why I was calling drop.terms() to get rid of the intercept
+    # mt <- drop.terms(mt, dropx = xint)
     attr(mt, "intercept") <- 0L
   }
   f <- binomial(link = "logit")
@@ -148,6 +164,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
                           prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           group = group, QR = QR, sparse = sparse, ...)
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)  
   f$link <- "clogit"
   f$linkinv <- function(eta, g = group$strata, 
                         successes = aggregate(Y, by = list(g), FUN = sum)$x) {
@@ -162,7 +179,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
   fit <- nlist(stanfit, algorithm, family = f, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
-               contrasts = attr(X, "contrasts"), 
+               contrasts = contrasts, 
                stan_function = "stan_clogit", 
                glmod = if(has_bars) glmod)
   out <- stanreg(fit)

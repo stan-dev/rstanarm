@@ -1,5 +1,5 @@
 # Part of the rstanarm package for estimating model parameters
-# Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
+# Copyright (C) 2015, 2016, 2017, 2018, 2019 Trustees of Columbia University
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,27 +15,29 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat 
-# package and then running the code
-
+Sys.setenv(USE_CXX14 = 1)
 set.seed(12345)
 
-MODELS_HOME <- file.path("src", "stan_files")
-if (!file.exists(MODELS_HOME)) { # R CMD check
-  MODELS_HOME <- file.path("..", "..", "00_pkg_src", "rstanarm", "src", "stan_files")
-  INCLUDE_DIR <- file.path("..", "..", "00_pkg_src", "rstanarm", "inst", "include")
-} else {
-  INCLUDE_DIR <- file.path("inst", "include")
-}
+MODELS_HOME <- "stan_files"
+INCLUDE_DIR <- "include"
 
 context("setup")
 test_that("Stan programs are available", {
-  message(MODELS_HOME)
   expect_true(file.exists(MODELS_HOME))
 })
 
 library(rstan)
 Sys.unsetenv("R_TESTS")
+TBB <- system.file("lib", .Platform$r_arch, package = "RcppParallel", mustWork = TRUE)
+SH  <- system.file(ifelse(.Platform$OS.type == "windows", "libs", "lib"), 
+                   .Platform$r_arch, package = "StanHeaders",  mustWork = TRUE)
+Sys.setenv(LOCAL_LIBS = paste0("-L", shQuote(TBB), " -tbb -tbbmalloc ",
+                               "-L", shQuote(SH) , " -lStanHeaders"))
+# Sys.setenv(PKG_LIBS = Sys.getenv("LOCAL_LIBS"))
+Eigen <- dir(system.file("include", "stan", "math", "prim",
+                         package = "StanHeaders", mustWork = TRUE),
+             pattern = "Eigen.hpp$", full.names = TRUE, recursive = TRUE)[1]
+Sys.setenv(PKG_CXXFLAGS = paste("-include", shQuote(Eigen)))
 
 functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
   mc <- readLines(f)
@@ -62,8 +64,8 @@ functions <- c(unlist(lapply(file.path(MODELS_HOME, "functions",
 model_code <- paste(c("functions {", functions, "}"), collapse = "\n")
 stanc_ret <- stanc(model_code = model_code, model_name = "Stan Functions",
                    allow_undefined = TRUE)
-expose_stan_functions(stanc_ret)
-Rcpp::sourceCpp(file.path(INCLUDE_DIR, "tests.cpp"))
+expose_stan_functions(stanc_ret, rebuild = TRUE, verbose = TRUE)
+Rcpp::sourceCpp(file.path(INCLUDE_DIR, "tests.cpp"), rebuild = TRUE, verbose = TRUE)
 N <- 99L
 
 # bernoulli
@@ -276,17 +278,20 @@ test_that("inv_gaussian returns expected results", {
 # lm
 N <- 99L
 context("lm")
-test_that("ll_mvn_ols_qr_lp returns expected results", {
+test_that("ll_mvn_ols... returns expected results", {
   X <- matrix(rnorm(2 * N), N, 2)
+  X <- sweep(X, MARGIN = 2, STATS = colMeans(X), FUN = "-")
   y <- 1 + X %*% c(2:3) + rnorm(N)
   ols <- lm.fit(cbind(1,X), y)
   b <- coef(ols)
-  X <- sweep(X, MARGIN = 2, STATS = colMeans(X), FUN = "-")
   intercept <- 0.5
   beta <- rnorm(2)
   sigma <- rexp(1)
   SSR <- crossprod(residuals(ols))[1]
   ll <- sum(dnorm(y, intercept + X %*% beta, sigma, log = TRUE))
+  expect_true(all.equal(ll, ll_mvn_ols(c(intercept, beta), b, 
+                                       crossprod(cbind(1, X)), SSR, 
+                                       sigma, N)))
   decomposition <- qr(X)
   Q <- qr.Q(decomposition)
   R <- qr.R(decomposition)

@@ -268,10 +268,10 @@ split_cov_prior <- function(prior_stuff, cnms, submodel_cnms) {
 # @return A named list with the same structure as returned by handle_glm_prior
 autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL, 
                             family = NULL, QR = FALSE, min_prior_scale = 1e-12, 
-                            assoc = NULL, ...) {
+                            assoc = NULL, scale_assoc = NULL, ...) {
   ps <- prior_stuff
   
-  if (!is.null(response) && is.gaussian(family)) { 
+  if (!identical(NULL, response) && is.gaussian(family$family)) { 
     # use response variable for scaling priors
     if (ps$prior_dist > 0L && ps$prior_autoscale) {
       ss <- sd(response)
@@ -279,7 +279,7 @@ autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL,
     }
   }
   
-  if (!is.null(predictors) && !QR) {
+  if (!identical(NULL, predictors) && !QR) {
     # use predictors for scaling priors
     if (ps$prior_dist > 0L && ps$prior_autoscale) {
       ps$prior_scale <- 
@@ -288,18 +288,20 @@ autoscale_prior <- function(prior_stuff, response = NULL, predictors = NULL,
     }      
   }
   
-  if (!is.null(assoc)) {
+  if (!identical(NULL, assoc)) {
     # Evaluate mean and SD of each of the association terms that will go into
     # the linear predictor for the event submodel (as implicit "covariates").
     # (NB the approximate association terms are calculated using coefs
     # from the separate longitudinal submodels estimated using glmer).
     # The mean will be used for centering each association term.
     # The SD will be used for autoscaling the prior for each association parameter.
-    if (is.null(family))
+    if (identical(NULL, family))
       stop("'family' cannot be NULL when autoscaling association parameters.")
     assoc_terms <- make_assoc_terms(family = family, assoc = assoc, ...)
     ps$a_xbar <- as.array(apply(assoc_terms, 2L, mean))
     if (ps$prior_dist > 0L && ps$prior_autoscale) {
+      if (!identical(NULL, scale_assoc))
+        assoc_terms <- assoc_terms * scale_assoc
       a_beta_scale <- apply(assoc_terms, 2L, get_scale_value)
       ps$prior_scale <- pmax(min_prior_scale, ps$prior_scale / a_beta_scale)
     }
@@ -336,6 +338,8 @@ summarize_jm_prior <-
            user_priorEvent_aux = NULL,
            user_priorEvent_assoc = NULL,
            user_prior_covariance = NULL,
+           b_user_prior_stuff = NULL,
+           b_prior_stuff = NULL,
            y_has_intercept = NULL,
            e_has_intercept = NULL,
            y_has_predictors = NULL,
@@ -486,8 +490,31 @@ summarize_jm_prior <-
         ))
     }
     
-    if (length(user_prior_covariance))
-      prior_list$prior_covariance <- user_prior_covariance
+    if (length(user_prior_covariance)) {
+      if (user_prior_covariance$dist == "decov") {
+        prior_list$prior_covariance <- user_prior_covariance
+      } else if (user_prior_covariance$dist == "lkj") {
+        # lkj prior for correlation matrix
+        prior_list$prior_covariance <- user_prior_covariance
+        # half-student_t prior on SD for each ranef (possibly autoscaled)
+        prior_list$prior_covariance$df <- b_user_prior_stuff$prior_df
+        prior_list$prior_covariance$scale <- b_user_prior_stuff$prior_scale
+        adj_scales <- uapply(b_prior_stuff, FUN = uapply, '[[', "prior_scale")
+        if (!all(b_user_prior_stuff$prior_scale == adj_scales)) {
+          prior_list$prior_covariance$adjusted_scale <- adj_scales
+        } else {
+          prior_list$prior_covariance$adjusted_scale <- NULL
+        }
+      } else {
+        prior_list$prior_covariance <- NULL
+      }
+    }
+    
+    if (!stub_for_names == "Long") {
+      nms <- names(prior_list)
+      new_nms <- gsub("Long", "", nms)
+      names(prior_list) <- new_nms
+    }
     
     return(prior_list)
   }
@@ -580,8 +607,12 @@ handle_y_mod <- function(formula, data, family) {
   has_aux <- check_for_aux(family)
   family <- append_mvmer_famlink(family, is_bernoulli)
   
+  # Offset
+  offset <- model.offset(mf)
+  has_offset <- as.numeric(!is.null(offset))
+  
   nlist(y, x, z, reTrms, model_frame = mf, formula, terms, 
-        family, intercept_type, has_aux)
+        family, intercept_type, has_aux, offset, has_offset)
 }
 
 # Return the response vector for passing to Stan
@@ -915,10 +946,10 @@ append_predvars_attribute <- function(terms, formula, data) {
 # @return A reformulated model formula with variables replaced by predvars
 use_predvars <- function(mod, keep_response = TRUE) {
   fm <- formula(mod)
-  ff <- grep("", attr(terms(mod, fixed.only = TRUE), "variables"), value = TRUE)[-1]
-  fr <- grep("", attr(terms(mod, random.only = TRUE), "variables"), value = TRUE)[-1]
-  pf <- grep("", attr(terms(mod, fixed.only = TRUE), "predvars"), value = TRUE)[-1]
-  pr <- grep("", attr(terms(mod, random.only = TRUE), "predvars"), value = TRUE)[-1]
+  ff <- lapply(attr(terms(mod, fixed.only  = TRUE), "variables"), deparse, 500)[-1]
+  fr <- lapply(attr(terms(mod, random.only = TRUE), "variables"), deparse, 500)[-1]
+  pf <- lapply(attr(terms(mod, fixed.only  = TRUE), "predvars"),  deparse, 500)[-1]
+  pr <- lapply(attr(terms(mod, random.only = TRUE), "predvars"),  deparse, 500)[-1]
   if (!identical(c(ff, fr), c(pf, pr))) {
     for (j in 1:length(ff))
       fm <- gsub(ff[[j]], pf[[j]], fm, fixed = TRUE)    
@@ -931,7 +962,7 @@ use_predvars <- function(mod, keep_response = TRUE) {
   if (keep_response && length(fm) == 3L) {
     fm <- reformulate(rhs, response = formula(mod)[[2L]])
   } else if (keep_response && length(fm) == 2L) {
-    warning2("No response variable found, reformulating RHS only.")
+    warning("No response variable found, reformulating RHS only.", call. = FALSE)
     fm <- reformulate(rhs, response = NULL)
   } else {
     fm <- reformulate(rhs, response = NULL)
@@ -1465,6 +1496,56 @@ validate_lag_assoc <- function(lag_assoc, M) {
   lag_assoc
 }
 
+# Validate the user input to the scale_assoc argument of stan_jm
+#
+# @param scale_assoc The user input to the scale_assoc argument
+# @param assoc_as_list A list with information about the association structure for 
+#   the longitudinal submodels
+# @return A numeric vector of scaling parameters for all assoc terms
+validate_scale_assoc <- function(scale_assoc, assoc_as_list) {
+  M <- length(assoc_as_list)
+  
+  if (is.null(scale_assoc)) 
+    scale_assoc <-  rep(1,M)
+  if (length(scale_assoc) < M)
+    stop2("'scale_assoc' must be specified for each longitudinal submodel.")
+  if (length(scale_assoc) > M)
+    stop2("'scale_assoc' can only be specified once for each longitudinal submodel.")
+  if (!is.numeric(scale_assoc))
+    stop2("'scale_assoc' must be numeric.")
+  
+  sel_shared <- c("shared_b", "shared_coef")
+  sel_terms <- c("etavalue", "etaslope", "etaauc", 
+                 "muvalue", "muslope", "muauc")
+  sel_data <- c("which_formulas")
+  sel_itx <- c("which_interactions")
+  
+  scale_list <- list()
+  for (m in 1:M) {
+    a = assoc_as_list[[m]]
+    
+    if (a[["null"]]) {
+      scale_list[[m]] = as.array(integer(0))
+    } else {
+      if (scale_assoc[m] == 0)
+        stop2("'scale_assoc' must be non-zero.")
+      if (any(unlist(a[sel_shared])))
+        stop2("'scale_assoc' is not yet implemented for the following association structures: ", 
+              paste(sel_shared, collapse = ", "))
+      
+      # calculate scale for each assoc term
+      scale_terms <- rep(scale_assoc[m], length(which(unlist(a[sel_terms]))))
+      scale_data <- rep(scale_assoc[m], length(unlist(a[[sel_data]])))
+      scale_itx <- scale_assoc[m] * scale_assoc[unlist(a[[sel_itx]])]
+      
+      scale_list[[m]] <- c(scale_terms, scale_data, scale_itx)
+    }
+  }
+  
+  # return vector of scaling parameters
+  return(unlist(scale_list))
+}
+
 # Remove suffixes from the user inputted assoc argument
 #
 # @param x A character vector, being the user input to the 
@@ -1660,6 +1741,8 @@ handle_assocmod <- function(data, assoc, y_mod, grp_stuff, ids, times,
   form_new <- reformulate(rhs, response = NULL)
   df <- get_all_vars(form_new, data)
   df <- df[complete.cases(df), , drop = FALSE]
+  
+  df$offset <- 0 # force offset to zero for assoc term
 
   # Declare df as a data.table for merging with quadrature points
   dt <- prepare_data_table(df, id_var = id_var, time_var = time_var, 

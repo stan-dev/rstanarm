@@ -17,6 +17,7 @@
 
 #' Bayesian regularized linear but big models via Stan
 #' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
 #' This is the same model as with \code{\link{stan_lm}} but it utilizes the
 #' output from \code{\link[biglm]{biglm}} in the \pkg{biglm} package in order to
 #' proceed when the data is too large to fit in memory.
@@ -34,12 +35,7 @@
 #' @param prior Must be a call to \code{\link{R2}} with its \code{location}
 #'   argument specified or \code{NULL}, which would indicate a standard uniform
 #'   prior for the \eqn{R^2}.
-#' @param prior_intercept Either \code{NULL} (the default) or a call to 
-#'   \code{\link{normal}}. If a \code{\link{normal}} prior is specified without
-#'   a \code{scale}, then the standard deviation is taken to be the marginal
-#'   standard deviation of the outcome divided by the square root of the sample
-#'   size, which is legitimate because the marginal standard deviation of the
-#'   outcome is a primitive parameter being estimated.
+#' @inheritParams stan_lm
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
@@ -70,9 +66,13 @@ stan_biglm <- function(biglm, xbar, ybar, s_y, ...,
                        prior_intercept = NULL, prior_PD = FALSE, 
                        algorithm = c("sampling", "meanfield", "fullrank"),
                        adapt_delta = NULL) {
+  if (!requireNamespace("biglm", quietly = TRUE)) {
+    stop("Please install the biglm package to use this function.")
+  }
   if (!inherits(biglm, "biglm")    || is.null(biglm$qr) ||
-      !inherits(biglm$qr, "bigqr") || is.null(biglm$terms))
+      !inherits(biglm$qr, "bigqr") || is.null(biglm$terms)) {
     stop("'biglm' must be of S3 class biglm as defined by the biglm package.")
+  }
 
   b <- coef(biglm)
   R <- diag(length(b))
@@ -82,13 +82,14 @@ stan_biglm <- function(biglm, xbar, ybar, s_y, ...,
     b <- b[-1]
     R <- R[-1,-1]
     has_intercept <- TRUE
+  } else {
+    has_intercept <- FALSE
   }
-  else has_intercept <- FALSE
 
-  return(stan_biglm.fit(b, R, SSR = biglm$qr$ss, N = biglm$n, xbar, ybar, s_y, 
-                        has_intercept, ...,
-                        prior = prior, prior_intercept = prior_intercept,
-                        prior_PD = prior_PD, algorithm = algorithm, 
-                        adapt_delta = adapt_delta))
+  stan_biglm.fit(b, R, SSR = biglm$qr$ss, N = biglm$n, xbar, ybar, s_y, 
+                 has_intercept, ...,
+                 prior = prior, prior_intercept = prior_intercept,
+                 prior_PD = prior_PD, algorithm = match.arg(algorithm), 
+                 adapt_delta = adapt_delta)
 }
 

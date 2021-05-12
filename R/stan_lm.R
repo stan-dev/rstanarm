@@ -16,14 +16,15 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #' Bayesian regularized linear models via Stan
-#'
-#' Bayesian inference for linear modeling with regularizing priors on the 
-#' model parameters that are driven by prior beliefs about \eqn{R^2}, the 
-#' proportion of variance in the outcome attributable to the predictors. See 
-#' \code{\link{priors}} for an explanation of this critical point. 
-#' \code{\link{stan_glm}} with \code{family="gaussian"} also estimates a 
-#' linear model with normally-distributed errors and allows for various other 
-#' priors on the coefficients.
+#' 
+#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
+#' Bayesian inference for linear modeling with regularizing priors on the model
+#' parameters that are driven by prior beliefs about \eqn{R^2}, the proportion
+#' of variance in the outcome attributable to the predictors. See
+#' \code{\link{priors}} for an explanation of this critical point.
+#' \code{\link{stan_glm}} with \code{family="gaussian"} also estimates a linear
+#' model with normally-distributed errors and allows for various other priors on
+#' the coefficients.
 #' 
 #' @export
 #' @templateVar fun stan_lm, stan_aov
@@ -43,7 +44,7 @@
 #' @template args-algorithm
 #' @template args-adapt_delta
 #'
-#' @param w Same as in \code{\link[stats]{lm.wfit}} but rarely specified.
+#' @param w Same as in \code{lm.wfit} but rarely specified.
 #' @param prior Must be a call to \code{\link{R2}} with its 
 #'   \code{location} argument specified or \code{NULL}, which would
 #'   indicate a standard uniform prior for the \eqn{R^2}.
@@ -54,6 +55,19 @@
 #'   root of the sample size, which is legitimate because the marginal
 #'   standard deviation of the outcome is a primitive parameter being
 #'   estimated.
+#'   
+#'   \strong{Note:} If using a dense representation of the design matrix
+#'   ---i.e., if the \code{sparse} argument is left at its default value of
+#'   \code{FALSE}--- then the prior distribution for the intercept is set so it
+#'   applies to the value \emph{when all predictors are centered}. If you prefer
+#'   to specify a prior on the intercept without the predictors being
+#'   auto-centered, then you have to omit the intercept from the
+#'   \code{\link[stats]{formula}} and include a column of ones as a predictor,
+#'   in which case some element of \code{prior} specifies the prior on it,
+#'   rather than \code{prior_intercept}. Regardless of how
+#'   \code{prior_intercept} is specified, the reported \emph{estimates} of the
+#'   intercept always correspond to a parameterization without centered
+#'   predictors (i.e., same as in \code{glm}).
 #'
 #'
 #' @details The \code{stan_lm} function is similar in syntax to the 
@@ -63,8 +77,8 @@
 #'   \code{"sampling"}). The \code{stan_lm} function has a formula-based
 #'   interface and would usually be called by users but the \code{stan_lm.fit}
 #'   and \code{stan_lm.wfit} functions might be called by other functions that
-#'   parse the data themselves and are analagous to \code{\link[stats]{lm.fit}}
-#'   and \code{\link[stats]{lm.wfit}} respectively.
+#'   parse the data themselves and are analogous to \code{lm.fit}
+#'   and \code{lm.wfit} respectively.
 #'      
 #'   In addition to estimating \code{sigma} --- the standard deviation of the
 #'   normally-distributed errors --- this model estimates a positive parameter
@@ -79,10 +93,11 @@
 #'   checking convergence because it is reasonably normally distributed
 #'   and a function of all the parameters in the model.
 #'   
-#'   The \code{stan_aov} function is similar to \code{\link[stats]{aov}} and
-#'   has a somewhat customized \code{\link{print}} method but basically just 
-#'   calls \code{stan_lm} with dummy variables to do a Bayesian analysis of
-#'   variance.
+#'   The \code{stan_aov} function is similar to \code{\link[stats]{aov}}, but
+#'   does a Bayesian analysis of variance that is basically equivalent to
+#'   \code{stan_lm} with dummy variables. \code{stan_aov} has a somewhat
+#'   customized \code{\link{print}} method that prints an ANOVA-like table in
+#'   addition to the output printed for \code{stan_lm} models.
 #'   
 #'   
 #' @references 
@@ -93,6 +108,7 @@
 #' @seealso 
 #' The vignettes for \code{stan_lm} and \code{stan_aov}, which have more
 #' thorough descriptions and examples.
+#' \url{http://mc-stan.org/rstanarm/articles/}
 #' 
 #' Also see \code{\link{stan_glm}}, which --- if \code{family =
 #' gaussian(link="identity")} --- also estimates a linear model with
@@ -100,13 +116,13 @@
 #'   
 #'   
 #' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #' (fit <- stan_lm(mpg ~ wt + qsec + am, data = mtcars, prior = R2(0.75), 
 #'                 # the next line is only to make the example go fast enough
-#'                 chains = 1, iter = 500, seed = 12345))
-#' plot(fit, prob = 0.8)
+#'                 chains = 1, iter = 300, seed = 12345, refresh = 0))
 #' plot(fit, "hist", pars = c("wt", "am", "qsec", "sigma"), 
 #'      transformations = list(sigma = "log"))
-#' 
+#' }
 stan_lm <- function(formula, data, subset, weights, na.action,
                     model = TRUE, x = FALSE, y = FALSE, 
                     singular.ok = TRUE, contrasts = NULL, offset, ...,
@@ -118,10 +134,12 @@ stan_lm <- function(formula, data, subset, weights, na.action,
   
   algorithm <- match.arg(algorithm)
   validate_glm_formula(formula)
-  validate_data(data)
+  data <- validate_data(data, if_missing = environment(formula))
+  
   call <- match.call(expand.dots = TRUE)
   mf <- match.call(expand.dots = FALSE)
   mf[[1L]] <- as.name("lm")
+  mf$data <- data
   mf$x <- mf$y <- mf$singular.ok <- TRUE
   mf$qr <- FALSE
   mf$prior <- mf$prior_intercept <- mf$prior_PD <- mf$algorithm <- 
@@ -138,9 +156,11 @@ stan_lm <- function(formula, data, subset, weights, na.action,
                           prior_PD = prior_PD, 
                           algorithm = algorithm, adapt_delta = adapt_delta, 
                           ...)
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
   fit <- nlist(stanfit, family = gaussian(), formula, offset, weights = w,
                x = X[,intersect(colnames(X), dimnames(stanfit)[[3]]), drop = FALSE], 
-               y = Y, data = if (missing("data")) environment(formula) else data,
+               y = Y, 
+               data = data,
                prior.info = prior, 
                algorithm, call, terms = mt,
                model = if (model) modelframe else NULL,

@@ -15,26 +15,22 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat
-# package and then running the code below possibly with options(mc.cores = 4).
-
-
 context("pp_check")
 
-
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 SEED <- 123
 set.seed(SEED)
 ITER <- 10
 CHAINS <- 2
 REFRESH <- 0
 
-source(test_path("helpers", "SW.R"))
-source(test_path("helpers", "expect_gg.R"))
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 
 fit <- example_model
 SW(fit2 <- stan_glm(mpg ~ wt + am, data = mtcars, iter = ITER, chains = CHAINS,
-                    seed = SEED, refresh = REFRESH))
+                    seed = SEED, refresh = 0))
 
 
 patt <- "rootogram|_bars|vs_x|grouped$|_data$"
@@ -44,12 +40,20 @@ ppc_funs_discrete <- bayesplot::available_ppc("rootogram|_bars")
 
 
 test_that("pp_check.stanreg creates ggplot object", {
-  exclude <- c("ppc_bars", "ppc_loo_pit", "ppc_loo_intervals", 
-               "ppc_loo_ribbon", "ppc_rootogram")
+  exclude <- c("ppc_bars", 
+               "ppc_loo_pit", 
+               "ppc_loo_pit_overlay", 
+               "ppc_loo_pit_qq",
+               "ppc_loo_intervals", 
+               "ppc_loo_ribbon", 
+               "ppc_rootogram", 
+               "ppc_error_binned", 
+               "ppc_km_overlay")
   for (f in ppc_funs_not_grouped) for (j in 1:2) {
-    if (!f %in% exclude)
+    if (!f %in% exclude) {
       expect_gg(suppressWarnings(pp_check(fit, plotfun = f, nreps = j)), 
                 info = f)
+    }
   }
 })
 
@@ -69,13 +73,13 @@ test_that("pp_check.stanreg creates ggplot object for count & ordinal outcomes",
   SW(fit3 <- stan_glm(counts ~ outcome + treatment, data = d, 
                    family = poisson(link="log"),
                    iter = ITER, chains = CHAINS,
-                   seed = SEED, refresh = REFRESH))
+                   seed = SEED, refresh = 0))
   expect_gg(pp_check(fit3, plotfun = "rootogram"))
   
   SW(fit4 <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
                        prior = R2(0.2, "mean"), init_r = 0.1, 
                        iter = ITER, chains = CHAINS,
-                       seed = SEED, refresh = REFRESH))
+                       seed = SEED, refresh = 0))
   expect_gg(pp_check(fit4, plotfun = "bars"))
   expect_gg(pp_check(fit4, plotfun = "bars_grouped", group = "agegp"))
 })
@@ -83,19 +87,19 @@ test_that("pp_check.stanreg creates ggplot object for count & ordinal outcomes",
 
 test_that("pp_check ok for vb", {
   SW(fit3 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "meanfield", 
-                      seed = SEED, iter = 10000))
+                      seed = SEED, iter = 10000, refresh = 0))
   expect_gg(pp_check(fit3))
   expect_gg(pp_check(fit3, plotfun = "error_hist"))
 })
 
-test_that("pp_check binned residual plot works for factors", {
-  ir2 <- iris[-c(1:50), ]
-  ir2$Species <- factor(ir2$Species)
-  SW(fit3 <- stan_glm(Species ~ Petal.Length + Petal.Width + Sepal.Length + Sepal.Width,
-                      data=ir2, family = "binomial", iter = ITER, chains = CHAINS,
-                      seed = SEED, refresh = REFRESH))
-  expect_gg(pp_check(fit3, plotfun = "error_binned"))
-})
+# test_that("pp_check binned residual plot works for factors", {
+#   ir2 <- iris[-c(1:50), ]
+#   ir2$Species <- factor(ir2$Species)
+#   SW(fit3 <- stan_glm(Species ~ Petal.Length + Petal.Width + Sepal.Length + Sepal.Width,
+#                       data=ir2, family = "binomial", iter = ITER, chains = CHAINS,
+#                       seed = SEED, refresh = 0))
+#   expect_gg(pp_check(fit3, plotfun = "error_binned"))
+# })
 
 
 # test errors --------------------------------------------------------------
@@ -114,7 +118,8 @@ test_that("pp_check throws error if 'group' variable not found", {
                "not found in model frame")
 })
 test_that("pp_check throws error for optimizing", {
-  SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED))
+  SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", 
+                      seed = SEED, refresh = 0))
   expect_error(pp_check(fito), regexp = "algorithm")
 })
 

@@ -1,13 +1,38 @@
-citHeader("To cite rstanarm in publications use:")
+year <- sub("-.*", "", meta$Date)
+version_note <- sprintf("R package version %s", meta$Version)
 
+citHeader("To cite rstanarm in publications please use the first citation entry.", 
+          "If you were using the 'stan_jm' modelling function then, where possible,",
+          "please consider including the second citation entry as well.")
+          
 citEntry(entry = "Misc", 
          title = "rstanarm: {Bayesian} applied regression modeling via {Stan}.",
-         author = person(given = "Stan Development Team"),
-         note = "R package version 2.13.1",
-         year = "2016",
-         url = "http://mc-stan.org/",
+         author = c(person("Ben", "Goodrich"),
+                    person("Jonah", "Gabry"),
+                    person("Imad", "Ali"),
+                    person("Sam", "Brilleman")),
+         note = version_note,
+         year = year,
+         url = "https://mc-stan.org/rstanarm",
          textVersion =
-           paste("Stan Development Team (2016).",
-                 title = "rstanarm: Bayesian applied regression modeling via Stan. R package version 2.13.1.",
-                 "http://mc-stan.org/.")
+           paste0("Goodrich B, Gabry J, Ali I & Brilleman S. (", year, "). ",
+                 title = "rstanarm: Bayesian applied regression modeling via Stan. ",
+                 version_note, " https://mc-stan.org/rstanarm.")
+)
+
+citEntry(entry = "Misc", 
+         title = "Joint longitudinal and time-to-event models via {Stan}.",
+         author = c(person("SL", "Brilleman"),
+                    person("MJ", "Crowther"),
+                    person("M", "Moreno-Betancur"),
+                    person("J", "Buros Novik"),
+                    person("R", "Wolfe")),
+         note = "StanCon 2018. 10-12 Jan 2018. Pacific Grove, CA, USA.",
+         url = "https://github.com/stan-dev/stancon_talks/",
+         year = "2018",
+         textVersion =
+           paste("Brilleman SL, Crowther MJ, Moreno-Betancur M, Buros Novik J & Wolfe R.",
+                 title = "Joint longitudinal and time-to-event models via Stan.",
+                 "StanCon 2018. 10-12 Jan 2018. Pacific Grove, CA, USA.",
+                 "https://github.com/stan-dev/stancon_talks/")
 )

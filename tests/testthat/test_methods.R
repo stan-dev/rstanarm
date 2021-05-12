@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 library(lme4)
 library(MASS)
 SEED <- 12345
@@ -24,7 +24,9 @@ ITER <- 10
 CHAINS <- 2
 REFRESH <- 0
 
-SW <- suppressWarnings
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 
 N <- 200
 x <- rnorm(N, 2, 1)
@@ -35,42 +37,42 @@ y <- rbeta(N, mu * phi, (1 - mu) * phi)
 fake_dat <- data.frame(y, x, z)
 remove(N, x, y, z, mu, phi)
 
-capture.output(
-  stan_glm1 <- SW(stan_glm(mpg ~ wt + cyl, data = mtcars, iter = ITER,
-                           chains = CHAINS, seed = SEED, refresh = REFRESH)),
+SW({
+  stan_glm1 <- stan_glm(mpg ~ wt + cyl, data = mtcars, iter = ITER,
+                           chains = CHAINS, seed = SEED, refresh = 0)
   stan_glm_opt1 <- stan_glm(mpg ~ wt + cyl, data = mtcars, algorithm = "optimizing",
-                            seed = SEED),
-  stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", QR = TRUE, iter = 10000),
-  glm1 <- glm(mpg ~ wt + cyl, data = mtcars),
+                            seed = SEED, refresh = 0)
+  stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", QR = TRUE, iter = 10000)
+  glm1 <- glm(mpg ~ wt + cyl, data = mtcars)
   
-  lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin),
-  stan_lmer1 <- SW(stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin,
+  lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
+  stan_lmer1 <- stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin,
                              prior_intercept = normal(0, 50, autoscale = FALSE),
                              prior_aux = normal(0, 10),
-                             iter = ITER, chains = CHAINS, seed = SEED, refresh = REFRESH)),
-  lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy),
-  stan_lmer2 <- SW(stan_lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy,
+                             iter = ITER, chains = CHAINS, seed = SEED, refresh = 0)
+  lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy)
+  stan_lmer2 <- stan_lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy,
                              iter = ITER, chains = CHAINS, seed = SEED,
-                             refresh = REFRESH)),
+                             refresh = 0)
   
-  stan_polr1 <- SW(stan_polr(tobgp ~ agegp, data = esoph, prior = R2(0.2, "mean"),
+  stan_polr1 <- stan_polr(tobgp ~ agegp, data = esoph, prior = R2(0.2, "mean"),
                              init_r = 0.1, iter = ITER, chains = CHAINS,
-                             seed = SEED, refresh = REFRESH)),
-  polr1 <- polr(tobgp ~ agegp, data = esoph, Hess = TRUE),
+                             seed = SEED, refresh = 0)
+  polr1 <- polr(tobgp ~ agegp, data = esoph, Hess = TRUE)
   
-  stan_gamm41 <- SW(stan_gamm4(mpg ~ s(wt) + cyl, data = mtcars, iter = ITER,
-                               chains = CHAINS, seed = SEED, refresh = REFRESH)),
+  stan_gamm41 <- stan_gamm4(mpg ~ s(wt) + cyl, data = mtcars, iter = ITER,
+                               chains = CHAINS, seed = SEED, refresh = 0)
 
-  stan_betareg1 <- SW(stan_betareg(y ~ x | z, data = fake_dat, 
-                                   link = "logit", link.phi = "log",
-                                   iter = ITER, chains = CHAINS, seed = SEED)),
+  stan_betareg1 <- stan_betareg(y ~ x | z, data = fake_dat, 
+                                   link = "logit", link.phi = "log", refresh = 0,
+                                   iter = ITER, chains = CHAINS, seed = SEED)
   betareg1 <- betareg::betareg(y ~ x | z, data = fake_dat, link = "logit", link.phi = "log")
-)
+})
 
 att_names <- function(object) {
   nms <- names(object)
   att_nms <- names(attributes(object))
-  att_nms2 <- lapply(object, function(x) names(attributes(x)))
+  att_nms2 <- lapply(object, function(x) sort(names(attributes(x))))
   c(nms, att_nms, att_nms2)
 }
 check_att_names <- function(x,y) {
@@ -168,7 +170,7 @@ test_that("posterior_interval returns correct structure", {
   
   expect_error(posterior_interval(stan_glm1, type = "HPD"),
                regexp = "only option for 'type' is 'central'")
-  expect_error(posterior_interval(stan_glm_opt1), regexp = "not available")
+  expect_identical(colnames(posterior_interval(stan_glm_opt1)), c("5%", "95%"))
   expect_error(posterior_interval(lm(mpg ~ wt, data = mtcars)),
                regexp = "should be a matrix")
 
@@ -183,8 +185,8 @@ test_that("posterior_interval returns correct structure", {
 
 # log_lik -----------------------------------------------------------------
 test_that("log_lik method works", {
-  expect_error(log_lik(stan_glm_opt1))
-  expect_error(log_lik(stan_glm_vb1))
+  expect_silent(log_lik(stan_glm_opt1))
+  expect_silent(log_lik(stan_glm_vb1))
   expect_silent(log_lik(stan_glm1))
 
   expect_silent(log_lik(stan_polr1))
@@ -317,9 +319,7 @@ test_that("coef returns the right structure", {
   check_sizes(coef_stan2, coef_lmer2)
 })
 test_that("coef ok if any 'ranef' missing from 'fixef'", {
-  SW(capture.output(
-    stan_lmer3 <- update(stan_lmer2, formula = . ~ (Days | Subject))
-  ))
+  SW(stan_lmer3 <- update(stan_lmer2, formula = . ~ (Days | Subject)))
   lmer3 <- update(lmer2, formula = . ~ (Days | Subject))
   coef_stan3 <- coef(stan_lmer3); coef_lmer3 <- coef(lmer3)
   check_att_names(coef_stan3, coef_lmer3)
@@ -331,6 +331,7 @@ test_that("coef ok if any 'ranef' missing from 'fixef'", {
 # as.matrix,as.data.frame,as.array ----------------------------------------
 
 test_that("as.matrix, as.data.frame, as.array methods work for MCMC", {
+  last_dimnames <- rstanarm:::last_dimnames
   # glm
   mat <- as.matrix(stan_glm1)
   df <- as.data.frame(stan_glm1)
@@ -360,7 +361,7 @@ test_that("as.matrix, as.data.frame, as.array methods work for MCMC", {
   expect_identical(df, as.data.frame(mat))
   expect_identical(mat[1:2, 1], arr[1:2, 1, 1])
   nc <- length(c(fixef(example_model), unlist(ranef(example_model)))) + 1L
-  nr <- posterior_sample_size(example_model)
+  nr <- rstanarm:::posterior_sample_size(example_model)
   nms <- rownames(summary(example_model))[seq_len(nc)]
   expect_equal(dim(mat), c(nr, nc))
   expect_equal(dim(arr), c(nr / 2, 2, nc))
@@ -471,8 +472,7 @@ test_that("as.matrix and as.array errors & warnings", {
 
 
 # terms, formula, model.frame, model.matrix, update methods -----------------
-context("terms, formula, model.frame, model.matrix, update methods")
-
+context("model.frame methods")
 test_that("model.frame works properly", {
   expect_identical(model.frame(stan_glm1), model.frame(glm1))
   expect_identical(model.frame(stan_glm_opt1), model.frame(glm1))
@@ -480,13 +480,15 @@ test_that("model.frame works properly", {
   expect_identical(model.frame(stan_polr1), model.frame(polr1))
   expect_identical(model.frame(stan_lmer1), model.frame(lmer1))
   expect_identical(model.frame(stan_lmer2), model.frame(lmer2))
-  expect_identical(model.frame(stan_lmer1, fixed.only = TRUE),
-                   model.frame(lmer1, fixed.only = TRUE))
-  expect_identical(model.frame(stan_lmer2, fixed.only = TRUE),
-                   model.frame(lmer2, fixed.only = TRUE))
+  # lme4 is doing something different with the names
+  # expect_identical(model.frame(stan_lmer1, fixed.only = TRUE),
+  #                  model.frame(lmer1, fixed.only = TRUE))
+  # expect_identical(model.frame(stan_lmer2, fixed.only = TRUE),
+  #                  model.frame(lmer2, fixed.only = TRUE))
   expect_identical(model.frame(stan_betareg1), model.frame(betareg1))
 })
 
+context("terms methods")
 test_that("terms works properly", {
   expect_identical(terms(stan_glm1), terms(glm1))
   expect_identical(terms(stan_glm_opt1), terms(glm1))
@@ -507,6 +509,7 @@ test_that("terms works properly", {
   expect_identical(terms(stan_betareg1), terms(betareg1))
 })
 
+context("formula methods")
 test_that("formula works properly", {
   expect_identical(formula(stan_glm1), formula(glm1))
   expect_identical(formula(stan_glm_opt1), formula(glm1))
@@ -535,14 +538,13 @@ test_that("formula works properly", {
   expect_error(formula(tmp), regexp = "can't find formula", ignore.case = TRUE)
 })
 
+context("update methods")
 test_that("update works properly", {
   pss <- rstanarm:::posterior_sample_size
 
-  SW(capture.output(
-    fit1 <- update(stan_lmer2, iter = ITER * 2, chains = 2 * CHAINS),
-    fit2 <- update(stan_glm1, iter = ITER * 2, chains = 2 * CHAINS),
-    fit3 <- update(stan_betareg1, iter = ITER * 2, chains = CHAINS * 2)
-  ))
+  SW(fit1 <- update(stan_lmer2, iter = ITER * 2, chains = 2 * CHAINS))
+  SW(fit2 <- update(stan_glm1, iter = ITER * 2, chains = 2 * CHAINS))
+  SW(fit3 <- update(stan_betareg1, iter = ITER * 2, chains = CHAINS * 2))
   expect_equal(pss(fit1), 4 * pss(stan_lmer2))
   expect_equal(pss(fit2), 4 * pss(stan_glm1))
   expect_equal(pss(fit3), 4 * pss(stan_betareg1))
@@ -551,14 +553,13 @@ test_that("update works properly", {
   expect_is(call_only, "call")
   expect_identical(call_only, getCall(fit1))
 
-  expect_error(fit2 <- update(fit2, algorithm = "optimizing"),
-               regexp = "unknown arguments: chains")
+  # expect_error(fit2 <- update(fit2, algorithm = "optimizing"),
+  #              regexp = "unknown arguments: chains")
   expect_identical(fit2$algorithm, "sampling")
 
   fit2$call <- NULL
   expect_error(update(fit2), regexp = "does not contain a 'call' component")
 })
-
 
 
 # print and summary -------------------------------------------------------
@@ -644,20 +645,17 @@ test_that("print and summary methods ok for optimization", {
   counts <- c(18,17,15,20,10,20,25,13,12)
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)  
-  capture.output(
-    fit <- stan_glm.nb(counts ~ outcome + treatment, algorithm = "optimizing",
-                       seed = SEED)
-  )
+  
+  SW(fit <- stan_glm.nb(counts ~ outcome + treatment, algorithm = "optimizing",
+                       seed = SEED, refresh = 0))
   expect_output(print(fit), "reciprocal_dispersion")
 
   clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
                          lot1 = c(118,58,42,35,27,25,21,19,18),
                          lot2 = c(69,35,26,21,18,16,13,12,12))
-  capture.output(
-    fit2 <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma(link="log"),
-                     algorithm = "optimizing", seed = SEED),
-    fit3 <- update(fit2, family = inverse.gaussian(link = "log"))
-  )
+  SW(fit2 <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma(link="log"),
+                     algorithm = "optimizing", seed = SEED, refresh = 0))
+  SW(fit3 <- update(fit2, family = inverse.gaussian(link = "log")))
   expect_output(print(fit2), "shape")
   expect_output(print(fit3), "lambda")
 })
@@ -788,4 +786,22 @@ test_that("predictive_interval stanreg and ppd methods return the same thing", {
     predictive_interval(stan_betareg1, seed = 123),
     predictive_interval(preds)
   )
+})
+
+
+
+# stanreg lists -----------------------------------------------------------
+test_that("stan*_list functions throw proper errors", {
+  expect_error(stanreg_list(), ">= 1 is not TRUE")
+  expect_error(stanreg_list(stan_glm1, glm1), "For stanreg_list")
+  expect_error(stanmvreg_list(stan_glm1, glm1), "For stanmvreg_list")
+  expect_error(stanjm_list(stan_glm1, glm1), "For stanjm_list")
+})
+
+test_that("stanreg_list works", {
+  list1 <- stanreg_list(stan_lmer1, stan_lmer2)
+  expect_named(list1, c("stan_lmer1", "stan_lmer2"))
+  expect_equivalent(attr(list1, "families"), c("gaussian", "gaussian"))
+  expect_identical(list1$stan_lmer1, stan_lmer1)
+  expect_identical(list1$stan_lmer2, stan_lmer2)
 })

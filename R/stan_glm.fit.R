@@ -25,24 +25,36 @@
 #'   have elements for the \code{regularization}, \code{concentration} 
 #'   \code{shape}, and \code{scale} components of a \code{\link{decov}}
 #'   prior for the covariance matrices among the group-specific coefficients.
+#' @param importance_resampling Logical scalar indicating whether to use 
+#'   importance resampling when approximating the posterior distribution with
+#'   a multivariate normal around the posterior mode, which only applies
+#'   when \code{algorithm} is \code{"optimizing"} but defaults to \code{TRUE}
+#'   in that case
+#' @param keep_every Positive integer, which defaults to 1, but can be higher
+#'   in order to "thin" the importance sampling realizations. Applies only
+#'   when \code{importance_resampling=TRUE}.
 #' @importFrom lme4 mkVarCorr
+#' @importFrom loo psis
 stan_glm.fit <- 
   function(x, y, 
            weights = rep(1, NROW(y)), 
            offset = rep(0, NROW(y)), 
            family = gaussian(),
            ...,
-           prior = normal(),
-           prior_intercept = normal(),
-           prior_aux = exponential(),
+           prior = default_prior_coef(family),
+           prior_intercept = default_prior_intercept(family),
+           prior_aux = exponential(autoscale = TRUE),
            prior_smooth = exponential(autoscale = FALSE),
            prior_ops = NULL,
            group = list(),
            prior_PD = FALSE, 
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"), 
+           mean_PPD = algorithm != "optimizing" && !prior_PD,
            adapt_delta = NULL, 
            QR = FALSE, 
-           sparse = FALSE) {
+           sparse = FALSE,
+           importance_resampling = algorithm != "sampling",
+           keep_every = algorithm != "sampling") {
   
   # prior_ops deprecated but make sure it still works until 
   # removed in future release
@@ -54,29 +66,38 @@ stan_glm.fit <-
     prior_aux <- tmp[["prior_aux"]]
     prior_ops <- NULL
   }
-  
+
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
                           "poisson", "neg_binomial_2", "Beta regression")
   fam <- which(pmatch(supported_families, family$family, nomatch = 0L) == 1L)
-  if (!length(fam)) 
-    stop("'family' must be one of ", paste(supported_families, collapse = ", "))
+  if (!length(fam)) {
+    supported_families_err <- supported_families
+    supported_families_err[supported_families_err == "Beta regression"] <- "mgcv::betar"
+    stop("'family' must be one of ", paste(supported_families_err, collapse = ", "))
+  }
   
   supported_links <- supported_glm_links(supported_families[fam])
   link <- which(supported_links == family$link)
   if (!length(link)) 
     stop("'link' must be one of ", paste(supported_links, collapse = ", "))
   
-  if (binom_y_prop(y, family, weights))
+  if (binom_y_prop(y, family, weights)) {
     stop("To specify 'y' as proportion of successes and 'weights' as ",
          "number of trials please use stan_glm rather than calling ",
-         "stan_glm.fit directly.")
+         "stan_glm.fit directly.", call. = FALSE)
+  }
   
   y <- validate_glm_outcome_support(y, family)
+  trials <- NULL
   if (is.binomial(family$family) && NCOL(y) == 2L) {
     trials <- as.integer(y[, 1L] + y[, 2L])
     y <- as.integer(y[, 1L])
+    if (length(y == 1)) {
+      y <- array(y)
+      trials <- array(trials)
+    }
   }
 
   # useless assignments to pass R CMD check
@@ -122,11 +143,19 @@ stan_glm.fit <-
   # global_prior_df, global_prior_scale, slab_df, slab_scale
   for (i in names(prior_stuff))
     assign(i, prior_stuff[[i]])
-  
+
+  if (isTRUE(is.list(prior_intercept)) && 
+      isTRUE(prior_intercept$default)) {
+    m_y <- 0
+    if (family$family == "gaussian" && family$link == "identity") {
+      if (!is.null(y)) m_y <- mean(y) # y can be NULL if prior_PD=TRUE
+    }
+    prior_intercept$location <- m_y
+  }
   prior_intercept_stuff <- handle_glm_prior(
     prior_intercept,
     nvars = 1,
-    default_scale = 10,
+    default_scale = 2.5,
     link = family$link,
     ok_dists = ok_intercept_dists
   )
@@ -171,6 +200,8 @@ stan_glm.fit <-
     }
     for (i in names(prior_smooth_stuff))
       assign(i, prior_smooth_stuff[[i]])
+    
+    prior_scale_for_smooth <- array(prior_scale_for_smooth)
   } else {
     prior_dist_for_smooth <- 0L
     prior_mean_for_smooth <- array(NA_real_, dim = 0)
@@ -179,7 +210,7 @@ stan_glm.fit <-
   }
   
   famname <- supported_families[fam]
-  is_bernoulli <- is.binomial(famname) && all(y %in% 0:1)
+  is_bernoulli <- is.binomial(famname) && all(y %in% 0:1) && is.null(trials)
   is_nb <- is.nb(famname)
   is_gaussian <- is.gaussian(famname)
   is_gamma <- is.gamma(famname)
@@ -198,6 +229,20 @@ stan_glm.fit <-
            "the model must have an intercept.")
   }
   
+  # allow prior_PD even if no y variable
+  if (is.null(y)) {
+    if (!prior_PD) {
+      stop("Outcome variable must be specified if 'prior_PD' is not TRUE.")
+    } else {
+      y <- fake_y_for_prior_PD(N = NROW(x), family = family)
+      if (is_gaussian && 
+          (prior_autoscale || prior_autoscale_for_intercept || prior_autoscale_for_aux)) {
+        message("'y' not specified, will assume sd(y)=1 when calculating scaled prior(s). ")
+      }
+    }
+  }
+  
+  
   if (is_gaussian) {
     ss <- sd(y)
     if (prior_dist > 0L && prior_autoscale) 
@@ -213,9 +258,9 @@ stan_glm.fit <-
                           apply(xtemp, 2L, FUN = function(x) {
                             num.categories <- length(unique(x))
                             x.scale <- 1
-                            if (num.categories == 2) {
-                              x.scale <- diff(range(x))
-                            } else if (num.categories > 2) {
+                            if (num.categories == 1) {
+                              x.scale <- 1
+                            } else {
                               x.scale <- sd(x)
                             }
                             return(x.scale)
@@ -233,10 +278,11 @@ stan_glm.fit <-
       stop("'QR' and 'sparse' cannot both be TRUE.")
     cn <- colnames(xtemp)
     decomposition <- qr(xtemp)
-    sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
     Q <- qr.Q(decomposition)
-    R_inv <- qr.solve(decomposition, Q) * sqrt_nm1
-    xtemp <- Q * sqrt_nm1
+    if (prior_autoscale) scale_factor <- sqrt(nrow(xtemp) - 1L)
+    else scale_factor <- diag(qr.R(decomposition))[ncol(xtemp)]
+    R_inv <- qr.solve(decomposition, Q) * scale_factor
+    xtemp <- Q * scale_factor
     colnames(xtemp) <- cn
     xbar <- c(xbar %*% R_inv)
   }
@@ -256,6 +302,7 @@ stan_glm.fit <-
     has_offset = length(offset) > 0,
     has_intercept,
     prior_PD,
+    compute_mean_PPD = mean_PPD,
     prior_dist,
     prior_mean,
     prior_scale,
@@ -330,12 +377,12 @@ stan_glm.fit <-
       parts0 <- extract_sparse_parts(Z[y == 0, , drop = FALSE])
       parts1 <- extract_sparse_parts(Z[y == 1, , drop = FALSE])
       standata$num_non_zero <- c(length(parts0$w), length(parts1$w))
-      standata$w0 <- parts0$w
-      standata$w1 <- parts1$w
-      standata$v0 <- parts0$v - 1L
-      standata$v1 <- parts1$v - 1L
-      standata$u0 <- parts0$u - 1L
-      standata$u1 <- parts1$u - 1L
+      standata$w0 <- as.array(parts0$w)
+      standata$w1 <- as.array(parts1$w)
+      standata$v0 <- as.array(parts0$v - 1L)
+      standata$v1 <- as.array(parts1$v - 1L)
+      standata$u0 <- as.array(parts0$u - 1L)
+      standata$u1 <- as.array(parts1$u - 1L)
     } else {
       parts <- extract_sparse_parts(Z)
       standata$num_non_zero <- length(parts$w)
@@ -404,7 +451,7 @@ stan_glm.fit <-
     }
     standata$y <- y
     standata$weights <- weights
-    standata$offset <- offset
+    standata$offset_ <- offset
     standata$K_smooth <- ncol(S)
     standata$S <- S
     standata$smooth_map <- smooth_map
@@ -466,10 +513,8 @@ stan_glm.fit <-
         standata$weights1 <- double(0)
       }
       if (length(offset)) {
-        # nocov start
         standata$offset0 <- offset[y0]
         standata$offset1 <- offset[y1]
-        # nocov end
       } else {
         standata$offset0 <- double(0)
         standata$offset1 <- double(0)
@@ -495,10 +540,9 @@ stan_glm.fit <-
     stanfit <- stanmodels$count
   } else if (is_gamma) {
     # nothing
-  } else { # nocov start
-    # family already checked above
+  } else {
     stop(paste(famname, "is not supported."))
-  } # nocov end
+  }
   
   prior_info <- summarize_glm_prior(
     user_prior = prior_stuff,
@@ -520,11 +564,22 @@ stan_glm.fit <-
             if (is_continuous | is_nb) "aux",
             if (ncol(S)) "smooth_sd",
             if (standata$len_theta_L) "theta_L",
-            if (!standata$clogit) "mean_PPD")
+            if (mean_PPD && !standata$clogit) "mean_PPD")
   if (algorithm == "optimizing") {
-    out <- optimizing(stanfit, data = standata, 
-                      draws = 1000, constrained = TRUE, ...)
+    optimizing_args <- list(...)
+    if (is.null(optimizing_args$draws)) optimizing_args$draws <- 1000L
+    optimizing_args$object <- stanfit
+    optimizing_args$data <- standata
+    optimizing_args$constrained <- TRUE
+    optimizing_args$importance_resampling <- importance_resampling
+    if (is.null(optimizing_args$tol_rel_grad)) 
+      optimizing_args$tol_rel_grad <- 10000L
+    out <- do.call(optimizing, args = optimizing_args)
     check_stanfit(out)
+    if (optimizing_args$draws == 0) {
+      out$theta_tilde <- out$par
+      dim(out$theta_tilde) <- c(1,length(out$par))
+    }
     new_names <- names(out$par)
     mark <- grepl("^beta\\[[[:digit:]]+\\]$", new_names)
     if (QR) {
@@ -545,6 +600,58 @@ stan_glm.fit <-
               if (is_beta) "(phi)" else NA
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
+    if (optimizing_args$draws > 0 && importance_resampling) {
+        ## begin: psis diagnostics and importance resampling
+        lr <- out$log_p-out$log_g
+        lr[lr==-Inf] <- -800
+        p <- suppressWarnings(psis(lr, r_eff = 1))
+        p$log_weights <- p$log_weights-log_sum_exp(p$log_weights)
+        theta_pareto_k <- suppressWarnings(apply(out$theta_tilde, 2L, function(col) {
+          if (all(is.finite(col))) 
+            psis(log1p(col ^ 2) / 2 + lr, r_eff = 1)$diagnostics$pareto_k 
+          else NaN
+          }))
+        ## todo: change fixed threshold to an option
+        if (p$diagnostics$pareto_k > 1) {
+          warning("Pareto k diagnostic value is ", 
+                  round(p$diagnostics$pareto_k, digits = 2),
+                  ". Resampling is disabled. ", 
+                  "Decreasing tol_rel_grad may help if optimization has terminated prematurely. ", 
+                  "Otherwise consider using sampling.", call. = FALSE, immediate. = TRUE)
+          importance_resampling <- FALSE
+        } else if (p$diagnostics$pareto_k > 0.7) { 
+          warning("Pareto k diagnostic value is ", 
+                  round(p$diagnostics$pareto_k, digits = 2), 
+                  ". Resampling is unreliable. ",
+                  "Increasing the number of draws or decreasing tol_rel_grad may help.", 
+                  call. = FALSE, immediate. = TRUE)
+        }
+        out$psis <- nlist(pareto_k = p$diagnostics$pareto_k, 
+                          n_eff = p$diagnostics$n_eff / keep_every)
+    } else {
+      theta_pareto_k <- rep(NaN,length(new_names))
+      importance_resampling <- FALSE
+    }
+    ## importance_resampling
+    if (importance_resampling) {  
+      ir_idx <- .sample_indices(exp(p$log_weights), 
+                                n_draws = ceiling(optimizing_args$draws / keep_every))
+      out$theta_tilde <- out$theta_tilde[ir_idx,]
+      out$ir_idx <- ir_idx
+      ## SIR mcse and n_eff
+      w_sir <- as.numeric(table(ir_idx)) / length(ir_idx)
+      mcse <- apply(out$theta_tilde[!duplicated(ir_idx),], 2L, function(col) {
+        if (all(is.finite(col))) sqrt(sum(w_sir^2*(col-mean(col))^2)) else NaN
+      })
+      n_eff <- round(apply(out$theta_tilde[!duplicated(ir_idx),], 2L, var)/ (mcse ^ 2), digits = 0)
+    } else {
+      out$ir_idx <- NULL
+      mcse <- rep(NaN, length(theta_pareto_k))
+      n_eff <- rep(NaN, length(theta_pareto_k))
+    }
+    out$diagnostics <- cbind(mcse, theta_pareto_k, n_eff)
+    colnames(out$diagnostics) <- c("mcse", "khat", "n_eff")
+    ## end: psis diagnostics and SIR
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
                                              chains = 0))
     return(structure(out, prior.info = prior_info))
@@ -559,15 +666,24 @@ stan_glm.fit <-
         data = standata, 
         pars = pars, 
         show_messages = FALSE)
-      stanfit <- do.call(sampling, sampling_args)
+      stanfit <- do.call(rstan::sampling, sampling_args)
     } else {
       # meanfield or fullrank vb
-      stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
-                           algorithm = algorithm, ...)
+      vb_args <- list(...)
+      if (is.null(vb_args$output_samples)) vb_args$output_samples <- 1000L
+      if (is.null(vb_args$tol_rel_obj)) vb_args$tol_rel_obj <- 1e-4
+      if (is.null(vb_args$keep_every)) vb_args$keep_every <- keep_every
+      vb_args$object <- stanfit
+      vb_args$data <- standata
+      vb_args$pars <- pars
+      vb_args$algorithm <- algorithm
+      vb_args$importance_resampling <- importance_resampling
+      stanfit <- do.call(vb, args = vb_args)
       if (!QR) 
         recommend_QR_for_vb()
     }
-    check_stanfit(stanfit)
+    check <- try(check_stanfit(stanfit))
+    if (!isTRUE(check)) return(standata)
     if (QR) {
       thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, 
                         permuted = FALSE)
@@ -618,7 +734,7 @@ stan_glm.fit <-
                    if (is_beta) "(phi)",
                    if (ncol(S)) paste0("smooth_sd[", names(x)[-1], "]"),
                    if (standata$len_theta_L) paste0("Sigma[", Sigma_nms, "]"),
-                   if (!standata$clogit) "mean_PPD", 
+                   if (mean_PPD && !standata$clogit) "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
     return(structure(stanfit, prior.info = prior_info))
@@ -672,6 +788,14 @@ stan_family_number <- function(famname) {
 # @return y (possibly slightly modified) unless an error is thrown
 #
 validate_glm_outcome_support <- function(y, family) {
+  if (is.character(y)) {
+    stop("Outcome variable can't be type 'character'.", call. = FALSE)
+  }
+  
+  if (is.null(y)) {
+    return(y)
+  }
+  
   .is_count <- function(x) {
     all(x >= 0) && all(abs(x - round(x)) < .Machine$double.eps^0.5)
   }
@@ -729,6 +853,25 @@ validate_glm_outcome_support <- function(y, family) {
   return(y)
 }
 
+# Generate fake y variable to use if prior_PD and no y is specified
+# @param N number of observations
+# @param family family object
+fake_y_for_prior_PD <- function(N, family) {
+  fam <- family$family
+  if (is.gaussian(fam)) {
+    # if prior autoscaling is on then the value of sd(y) matters
+    # generate a fake y so that sd(y) is 1
+    fake_y <- as.vector(scale(rnorm(N)))
+  } else if (is.binomial(fam) || is.poisson(fam) || is.nb(fam)) {
+    # valid for all discrete cases
+    fake_y <- rep_len(c(0, 1), N)
+  } else {
+    # valid for gamma, inverse gaussian, beta 
+    fake_y <- runif(N)
+  }
+  return(fake_y)
+}
+
 
 
 # Add extra level _NEW_ to each group
@@ -736,7 +879,6 @@ validate_glm_outcome_support <- function(y, family) {
 # @param Ztlist ranef indicator matrices
 # @param cnms group$cnms
 # @param flist group$flist
-#' @importFrom Matrix rBind
 pad_reTrms <- function(Ztlist, cnms, flist) {
   stopifnot(is.list(Ztlist))
   l <- sapply(attr(flist, "assign"), function(i) nlevels(flist[[i]]))
@@ -747,11 +889,7 @@ pad_reTrms <- function(Ztlist, cnms, flist) {
                             paste0("_NEW_", names(flist)[i]))
   }
   for (i in 1:length(p)) {
-    Ztlist[[i]] <- if (getRversion() < "3.2.0") {
-      rBind( Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
-    } else {
-      rbind2(Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
-    }
+    Ztlist[[i]] <- rbind(Ztlist[[i]], Matrix(0, nrow = p[i], ncol = n, sparse = TRUE))
   }
   Z <- t(do.call(rbind, args = Ztlist))
   return(nlist(Z, cnms, flist))
@@ -917,6 +1055,7 @@ summarize_glm_prior <-
     return(prior_list)
   }
 
+# rename aux parameter based on family
 .rename_aux <- function(family) {
   fam <- family$family
   if (is.gaussian(fam)) "sigma" else
@@ -925,3 +1064,31 @@ summarize_glm_prior <-
         if (is.nb(fam)) "reciprocal_dispersion" else NA
 }
 
+.sample_indices <- function(wts, n_draws) {
+  ## Stratified resampling
+  ##   Kitagawa, G., Monte Carlo Filter and Smoother for Non-Gaussian
+  ##   Nonlinear State Space Models, Journal of Computational and
+  ##   Graphical Statistics, 5(1):1-25, 1996.
+  K <- length(wts)
+  w <- n_draws * wts # expected number of draws from each model
+  idx <- rep(NA, n_draws)
+
+  c <- 0
+  j <- 0
+
+  for (k in 1:K) {
+    c <- c + w[k]
+    if (c >= 1) {
+      a <- floor(c)
+      c <- c - a
+      idx[j + 1:a] <- k
+      j <- j + a
+    }
+    if (j < n_draws && c >= runif(1)) {
+      c <- c - 1
+      j <- j + 1
+      idx[j] <- k
+    }
+  }
+  return(idx)
+}

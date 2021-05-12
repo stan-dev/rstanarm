@@ -42,7 +42,8 @@
 #'   an \eqn{S} by \eqn{Npat} matrix where \eqn{Npat} is the number of individuals.
 #'   
 #'   
-#' @examples 
+#' @examples
+#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'  roaches$roach100 <- roaches$roach1 / 100
 #'  fit <- stan_glm(
@@ -52,7 +53,8 @@
 #'     family = poisson(link = "log"),
 #'     prior = normal(0, 2.5),
 #'     prior_intercept = normal(0, 10),
-#'     iter = 500 # to speed up example
+#'     iter = 500, # just to speed up example,
+#'     refresh = 0
 #'  )
 #'  ll <- log_lik(fit)
 #'  dim(ll)
@@ -66,11 +68,9 @@
 #'  dim(ll2)
 #'  all.equal(ncol(ll2), nrow(nd))
 #' }
-#'
+#' }
 log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
-  if (!used.sampling(object))
-    STOP_sampling_only("Pointwise log-likelihood matrix")
-  newdata <- validate_newdata(newdata)
+  newdata <- validate_newdata(object, newdata, m = NULL)
   calling_fun <- as.character(sys.call(-1))[1]
   dots <- list(...)
   if (is.stanmvreg(object)) {
@@ -83,6 +83,7 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
     m <- NULL
   }
   
+  newdata <- validate_newdata(object, newdata = newdata, m = m)
   args <- ll_args.stanreg(object, newdata = newdata, offset = offset, 
                           reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
                           ...)
@@ -94,9 +95,8 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
         FUN.VALUE = numeric(length = args$S),
         FUN = function(i) {
           as.vector(fun(
-            i = i,
             draws = args$draws,
-            data = args$data[args$data$strata ==
+            data_i = args$data[args$data$strata ==
                                levels(args$data$strata)[i], , drop = FALSE]
           ))
         }
@@ -107,8 +107,7 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
       seq_len(args$N),
       FUN = function(i) {
         as.vector(fun(
-          i = i,
-          data = args$data[i, , drop = FALSE],
+          data_i = args$data[i, , drop = FALSE],
           draws = args$draws
         ))
       },
@@ -210,17 +209,26 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   has_newdata <- !is.null(newdata)
   
   dots <- list(...)
+  
+  z_betareg <- NULL
   if (has_newdata && reloo_or_kfold && !is.mer(object)) {
     x <- dots$newx
+    z_betareg <- dots$newz # NULL except for some stan_betareg models
+    if (!is.null(z_betareg)) {
+      z_betareg <- as.matrix(z_betareg)
+    }
     stanmat <- dots$stanmat
-    y <- eval(formula(object)[[2L]], newdata)
+    form <- as.formula(formula(object)) # in case formula is string
+    y <- eval(form[[2L]], newdata)
   } else if (has_newdata) {
     ppdat <- pp_data(object, as.data.frame(newdata), offset = offset, m = m)
-    tmp <- pp_eta(object, ppdat, m = m)
-    eta <- tmp$eta
-    stanmat <- tmp$stanmat
+    pp_eta_dat <- pp_eta(object, ppdat, m = m)
+    eta <- pp_eta_dat$eta
+    stanmat <- pp_eta_dat$stanmat
+    z_betareg <- ppdat$z_betareg
     x <- ppdat$x
-    y <- eval(formula(object, m = m)[[2L]], newdata)
+    form <- as.formula(formula(object, m = m))
+    y <- eval(form[[2L]], newdata)
   } else {
     stanmat <- as.matrix.stanreg(object)
     x <- get_x(object, m = m)
@@ -237,12 +245,17 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
                     sigma = stanmat[,"sigma"])
       data <- data.frame(y)
       data$offset <- if (has_newdata) offset else object$offset
-      if (model_has_weights(object))
+      if (model_has_weights(object)) {
         data$weights <- object$weights
+      }
+      data$i_ <- seq_len(nrow(data))  # for nlmer need access to i inside .ll_nlmer_i
       return(nlist(data, draws, S = NROW(draws$mu), N = nrow(data)))
       
     } else if (!is.binomial(fname)) {
       data <- data.frame(y, x)
+      if (!is.null(z_betareg)) {
+        data <- cbind(data, z_betareg)
+      }
     } else {
       if (NCOL(y) == 2L) {
         trials <- rowSums(y)
@@ -284,23 +297,32 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
       if (length(z_vars) == 1 && z_vars == "(phi)") {
         draws$phi <- stanmat[, z_vars]
       } else {
-        x_dat <- get_x(object)
-        z_dat <- object$z
-        colnames(x_dat) <- colnames(x_dat)
-        colnames(z_dat) <- paste0("(phi)_", colnames(z_dat))
-        data <- data.frame(y = get_y(object), cbind(x_dat, z_dat), check.names = FALSE)
+        if (has_newdata) {
+          if (!is.null(z_betareg)) {
+          colnames(data) <- c("y", colnames(get_x(object)), 
+                              paste0("(phi)_", colnames(z_betareg)))
+          }
+        } else {
+          x_dat <- get_x(object)
+          z_dat <- as.matrix(object$z)
+          colnames(x_dat) <- colnames(x_dat)
+          colnames(z_dat) <- paste0("(phi)_", colnames(z_dat))
+          data <- data.frame(y = get_y(object), cbind(x_dat, z_dat), check.names = FALSE)
+        }
         draws$phi <- stanmat[,z_vars]
       }
     }
   } else {
     stopifnot(is_polr(object))
     y <- as.integer(y)
-    if (has_newdata) 
+    if (has_newdata) {
       x <- .validate_polr_x(object, x)
+    }
     data <- data.frame(y, x)
     draws$beta <- stanmat[, colnames(x), drop = FALSE]
-    patt <- if (length(unique(y)) == 2L) "(Intercept)" else "|"
-    zetas <- grep(patt, colnames(stanmat), fixed = TRUE, value = TRUE)
+    zetas <- grep(pattern = if (length(unique(y)) == 2L) "(Intercept)" else "|", 
+                  x = colnames(stanmat), 
+                  fixed = TRUE, value = TRUE)
     draws$zeta <- stanmat[, zetas, drop = FALSE]
     draws$max_y <- max(y)
     if ("alpha" %in% colnames(stanmat)) { 
@@ -398,45 +420,45 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 }
 
 # log-likelihood functions ------------------------------------------------
-.ll_gaussian_i <- function(i, data, draws) {
-  val <- dnorm(data$y, mean = .mu(data,draws), sd = draws$sigma, log = TRUE)
-  .weighted(val, data$weights)
+.ll_gaussian_i <- function(data_i, draws) {
+  val <- dnorm(data_i$y, mean = .mu(data_i, draws), sd = draws$sigma, log = TRUE)
+  .weighted(val, data_i$weights)
 }
-.ll_binomial_i <- function(i, data, draws) {
-  val <- dbinom(data$y, size = data$trials, prob = .mu(data,draws), log = TRUE)
-  .weighted(val, data$weights)
+.ll_binomial_i <- function(data_i, draws) {
+  val <- dbinom(data_i$y, size = data_i$trials, prob = .mu(data_i, draws), log = TRUE)
+  .weighted(val, data_i$weights)
 }
-.ll_clogit_i <- function(i, data, draws) {
-  eta <- linear_predictor(draws$beta, .xdata(data), data$offset)
-  denoms <- apply(eta, 1, log_clogit_denom, N_j = NCOL(eta), D_j = sum(data$y))
-  rowSums(eta[,data$y == 1, drop = FALSE] - denoms)
+.ll_clogit_i <- function(data_i, draws) {
+  eta <- linear_predictor(draws$beta, .xdata(data_i), data_i$offset)
+  denoms <- apply(eta, 1, log_clogit_denom, N_j = NCOL(eta), D_j = sum(data_i$y))
+  rowSums(eta[,data_i$y == 1, drop = FALSE] - denoms)
 }
-.ll_poisson_i <- function(i, data, draws) {
-  val <- dpois(data$y, lambda = .mu(data, draws), log = TRUE)
-  .weighted(val, data$weights)
+.ll_poisson_i <- function(data_i, draws) {
+  val <- dpois(data_i$y, lambda = .mu(data_i, draws), log = TRUE)
+  .weighted(val, data_i$weights)
 }
-.ll_neg_binomial_2_i <- function(i, data, draws) {
-  val <- dnbinom(data$y, size = draws$size, mu = .mu(data, draws), log = TRUE)
-  .weighted(val, data$weights)
+.ll_neg_binomial_2_i <- function(data_i, draws) {
+  val <- dnbinom(data_i$y, size = draws$size, mu = .mu(data_i, draws), log = TRUE)
+  .weighted(val, data_i$weights)
 }
-.ll_Gamma_i <- function(i, data, draws) {
-  val <- dgamma(data$y, shape = draws$shape, 
-                rate = draws$shape / .mu(data,draws), log = TRUE)
-  .weighted(val, data$weights)
+.ll_Gamma_i <- function(data_i, draws) {
+  val <- dgamma(data_i$y, shape = draws$shape, 
+                rate = draws$shape / .mu(data_i,draws), log = TRUE)
+  .weighted(val, data_i$weights)
 }
-.ll_inverse.gaussian_i <- function(i, data, draws) {
-  mu <- .mu(data, draws)
+.ll_inverse.gaussian_i <- function(data_i, draws) {
+  mu <- .mu(data_i, draws)
   val <- 0.5 * log(draws$lambda / (2 * pi)) - 
-    1.5 * log(data$y) -
-    0.5 * draws$lambda * (data$y - mu)^2 / 
-    (data$y * mu^2)
-  .weighted(val, data$weights)
+    1.5 * log(data_i$y) -
+    0.5 * draws$lambda * (data_i$y - mu)^2 / 
+    (data_i$y * mu^2)
+  .weighted(val, data_i$weights)
 }
-.ll_polr_i <- function(i, data, draws) {
-  eta <- linear_predictor(draws$beta, .xdata(data), data$offset)
+.ll_polr_i <- function(data_i, draws) {
+  eta <- linear_predictor(draws$beta, .xdata(data_i), data_i$offset)
   f <- draws$f
-  J <- draws$max_y
-  y_i <- data$y
+  y_i <- data_i$y
+  J <- ncol(draws$zeta) + 1
   linkinv <- polr_linkinv(f)
   if (is.null(draws$alpha)) {
     if (y_i == 1) {
@@ -456,20 +478,21 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
       stop("Exponentiation only possible when there are exactly 2 outcomes.")
     }
   }
-  .weighted(val, data$weights)
+  .weighted(val, data_i$weights)
 }
-.ll_beta_i <- function(i, data, draws) {
-  mu <- .mu_beta(data, draws)
+.ll_beta_i <- function(data_i, draws) {
+  mu <- .mu_beta(data_i, draws)
   phi <- draws$phi
-  if (length(grep("(phi)_", colnames(data), fixed = TRUE)) > 0) {
-    phi <- .phi_beta(data, draws)
+  if (length(grep("(phi)_", colnames(data_i), fixed = TRUE)) > 0) {
+    phi <- .phi_beta(data_i, draws)
   }
-  val <- dbeta(data$y, mu * phi, (1 - mu) * phi, log = TRUE)
-  .weighted(val, data$weights)
+  val <- dbeta(data_i$y, mu * phi, (1 - mu) * phi, log = TRUE)
+  .weighted(val, data_i$weights)
 }
-.ll_nlmer_i <- function(i, data, draws) {
-  val <- dnorm(data$y, mean = draws$mu[,i], sd = draws$sigma, log = TRUE)
-  .weighted(val, data$weights)
+.ll_nlmer_i <- function(data_i, draws) {
+  i_ <- data_i$i_
+  val <- dnorm(data_i$y, mean = draws$mu[, i_], sd = draws$sigma, log = TRUE)
+  .weighted(val, data_i$weights)
 }
 
 # log-likelihood functions for stanjm objects only ----------------------
@@ -500,7 +523,8 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     y <- data$y[[m]]
     x <- data$yX[[m]]
     z <- t(data$yZt[[m]])
-    Z_names <- data$yZ_names[[m]]    
+    Z_names <- data$yZ_names[[m]] 
+    offset <- data$yOffset[[m]]
   } else { 
     # for stan_mvmer models, log_lik is only ever called for
     # one submodel at a time, so data is for one submodel
@@ -508,9 +532,14 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     x <- data$X
     z <- t(data$Zt)
     Z_names <- data$Z_names
+    offset <- data$yOffset
   }
   if (!is.binomial(fname)) {
-    dat <- data.frame(y, x)
+    if (!is.null(offset)) {
+      dat <- data.frame(y, x, offset)
+    } else {
+      dat <- data.frame(y, x)
+    }
   } else {
     if (NCOL(y) == 2L) {
       trials <- rowSums(y)
@@ -521,7 +550,11 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
         y <- fac2bin(y)
       stopifnot(all(y %in% c(0, 1)))
     }
-    dat <- data.frame(y, trials, x)
+    if (!is.null(offset)) {
+      dat <- data.frame(y, trials, x, offset)
+    } else {
+      dat <- data.frame(y, trials, x)
+    }
   }  
   dat <- cbind(dat, as.matrix(z))
   draws$beta <- stanmat[, nms$y[[m]], drop = FALSE]
@@ -671,7 +704,7 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
                          reloo_or_kfold = reloo_or_kfold)
   fun  <- ll_fun(object, m = m)
   ll <- lapply(seq_len(args$N), function(j) as.vector(
-    fun(i = j, data = args$data[j, , drop = FALSE], draws = args$draws)))
+    fun(data_i = args$data[j, , drop = FALSE], draws = args$draws)))
   ll <- do.call("cbind", ll)
   # return S*Npat matrix by summing log-lik for y within each individual
   res <- apply(ll, 1L, function(row) tapply(row, data$flist[[m]], sum))
@@ -712,6 +745,10 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
   # Linear predictor for the survival submodel
   e_eta <- linear_predictor(pars$ebeta, data$eXq) 
   
+  # Scaling parameter for linear predictor
+  assoc_as_list <- apply(assoc, 2L, c)
+  scale_assoc <- validate_scale_assoc(object$scale_assoc, assoc_as_list)
+  
   # Add on contribution from assoc structure
   if (length(pars$abeta)) {
     M <- get_M(object)
@@ -728,12 +765,12 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
     if (one_draw) {
       aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
                               family = family, beta = pars$beta, b = pars$b)
-      e_eta <- e_eta + linear_predictor.default(pars$abeta, aXq)
+      e_eta <- e_eta + scale_assoc * linear_predictor.default(pars$abeta, aXq)
     } else {
       aXq <- make_assoc_terms(parts = data$assoc_parts, assoc = assoc, 
                               family = family, beta = pars$beta, b = pars$b)
       for (k in 1:length(aXq)) {
-        e_eta <- e_eta + sweep(aXq[[k]], 1L, pars$abeta[,k], `*`)
+        e_eta <- e_eta + scale_assoc[k] * sweep(aXq[[k]], 1L, pars$abeta[,k], `*`)
       }
     }    
   }

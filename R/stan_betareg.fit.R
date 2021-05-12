@@ -26,11 +26,11 @@ stan_betareg.fit <-
            offset = rep(0, NROW(x)),
            link = c("logit", "probit", "cloglog", "cauchit", "log", "loglog"), 
            link.phi = NULL, ...,
-           prior = normal(), 
-           prior_intercept = normal(),
-           prior_z = normal(), 
-           prior_intercept_z = normal(),
-           prior_phi = exponential(),
+           prior = normal(autoscale=TRUE), 
+           prior_intercept = normal(autoscale=TRUE),
+           prior_z = normal(autoscale=TRUE), 
+           prior_intercept_z = normal(autoscale=TRUE),
+           prior_phi = exponential(autoscale=TRUE),
            prior_PD = FALSE, 
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
            adapt_delta = NULL, 
@@ -101,7 +101,7 @@ stan_betareg.fit <-
     assign(i, prior_stuff[[i]])
   
   prior_intercept_stuff <- handle_glm_prior(prior_intercept, nvars = 1, 
-                                            default_scale = 10, link = link,
+                                            default_scale = 2.5, link = link,
                                             ok_dists = ok_intercept_dists)
   names(prior_intercept_stuff) <- paste0(names(prior_intercept_stuff), 
                                          "_for_intercept")
@@ -115,7 +115,7 @@ stan_betareg.fit <-
     assign(paste0(i,"_z"), prior_stuff_z[[i]])
   
   prior_intercept_stuff_z <- handle_glm_prior(prior_intercept_z, nvars = 1, 
-                                              link = link.phi, default_scale = 10,
+                                              link = link.phi, default_scale = 2.5,
                                               ok_dists = ok_intercept_dists)
   names(prior_intercept_stuff_z) <- paste0(names(prior_intercept_stuff_z), 
                                            "_for_intercept")
@@ -194,18 +194,20 @@ stan_betareg.fit <-
       decomposition <- qr(xtemp)
       sqrt_nm1 <- sqrt(nrow(xtemp) - 1L)
       Q <- qr.Q(decomposition)
-      R_inv <- qr.solve(decomposition, Q) * sqrt_nm1
-      xtemp <- Q * sqrt_nm1
+      if (prior_autoscale) scale_factor <- sqrt(nrow(xtemp) - 1L)
+      else scale_factor <- diag(qr.R(decomposition))[ncol(xtemp)]
+      R_inv <- qr.solve(decomposition, Q) * scale_factor
+      xtemp <- Q * scale_factor
       colnames(xtemp) <- cn
       xbar <- c(xbar %*% R_inv) 
     }
     if (Z_true == 1 && nvars_z > 1) {
       cn_z <- colnames(ztemp)
       decomposition_z <- qr(ztemp)
-      sqrt_nm1_z <- sqrt(nrow(ztemp) - 1L)
       Q_z <- qr.Q(decomposition_z)
-      R_inv_z <- qr.solve(decomposition_z, Q_z) * sqrt_nm1_z
-      ztemp <- Q_z * sqrt_nm1_z
+      if (nvars <= 1) scale_factor <- sqrt(nrow(ztemp) - 1L)
+      R_inv_z <- qr.solve(decomposition_z, Q_z) * scale_factor
+      ztemp <- Q_z * scale_factor
       colnames(ztemp) <- cn_z
       zbar <- c(zbar %*% R_inv_z)
     }
@@ -235,7 +237,7 @@ stan_betareg.fit <-
     prior_df_for_smooth = array(NA_real_, dim = 0), K_smooth = 0L,
     S = matrix(NA_real_, nrow(xtemp), ncol = 0L), smooth_map = integer(),
     has_weights = length(weights) > 0, weights = weights,
-    has_offset = length(offset) > 0, offset = offset,
+    has_offset = length(offset) > 0, offset_ = offset,
     t = 0L, 
     p = integer(), 
     l = integer(), 
@@ -266,7 +268,8 @@ stan_betareg.fit <-
       as.array(as.integer(prior_df)) else integer(0),
     num_normals_z = if (prior_dist_z == 7) 
       as.array(as.integer(prior_df_z)) else integer(0),
-    len_y = nrow(xtemp), SSfun = 0L, input = double(), Dose = double()  
+    len_y = nrow(xtemp), SSfun = 0L, input = double(), Dose = double(),
+    compute_mean_PPD = TRUE
     )
 
   # call stan() to draw from posterior distribution
@@ -303,12 +306,12 @@ stan_betareg.fit <-
   
 
   if (algorithm == "optimizing") {
-    out <-
-      optimizing(stanfit,
-                 data = standata,
-                 draws = 1000,
-                 constrained = TRUE,
-                 ...)
+    optimizing_args <- list(...)
+    if (is.null(optimizing_args$draws)) optimizing_args$draws <- 1000L
+    optimizing_args$object <- stanfit
+    optimizing_args$data <- standata
+    optimizing_args$constrained <- TRUE
+    out <- do.call(optimizing, args = optimizing_args)
     check_stanfit(out)
     out$par <- out$par[!grepl("eta_z", names(out$par))]
     out$theta_tilde <- out$theta_tilde[, !grepl("eta_z", colnames(out$theta_tilde))]
@@ -352,7 +355,8 @@ stan_betareg.fit <-
       if (!QR) 
         recommend_QR_for_vb()
     }
-    check_stanfit(stanfit)
+    check <- check_stanfit(stanfit)
+    if (!isTRUE(check)) return(standata)
     if (QR) {
       if (ncol(xtemp) > 1) {
         thetas <- extract(stanfit, pars = "beta", inc_warmup = TRUE, 

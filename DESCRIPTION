@@ -1,11 +1,15 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.17.2
-Date: 2017-12-18
+Version: 2.21.2
+Date: 2020-07-21
+Encoding: UTF-8
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
              person("Sam", "Brilleman", role = "ctb"),
+             person(given = "Jacqueline Buros", family = "Novik", 
+                    role = "ctb", comment = "R/stan_jm.R"),
+             person("AstraZeneca", role = "ctb", comment = "R/stan_jm.R"),
              person("Trustees of", "Columbia University", role = "cph"),
              person("Simon", "Wood", role = "cph", comment = "R/stan_gamm4.R"),
              person("R Core", "Deveopment Team", role = "cph", 
@@ -17,6 +21,8 @@ Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "au
              person("Brian", "Ripley", role = "cph", 
                     comment = "R/stan_aov.R, R/stan_polr.R"),
              person("William", "Venables", role = "cph", comment = "R/stan_polr.R"),
+             person("Paul-Christian", "Burkner", email = "paul.buerkner@gmail.com",
+                    role = "cph", comment = "R/misc.R"),
              person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", 
                     role = c("cre", "aut")))
 Description: Estimates previously compiled regression models using the 'rstan'
@@ -25,24 +31,25 @@ Description: Estimates previously compiled regression models using the 'rstan'
     data.frame plus some additional arguments for priors.
 License: GPL (>=3)
 Depends:
-    R (>= 3.0.2),
+    R (>= 3.4.0),
     Rcpp (>= 0.12.0),
     methods
 Imports:
-    bayesplot (>= 1.2.0),
+    bayesplot (>= 1.7.0),
     ggplot2 (>= 2.2.1),
     lme4 (>= 1.1-8),
-    loo (>= 1.1.0),
-    Matrix,
+    loo (>= 2.1.0),
+    Matrix (>= 1.2-13),
     nlme (>= 3.1-124),
-    rstan (>= 2.17.2),
-    rstantools (>= 1.2.0),
+    rstan (>= 2.21.1),
+    rstantools (>= 2.1.0),
     shinystan (>= 2.3.0),
     stats,
     survival (>= 2.40.1),
+    RcppParallel (>= 5.0.1),
     utils
 Suggests:
-    arm,
+    biglm,
     betareg,
     data.table (>= 1.10.0),
     digest,
@@ -53,13 +60,15 @@ Suggests:
     mgcv (>= 1.8-13),
     rmarkdown,
     roxygen2,
+    StanHeaders (>= 2.21.0),
     testthat (>= 1.0.2)
-LinkingTo: StanHeaders (>= 2.17.1), rstan (>= 2.17.2), BH (>= 1.65.0), Rcpp (>=
-    0.12.0), RcppEigen (>= 0.3.3.3.0)
-SystemRequirements: pandoc
+LinkingTo: StanHeaders (>= 2.21.0), rstan (>= 2.21.1), BH (>= 1.72.0-2), Rcpp (>=
+    0.12.0), RcppEigen (>= 0.3.3.3.0), RcppParallel (>= 5.0.1)
+SystemRequirements: GNU make, pandoc (>= 1.12.3), pandoc-citeproc
 VignetteBuilder: knitr
 LazyData: true
+UseLTO: true
 NeedsCompilation: yes
-URL: http://discourse.mc-stan.org, http://mc-stan.org/
+URL: https://mc-stan.org/rstanarm/, https://discourse.mc-stan.org
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RoxygenNote: 5.0.1
+RoxygenNote: 7.1.1
