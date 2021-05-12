@@ -48,46 +48,30 @@ This vignette provides an introduction to the `stan_surv` modelling function in 
 
 # Introduction
 
-Survival (a.k.a. time-to-event) analysis is generally concerned with the time from some defined baseline (e.g. diagnosis of a disease) until an event of interest occurs (e.g. death or disease progression). 
+Survival (or time-to-event) analysis is concerned with the analysis of an outcome variable that corresponds to the time from some defined baseline until an event of interest occurs. The methodology is used in a range of disciplines where it is known by a variety of different names. These include survival analysis (medicine), duration analysis (economics), reliability analysis (engineering), and event history analysis (sociology). Survival analyses are particularly common in health and medical research, where a classic example of survival outcome data is the time from diagnosis of a disease until the occurrence of death.
 
-In standard survival analysis, one event time is measured for each observational unit. In practice however that event time may be unobserved due to left, right, or interval censoring, in which case the event time is only known to have occurred within the relevant censoring interval. 
+In standard survival analysis, one event time is measured for each observational unit. In practice however that event time may be unobserved due to left, right, or interval censoring, in which case the event time is only known to have occurred within the relevant censoring interval. The combined aspects of time and censoring make survival analysis methodology distinct from many other regression modelling approaches. 
 
-There are two common approaches to modelling survival data. The first is to model the *rate* of the event (known as the *hazard*) as a function of time -- the class of models known as proportional and non-proportional hazards regression models. The second is to model the event time directly -- the class of models known as accelerated failure time (AFT) models. In addition, a number of extensions to standard survival analysis have been proposed. These include the handling of multiple (recurrent) events, competing events, clustered survival data, cure models, and more.
+There are two common approaches to modelling survival data. The first is to model the instantaneous rate of the event (known as the hazard) as a function of time. This includes the class of models known as proportional and non-proportional hazards regression models. The second is to model the event time itself. This includes the class of models known as accelerated failure time (AFT) models. Under both of these modelling frameworks a number of extensions have been proposed. For instance the handling of recurrent events, competing events, clustered survival data, cure models, and more. More recently, methods for modelling both longitudinal (e.g. a repeatedly measured biomarker) and survival data have become increasingly popular (as described in the `stan_jm` [vignette](priors.html)).
 
-The intention is for the `stan_surv` modelling function in the **rstanarm** package to provide functionality for fitting a wide range of Bayesian survival models. The current implementation allows for the following model formulations:
+This vignette is structured as follows. In the next sections we describe the modelling, estimation, and prediction frameworks underpinning survival models in __rstanarm__. Following that we describe the implementation and arguments for the `stan_surv` modelling function. Following that we demonstrate usage of the package through a series of examples.
 
-- standard parametric (exponential, Weibull and Gompertz) hazard models
-- flexible parametric (cubic spline-based) hazard models
-- standard parametric (exponential and Weibull) AFT models.
-
-Under each of those model formulations the following are allowed:
-
-- left, right, and interval censored survival data 
-- delayed entry (i.e. left truncation)
-- covariates can be time-fixed or time-varying (with the latter specified using a "start-stop" data structure)
-- coefficients for covariates can be either time-fixed (e.g. proportional hazards) or time-varying (e.g. non-proportional hazards) -- when coefficients are specified as time-varying they can be modelled using either a smooth (cubic) B-spline function or a piecewise constant function.
-
-
-# Technical details
+# Modelling framework
 
 ## Data and notation
 
-We assume that a true event time for individual $i$ ($i = 1,...,N$) exists, denoted $T_i^*$, but that in practice it may or may not observed due to left, right, or interval censoring. Therefore, in practice we observe outcome data $\mathcal{D}_i = \{T_i, T_i^U, T_i^E, d_i\}$ for individual $i$ where:
+We assume that a true event time for individual $i$ ($i = 1,...,N$) exists and can be denoted $T_i^*$. However, in practice $T_i^*$ may not be observed due to left, right, or interval censoring. We therefore observe outcome data $\mathcal{D}_i = \{T_i, T_i^U, T_i^E, d_i\}$ for individual $i$ where:
 
-- $T_i$: the observed event or censoring time
-- $T_i^U$: the observed upper limit for interval censored individuals
-- $T_i^E$: the observed entry time (i.e. the time at which an individual became at risk for the event)
+- $T_i$ denotes the observed event or censoring time
+- $T_i^U$ denotes the observed upper limit for interval censored individuals
+- $T_i^E$ denotes the observed entry time (i.e. the time at which an individual became at risk for the event); and
+- $d_i \in \{0,1,2,3\}$ denotes an event indicator taking value 0 if individual $i$ was right censored (i.e. $T_i^* > T_i$), value 1 if individual $i$ was uncensored (i.e. $T_i^* = T_i$), value 2 if individual $i$ was left censored (i.e. $T_i^* < T_i$), or value 3 if individual $i$ was interval censored (i.e. $T_i < T_i^* < T_i^U$).
 
-and $d_i \in \{0,1,2,3\}$ denotes an event indicator taking value:
+### Hazard, cumulative hazard, and survival
 
-- 0 if individual $i$ was right censored (i.e. $T_i^* > T_i$) 
-- 1 if individual $i$ was uncensored (i.e. $T_i^* = T_i$)
-- 2 if individual $i$ was left censored (i.e. $T_i^* < T_i$)
-- 3 if individual $i$ was interval censored (i.e. $T_i < T_i^* < T_i^U$)
+There are three key quantities of interest in standard survival analysis: the hazard rate, the cumulative hazard, and the survival probability. It is these quantities that are used to form the likelihood function for the survival models described in later sections.
 
-## The hazard rate, cumulative hazard, and survival probability
-
-The hazard of the event at time $t$ is the instantaneous rate of occurrence for the event at time $t$. Mathematically, it is defined as:
+The hazard is the instantaneous rate of occurrence for the event at time $t$. Mathematically, it is defined as:
 \
 \begin{equation}
 \begin{split}
@@ -96,7 +80,9 @@ h_i(t) = \lim_{\Delta t \to 0}
 \end{split}
 \end{equation}
 \
-where $\Delta t$ is the width of some small time interval. The numerator is the conditional probability of the individual experiencing the event during the time interval $[t, t + \Delta t)$, given that they were still at risk of the event at time $t$. The denominator converts the conditional probability to a rate per unit of time. As $\Delta t$ approaches the limit, the width of the interval approaches zero and the instantaneous event rate is obtained.
+where $\Delta t$ is the width of some small time interval.
+
+The numerator is the conditional probability of the individual experiencing the event during the time interval $[t, t + \Delta t)$, given that they were still at risk of the event at time $t$. The denominator converts the conditional probability to a rate per unit of time. As $\Delta t$ approaches the limit, the width of the interval approaches zero and the instantaneous event rate is obtained.
 
 The cumulative hazard is defined as:
 \
@@ -114,216 +100,624 @@ S_i(t) = \exp \left[ -H_i(t) \right] = \exp \left[ -\int_{s=0}^t h_i(s) ds \righ
 \end{split}
 \end{equation}
 
-It can be seen here that in the standard survival analysis setting there is a one-to-one relationship between each of the hazard, the cumulative hazard, and the survival probability. These quantities are also used to form the likelihood for the survival model described in the later sections.
+It can be seen here that in the standard survival analysis setting -- where there is one event type of interest (i.e. no competing events) -- there is a one-to-one relationship between each of the hazard, the cumulative hazard, and the survival probability.
 
-## Hazard scale formulations
+### Delayed entry
 
-When `basehaz` is set equal to `"exp"`, `"weibull"`, `"gompertz"`, `"ms"` (the default), or `"bs"` then the model is defined on the hazard scale as described by the following parameterisations. 
+Delayed entry, also known as left truncation, occurs when an individual is not at risk of the event until some time $t > 0$. As previously described we use $T_i^E$ to denote the entry time at which the individual becomes at risk. A common situation where delayed entry occurs is when age is used as the time scale. With age as the time scale it is likely that our study will only be concerned with the observation of individuals starting from some time (i.e. age) $t > 0$.
 
-We model the hazard of the event for individual $i$ at time $t$ using the regression model:
+To allow for delayed entry we essentially want to work with a conditional survival probability:
 \
 \begin{equation}
 \begin{split}
-h_i(t) = h_0(t) \exp \left[ \eta_i(t) \right]
+S_i \left(t \mid T_i^E > 0 \right) = \frac{S_i(t)}{S_i \left( T_i^E \right)}
 \end{split}
 \end{equation}
-\
-where $h_0(t)$ is the baseline hazard (i.e. the hazard for an individual with all covariates set equal to zero) at time $t$, and $\eta_i(t)$ denotes the linear predictor evaluated for individual $i$ at time $t$. For full generality, we allow the linear predictor to be time-varying; that is, it may be a function of time-varying covariates or time-varying coefficients (i.e. a time-varying hazard ratio). However, if there are no time-varying covariates or time-varying coefficients in the model, then the linear predictor reduces to a time-fixed quantity and the definition of the hazard function reduces to:
-\
+
+Here the survival probability is evaluated conditional on the individual having survived up to the entry time. This conditional survival probability is used to allow for delayed entry in the log likelihood of our survival model.
+
+## Model formulations
+
+Our modelling approaches are twofold. First, we define a class of models on the hazard scale. This includes both proportional and non-proportional hazard regression models. Second, we define a class of models on the scale of the survival time. These are often known as accelerated failure time (AFT) models and can include both time-fixed and time-varying acceleration factors.
+
+These two classes of models and their respective features are described in the following sections.
+
+### Hazard scale models
+
+Under a hazard scale formulation, we model the hazard of the event for individual $i$ at time $t$ using the regression model:
+/
 \begin{equation}
 \begin{split}
-h_i(t) = h_0(t) \exp \left[ \eta_i \right]
+h_i(t) = h_0(t) \exp \left( \eta_i(t) \right)
 \end{split}
 \end{equation}
+/
+where $h_0(t)$ is the baseline hazard (i.e. the hazard for an individual with all covariates set equal to zero) at time $t$, and $\eta_i(t)$ denotes the linear predictor evaluated for individual $i$ at time $t$.
 
-Our linear predictor is defined as:
-\
+For full generality we allow the linear predictor to be time-varying. That is, it may be a function of time-varying covariates and/or time-varying coefficients (e.g. a time-varying hazard ratio). However, if there are no time-varying covariates or time-varying coefficients in the model, then the linear predictor reduces to a time-fixed quantity and the definition of the hazard function reduces to:
+/
 \begin{equation}
 \begin{split}
-\eta_i(t) = \beta_0 + \sum_{p=1}^P \beta_p(t) x_{ip}(t)
+h_i(t) = h_0(t) \exp \left( \eta_i \right)
 \end{split}
 \end{equation}
-\
-where $\beta_0$ denotes the intercept parameter, $x_{ip}(t)$ denotes the observed value of $p^{th}$ $(p=1,...,P)$ covariate for the $i^{th}$ $(i=1,...,N)$ individual at time $t$, and $\beta_p(t)$ denotes the coefficient for the $p^{th}$ covariate.
+/
+where the linear predictor $\eta_i$ is no longer a function of time. We describe the linear predictor in detail in later sections.
 
-The quantity $\exp \left( \beta_p(t) \right)$ is referred to as a "hazard ratio". The *hazard ratio (HR)* quantifies the relative increase in the hazard that is associated with a unit-increase in the relevant covariate, $x_{ip}$; e.g. a hazard ratio of 2 means that a unit-increase in the covariate leads to a doubling in the hazard (i.e. the instantaneous rate) of the event. The hazard ratio can be treated as a time-fixed quantity (i.e. proportional hazards) or time-varying quantity (i.e. non-proportional hazards), as described in later sections.
+Different distributional assumptions can be made for the baseline hazard $h_0(t)$ and affect how the baseline hazard changes as a function of time. The __rstanarm__ package currently accommodates several standard parametric distributions for the baseline hazard (exponential, Weibull, Gompertz) as well as more flexible approaches that directly model the baseline hazard as a piecewise or smooth function of time using splines.
 
-### Distributions
+The following describes the baseline hazards that are currently implemented in the __rstanarm__ package.
 
-- **Exponential model** (`basehaz = "exp"`): for scale parameter $\lambda_i(t) = \exp ( \eta_i(t) )$ we have:
-\
+#### M-splines model (the default):
+
+Let $M_{l}(t; \boldsymbol{k}, \delta)$ denote the $l^{\text{th}}$ $(l = 1,...,L)$ basis term for a degree $\delta$ M-spline function evaluated at a vector of knot locations $\boldsymbol{k} = \{k_{1},...,k_{J}\}$, and $\gamma_{l}$ denote the $l^{\text{th}}$ M-spline coefficient. We then have:
+/
+\begin{equation}
+h_i(t) = \sum_{l=1}^{L} \gamma_{l} M_{l}(t; \boldsymbol{k}, \delta) \exp ( \eta_i(t) )
+\end{equation}
+
+The M-spline basis is evaluated using the method described in \cite{Ramsay:1988} and implemented in the __splines2__ package \citep{Wang:2018}.
+
+To ensure that the hazard function $h_i(t)$ is not constrained to zero at the origin (i.e. when $t$ approaches 0) the M-spline basis incorporates an intercept. To ensure identifiability of both the M-spline coefficients and the intercept in the linear predictor we constrain the M-spline coefficients to a simplex, that is, $\sum_{l=1}^L{\gamma_l} = 1$.
+
+The default degree in __rstanarm__ is $\delta = 3$ (i.e. cubic M-splines) such that the baseline hazard can be modelled as a flexible and smooth function of time, however this can be changed by the user. It is worthwhile noting that setting $\delta = 0$ is treated as a special case that corresponds to a piecewise constant baseline hazard.
+
+#### Exponential model:
+
+For scale parameter $\lambda_i(t) = \exp ( \eta_i(t) )$ we have:
+/
 \begin{equation}
 h_i(t) = \lambda_i(t)
 \end{equation}
 
-- **Weibull model** (`basehaz = "weibull"`): for scale parameter $\lambda_i(t) = \exp ( \eta_i(t) )$ and shape parameter $\gamma > 0$ we have:
-\
+In the case where the linear predictor is not time-varying, the exponential model leads to a hazard rate that is constant over time.
+
+#### Weibull model:
+
+For scale parameter $\lambda_i(t) = \exp ( \eta_i(t) )$ and shape parameter $\gamma > 0$ we have:
+/
 \begin{equation}
 h_i(t) = \gamma t^{\gamma-1} \lambda_i(t)
 \end{equation}
 
-- **Gompertz model** (`basehaz = "gompertz"`): for shape parameter $\lambda_i(t) = \exp ( \eta_i(t) )$ and scale parameter $\gamma > 0$ we have:
-\
+In the case where the linear predictor is not time-varying, the Weibull model leads to a hazard rate that is monotonically increasing or monotonically decreasing over time. In the special case where $\gamma = 1$ it reduces to the exponential model.
+
+#### Gompertz model:
+
+For shape parameter $\lambda_i(t) = \exp ( \eta_i(t) )$ and scale parameter $\gamma > 0$ we have:
+/
 \begin{equation}
 h_i(t) = \exp(\gamma t) \lambda_i(t)
 \end{equation}
 
-- **M-splines model** (`basehaz = "ms"`, the default): letting $M(t; \boldsymbol{\gamma}, \boldsymbol{k_0}, \delta)$ denote a degree $\delta$ M-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0} = $ and parameter vector $\boldsymbol{\gamma} > 0$ we have:
-\
+#### B-splines model (for the log baseline hazard):
+
+Let $B_{l}(t; \boldsymbol{k}, \delta)$ denote the $l^{\text{th}}$ $(l = 1,...,L)$ basis term for a degree $\delta$ B-spline function evaluated at a vector of knot locations $\boldsymbol{k} = \{k_{1},...,k_{J}\}$, and $\gamma_{l}$ denote the $l^{\text{th}}$ B-spline coefficient. We then have:
+/
 \begin{equation}
-h_i(t) = M(t; \boldsymbol{\gamma}, \boldsymbol{k_0}, \delta) \exp ( \eta_i(t) )
+h_i(t) = \exp \left( \sum_{l=1}^{L} \gamma_{l} B_{l}(t; \boldsymbol{k}, \delta) + \eta_i(t) \right)
 \end{equation}
-\
-The M-spline function is calculated using the method described in Ramsay (1988) and implemented in the **splines2** R package (Wang and Yan (2018)). To ensure that the hazard function $h_i(t)$ is not constrained to zero at the origin (i.e. when $t$ approaches 0) the M-spline basis incorporates an intercept. To ensure identifiability of both the intercept parameter in the M-spline function and the intercept parameter in the linear predictor (i.e. $\beta_0$) we constrain the M-spline coefficients to a simplex, that is, $\sum_{j=1}^J{\gamma_j} = 1$. The default degree in **rstanarm** is $\delta = 3$; that is, cubic M-splines. However this can be controlled by the user via the `basehaz_ops` argument. It is worthwhile noting that $\delta = 0$ would correspond to a piecewise constant baseline hazard.
+/
+The B-spline basis is calculated using the method implemented in the __splines2__ package \citep{Wang:2018}. The B-spline basis does not require an intercept and therefore does not include one; any constant shift in the log hazard is fully captured via an intercept in the linear predictor. By default cubic B-splines are used (i.e. $\delta = 3$) and these allow the log baseline hazard to be modelled as a smooth function of time.
 
-- **B-splines model** (for the *log* baseline hazard): letting $B(t; \boldsymbol{\gamma}, \boldsymbol{k_0}, \delta)$ denote a degree $\delta$ B-spline function with basis evaluated at a vector of knot locations $\boldsymbol{k_0}$ and parameter vector $\boldsymbol{\gamma}$ we have:
-\
-\begin{equation}
-h_i(t) = \exp ( B(t; \boldsymbol{\gamma}, \boldsymbol{k_0}, \delta) + \eta_i(t) )
-\end{equation}
-\
-The B-spline function is calculated using the method implemented in the **splines2** R package (Wang and Yan (2018)). The B-spline basis does not require an intercept and therefore does not include one; any constant shift in the log hazard is fully captured via the intercept in the linear predictor (i.e. $\beta_0$).
+### Accelerated failure time (AFT) models
 
-**Note:** When the linear predictor *is not* time-varying (i.e. under proportional hazards) there is a closed form expression for the survival probability (except for the B-splines model); details shown in the appendix. However, when the linear predictor *is* time-varying (i.e. under non-proportional hazards) there is no closed form expression for the survival probability; instead, quadrature is used to evaluate the survival probability for inclusion in the likelihood. Extended details on the parameterisations are given in the appendix.
-
-## Accelerated failure time formulations
-
-When `basehaz` is set equal to `"exp-aft"`, or `"weibull-aft"` then the model is defined on the accelerated failure time scale as described by the following parameterisations. 
-
-Following Hougaard (1999), we model the survival probability for individual $i$ at time $t$ using the regression model:
-\
-\begin{equation}
+Under an AFT formulation we model the survival probability for individual $i$ at time $t$ using the regression model \citep{Hougaard:1999}:
+/
+\begin{equation} \label{eq:aftform-surv}
 \begin{split}
-S_i(t) = S_0 \left( \int_0^t \exp \left[ - \eta_i(u) \right] du \right)
+S_i(t) = S_0 \left( \int_{u=0}^t \exp \left( - \eta_i(u) \right) du \right)
 \end{split}
 \end{equation}
-\
-where $S_0(t)$ is the baseline survival probability at time $t$, and $\eta_i(t)$ denotes the linear predictor evaluated for individual $i$ at time $t$. For full generality, we allow the linear predictor to be time-varying; that is, it may be a function of time-varying covariates or time-varying coefficients (i.e. a time-varying acceleration factor). However, if there are no time-varying covariates or time-varying coefficients in the model, then the linear predictor reduces to a time-fixed quantity (i.e. $\eta_i(t) = \eta_i$) and the definition of the survival probability reduces to:
-\
+/
+where $S_0(t)$ is the baseline survival probability at time $t$, and $\eta_i(t)$ denotes the linear predictor evaluated for individual $i$ at time $t$. For full generality we again allow the linear predictor to be time-varying. This also leads to a corresponding general expression for the hazard function \citep{Hougaard:1999} as follows:
+/
+\begin{align} \label{eq:aftform-haz}
+\begin{split}
+h_i(t) = \exp \left(-\eta_i(t) \right) h_0 \left( \int_{u=0}^t \exp \left( - \eta_i(u) \right) du \right)
+\end{split}
+\end{align}
+
+If there are no time-varying covariates or time-varying coefficients in the model, then the definition of the survival probability reduces to:
+/
 \begin{equation}
 \begin{split}
-S_i(t) = S_0 \left( t \exp \left[ - \eta_i \right] \right)
+S_i(t) = S_0 \left( t \exp \left( - \eta_i \right) \right)
 \end{split}
 \end{equation}
-
-Our linear predictor is defined as:
-\
-\begin{equation}
+/
+and for the hazard:
+/
+\begin{align}
 \begin{split}
-\eta_i(t) = \beta_0^* + \sum_{p=1}^P \beta_p^*(t) x_{ip}(t)
+h_i(t) = \exp \left( -\eta_i \right) h_0 \left( t \exp \left( - \eta_i \right) \right)
 \end{split}
-\end{equation}
-\
-where $\beta_0^*$ denotes the intercept parameter, $x_{ip}(t)$ denotes the observed value of $p^{th}$ $(p=1,...,P)$ covariate for the $i^{th}$ $(i=1,...,N)$ individual at time $t$, and $\beta_p^*(t)$ denotes the coefficient for the $p^{th}$ covariate.
+\end{align}
 
-The quantity $\exp \left( - \beta_p^*(t) \right)$ is referred to as an "acceleration factor" and the quantity $\exp \left( \beta_p^*(t) \right)$ is referred to as a "survival time ratio". The *acceleration factor* (AF) quantifies the acceleration (or deceleration) of the event process that is associated with a unit-increase in the relevant covariate, $x_{ip}$; e.g. an acceleration factor of 0.5 means that a unit-increase in the covariate leads to an individual approaching the event at half the speed. If you find that somewhat confusing, then it may be easier to think about the survival time ratio. The *survival time ratio* (STR) is interpreted as the increase (or decrease) in the expected survival time that is associated with a unit-increase in the relevant covariate, $x_{ip}$; e.g. a survival time ratio of 2 (which is equivalent to an acceleration factor of 0.5) means that a unit-increase in the covariate leads to an doubling in the expected survival time. The survival time ratio is equal to the inverse of the acceleration factor (i.e. $\text{STR} = 1/\text{AF}$).
+Different distributional assumptions can be made for how the baseline survival probability $S_0(t)$ changes as a function of time. The __rstanarm__ package currently accommodates two standard parametric distributions (exponential, Weibull) although others may be added in the future. The current distributions are implemented as follows.
 
-### Distributions
+#### Exponential model:
 
-- **Exponential model** (`basehaz = "exp-aft"`): When the linear predictor is time-varying we have:
-\
+When the linear predictor is time-varying we have:
+/
 \begin{equation}
-S_i(t) = \exp \left( - \int_0^t \exp ( -\eta_i(u) ) du \right)
+S_i(t) = \exp \left( - \int_{u=0}^t \exp ( -\eta_i(u) ) du \right)
 \end{equation}
-\
+/
 and when the linear predictor is time-fixed we have:
-\
+/
 \begin{equation}
 S_i(t) = \exp \left( - t \lambda_i \right)
 \end{equation}
-\
+/
 for scale parameter $\lambda_i = \exp ( -\eta_i )$.
 
-- **Weibull model** (`basehaz = "weibull-aft"`): When the linear predictor is time-varying we have:
-\
+#### Weibull model:
+
+When the linear predictor is time-varying we have:
+/
 \begin{equation}
-S_i(t) = \exp \left( - \left[ \int_0^t \exp ( -\eta_i(u) ) du \right]^{\gamma} \right)
+S_i(t) = \exp \left( - \left( \int_{u=0}^t \exp ( -\eta_i(u) ) du \right)^{\gamma} \right)
 \end{equation}
-\
+/
 for shape parameter $\gamma > 0$ and when the linear predictor is time-fixed we have:
-\
+/
 \begin{equation}
 S_i(t) = \exp \left( - t^{\gamma} \lambda_i \right)
 \end{equation}
-\
+/
 for scale parameter $\lambda_i = \exp ( -\gamma \eta_i )$ and shape parameter $\gamma > 0$.
 
-**Note:** When the linear predictor *is not* time-varying (i.e. under time-fixed acceleration), there is a closed form expression for both the hazard function and survival function; details shown in the appendix. However, when the linear predictor *is* time-varying (i.e. under time-varying acceleration) there is no closed form expression for the hazard function or survival probability; instead, quadrature is used to evaluate the cumulative acceleration factor, which in turn is used to evaluate the hazard function and survival probability for inclusion in the likelihood. Extended details on the parameterisations are given in the appendix.
+## Linear predictor
 
-## Time-fixed and time-varying effects of covariates
+Under all of the previous model formulations our linear predictor can be defined as:
+/
+\begin{equation} \label{eq:eta}
+\begin{split}
+\eta_i(t) = \boldsymbol{\beta}^T(t) \boldsymbol{X}_i(t)
+\end{split}
+\end{equation}
+/
+where $\boldsymbol{X}_i(t) = [1, x_{i1}(t), ..., x_{iP}(t) ]$ denotes a vector of covariates with $x_{ip}(t)$ denoting the observed value of $p^{th}$ $(p = 1,...,P)$ covariate for the $i^{th}$ $(i=1,...,N)$ individual at time $t$, and $\boldsymbol{\beta}(t) = [ \beta_0, \beta_1(t), ... , \beta_P(t) ]$ denotes a vector of parameters with $\beta_0$ denoting an intercept parameter and $\beta_p(t)$ denoting the possibly time-varying coefficient for the $p^{th}$ covariate.
 
-The coefficient $\beta_p(t)$ (i.e. the log hazard ratio) or $\beta_p^*(t)$ (i.e. log survival time ratio) can be treated as a time-fixed quantity (e.g. $\beta_p(t) = \beta_p$) or as a time-varying quantity. We refer to the latter as *time-varying effects* because the effect of the covariate is allowed to change as a function of time. In `stan_surv` time-varying effects are specified by using the `tve` function in the model formula. Note that in the following definitions we only refer to $\beta_p(t)$ (i.e. the log hazard ratio) but the same methodology applies to $\beta_p^*(t)$ (i.e. the log survival time ratio).
+### Hazard ratios
 
-Without time-varying effects we have:
-\
+Under a hazard scale formulation the quantity $\exp \left( \beta_p(t) \right)$ is referred to as a \textif{hazard ratio}.
+
+The hazard ratio quantifies the relative increase in the hazard that is associated with a unit-increase in the relevant covariate, $x_{ip}$, assuming that all other covariates in the model are held constant. For instance, a hazard ratio of 2 means that a unit-increase in the covariate leads to a doubling in the hazard (i.e. the instantaneous rate) of the event.
+
+### Acceleration factors and survival time ratios
+
+Under an AFT formulation the quantity $\exp \left( - \beta_p(t) \right)$ is referred to as an \textif{acceleration factor} and the quantity $\exp \left( \beta_p(t) \right)$ is referred to as a \textif{survival time ratio}.
+
+The acceleration factor quantifies the acceleration (or deceleration) of the event process that is associated with a unit-increase in the relevant covariate, $x_{ip}$. For instance, an acceleration factor of 0.5 means that a unit-increase in the covariate corresponds to approaching the event at half the speed.
+
+The survival time ratio is interpreted as the increase (or decrease) in the expected survival time that is associated with a unit-increase in the relevant covariate, $x_{ip}$. For instance, a survival time ratio of 2 (which is equivalent to an acceleration factor of 0.5) means that a unit-increase in the covariate leads to an doubling in the expected survival time.
+
+Note that the survival time ratio is a simple reparameterisation of the acceleration factor. Specifically, the survival time ratio is equal to the reciprocal of the acceleration factor. The survival time ratio and the acceleration factor therefore provide alternative interpretations for the same effect of the same covariate.
+
+### Time-fixed vs time-varying effects
+
+Under either a hazard scale or AFT formulation the coefficient $\beta_p(t)$ can be treated as a time-fixed or time-varying quantity.
+
+When $\beta_p(t)$ is treated as a time-fixed quantity we have:
+/
 \begin{equation}
 \begin{split}
 \beta_p(t) = \theta_{p0}
 \end{split}
 \end{equation}
-\
-such that $\theta_{p0}$ is a time-fixed log hazard ratio (or log survival time ratio).
+/
+such that $\theta_{p0}$ is a time-fixed log hazard ratio (or log survival time ratio). On the hazard scale this is equivalent to assuming proportional hazards, whilst on the AFT scale it is equivalent to assuming a time-fixed acceleration factor.
 
-With **time-varying effects modelled using B-splines** we have:
-\
+When $\beta_p(t)$ is treated as a time-varying quantity we refer to it as a time-varying effect because the effect of the covariate is allowed to change as a function of time. On the hazard scale this leads to non-proportional hazards, whilst on the AFT scale it leads to time-varying acceleration factors.
+
+When $\beta_p(t)$ is time-varying we must determine how we wish to model it. In __rstanarm__ the default is to use B-splines such that:
+/
 \begin{equation}
 \begin{split}
-\beta_p(t) = \theta_{p0} + \sum_{m=1}^{M} \theta_{pm} B_{m}(t; \boldsymbol{k}, \delta)
+\beta_p(t) = \theta_{p0} + \sum_{l=1}^{L} \theta_{pl} B_{l}(t; \boldsymbol{k}, \delta)
 \end{split}
 \end{equation}
-\
-where $\theta_{p0}$ is a constant, $B_{m}(t; \boldsymbol{k}, \delta)$ is the $m^{\text{th}}$ $(m = 1,...,M)$ basis term for a degree $\delta$ B-spline function evaluated at a vector of knot locations $\boldsymbol{k} = \{k_{1},...,k_{J}\}$, and $\theta_{pm}$ is the $m^{\text{th}}$ B-spline coefficient. By default cubic B-splines are used (i.e. $\delta = 3$). These allow the log hazard ratio (or log survival time ratio) to be modelled as a smooth function of time. 
+/
+where $\theta_{p0}$ is a constant, $B_{l}(t; \boldsymbol{k}, \delta)$ is the $l^{\text{th}}$ $(l = 1,...,L)$ basis term for a degree $\delta$ B-spline function evaluated at a vector of knot locations $\boldsymbol{k} = \{k_{1},...,k_{J}\}$, and $\theta_{pl}$ is the $l^{\text{th}}$ B-spline coefficient. By default cubic B-splines are used (i.e. $\delta = 3$). These allow the log hazard ratio (or log survival time ratio) to be modelled as a smooth function of time. 
 
-The degrees of freedom is equal to the number of additional parameters required to estimate a time-varying coefficient relative to a time-fixed coefficient. When a B-spline function is used to model the time-varying coefficient the degrees of freedom are $M = J + \delta - 2$ where $J$ is the total number of knots (including boundary knots). 
-
-With **time-varying effects modelled using a piecewise constant function** we have:
-\
+However an alternative is to model $\beta_p(t)$ using a piecewise constant function:
+/
 \begin{equation}
 \begin{split}
-\beta_p(t) = \theta_{p0} + \sum_{m=1}^{M} \theta_{pm} I(k_{m+1} < t \leq k_{m+2})
+\beta_p(t) = \theta_{p0} + \sum_{l=1}^{L} \theta_{pl} I(k_{l+1} < t \leq k_{l+2})
 \end{split}
 \end{equation}
-\
-where $I(x)$ is an indicator function taking value 1 if $x$ is true and 0 otherwise, $\theta_{p0}$ is a constant corresponding to the log hazard ratio (or log survival time ratio for AFT models) in the first time interval, $\theta_{pm}$ is the deviation in the log hazard ratio (or log survival time ratio) between the first and $(m+1)^\text{th}$ $(m = 1,...,M)$ time interval, and $\boldsymbol{k} = \{k_{1},...,k_{J}\}$ is a sequence of knot locations (i.e. break points) that includes the lower and upper boundary knots. This allows the log hazard ratio (or log survival time ratio) to be modelled as a piecewise constant function of time.
+/
+where $I(x)$ is an indicator function taking value 1 if $x$ is true and 0 otherwise, $\theta_{p0}$ is a constant corresponding to the log hazard ratio (or log survival time ratio for AFT models) in the first time interval, $\theta_{pl}$ is the deviation in the log hazard ratio (or log survival time ratio) between the first and $(l+1)^\text{th}$ $(l = 1,...,L)$ time interval, and $\boldsymbol{k} = \{k_{1},...,k_{J}\}$ is a sequence of knot locations (i.e. break points) that includes the lower and upper boundary knots. This allows the log hazard ratio (or log survival time ratio) to be modelled as a piecewise constant function of time.
 
-The degrees of freedom is equal to the number of additional parameters required to estimate a time-varying coefficient relative to a time-fixed coefficient. When a piecewise constant function is used to model the time-varying coefficient the degrees of freedom are $M = J - 2$ where $J$ is the total number of knots (including boundary knots).
+Note that we have dropped the subscript $p$ from the knot locations $\boldsymbol{k}$ and degree $\delta$ discussed above. This is just for simplicity of the notation. In fact, if a model has a time-varying effect estimated for more than one covariate, then each of these can be modelled using different knot locations and/or degree if the user desires. These knot locations and/or degree can also differ from those used for modelling the baseline or log baseline hazard described previously in Section \ref{sec:modelformulations}.
 
-**Default knot locations:** The vector of knot locations $\boldsymbol{k} = \{k_{1},...,k_{J}\}$ includes a lower boundary knot $k_{1}$ at the earliest entry time (equal to zero if there isn't delayed entry) and an upper boundary knot $k_{J}$ at the latest event or censoring time. The boundary knots cannot be changed by the user. Internal knot locations -- that is $k_{2},...,k_{(J-1)}$ when $J \geq 3$ -- can be explicitly specified by the user (see the `knots` argument to the `tve` function) or are determined by default. The default is to place the internal knots at equally spaced percentiles of the distribution of uncensored event times. When a B-spline function is specified, the `tve` function uses default values $M = 3$ (degrees of freedom) and $\delta = 3$ (cubic splines) which in fact corresponds to a cubic B-spline function with no internal knots. When a piecewise constant function is specified, the `tve` function uses a default value of $M = 3$ (degrees of freedom) which corresponds to internal knots at the $25^{\text{th}}$, $50^{\text{th}}$, and $75^{\text{th}}$ percentiles of the distribution of the uncensored event times.
+### Relationship between proportional hazards and AFT models
 
-**Note on subscripts:** We have dropped the subscript $p$ from the knot locations $\boldsymbol{k}$ and degree of the B-splines $\delta$ discussed above. This is just for simplicity of the notation. In fact, if a model has time-varying effects estimated for more than one covariate, then each these can be modelled using different knot locations and/or degree if the user desires.
+As shown in Section \ref{sec:modelformulations} some baseline distributions can be parameterised as either a proportional hazards or an AFT model. In __rstanarm__ this currently includes the exponential and Weibull models. One can therefore transform the estimates from an exponential or Weibull proportional hazards model to get the estimates that would be obtained under an exponential or Weibull AFT parameterisation.
 
-## Likelihood
-
-Allowing for the three forms of censoring and potential delayed entry (i.e. left truncation) the likelihood for the survival model takes the form:
-\
-\begin{align}
+Specifically, the following relationship applies for the exponential model:
+/
+\begin{equation}
 \begin{split}
-p(\mathcal{D}_i | \boldsymbol{\gamma}, \boldsymbol{\beta}) =
-  &        {\left[ h_i(T_i)              \right]}^{I(d_i=1)} \\
-  & \times {\left[ S_i(T_i)              \right]}^{I(d_i \in \{0,1\})} \\
-  & \times {\left[ 1 - S_i(T_i)          \right]}^{I(d_i=2)} \\
-  & \times {\left[ S_i(T_i) - S_i(T_i^U) \right]}^{I(d_i=3)} \\
-  & \times {\left[ S_i(T_i^E)            \right]}^{-1}
+\beta_0 & = - \beta_0^* \\
+\beta_p & = - \beta_p^*  
 \end{split}
-\end{align}
+\end{equation}
+/
+and for the Weibull model:
+/
+\begin{equation}
+\begin{split}
+\beta_0 & = -\gamma \beta_0^* \\
+\beta_p & = -\gamma \beta_p^*  
+\end{split}
+\end{equation}
+/
+where the unstarred parameters are from the proportional hazards model and the starred ($*$) parameters are from the AFT model. Note however that these relationships only hold in the absence of time-varying effects. This is demonstrated using a real dataset in the example in Section \ref{sec:aftmodel}.
 
-## Priors
+## Multilevel survival models
 
-The prior distribution for the so-called "auxiliary" parameters (i.e. $\gamma$ for the Weibull and Gompertz models, or $\boldsymbol{\gamma}$ for the M-spline and B-spline models) is specified via the `prior_aux` argument to `stan_surv`. Choices of prior distribution include:
+The definition of the linear predictor in Equation \ref{eq:eta} can be extended to allow for shared frailty or other clustering effects.
 
-- a Dirichlet prior is allowed for the M-spline coefficients $\boldsymbol{\gamma}$
-- a half-normal, half-t, half-Cauchy or exponential prior is allowed for the Weibull shape parameter $\gamma$
-- a half-normal, half-t, half-Cauchy or exponential prior is allowed for the Gompertz scale parameter $\gamma$
-- a normal, t, or Cauchy prior is allowed for the B-spline coefficients $\boldsymbol{\gamma}$
+Suppose that the individuals in our sample belong to a series of clusters. The clusters may represent for instance hospitals, families, or GP clinics. We denote the $i^{th}$ individual ($i = 1,...,N_j$) as a member of the $j^{th}$ cluster ($j = 1,...,J$). Moreover, to indicate the fact that individual $i$ is now a member of cluster $j$ we index the observed data (i.e. event times, event indicator, and covariates) with a subscript $j$, that is $T_{ij}^*$, $\mathcal{D}_{ij} = \{T_{ij}, T_{ij}^U, T_{ij}^E, d_{ij}\}$ and $X_{ij}(t)$, as well as estimated quantities such as the hazard rate, cumulative hazard, survival probability, and linear predictor, that is $h_{ij}(t)$, $H_{ij}(t)$, $S_{ij}(t)$, and $\eta_{ij}(t)$.
 
-These choices are described in greater detail in the `stan_surv` or `priors` help file.
+To allow for intra-cluster correlation in the event times we include cluster-specific random effects in the linear predictor as follows:
+/
+\begin{equation} \label{eq:multileveleta}
+\begin{split}
+\eta_{ij}(t) = \boldsymbol{\beta}^T \boldsymbol{X}_{ij}(t) + \boldsymbol{b}_{j}^T \boldsymbol{Z}_{ij}
+\end{split}
+\end{equation}
+/
+where $\boldsymbol{Z}_{ij}$ denotes a vector of covariates for the $i^{th}$ individual in the $j^{th}$ cluster, with an associated vector of cluster-specific parameters $\boldsymbol{b}_{j}$. We assume that the cluster-specific parameters are normally distributed such that $\boldsymbol{b}_{j} \sim N(0, \boldsymbol{\Sigma}}_{b})$ for some variance-covariance matrix $\boldsymbol{\Sigma}}_{b}$. We assume that $\boldsymbol{\Sigma}}_{b}$ is unstructured, that is each variance and covariance term is allowed to be different.
 
-The prior distribution for the intercept parameter in the linear predictor is specified via the `prior_intercept` argument to `stan_surv`. Choices include the normal, t, or Cauchy distributions. The default is a normal distribution with mean zero and scale 20. Note that -- internally (but not in the reported parameter estimates) -- the prior is placed on the intercept *after* centering the predictors at their sample means and *after* applying a constant shift of $\log \left( \frac{E}{T} \right)$ where $E$ is the total number of events and $T$ is the total follow up time. For example, a prior specified by the user as `prior_intercept = normal(0,20)` is in fact not centered on an intercept of zero when all predictors are at their sample means, but rather, it is centered on the log crude event rate when all predictors are at their means. This is intended to help with numerical stability and sampling, but does not impact on the reported estimates (i.e. the intercept is back-transformed before being returned to the user).
+In most cases $\boldsymbol{b}_{j}$ will correspond to just a cluster-specific random intercept (often known as a "shared frailty" term) but more complex random effects structures are possible. 
 
-The choice of prior distribution for the time-fixed coefficients $\theta_{p0}$ ($p = 1,...,P$) is specified via the `prior` argument to `stan_surv`. This can any of the standard prior distributions allowed for regression coefficients in the **rstanarm** package; see the [priors vignette](priors.html) and the `stan_surv` help file for details. 
+For simplicitly of notation Equation \ref{eq:multileveleta} also assumes just one clustering factor in the model (indexed by $j = 1,...,J$). However, it is possible to extend the model to multiple clustering factors (in __rstanarm__ there is no limit to the number of clustering factors that can be included). For example, suppose that the $i^{th}$ individual was clustered within the $j^{th}$ hospital that was clustered within the $k^{th}$ geographical region. Then we would have hospital-specific random effects $\boldsymbol{b}_j \sim N(0, \boldsymbol{\Sigma}}_{b})$ and region-specific random effects $\boldsymbol{u}_k \sim N(0, \boldsymbol{\Sigma}}_{u})$ and assume $\boldsymbol{b}_j$ and $\boldsymbol{u}_k$ are independent for all $(j,k)$.
 
-The additional coefficients required for estimating time-varying effects (i.e. the B-spline coefficients or the interval-specific deviations in the piecewise constant function) are given a random walk prior of the form $\theta_{p,1} \sim N(0,1)$ and $\theta_{p,m} \sim N(\theta_{p,m-1},\tau_p)$ for $m = 2,...,M$, where $M$ is the total number of cubic B-spline basis terms. The prior distribution for the hyperparameter $\tau_p$ is specified via the `prior_smooth` argument to `stan_surv`. Lower values of $\tau_p$ lead to a less flexible (i.e. smoother) function. Choices of prior distribution for the hyperparameter $\tau_p$ include an exponential, half-normal, half-t, or half-Cauchy distribution, and these are detailed in the `stan_surv` help file.
+# Estimation framework
 
+## Log posterior
+
+The log posterior for the $i^{th}$ individual in the $j^{th}$ cluster can be specified as:
+/
+\begin{equation}
+\begin{split}
+\log p(\boldsymbol{\theta}, \boldsymbol{b}_{j} \mid \mathcal{D}_{ij})
+  \propto
+    \log p(\mathcal{D}_{ij} \mid \boldsymbol{\theta}, \boldsymbol{b}_{j}) +
+    \log p(\boldsymbol{b}_{j} \mid \boldsymbol{\theta}) +
+    \log p(\boldsymbol{\theta})  
+\end{split}
+\end{equation}
+/
+where $\log p(\mathcal{D}_{ij} \mid \boldsymbol{\theta}, \boldsymbol{b}_{j})$ is the log likelihood for the outcome data, $\log p(\boldsymbol{b}_{j} \mid \boldsymbol{\theta})$ is the log likelihood for the distribution of any cluster-specific parameters (i.e. random effects) when relevant, and $\log p(\boldsymbol{\theta})$ represents the log likelihood for the joint prior distribution across all remaining unknown parameters.
+
+## Log likelihood
+
+Allowing for the three forms of censoring (left, right, and interval censoring) and potential delayed entry (i.e. left truncation) the log likelihood for the survival model takes the form:
+/
+\begin{equation} \label{eq:loglik}
+\begin{split}
+\log p(\mathcal{D}_{ij} \mid \boldsymbol{\theta}, \boldsymbol{b}_{j})
+  & =       {I(d_{ij} = 0)} \times \log \left[ S_{ij}(T_{ij})                    \right] \\
+  & \quad + {I(d_{ij} = 1)} \times \log \left[ h_{ij}(T_{ij})                    \right] \\
+  & \quad + {I(d_{ij} = 1)} \times \log \left[ S_{ij}(T_{ij})                    \right] \\
+  & \quad + {I(d_{ij} = 2)} \times \log \left[ 1 - S_{ij}(T_{ij})                \right] \\
+  & \quad + {I(d_{ij} = 3)} \times \log \left[ S_{ij}(T_{ij}) - S_{ij}(T_{ij}^U) \right] \\
+  & \quad - \log \left[ S_{ij} ( T_{ij}^E ) \right]
+\end{split}
+\end{equation}
+/
+where $I(x)$ is an indicator function taking value 1 if $x$ is true and 0 otherwise. That is, each individual's contribution to the likelihood depends on the type of censoring for their event time. 
+
+The last term on the right hand side of Equation \ref{eq:loglik} accounts for delayed entry. When an individual is at risk from time zero (i.e. no delayed entry) then $T_{ij}^E = 0$ and $S_{ij}(0) = 1$ meaning that the last term disappears from the likelihood.
+
+### Evaluating integrals in the log likelihood
+
+When the linear predictor is time-fixed there is a closed form expression for both the hazard rate and survival probability in almost all cases (the single exception is when B-splines are used to model the log baseline hazard). When there is a closed form expression for both the hazard rate and survival probability then there is also a closed form expression for the (log) likelihood function. The details of these expressions are given in Appendix \ref{app:haz-parameterisations} (for hazard models) and Appendix \ref{app:aft-parameterisations} (for AFT models).
+
+However, when the linear predictor is time-varying there isn't a closed form expression for the survival probability. Instead, Gauss-Kronrod quadrature with $Q$ nodes is used to approximate the necessary integrals.
+
+For hazard scale models Gauss-Kronrod quadrature is used to evaluate the cumulative hazard, which in turn is used to evaluate the survival probability. Expanding on Equation \ref{eq:survdef} we have:
+/
+\begin{equation}
+\begin{split}
+\int_{u=0}^{T_{ij}} h_{ij}(u) du
+  \approx \frac{T_{ij}}{2} \sum_{q=1}^{Q} w_q h_{ij} \left( \frac{T_{ij}(1 + v_q)}{2} \right)
+\end{split}
+\end{equation}
+/
+where $w_q$ and $v_q$, respectively, are the standardised weights and locations ("abscissa") for quadrature node $q$ $(q = 1,...,Q)$ \citep{Laurie:1997}.
+
+For AFT models Gauss-Kronrod quadrature is used to evaluate the cumulative acceleration factor, which in turn is used to evaluate both the survival probability and the hazard rate. Expanding on Equations \ref{eq:aftform-surv} and \ref{eq:aftform-haz} we have:
+/
+\begin{equation}
+\begin{split}
+\int_{u=0}^{T_{ij}} \exp \left( - \eta_{ij}(u) \right) du
+  \approx \frac{T_{ij}}{2} \sum_{q=1}^{Q} w_q \exp \left( - \eta_{ij} \left( \frac{T_{ij}(1 + v_q)}{2} \right) \right)
+\end{split}
+\end{equation}
+
+When quadrature is necessary, the default in __rstanarm__ is to use $Q = 15$ nodes. But the number of nodes can be changed by the user.
+
+## Prior distributions
+
+For each of the parameters a number of prior distributions are available. Default choices exist, but the user can explicitly specify the priors if they wish.
+
+### Intercept
+
+All models include an intercept parameter in the linear predictor ($\beta_0$) which effectively forms part of the baseline hazard. Choices of prior distribution for $\beta_0$ include the normal, t, or Cauchy distributions. The default is a normal distribution with mean 0 and standard deviation of 20.
+
+However it is worth noting that -- internally (but not in the reported parameter estimates) -- the prior is placed on the intercept after centering the predictors at their sample means and after applying a constant shift of $\log \left( \frac{E}{T} \right)$ where $E$ is the total number of events and $T$ is the total follow up time. For instance, the default prior is not centered on an intercept of zero when all predictors are at their sample means, but rather, it is centered on the log crude event rate when all predictors are at their sample means. This is intended to help with numerical stability and sampling, but does not impact on the reported estimates (i.e. the intercept is back-transformed before being returned to the user).
+
+\subsubsection{Regression coefficients}
+
+Choices of prior distribution for the time-fixed regression coefficients $\theta_{p0}$ ($p = 1,...,P$) include normal, t, and Cauchy distributions as well as several shrinkage prior distributions.
+
+Where relevant, the additional coefficients required for estimating a time-varying effect (i.e. the B-spline coefficients or the interval-specific deviations in the piecewise constant function) are given a random walk prior of the form $\theta_{p,1} \sim N(0,1)$ and $\theta_{p,m} \sim N(\theta_{p,m-1},\tau_p)$ for $m = 2,...,M$, where $M$ is the total number of cubic B-spline basis terms. The prior distribution for the hyperparameter $\tau_p$ can be specified by the user and choices include an exponential, half-normal, half-t, or half-Cauchy distribution. Note that lower values of $\tau_p$ lead to a less flexible (i.e. smoother) function for modelling the time-varying effect.
+
+\subsubsection{Auxiliary parameters}
+
+There are several choices of prior distribution for the so-called "auxiliary" parameters related to the baseline hazard (i.e. scalar $\gamma$ for the Weibull and Gompertz models or vector $\boldsymbol{\gamma}$ for the M-spline and B-spline models). These include:
+
+\begin{itemize}
+
+\item a Dirichlet prior distribution for the baseline hazard M-spline coefficients $\boldsymbol{\gamma}$;
+
+\item a half-normal, half-t, half-Cauchy or exponential prior distribution for the Weibull shape parameter $\gamma$;
+
+\item a half-normal, half-t, half-Cauchy or exponential prior distribution for the Gompertz scale parameter $\gamma$; and
+
+\item a normal, t, or Cauchy prior distribution for the log baseline hazard B-spline coefficients $\boldsymbol{\gamma}$.
+
+\end{itemize}
+
+\subsubsection{Covariance matrices}
+
+When a multilevel survival model is estimated there is an unstructured covariance matrix estimated for the random effects. Of course, in the situation where there is just one random effect in the model `formula` (e.g. a random intercept or "shared frailty" term) the covariance matrix will reduce to just a single element; i.e. it will be a scalar equal to the variance of the single random effect in the model.
+
+The prior distribution is based on a decomposition of the covariance matrix. The decomposition takes place as follows. The covariance matrix $\boldsymbol{\Sigma}_b$ is decomposed into a correlation matrix $\boldsymbol{\Omega}$ and vector of variances. The vector of variances is then further decomposed into a simplex $\pi$ (i.e. a probability vector summing to 1) and a scalar equal to the sum of the variances. Lastly, the sum of the variances is set equal to the order of the covariance matrix multiplied by the square of a scale parameter (here we denote that scale parameter $\tau$).
+
+The prior distribution for the correlation matrix $\boldsymbol{\Omega}$ is the LKJ distribution \citep{Lewandowski:2009}. It is parameterised through a regularisation parameter $\zeta > 0$. The default is $\zeta = 1$ such that the LKJ prior distribution is jointly uniform over all possible correlation matrices. When $\zeta > 1$ the mode of the LKJ distribution is the identity matrix and as $\zeta$ increases the distribution becomes more sharply peaked at the mode. When $0 < \zeta < 1$ the prior has a trough at the identity matrix.
+
+The prior distribution for the simplex $\boldsymbol{\pi}$ is a symmetric Dirichlet distribution with a single concentration parameter $\phi > 0$. The default is $\phi = 1$ such that the prior is jointly uniform over all possible simplexes. If $\phi > 1$ then the prior mode corresponds to all entries of the simplex being equal (i.e. equal variances for the random effects) and the larger the value of $\phi$ then the more pronounced the mode of the prior. If $0 < \phi < 1$ then the variances are polarised. 
+
+The prior distribution for the scale parameter $\tau$ is a Gamma distribution. The shape and scale parameter for the Gamma distribution are both set equal to 1 by default, however the user can change the value of the shape parameter. The behaviour is such that increasing the shape parameter will help enforce that the trace of $\boldsymbol{\Sigma}_b$ (i.e. sum of the variances of the random effects) be non-zero.
+
+Further details on this implied prior for covariance matrices can be found in the __rstanarm__ documentation and vignettes.
+
+## Estimation
+
+Estimation in __rstanarm__ is based on either full Bayesian inference (Hamiltonian Monte Carlo) or approximate Bayesian inference (either mean-field or full-rank variational inference). The default is full Bayesian inference, but the user can change this if they wish. The approximate Bayesian inference algorithms are much faster, but they only provide approximations for the joint posterior distribution and are therefore not recommended for final inference.
+
+Hamiltonian Monte Carlo is a form of Markov chain Monte Carlo (MCMC) in which information about the gradient of the log posterior is used to more efficiently sample from the posterior space. Stan uses a specific implementation of Hamiltonian Monte Carlo known as the No-U-Turn Sampler (NUTS) \citep{Hoffman:2014}. A benefit of NUTS is that the tuning parameters are handled automatically during a "warm-up" phase of the estimation. However the __rstanarm__ modelling functions provide arguments that allow the user to retain control over aspects such as the number of MCMC chains, number of warm-up and sampling iterations, and number of computing cores used.
+
+# Prediction framework
+
+## Survival predictions without clustering
+
+If our survival model does not contain any clustering effects (i.e. it is not a multilevel survival model) then our prediction framework is more straightforward. Let $\mathcal{D} = \{ \mathcal{D}_{i}; i = 1,...,N \}$ denote the entire collection of outcome data in our sample and let $T_{\max} = \max \{ T_{i}, T_{i}^U, T_{i}^E; i = 1,...,N \}$ denote the maximum event or censoring time across all individuals in our sample.
+
+Suppose that for some individual $i^*$ (who may or may not have been in our sample) we have covariate vector $\boldsymbol{x}_{i^*}$. Note that the covariate data must be time-fixed. The predicted probability of being event-free at time $0 < t \leq T_{\max}$, denoted $\hat{S}_{i^*}(t)$, can be generated from the posterior predictive distribution:
+/
+\begin{equation}
+\begin{split}
+p \Big( \hat{S}_{i^*}(t) \mid \boldsymbol{x}_{i^*}, \mathcal{D} \Big) = 
+  \int
+    p \Big( \hat{S}_{i^*}(t) \mid \boldsymbol{x}_{i^*}, \boldsymbol{\theta} \Big)
+    p \Big( \boldsymbol{\theta} \mid \mathcal{D} \Big)
+  d \boldsymbol{\theta}
+\end{split}
+\end{equation}
+
+We approximate this posterior predictive distribution by drawing from $p(\hat{S}_{i^*}(t) \mid \boldsymbol{x}_{i^*}, \boldsymbol{\theta}^{(l)})$ where $\boldsymbol{\theta}^{(l)}$ is the $l^{th}$ $(l = 1,...,L)$ MCMC draw from the posterior distribution $p(\boldsymbol{\theta} \mid \mathcal{D})$. 
+
+## Survival predictions with clustering
+
+When there are clustering effects in the model (i.e. multilevel survival models) then our prediction framework requires conditioning on the cluster-specific parameters. Let $\mathcal{D} = \{ \mathcal{D}_{ij}; i = 1,...,N_j, j = 1,...,J \}$ denote the entire collection of outcome data in our sample and let $T_{\max} = \max \{ T_{ij}, T_{ij}^U, T_{ij}^E; i = 1,...,N_j, j = 1,...,J \}$ denote the maximum event or censoring time across all individuals in our sample.
+
+Suppose that for some individual $i^*$ (who may or may not have been in our sample) and who is known to come from cluster $j^*$ (which may or may not have been in our sample) we have covariate vectors $\boldsymbol{x}_{i^*j^*}$ and $\boldsymbol{z}_{i^*j^*}$. Note again that the covariate data is assumed to be time-fixed.
+
+If individual $i^*$ does in fact come from a cluster $j^* = j$ (for some $j \in \{1,...,J\}$) in our sample then the predicted probability of being event-free at time $0 < t \leq T_{\max}$, denoted $S_{i^*j}(t)$, can be generated from the posterior predictive distribution:
+/
+\begin{equation}
+\begin{split}
+p \Big( \hat{S}_{i^*j}(t) \mid \boldsymbol{x}_{i^*j}, \boldsymbol{z}_{i^*j}, \mathcal{D} \Big) = 
+  \int
+    \int
+      p \Big( \hat{S}_{i^*j}(t) \mid \boldsymbol{x}_{i^*j}, \boldsymbol{z}_{i^*j}, \boldsymbol{\theta}, \boldsymbol{b}_j \Big)
+      p \Big( \boldsymbol{\theta}, \boldsymbol{b}_j \mid \mathcal{D} \Big)
+    d \boldsymbol{b}_j \space d \boldsymbol{\theta}
+\end{split}
+\end{equation}
+
+Since cluster $j$ was included in our sample data it is easy for us to approximate this posterior predictive distribution by drawing from $p(\hat{S}_{i^*j}(t) \mid \boldsymbol{x}_{i^*j}, \boldsymbol{z}_{i^*j}, \boldsymbol{\theta}^{(l)}, \boldsymbol{b}_j^{(l)})$ where $\boldsymbol{\theta}^{(l)}$ and $\boldsymbol{b}_j^{(l)}$ are the $l^{th}$ $(l = 1,...,L)$ MCMC draws from the joint posterior distribution $p(\boldsymbol{\theta}, \boldsymbol{b}_j \mid \mathcal{D})$. 
+
+Alternatively, individual $i^*$ may come from a new cluster $j^* \neq j$ (for all $j \in \{1,...,J\}$) that was not in our sample. The predicted probability of being event-free at time $0 < t \leq T_{\max}$ is therefore denoted $\hat{S}_{i^*j^*}(t)$ and can be generated from the posterior predictive distribution:
+/
+\begin{equation}
+\begin{aligned}
+p \Big( \hat{S}_{i^*j^*}(t) \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \mathcal{D} \Big) 
+& = 
+  \int
+    \int
+      p \Big( \hat{S}_{i^*j^*}(t) \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \boldsymbol{\theta}, \boldsymbol{\tilde{b}}_{j^*} \Big)
+      p \Big( \boldsymbol{\theta}, \boldsymbol{\tilde{b}}_{j^*} \mid \mathcal{D} \Big)
+    d \boldsymbol{\tilde{b}}_{j^*} \space d \boldsymbol{\theta} \\
+& = 
+  \int
+    \int
+      p \Big( \hat{S}_{i^*j^*}(t) \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \boldsymbol{\theta}, \boldsymbol{\tilde{b}}_{j^*} \Big)
+      p \Big( \boldsymbol{\tilde{b}}_{j^*} \mid \boldsymbol{\theta} \Big)
+      p \Big( \boldsymbol{\theta} \mid \mathcal{D} \Big)
+    d \boldsymbol{\tilde{b}}_{j^*} \space d \boldsymbol{\theta} \\
+\end{aligned}
+\end{equation}
+/
+where $\boldsymbol{\tilde{b}}_{j^*}$ denotes the cluster-specific parameters for the new cluster. We can obtain draws for $\boldsymbol{\tilde{b}}_{j^*}$ during estimation of the model (in a similar manner as for $\boldsymbol{b}_j$). At the $l^{th}$ iteration of the MCMC sampler we obtain $\boldsymbol{\tilde{b}}_{j^*}^{(l)}$ as a random draw from the posterior distribution of the cluster-specific parameters and store it for later use in predictions. The set of random draws $\boldsymbol{\tilde{b}}_{j^*}^{(l)}$ for $l = 1,...,L$ then allow us to essentially marginalise over the distribution of the cluster-specific parameters. This is the method used in __rstanarm__ when generating survival predictions for individuals in new clusters that were not part of the original sample.
+
+## Conditional survival probabilities
+
+In some instances we want to evaluate the predicted survival probability conditional on a last known survival time. This is known as a conditional survival probability.
+
+Suppose that individual $i^*$ is known to be event-free up until $C_{i^*}$ and we wish to predict the survival probability at some time $t > C_{i^*}$. To do this we draw from the conditional posterior predictive distribution:
+/
+\begin{equation}
+\begin{split}
+p \Big( \hat{S}_{i^*}(t) \mid \boldsymbol{x}_{i^*}, \mathcal{D}, t > C_{i^*} \Big) = 
+  \frac
+    {p \Big( \hat{S}_{i^*}(t)      \mid \boldsymbol{x}_{i^*}, \mathcal{D} \Big)}
+    {p \Big( \hat{S}_{i^*}(C_{i^*}) \mid \boldsymbol{x}_{i^*}, \mathcal{D} \Big)}
+\end{split}
+\end{equation}
+/
+or -- equivalently -- for multilevel survival models we have individual $i^*$ in cluster $j^*$ who is known to be event-free up until $C_{i^*j^*}$:
+/
+\begin{equation}
+\begin{split}
+p \Big( \hat{S}_{i^*j^*}(t) \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \mathcal{D}, t > C_{i^*j^*} \Big) = 
+  \frac
+    {p \Big( \hat{S}_{i^*j^*}(t)        \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \mathcal{D} \Big)}
+    {p \Big( \hat{S}_{i^*j^*}(C_{i^*j^*}) \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \mathcal{D} \Big)}
+\end{split}
+\end{equation}
+
+## Standardised survival probabilities
+
+All of the previously discussed predictions require conditioning on some covariate values $\boldsymbol{x}_{ij}$ and $\boldsymbol{z}_{ij}$. Even if we have a multilevel survival model and choose to marginalise over the distribution of the cluster-specific parameters, we are still obtaining predictions at some known unique values of the covariates.
+
+However sometimes we wish to generate an "average" survival probability. One possible approach is to predict at the mean value of all covariates \citep{Cupples:1995}. However this doesn't always make sense, especially not in the presence of categorical covariates. For instance, suppose our covariates are gender and a treatment indicator. Then predicting for an individual at the mean of all covariates might correspond to a 50% male who was 50% treated. That does not make sense and is not what we wish to do.
+
+A better alternative is to average over the individual survival probabilties. This essentially provides an approximation to marginalising over the joint distribution of the covariates. At any time $t$ it is possible to obtain a so-called standardised survival probability, denoted $\hat{S}^{*}(t)$, by averaging the individual-specific survival probabilities:
+/
+\begin{equation}
+\begin{split}
+p ( \hat{S}^{*}(t) \mid \mathcal{D} ) =
+  \frac{1}{N^{P}}
+    \sum_{i=1}^{N^{P}} p ( \hat{S}_i(t) \mid \boldsymbol{x}_{i^*}, \mathcal{D} )
+\end{split}
+\end{equation}
+/
+where $\hat{S}_i(t)$ is the predicted survival probability for individual $i$ ($i = 1,...,N^{P}$) at time $t$, and $N^{P}$ is the number of individuals included in the predictions. For multilevel survival models the calculation is similar and follows quite naturally (details not shown).
+
+Note however that if $N^{P}$ is not sufficiently large (for example we predict individual survival probabilities using covariate data for just $N^{P} = 2$ individuals) then averaging over their covariate distribution may not be meaningful. Similarly, if we estimated a multilevel survival model and then predicted standardised survival probabilities based on just $N^{P} = 2$ individuals from our sample, the joint distribution of their cluster-specific parameters would likely be a poor representation of the distribution of cluster-specific parameters for the entire sample and population.
+
+It is therefore better to calculate standardised survival probabilities by setting $N^{P}$ equal to the total number of individuals in the original sample (i.e. $N^{P} = N$. This approach can then also be used for assessing the fit of the survival model in __rstanarm__ (see the \fct{ps_check} function described in Section \ref{sec:implementation}). Posterior predictive draws of the standardised survival probability are evaluated at a series of time points between 0 and $T_{\max}$ using all individuals in the estimation sample and the predicted standardised survival curve is overlaid with the observed Kaplan-Meier survival curve.
+
+# Implementation
+
+## Overview
+
+The __rstanarm__ package is built on top of the __rstan__ R package \citep{Stan:2019}, which is the R interface for Stan. 
+Models in __rstanarm__ are written in the Stan programming language, translated into C++ code, and then compiled at the time the package is built. This means that for most users -- who install a binary version of __rstanarm__ from the Comprehensive R Archive Network (CRAN) -- the models in __rstanarm__ will be pre-compiled. This is beneficial for users because there is no compilation time either during installation or when they estimate a model.
+
+## Main modelling function
+
+Survival models in __rstanarm__ are implemented around the \fct{stan_surv} modelling function.
+
+The function signature for \fct{stan_surv} is:
+/
+<<stan_surv_signature, eval=FALSE>>=
+stan_surv(formula, data, basehaz = "ms", basehaz_ops, qnodes = 15,
+  prior = normal(), prior_intercept = normal(), prior_aux,
+  prior_smooth = exponential(autoscale = FALSE),
+  prior_covariance = decov(), prior_PD = FALSE,
+  algorithm = c("sampling", "meanfield", "fullrank"),
+  adapt_delta = 0.95, ...)
+@
+
+The following provides a brief description of the main features of each of these arguments:
+
+\begin{itemize}
+
+\item The `formula` argument accepts objects built around the standard R formula syntax (see \fct{stats::formula}). The left hand side of the formula should be an object returned by the \fct{Surv} function in the __survival__ package \citep{Therneau:2019}. Any random effects structure (for multilevel survival models) can be specified on the right hand side of the formula using the same syntax as the __lme4__ package \citep{Bates:2015} as shown in the example in Section \ref{sec:multilevelmodel}.
+
+By default, any covariate effects specified in the fixed-effect part of the model `formula` are included under a proportional hazards assumption (for models estimated using a hazard scale formulation) or under the assumption of time-fixed acceleration factors (for models estimated using an AFT formulation). Time-varying effects are specified in the model `formula` by wrapping the covariate name in the \fct{tve} function. For example, if we wanted to estimate a time-varying effect for the covariate \code{sex} then we could specify \code{tve(sex)} in the model formula, e.g. \code{formula = Surv(time, status) ~ tve(sex) + age}. The \fct{tve} function is a special function that only has meaning when used in the `formula` of a model estimated using \fct{stan_surv}. Its functionality is demonstrated in the worked examples in Sections \ref{sec:tvebs} and \ref{sec:tvepw}.
+
+\item The \code{data} argument accepts an object inheriting the class \class{data.frame}, in other words the usual R data frame.
+
+\item The choice of parametric baseline hazard (or baseline survival distribution for AFT models) is specified via the \code{basehaz} argument. For the M-spline (\code{"ms"}) and B-spline (\code{"bs"}) models additional options related to the spline degree $\delta$, knot locations $\boldsymbol{k}$, or degrees of freedom $L$ can be specified as a list and passed to the \code{basehaz_ops} argument. For example, specifying \code{basehaz = "ms"} and \code{basehaz_ops = list(degree = 2, knots = c(10,20))} would request a baseline hazard modelled using quadratic M-splines with two internal knots located at $t = 10$ and $t = 20$.
+
+\item The argument \code{qnodes} is a control argument that allows the user to specify the number of quadrature nodes when quadrature is required (as described in Section \ref{sec:loglikelihood}).
+
+\item The \code{prior} family of arguments allow the user to specify the prior distributions for each of the parameters, as follows:
+
+  \begin{itemize}
+  
+  \item \code{prior} relates to the time-fixed regression coefficients;
+  
+  \item \code{prior_intercept} relates to the intercept in the linear predictor;
+  
+  \item \code{prior_aux} relates to the so-called "auxiliary" parameters in the baseline hazard ($\gamma$ for the Weibull and Gompertz models or $\boldsymbol{\gamma}$ for the M-spline and B-spline models);
+  
+  \item \code{prior_smooth} relates to the hyperparameter $\tau_p$ when the $p^{th}$ covariate has a time-varying effect; and
+  
+  \item \code{prior_covariance} relates to the covariance matrix for the random effects when a multilevel survival model is being estimated.
+  
+  \end{itemize}
+
+\item The remaining arguments (\code{prior_PD}, \code{algorithm}, and \code{adapt_delta}) are optional control arguments related to estimation in Stan:
+
+  \begin{itemize}
+  
+  \item Setting \code{prior_PD = TRUE} states that the user only wants to draw from the prior predictive distribution and not condition on the data.
+  
+  \item The \code{algorithm} argument specifies the estimation routine to use. This includes either Hamiltonian Monte Carlo (\code{"sampling"}) or one of the variational Bayes algorithms (\code{"meanfield"} or \code{"fullrank"}). The model specification is agnostic to the chosen \code{algorithm}. That is, the user can choose from any of the available algorithms regardless of the specified model.
+  
+  \item The \code{adapt_delta} argument controls the target average acceptance probability. It is only relevant when \code{algorithm = "sampling"} in which case \code{adapt_delta} should be between 0 and 1, with higher values leading to smaller step sizes and therefore a more robust sampler but longer estimation times.
+  
+  \end{itemize}
+
+\end{itemize}
+
+The model returned by \fct{stan_surv} is an object of class \class{stansurv} and inheriting the \class{stanreg} class. It is effectively a list with a number of important attributes. There are a range of post-estimation functions that can be called on \class{stansurv} (and \class{stanreg}) objects -- some of the most important ones are described in Section \ref{sec:postest-functions}.
+
+### Default knot locations
+
+Default knot locations for the M-spline, B-spline, or piecewise constant functions are the same regardless of whether they are used for modelling the baseline hazard or time-varying effects. By default the vector of knot locations $\boldsymbol{k} = \{k_{1},...,k_{J}\}$ includes a lower boundary knot $k_{1}$ at the earliest entry time (equal to zero if there isn't delayed entry) and an upper boundary knot $k_{J}$ at the latest event or censoring time. The location of the boundary knots cannot be changed by the user. 
+
+Internal knot locations -- that is $k_{2},...,k_{(J-1)}$ when $J \geq 3$ -- can be explicitly specified by the user or are determined by default. The number of internal knots and/or their locations can be controlled via the \code{basehaz_ops} argument to \fct{stan_surv} (for modelling the baseline hazard) or via the arguments to the \fct{tve} function (for modelling a time-varying effect). If knot locations are not explicitly specified by the user, then the default is to place the internal knots at equally spaced percentiles of the distribution of uncensored event times. For instance, if there are three internal knots they would be placed at the $25^{\text{th}}$, $50^{\text{th}}$, and $75^{\text{th}}$ percentiles of the distribution of the uncensored event times. 
+
+## Post-estimation functions
+
+The __rstanarm__ package provides a range of post-estimation functions that can be used after fitting the survival model. This includes functions for inference (e.g. reporting parameter estimates), diagnostics (e.g. assessing model fit), and generating predictions. We highlight the most important ones here:
+
+\begin{itemize}
+
+\item The \fct{print} and \fct{summary} functions provide reports of parameter estimates and some summary information on the data (e.g. number of observations, number of events, etc). They each provide varying levels of detail. For example, the \fct{summary} method provides diagnostic measures such as Gelman and Rubin's Rhat statistic \citep{Gelman:1992} for assessing convergence of the MCMC chains and the number of effective MCMC samples. On the other hand, the \fct{print} method is more concise and does not provide this level of additional detail.
+
+\item The \fct{fixef} and \fct{ranef} functions report the fixed effect and random effect parameter estimates, respectively.
+
+\item The \fct{posterior_survfit} function is the primary function for generating survival predictions. The type of prediction is specified via the \code{type} arguments and can currently be any of the following:
+
+  \begin{itemize}
+  
+  \item \code{"surv"}: the estimated survival probability;
+  \item \code{"cumhaz"}: the estimated cumulative hazard;
+  \item \code{"haz"}: the estimated hazard rate;
+  \item \code{"cdf"}: the estimated failure probability;
+  \item \code{"logsurv"}: the estimated log survival probability;
+  \item \code{"logcumhaz"}: the estimated log cumulative hazard;
+  \item \code{"loghaz"}: the estimated log hazard rate; or
+  \item \code{"logcdf"}: the estimated log failure probability.
+  
+  \end{itemize}
+
+There are additional arguments to \fct{posterior_survfit} that control the time at which the predictions are generated (\code{times}), whether they are generated across a time range (referred to as extrapolation, see \code{extrapolate}), whether they are conditional on a last known survival time (\code{condition}), and whether they are averaged across individuals (referred to as standardised predictions, see \code{standardise}). The returned predictions are a data frame with a special class called \class{survfit.stansurv}. The \class{survfit.stansurv} class has both \fct{print} and \fct{plot} methods that can be called on it. These will be demonstrated as part of the examples in Section \ref{sec:usage}.
+
+\item The \fct{loo} and \fct{waic} functions report model fit statistics. The former is based on approximate leave-one-out cross validation \citep{Vehtari:2017} and is recommended. The latter is a less preferable alternative that reports the Widely Applicable Information Criterion (WAIC) criterion \citep{Watanabe:2010}. Both of these functions are built on top of the __loo__ R package \citep{Vehtari:2019}. The values (objects) returned by either \fct{loo} or \fct{waic} can also be passed to the \fct{loo_compare} function to compare different models estimated on the same dataset. This will be demonstrated as part of the examples in Section  \ref{sec:usage}.
+
+\item The \fct{log_lik} function generates a pointwise log likelihood matrix. That is, it calculates the log likelihood for each observation (either in the original dataset or some new dataset) using each MCMC draw of the model parameters.
+
+\item The \fct{plot} function allows for a variety of plots depending on the input to the \code{plotfun} argument. The default is to plot the estimated baseline hazard (\code{plotfun = "basehaz"}), but alternatives include a plot of the estimated time-varying hazard ratio for models with time-varying effects (\code{plotfun = "tve"}), plots summarising the parameter estimates (e.g. posterior densities or posterior intervals), and plots providing diagnostics (e.g. MCMC trace plots).
+
+\item The \fct{ps_check} function provides a quick diagnostic check for the fitted survival function. It is based on the estimation sample and compares the predicted standardised survival curve to the observed Kaplan-Meier survival curve.
+
+\end{itemize}
 
 # Usage examples
 
