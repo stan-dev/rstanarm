@@ -142,6 +142,10 @@ stan_gamm4 <-
   data <- validate_data(data, if_missing = list())
   family <- validate_family(family)
   
+  if (length(mgcv::interpret.gam(formula)$smooth.spec) == 0) {
+    stop("Formula must have at least one smooth term to use stan_gamm4.", call. = FALSE)
+  }
+  
   if (!is.null(random)) {
     fake.formula <- as.character(mgcv::interpret.gam(formula)$fake.formula)
     form <- paste(fake.formula[2], fake.formula[1], fake.formula[3],
