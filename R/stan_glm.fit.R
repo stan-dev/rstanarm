@@ -679,8 +679,9 @@ stan_glm.fit <-
       vb_args$algorithm <- algorithm
       vb_args$importance_resampling <- importance_resampling
       stanfit <- do.call(vb, args = vb_args)
-      if (!QR) 
+      if (!QR && standata$K > 1) {
         recommend_QR_for_vb()
+      }
     }
     check <- try(check_stanfit(stanfit))
     if (!isTRUE(check)) return(standata)

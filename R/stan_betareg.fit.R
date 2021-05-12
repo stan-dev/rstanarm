@@ -352,8 +352,9 @@ stan_betareg.fit <-
     } else { # algorithm either "meanfield" or "fullrank"
       stanfit <- rstan::vb(stanfit, pars = pars, data = standata,
                            algorithm = algorithm, init = 0.001, ...)
-      if (!QR) 
+      if (!QR && standata$K > 1) {
         recommend_QR_for_vb()
+      }
     }
     check <- check_stanfit(stanfit)
     if (!isTRUE(check)) return(standata)
