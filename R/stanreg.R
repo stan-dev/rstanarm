@@ -127,6 +127,7 @@ stanreg <- function(object) {
     formula = object$formula, 
     terms = object$terms,
     prior.info = attr(stanfit, "prior.info"),
+    dropped_cols = attr(stanfit, "dropped_cols"),
     algorithm = object$algorithm,
     stan_summary,  
     stanfit = if (opt) stanfit$stanfit else stanfit,

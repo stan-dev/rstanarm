@@ -337,7 +337,7 @@ stan_betareg.fit <-
     names(out$par) <- new_names
     colnames(out$theta_tilde) <- new_names
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, chains = 0))
-    return(structure(out, prior.info = prior_info))
+    return(structure(out, prior.info = prior_info, dropped_cols = x_stuff$dropped_cols))
   } else {
     if (algorithm == "sampling") {
       sampling_args <- set_sampling_args(
@@ -393,7 +393,7 @@ stan_betareg.fit <-
                      "mean_PPD", "log-posterior")
     }
     stanfit@sim$fnames_oi <- new_names
-    return(structure(stanfit, prior.info = prior_info))
+    return(structure(stanfit, prior.info = prior_info, dropped_cols = x_stuff$dropped_cols))
   }
 }
 

@@ -654,7 +654,7 @@ stan_glm.fit <-
     ## end: psis diagnostics and SIR
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
                                              chains = 0))
-    return(structure(out, prior.info = prior_info))
+    return(structure(out, prior.info = prior_info, dropped_cols = x_stuff$dropped_cols))
     
   } else {
     if (algorithm == "sampling") {
@@ -737,7 +737,7 @@ stan_glm.fit <-
                    if (mean_PPD && !standata$clogit) "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
-    return(structure(stanfit, prior.info = prior_info))
+    return(structure(stanfit, prior.info = prior_info, dropped_cols = x_stuff$dropped_cols))
   }
 }
 
