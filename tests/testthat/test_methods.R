@@ -627,7 +627,21 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_s3_class(s, "summary.stanreg")
   expect_output(print(s), "stan_betareg")
   expect_identical(attr(s, "algorithm"), "sampling")
+})
+
+test_that("print and summary include subset information", {
+  SW(fit <- stan_glm(mpg ~ wt, data = mtcars, subset = cyl == 4, iter = 5, chains = 1, refresh = 0))
+  expect_output(print(fit), "subset:       cyl == 4")
+  expect_output(print(summary(fit)), "subset:       cyl == 4")
   
+  SW(fit <- stan_glm(mpg ~ wt, data = mtcars, subset = rep(TRUE, 32), iter = 5, chains = 1, refresh = 0))
+  expect_output(print(fit), "subset:       rep(TRUE, 32)", fixed = TRUE)
+  expect_output(print(summary(fit)), "subset:       rep(TRUE, 32)", fixed = TRUE)
+  
+  sub <- mtcars$cyl == 4
+  SW(fit <- stan_glm(mpg ~ wt, data = mtcars, subset = sub, iter = 5, chains = 1, refresh = 0))
+  expect_output(print(fit), "subset:       sub", fixed = TRUE)
+  expect_output(print(summary(fit)), "subset:       sub", fixed = TRUE)
 })
 
 test_that("print and summary methods ok for optimization", {
