@@ -80,6 +80,13 @@ test_that("formula argument works", {
   expect_equal(jm_offset$glmod$Long1$has_offset, 1)
 })
 
+test_that("error if outcome is character", {
+  expect_error(
+    update(jm1, formulaLong. = as.character(logBili) ~ year + (year | id)), 
+    "Outcome variable can't be type 'character'"
+  )
+})
+
 test_that("data argument works", {
   SW(fit <- update(jm1, dataLong = list(pbcLong)))
   expect_identical(as.matrix(jm1), 

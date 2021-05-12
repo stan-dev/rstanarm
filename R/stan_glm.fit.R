@@ -66,7 +66,7 @@ stan_glm.fit <-
     prior_aux <- tmp[["prior_aux"]]
     prior_ops <- NULL
   }
-  
+
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
@@ -788,6 +788,10 @@ stan_family_number <- function(famname) {
 # @return y (possibly slightly modified) unless an error is thrown
 #
 validate_glm_outcome_support <- function(y, family) {
+  if (is.character(y)) {
+    stop("Outcome variable can't be type 'character'.", call. = FALSE)
+  }
+  
   if (is.null(y)) {
     return(y)
   }

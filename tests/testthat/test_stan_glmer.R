@@ -117,6 +117,17 @@ test_that("stan_lmer returns an error when 'family' specified", {
   )
 })
 
+test_that("error if y is character", {
+  expect_error(
+    stan_lmer(as.character(mpg) ~ wt + (1|cyl),  data = mtcars),
+    "Outcome variable can't be type 'character'"
+  )
+  expect_error(
+    stan_glmer.nb(as.character(mpg) ~ wt + (1|cyl),  data = mtcars),
+    "Outcome variable can't be type 'character'"
+  )
+})
+
 
 context("stan_gamm4")
 test_that("stan_gamm4 returns stanreg object", {
