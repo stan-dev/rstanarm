@@ -392,6 +392,15 @@ posterior_survfit.stansurv <- function(object,
   
   dots <- list(...)
   
+  if ("newdataEvent" %in% names(dots))
+    stop("The argument 'newdataEvent' should not be specified when ",
+         "predicting for stan_surv models. Perhaps you meant to specify ",
+         "'newdata' instead of 'newdataEvent'.")
+  
+  if ("newdataLong" %in% names(dots))
+    stop("The argument 'newdataLong' should not be specified when ",
+         "predicting for stan_surv models.")
+    
   newdata <- validate_newdata(object, newdata = newdata)
   has_newdata <- not.null(newdata)
   
@@ -585,6 +594,11 @@ posterior_survfit.stanjm <- function(object,
     ids <- NULL
   
   dots <- list(...)
+  
+  if ("newdata" %in% names(dots))
+    stop("The argument 'newdata' should not be specified when predicting ",
+         "for stan_jm models. You should specify 'newdataLong' and ",
+         "'newdataEvent' instead of 'newdata'.")
   
   # Temporarily only allow survprob for stan_jm until refactoring is done
   if (!type == "surv")
