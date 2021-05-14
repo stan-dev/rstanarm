@@ -1,9 +1,6 @@
-#ifndef RSTANARM__CSR_MATRIX_TIMES_VECTOR2_HPP
-#define RSTANARM__CSR_MATRIX_TIMES_VECTOR2_HPP
+#ifndef RSTANARM_CSR_MATRIX_TIMES_VECTOR2_HPP
+#define RSTANARM_CSR_MATRIX_TIMES_VECTOR2_HPP
 
-/*
- * This works exactly like csr_matrix_times_vector but faster and less safe
- */
 template <typename T2__, typename T5__>
 inline
 Eigen::Matrix<typename boost::math::tools::promote_args<T2__, T5__>::type,
@@ -18,6 +15,19 @@ csr_matrix_times_vector2(const int& m,
   Eigen::Map<const Eigen::SparseMatrix<T2__,Eigen::RowMajor> >
     sm(m, n, w.size(), &u[0], &v[0], &w[0]);
   return sm * b;
+}
+
+/*
+ * This works exactly like csr_matrix_times_vector but faster and less safe
+ */
+ template <typename T2__, typename T5__>
+ Eigen::Matrix<stan::promote_args_t<stan::value_type_t<T2__>,
+ stan::value_type_t<T5__>>, -1, 1>
+ csr_matrix_times_vector2(const int& m, const int& n, const T2__& w_arg__,
+                          const std::vector<int>& v,
+                          const std::vector<int>& u, const T5__& b_arg__,
+                          std::ostream* pstream__) {
+  return stan::math::csr_matrix_times_vector(m, n, w_arg__, v, u, b_arg__);
 }
 
 /* This specialization is slower than the above templated version
