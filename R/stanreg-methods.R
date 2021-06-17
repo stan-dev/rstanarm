@@ -439,10 +439,10 @@ model.matrix.stanreg <- function(object, ...) {
 #'   'tve(varname)' terms in the model formula are returned as 'varname'.
 #' 
 formula.stanreg <- function(x, ..., m = NULL) {
-  if (is.mer(x) && !isTRUE(x$stan_function == "stan_gamm4")) 
-	  return(formula_mer(x, ...))
   if (is.surv(x))
     return(formula_surv(x, ...))
+  if (is.mer(x) && !isTRUE(x$stan_function == "stan_gamm4")) 
+	  return(formula_mer(x, ...))
   x$formula
 }
 
