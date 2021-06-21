@@ -90,7 +90,7 @@ NULL
 #' @rdname stanreg-methods
 #' @export
 coef.stanreg <- function(object, ...) {
-  if (is.mer(object)) 
+  if (is.mer(object) && !is.surv(object)) 
     return(coef_mer(object, ...))
   
   object$coefficients
@@ -423,7 +423,7 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
 #' 
 model.matrix.stanreg <- function(object, ...) {
   if (inherits(object, "gamm4")) return(object$jam$X)
-  if (is.mer(object)) return(object$glmod$X)
+  if (is.mer(object) && !is.surv(object)) return(object$glmod$X)
     
   NextMethod("model.matrix")
 }
