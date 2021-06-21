@@ -24,6 +24,9 @@ pp_data <-
            m = NULL,
            ...) {
     validate_stanreg_object(object)
+    if (is.stansurv(object)) {
+      return(.pp_data_surv(object, newdata = newdata, ...))
+    }
     if (is.mer(object)) {
       if (is.nlmer(object))
         out <- .pp_data_nlmer(object, newdata = newdata, re.form = re.form, m = m, ...)
@@ -31,9 +34,6 @@ pp_data <-
         out <- .pp_data_mer(object, newdata = newdata, re.form = re.form, m = m, ...)
       if (!is.null(offset)) out$offset <- offset
       return(out)
-    }
-    if (is.stansurv(object)) {
-      return(.pp_data_surv(object, newdata = newdata, ...))
     }
     .pp_data(object, newdata = newdata, offset = offset, ...)
   }

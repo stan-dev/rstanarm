@@ -90,7 +90,7 @@ NULL
 #' @rdname stanreg-methods
 #' @export
 coef.stanreg <- function(object, ...) {
-  if (is.mer(object)) 
+  if (is.mer(object) && !is.surv(object)) 
     return(coef_mer(object, ...))
   
   object$coefficients
@@ -399,6 +399,9 @@ family.stanreg <- function(object, ...) object$family
 #' @param fixed.only See \code{\link[lme4:merMod-class]{model.frame.merMod}}.
 #' 
 model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
+  if (is.stansurv(formula)) {
+    return(formula$model_frame)
+  }
   if (is.mer(formula)) {
     fr <- formula$glmod$fr
     if (fixed.only) {
@@ -407,9 +410,6 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
       fr <- fr[vars]
     }
     return(fr)
-  }
-  if (is.stansurv(formula)) {
-    return(formula$model_frame)
   }
   
   NextMethod("model.frame")
@@ -423,7 +423,7 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
 #' 
 model.matrix.stanreg <- function(object, ...) {
   if (inherits(object, "gamm4")) return(object$jam$X)
-  if (is.mer(object)) return(object$glmod$X)
+  if (is.mer(object) && !is.surv(object)) return(object$glmod$X)
     
   NextMethod("model.matrix")
 }
@@ -439,10 +439,10 @@ model.matrix.stanreg <- function(object, ...) {
 #'   'tve(varname)' terms in the model formula are returned as 'varname'.
 #' 
 formula.stanreg <- function(x, ..., m = NULL) {
-  if (is.mer(x) && !isTRUE(x$stan_function == "stan_gamm4")) 
-	  return(formula_mer(x, ...))
   if (is.surv(x))
     return(formula_surv(x, ...))
+  if (is.mer(x) && !isTRUE(x$stan_function == "stan_gamm4")) 
+	  return(formula_mer(x, ...))
   x$formula
 }
 
