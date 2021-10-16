@@ -162,7 +162,7 @@
 #' \item \code{arsenic} Arsenic level in respondent's well
 #' \item \code{dist} Distance (meters) from the respondent's house to the
 #' nearest well with safe drinking water.
-#' \item \code{association} Indicator for member(s) of household participate
+#' \item \code{assoc} Indicator for member(s) of household participate
 #' in community organizations
 #' \item \code{educ} Years of education (head of household)
 #' }
