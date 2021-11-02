@@ -466,3 +466,20 @@ test_that("contrasts attribute isn't dropped", {
                  chains = 1, refresh = 0)
   expect_equal(fit$contrasts, contrasts)
 })
+
+test_that("returns something with collinear predictors", {
+  N <- 100
+  y <- rnorm(N)
+  z <- sample(c(0,1), N, replace=TRUE)
+  x1 <- rnorm(N)
+  x2 <- 2*x1
+
+  fit_1 <- stan_glm(
+    y ~ z * (x1 + x2),
+    data = data.frame(y, z, x1, x2),
+    prior = normal(location = 0, scale = 0.1),
+    prior_intercept = normal(location = 0, scale = 0.1),
+    chains = CHAINS, iter = ITER, refresh = REFRESH
+  )
+  expect_stanreg(fit_1)  
+})
