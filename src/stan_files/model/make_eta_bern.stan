@@ -6,8 +6,8 @@
       eta1 = N[2] > 0 ? X1[1] * beta : rep_vector(0.0, 0);
     }
     else {
-      eta0 = csr_matrix_times_vector2(N[1], K, w_X0, v_X0, u_X0, beta);
-      eta1 = csr_matrix_times_vector2(N[2], K, w_X1, v_X1, u_X1, beta);
+      eta0 = csr_matrix_times_vector(N[1], K, w_X0, v_X0, u_X0, beta);
+      eta1 = csr_matrix_times_vector(N[2], K, w_X1, v_X1, u_X1, beta);
     }
   }
   else {
@@ -31,6 +31,6 @@
     if (N[1] > 0) eta0 += b[V0[i]];
     if (N[2] > 0) eta1 += b[V1[i]];
   } else if (t > 0) {
-    if (N[1] > 0) eta0 += csr_matrix_times_vector2(N[1], q, w0, v0, u0, b);
-    if (N[2] > 0) eta1 += csr_matrix_times_vector2(N[2], q, w1, v1, u1, b);
+    if (N[1] > 0) eta0 += csr_matrix_times_vector(N[1], q, w0, v0, u0, b);
+    if (N[2] > 0) eta1 += csr_matrix_times_vector(N[2], q, w1, v1, u1, b);
   }

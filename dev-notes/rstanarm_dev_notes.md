@@ -268,12 +268,6 @@ A brief description of what (generally) goes into each the various files/folders
 
 For example, `continuous.stan` contains all the models that can be declared by `stan_glm` (as well as some others). You can view the compiled model in R by executing `rstanarm:::stanmodels$continuous`.
 
-**`inst/include/` **
-
-This folder can include separate header files (ending with `.hpp`) that implement custom C++
-functions. If you add something, be sure to include it in `meta_header.hpp` and test it inside
-`tests.cpp`.
-
 **`data`**
 
 * Example data used in the examples/tests.

@@ -23,22 +23,6 @@ functions {
     return -0.5 * (quad_form(XtX, coeff - OLS) + SSR) / square(sigma)
             - N * (log(sigma) + log(sqrt(2 * pi())));
   }
-
-  /** 
-  * test function for csr_matrix_times_vector
-  *
-  * @param m Integer number of rows
-  * @param n Integer number of columns
-  * @param w Vector (see reference manual)
-  * @param v Integer array (see reference manual)
-  * @param u Integer array (see reference manual)
-  * @param b Vector that is multiplied from the left by the CSR matrix
-  * @return A vector that is the product of the CSR matrix and b
-  */
-  vector test_csr_matrix_times_vector(int m, int n, vector w, 
-                                      int[] v, int[] u, vector b) {
-    return csr_matrix_times_vector(m, n, w, v, u, b); 
-  }
 }
 data {
   // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x

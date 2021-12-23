@@ -50,9 +50,6 @@ functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), func
   } else return(as.character(NULL))
 })
 names(functions) <- basename(names(functions))
-functions$polr.stan <- grep("csr_matrix_times_vector2", 
-                            functions$polr.stan, 
-                            value = TRUE, fixed = TRUE, invert = TRUE)
 functions <- c(unlist(lapply(file.path(MODELS_HOME, "functions", 
                              c("common_functions.stan",
                                "bernoulli_likelihoods.stan",
@@ -65,7 +62,6 @@ model_code <- paste(c("functions {", functions, "}"), collapse = "\n")
 stanc_ret <- stanc(model_code = model_code, model_name = "Stan Functions",
                    allow_undefined = TRUE)
 expose_stan_functions(stanc_ret, rebuild = TRUE, verbose = TRUE)
-Rcpp::sourceCpp(file.path(INCLUDE_DIR, "tests.cpp"), rebuild = TRUE, verbose = TRUE)
 N <- 99L
 
 # bernoulli
@@ -399,8 +395,6 @@ if (require(lme4) && require(HSAUR3)) test_that("the Stan equivalent of lme4's Z
                  tol = 1e-14)
     
     parts <- extract_sparse_parts(Z)
-    Zb <- csr_matrix_times_vector2_test(nrow(Z), ncol(Z), parts$w, 
-                                        parts$v - 1L, parts$u - 1L, b)
     expect_equal(Zb, as.vector(Z %*% b), tol = 1e-14)
     if (all(sapply(group$cnms, FUN = function(x) {
         length(x) == 1 && x == "(Intercept)"
@@ -408,7 +402,6 @@ if (require(lme4) && require(HSAUR3)) test_that("the Stan equivalent of lme4's Z
       V <- matrix(parts$v, nrow = sum(p), ncol = nrow(Z))
       expect_true(all(V == 
                       t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v - 1L))))))
-      expect_equal(Zb, apply(V, 2, FUN = function(v) sum(b[v])))
     }
   }
   test_lme4(glFormula(Reaction ~ Days + (Days | Subject), data = sleepstudy)$reTrms)
