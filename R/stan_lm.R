@@ -17,7 +17,7 @@
 
 #' Bayesian regularized linear models via Stan
 #' 
-#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="http://mc-stan.org/about/logo/"}}
 #' Bayesian inference for linear modeling with regularizing priors on the model
 #' parameters that are driven by prior beliefs about \eqn{R^2}, the proportion
 #' of variance in the outcome attributable to the predictors. See
