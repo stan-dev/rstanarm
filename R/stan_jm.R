@@ -18,7 +18,7 @@
 
 #' Bayesian joint longitudinal and time-to-event models via Stan
 #' 
-#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="http://mc-stan.org/about/logo/"}}
 #' Fits a shared parameter joint model for longitudinal and time-to-event 
 #' (e.g. survival) data under a Bayesian framework using Stan.
 #' 
