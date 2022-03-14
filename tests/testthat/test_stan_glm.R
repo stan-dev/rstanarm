@@ -448,6 +448,30 @@ test_that("contrasts attribute isn't dropped", {
   expect_equal(fit$contrasts, contrasts)
 })
 
+
+test_that("QR recommended if VB and at least 2 predictors", {
+  expect_message(
+    SW(stan_glm(mpg ~ wt + cyl, data = mtcars, algorithm = "meanfield", refresh = 0)),
+    "Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms"
+  )
+  # no message if QR already specified
+  expect_message(
+    SW(stan_glm(mpg ~ wt + cyl, data = mtcars, algorithm = "meanfield", refresh = 0, QR = TRUE)),
+    NA
+  )
+  # no message if only 1 predictor
+  expect_message(
+    SW(stan_glm(mpg ~ wt, data = mtcars, algorithm = "meanfield", refresh = 0)),
+    NA
+  )
+})
+
+test_that("QR errors if only 1 predictor", {
+  expect_error(
+    stan_glm(mpg ~ wt, data = mtcars, QR = TRUE),
+    "can only be specified when there are multiple predictors"
+  )
+
 test_that("returns something with collinear predictors", {
   N <- 100
   y <- rnorm(N)

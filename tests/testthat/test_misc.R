@@ -496,10 +496,3 @@ test_that("validate_newdata works", {
   expect_error(validate_newdata(fit, newdata = newd), "NAs are not allowed")
 })
 
-
-test_that("recommend_QR_for_vb produces the right message", {
-  expect_message(
-    rstanarm:::recommend_QR_for_vb(),
-    "Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms"
-  )
-})
