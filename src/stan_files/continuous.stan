@@ -24,6 +24,8 @@ functions {
             - N * (log(sigma) + log(sqrt(2 * pi())));
   }
 
+  vector CODOLS(matrix X, vector y); // implemented in C++
+
   /** 
   * test function for csr_matrix_times_vector
   *
@@ -94,13 +96,9 @@ transformed data {
     matrix[N, has_intercept + K + K_smooth ] X_ = has_intercept ? append_col(rep_vector(1.0, N), 
                                                   (K_smooth > 0 ? append_col(X[1], S) : X[1])) : 
                                                   (K_smooth > 0 ? append_col(X[1], S) : X[1]);
-    matrix[cols(X_), cols(X_)] R = qr_thin_R(X_);
-    if (tail(diagonal(R), 1)[1] > 1e-16) {
-      matrix[N, cols(R)] Q = qr_thin_Q(X_);
-      XtX = crossprod(X_);
-      OLS = mdivide_right_tri_low(y' * Q, R')';
-      SSR = dot_self(y - X_ * OLS);
-    } else can_do_OLS = 0;
+    XtX = crossprod(X_);
+    OLS = CODOLS(X_, y);
+    SSR = dot_self(y - X_ * OLS);
   }
   if (can_do_normalidglm) {
     XS = K_smooth > 0 ? append_col(X[1], S) : X[1];

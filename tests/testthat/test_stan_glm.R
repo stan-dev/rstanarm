@@ -471,4 +471,20 @@ test_that("QR errors if only 1 predictor", {
     stan_glm(mpg ~ wt, data = mtcars, QR = TRUE),
     "can only be specified when there are multiple predictors"
   )
+
+test_that("returns something with collinear predictors", {
+  N <- 100
+  y <- rnorm(N)
+  z <- sample(c(0,1), N, replace=TRUE)
+  x1 <- rnorm(N)
+  x2 <- 2*x1
+
+  fit_1 <- stan_glm(
+    y ~ z * (x1 + x2),
+    data = data.frame(y, z, x1, x2),
+    prior = normal(location = 0, scale = 0.1),
+    prior_intercept = normal(location = 0, scale = 0.1),
+    chains = CHAINS, iter = ITER, refresh = REFRESH
+  )
+  expect_stanreg(fit_1)  
 })

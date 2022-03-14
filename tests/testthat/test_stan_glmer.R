@@ -117,6 +117,17 @@ test_that("stan_lmer returns an error when 'family' specified", {
   )
 })
 
+test_that("error if y is character", {
+  expect_error(
+    stan_lmer(as.character(mpg) ~ wt + (1|cyl),  data = mtcars),
+    "Outcome variable can't be type 'character'"
+  )
+  expect_error(
+    stan_glmer.nb(as.character(mpg) ~ wt + (1|cyl),  data = mtcars),
+    "Outcome variable can't be type 'character'"
+  )
+})
+
 
 context("stan_gamm4")
 test_that("stan_gamm4 returns stanreg object", {
@@ -158,6 +169,18 @@ test_that("stan_gamm4 doesn't error when bs='cc", {
   # with another 'cc' smooth term
   SW(fit3 <- stan_gamm4(y ~ s(x2, bs = "cc") + s(x, bs = "cc"), data=data, iter = 5, chains = 1, init = 0, refresh = 0))
   expect_stanreg(fit3)
+})
+
+test_that("stan_gamm4 errors if no smooth terms in formula", {
+  dat <- data.frame(
+    y = rnorm(100), 
+    x = rnorm(100), 
+    id = gl(5, 20)
+  )
+  expect_error(
+    stan_gamm4(y ~ x, random = ~(1 | id), data = dat),
+    "Formula must have at least one smooth term to use stan_gamm4"
+  )
 })
 
 

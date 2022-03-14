@@ -17,7 +17,7 @@
 
 #' Conditional logistic (clogit) regression models via Stan
 #'
-#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="http://mc-stan.org/about/logo/"}}
 #' A model for case-control studies with optional prior distributions for the
 #' coefficients, intercept, and auxiliary parameters.
 #'

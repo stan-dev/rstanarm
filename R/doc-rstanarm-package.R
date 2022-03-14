@@ -39,7 +39,7 @@
 #'
 #' @description
 #' \if{html}{
-#'    \figure{stanlogo.png}{options: width="50px" alt="http://mc-stan.org/about/logo/"}
+#'    \figure{stanlogo.png}{options: width="50" alt="http://mc-stan.org/about/logo/"}
 #'    \emph{Stan Development Team}
 #' }
 #'
