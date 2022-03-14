@@ -30,24 +30,24 @@ context("stan_polr")
 
 
 f <- tobgp ~ agegp + alcgp
-suppressWarnings(capture.output(
+SW({
   fit1 <- stan_polr(f, data = esoph, method = "logistic", prior_PD = TRUE,
                     prior = R2(location = 0.4, what = "median"),
-                    chains = CHAINS, iter = ITER, seed = SEED, refresh = 0),
+                    chains = CHAINS, iter = ITER, seed = SEED, refresh = 0)
   fit1vb <- stan_polr(f, data = esoph, method = "loglog",
                       prior = R2(location = 0.4, what = "median"),
-                      seed = SEED, algorithm = "fullrank"),
+                      seed = SEED, algorithm = "fullrank")
   fit2 <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, data = esoph, 
                     prior = R2(location = 0.4), method = "logistic", shape = 2, rate = 2,
-                    chains = CHAINS, iter = ITER, seed = SEED, refresh = 0),
+                    chains = CHAINS, iter = ITER, seed = SEED, refresh = 0)
   fit2vb <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp, data = esoph, 
                       method = "probit", seed = SEED, algorithm = "fullrank",
-                      prior = NULL, prior_counts = NULL), # test with NULL priors
+                      prior = NULL, prior_counts = NULL) # test with NULL priors
   fit3 <- stan_polr(factor(tobgp == "30+") ~ agegp + alcgp,
                     data = esoph, prior = R2(location = 0.4),
                     shape = 2, rate = 2, chains = CHAINS, iter = ITER,
                     seed = SEED, refresh = 0)
-))
+})
 
 test_that("stan_polr runs for esoph example", {
   expect_stanreg(fit1)

@@ -229,6 +229,30 @@ test_that("posterior_predict/epred with newdata works for intercept only model",
   expect_error(posterior_epred(fit_intercept, data.frame()), "must have more than 0 rows")
 })
 
+test_that("posterior_predict can handle empty interaction levels", {
+  d1 <- expand.grid(group1 = c("A", "B"), group2 = c("a", "b", "c"))[1:5,]
+  d1$y <- c(0, 1, 0, 1, 0)
+  SW(fit <- rstanarm::stan_glm(y ~ group1:group2, data = d1, family = "binomial",
+                               refresh = 0, iter = 20, chains = 1))
+  expect_silent(ppd <- posterior_predict(fit))
+  expect_equal(dim(ppd), c(10, 5))
+  
+  # make sure it can handle this in newdata even if not a problem in original data
+  d2 <- expand.grid(group1 = c("A", "B"), group2 = c("a", "b", "c"))[1:6,]
+  d2$y <- c(0, 1, 0, 1, 0, 0)
+  SW(fit <- rstanarm::stan_glm(y ~ group1:group2, data = d2, family = "binomial",
+                               refresh = 0, iter = 20, chains = 1))
+  expect_silent(posterior_predict(fit))
+  expect_silent(posterior_predict(fit, newdata = d1))
+  
+  # make sure it doesn't drop repeated rows in newdata
+  nd <- data.frame(group1 = c("A", "A"), group2 = c("a", "a"))
+  expect_silent(ppd <- posterior_predict(fit, newdata = nd))
+  expect_equal(ncol(ppd), nrow(nd))
+  expect_silent(ppd <- posterior_predict(fit, newdata = nd[1, ]))
+  expect_equal(ncol(ppd), 1)
+})
+
 
 # helper functions --------------------------------------------------------
 context("posterior_predict helper functions")
