@@ -6,6 +6,10 @@ output:
   html_vignette:
     toc: yes
 ---
+<!--
+%\VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{Probabilistic A/B Testing with rstanarm}
+-->
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -624,7 +628,7 @@ Krushke, J.K. (2015). _Doing Bayesian Data Analysis - A Tutorial with R, JAGS,
 and Stan_. Elsevier, New York, 2nd edition.
 
 Overlap coefficient. Wikipedia. Available from
-https://en.wikipedia.org/wiki/Overlap_coefficien¿
+https://en.wikipedia.org/wiki/Overlap_coefficient
 
 Stan Development Team (2019). RStan: the R interface to Stan. R package version
 2.19.2. http://mc-stan.org/.
