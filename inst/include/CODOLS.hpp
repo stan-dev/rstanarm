@@ -19,5 +19,14 @@ CODOLS(const Eigen::Matrix<T2__, Eigen::Dynamic, Eigen::Dynamic>& X,
   CompleteOrthogonalDecomposition<MatrixXd> cod(X);
   return cod.solve(y);
 }
-#endif
 
+inline
+auto
+CODOLS(const Eigen::Matrix<double, -1, -1, 0, -1, -1>& X,
+       const Eigen::Map<Eigen::Matrix<double, -1, 1, 0, -1, 1>, 0, Eigen::Stride<0, 0>>& y,
+       std::ostream* pstream__) {
+  using namespace Eigen;
+  CompleteOrthogonalDecomposition<MatrixXd> cod(X);
+  return cod.solve(y);
+}
+#endif
