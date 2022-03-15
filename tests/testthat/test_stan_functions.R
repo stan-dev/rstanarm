@@ -403,7 +403,7 @@ if (require(lme4) && require(HSAUR3)) test_that("the Stan equivalent of lme4's Z
       V <- matrix(parts$v, nrow = sum(p), ncol = nrow(Z))
       expect_true(all(V == 
                       t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v - 1L))))))
-      expect_equal(Zb, apply(V, 2, FUN = function(v) sum(b[v])))
+      expect_equal(Zb@x, apply(V, 2, FUN = function(v) sum(b[v])))
     }
   }
   test_lme4(glFormula(Reaction ~ Days + (Days | Subject), data = sleepstudy)$reTrms)
