@@ -471,6 +471,7 @@ test_that("QR errors if only 1 predictor", {
     stan_glm(mpg ~ wt, data = mtcars, QR = TRUE),
     "can only be specified when there are multiple predictors"
   )
+})
 
 test_that("returns something with collinear predictors", {
   N <- 100
