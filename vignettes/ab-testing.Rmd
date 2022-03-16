@@ -622,7 +622,7 @@ https://hbr.org/2017/06/a-refresher-on-ab-testing.
 
 Goodrich, B., Gabry, J., Ali, I. & Brilleman, S. (2019). rstanarm: Bayesian
 applied regression modeling via Stan. R package version 2.17.4.
-http://mc-stan.org/.
+https://mc-stan.org/.
 
 Krushke, J.K. (2015). _Doing Bayesian Data Analysis - A Tutorial with R, JAGS,
 and Stan_. Elsevier, New York, 2nd edition.
@@ -631,7 +631,7 @@ Overlap coefficient. Wikipedia. Available from
 https://en.wikipedia.org/wiki/Overlap_coefficient
 
 Stan Development Team (2019). RStan: the R interface to Stan. R package version
-2.19.2. http://mc-stan.org/.
+2.19.2. https://mc-stan.org/.
 
 Student's t-test. Wikipedia. Available from
 https://en.wikipedia.org/wiki/Student's_t-test.

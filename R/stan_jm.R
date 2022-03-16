@@ -18,7 +18,7 @@
 
 #' Bayesian joint longitudinal and time-to-event models via Stan
 #' 
-#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="http://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 #' Fits a shared parameter joint model for longitudinal and time-to-event 
 #' (e.g. survival) data under a Bayesian framework using Stan.
 #' 
@@ -273,7 +273,7 @@
 #'   known as a shared parameter model) for longitudinal and time-to-event data 
 #'   under a Bayesian framework. The underlying
 #'   estimation is carried out using the Bayesian C++ package Stan 
-#'   (\url{http://mc-stan.org/}). \cr
+#'   (\url{https://mc-stan.org/}). \cr
 #'   \cr 
 #'   The joint model may be univariate (with only one longitudinal submodel) or
 #'   multivariate (with more than one longitudinal submodel). 

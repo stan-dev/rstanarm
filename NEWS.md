@@ -100,7 +100,7 @@ with identical (not just up to rng noise) results. (Thanks to @mcol)
 to @avehtari and @VMatthijs)
 
 * `compare_models()` is deprecated in favor of `loo_compare()` to keep up 
-with the loo package ([loo::loo_compare()](http://mc-stan.org/loo/reference/loo_compare))
+with the loo package ([loo::loo_compare()](https://mc-stan.org/loo/reference/loo_compare))
 
 * The `kfold()` method now has a `cores` argument and parallelizes by fold
 rather than by Markov chain (unless otherwise specified), which should be much

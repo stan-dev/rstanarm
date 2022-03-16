@@ -160,7 +160,7 @@ The `prior_summary` function is used to report the prior distributions specified
 If you do this right then everything should work out swimmingly in the `prior_summary.R` file. If it so happens that you've introduced a new prior then you'll need to update the conditional in the relevant `.prior_*_prior` function to pick this information up.
 
 # Documentation and Examples
-We use [roxygen](http://r-pkgs.had.co.nz/man.html) for documentation and examples. Some advice follows,
+We use [roxygen](https://r-pkgs.had.co.nz/man.html) for documentation and examples. Some advice follows,
 
 * The title will probably be something like "Bayesian model of awesomeness".
 * Following the title you should add a description of the model. Some things to consider are,  
@@ -288,5 +288,5 @@ functions. If you add something, be sure to include it in `meta_header.hpp` and 
 
 **`tests/testthat`**
 
-* Tests run using the [testthat](http://r-pkgs.had.co.nz/tests.html) package.
+* Tests run using the [testthat](https://r-pkgs.had.co.nz/tests.html) package.
 

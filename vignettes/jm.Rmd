@@ -823,7 +823,7 @@ plot(p1) # plot the standardised survival curve
 10. Pantazis N, Touloumi G. Bivariate modelling of longitudinal measurements of two human immunodeficiency type 1 disease progression markers in the presence of informative drop-outs. *Applied Statistics* 2005;**54**:405-23.
 11. Taylor JM, Park Y, Ankerst DP, et al. Real-time individual predictions of prostate cancer recurrence using joint models. *Biometrics* 2013;**69**(1):206-13.
 12. Brilleman SL, Crowther MJ, Moreno-Betancur M, Buros Novik J, Wolfe R. Joint longitudinal and time-to-event models via Stan. *In: Proceedings of StanCon 2018.* https://github.com/stan-dev/stancon_talks
-12. Stan Development Team. *rstanarm: Bayesian applied regression  modeling via Stan.* R package version 2.14.1. http://mc-stan.org/. 2016.
+12. Stan Development Team. *rstanarm: Bayesian applied regression  modeling via Stan.* R package version 2.14.1. https://mc-stan.org/. 2016.
 13. R Core Team. *R: A language and environment for statistical computing.* Vienna, Austria: R Foundation for Statistical Computing; 2015.
 14. Crowther MJ, Lambert PC, Abrams KR. Adjusting for measurement error in baseline prognostic biomarkers included in a time-to-event analysis: a joint modelling approach. *BMC Med Res Methodol* 2013;**13**.
 15. Hickey GL, Philipson P, Jorgensen A, Kolamunnage-Dona R. Joint modelling of time-to-event and multivariate longitudinal outcomes: recent developments and issues. *BMC Med Res Methodol* 2016;**16**(1):117.

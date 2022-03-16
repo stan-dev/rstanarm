@@ -39,7 +39,7 @@
 #'
 #' @description
 #' \if{html}{
-#'    \figure{stanlogo.png}{options: width="50" alt="http://mc-stan.org/about/logo/"}
+#'    \figure{stanlogo.png}{options: width="50" alt="https://mc-stan.org/about/logo/"}
 #'    \emph{Stan Development Team}
 #' }
 #'
@@ -77,7 +77,7 @@
 #'
 #' @section Prior distributions:
 #' See \link[=priors]{priors help page} and the vignette
-#' \href{http://mc-stan.org/rstanarm/articles/priors.html}{\emph{Prior Distributions for rstanarm Models}}
+#' \href{https://mc-stan.org/rstanarm/articles/priors.html}{\emph{Prior Distributions for rstanarm Models}}
 #' for an overview of the various choices the user can make for prior
 #' distributions. The package vignettes for the modeling functions also provide
 #' examples of using many of the available priors as well as more detailed
@@ -85,16 +85,16 @@
 #'
 #' @seealso
 #' \itemize{
-#'   \item \url{http://mc-stan.org/} for more information on the Stan C++
+#'   \item \url{https://mc-stan.org/} for more information on the Stan C++
 #'   package used by \pkg{rstanarm} for model fitting.
 #'   \item \url{https://github.com/stan-dev/rstanarm/issues/} to submit a bug
 #'   report or feature request.
-#'   \item \url{http://discourse.mc-stan.org} to ask a
+#'   \item \url{https://discourse.mc-stan.org} to ask a
 #'   question about \pkg{rstanarm} on the Stan-users forum.
 #' }
 #'
-#' @templateVar armRef \url{http://stat.columbia.edu/~gelman/arm/}
-#' @templateVar bdaRef \url{http://stat.columbia.edu/~gelman/book/}
+#' @templateVar armRef \url{https://stat.columbia.edu/~gelman/arm/}
+#' @templateVar bdaRef \url{https://stat.columbia.edu/~gelman/book/}
 #' @template reference-lme4
 #' @template reference-bda
 #' @template reference-gelman-hill

@@ -1,15 +1,15 @@
 # rstanarm <img src="man/figures/stanlogo.png" align="right" width="120" />
 
 <!-- badges: start -->
-[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rstanarm?color=blue)](http://cran.r-project.org/package=rstanarm)
-[![Downloads](http://cranlogs.r-pkg.org/badges/rstanarm?color=blue)](http://cran.rstudio.com/package=rstanarm)
+[![CRAN\_Status\_Badge](https://www.r-pkg.org/badges/version/rstanarm?color=blue)](https://cran.r-project.org/package=rstanarm)
+[![Downloads](https://cranlogs.r-pkg.org/badges/rstanarm?color=blue)](https://cran.rstudio.com/package=rstanarm)
 [![R-CMD-check](https://github.com/stan-dev/rstanarm/workflows/R-CMD-check/badge.svg)](https://github.com/stan-dev/rstanarm/actions)
 <!-- badges: end -->
 
 ### Bayesian applied regression modeling (arm) via Stan
 
 This is an R package that emulates other R model-fitting functions but uses
-[Stan](http://mc-stan.org) (via the **rstan** package) for the back-end
+[Stan](https://mc-stan.org) (via the **rstan** package) for the back-end
 estimation. The primary target audience is people who would be open to Bayesian
 inference if using Bayesian software were easier but would use frequentist
 software otherwise. 
@@ -23,7 +23,7 @@ Click the arrows for more details:
 <details><summary>More detail</summary>
 
 The **rstanarm** package is an appendage to the **rstan** package, the R
-interface to [Stan](http://mc-stan.org/). **rstanarm** enables many of the most
+interface to [Stan](https://mc-stan.org/). **rstanarm** enables many of the most
 common applied regression models to be estimated using Markov Chain Monte Carlo,
 variational approximations to the posterior distribution, or optimization. The
 package allows these models to be specified using the customary R modeling
@@ -32,22 +32,22 @@ Additional arguments are provided for specifying prior distributions.
 
 The set of models supported by **rstanarm** is large (and will continue to
 grow), but also limited enough so that it is possible to integrate them
-tightly with the [`pp_check`](http://mc-stan.org/rstanarm/reference/pp_check.stanreg.html) function for graphical posterior predictive checks using [**bayesplot**](http://mc-stan.org/bayesplot) and the
-[`posterior_predict`](http://mc-stan.org/rstanarm/reference/posterior_predict.stanreg.html)
+tightly with the [`pp_check`](https://mc-stan.org/rstanarm/reference/pp_check.stanreg.html) function for graphical posterior predictive checks using [**bayesplot**](https://mc-stan.org/bayesplot) and the
+[`posterior_predict`](https://mc-stan.org/rstanarm/reference/posterior_predict.stanreg.html)
 function to easily estimate the effect of specific manipulations of predictor
 variables or to predict the outcome in a training set.
 
 The fitted model objects returned by the **rstanarm** modeling functions are
 called _stanreg_ objects. In addition to all of the traditional
-[methods](http://mc-stan.org/rstanarm/reference/stanreg-methods.html)
+[methods](https://mc-stan.org/rstanarm/reference/stanreg-methods.html)
 defined for fitted model objects, stanreg objects can also be used with the
-[**loo**](http://mc-stan.org/rstanarm/reference/loo.stanreg.html) package for
+[**loo**](https://mc-stan.org/rstanarm/reference/loo.stanreg.html) package for
 leave-one-out cross-validation, model comparison, and model weighting/averaging
-and the [**shinystan**](http://mc-stan.org/rstanarm/reference/shinystan.html) 
+and the [**shinystan**](https://mc-stan.org/rstanarm/reference/shinystan.html) 
 package for exploring the posterior distribution and model diagnostics
 with a graphical user interface. 
 
-Check out the **rstanarm** [vignettes](http://mc-stan.org/rstanarm/articles/)
+Check out the **rstanarm** [vignettes](https://mc-stan.org/rstanarm/articles/)
 for examples and more details about the entire process.
 </details>
 
@@ -229,7 +229,7 @@ remotes::install_github("stan-dev/rstanarm", INSTALL_opts = "--no-multiarch", fo
 
 You can switch `build_vignettes` to `TRUE` but it takes a lot longer to install and the 
 vignettes are already separately available from the 
-[Stan website](http://mc-stan.org/rstanarm/articles/index.html) 
+[Stan website](https://mc-stan.org/rstanarm/articles/index.html) 
 and 
 [CRAN](https://cran.r-project.org/package=rstanarm/vignettes). 
 If installation fails, please let us know by [filing an issue](https://github.com/stan-dev/rstanarm/issues).
@@ -247,4 +247,4 @@ Note that this binary is static (i.e. it is not automatically updated) and is on
 ### Contributing 
 
 If you are interested in contributing to the development of **rstanarm** please 
-see the [developer notes](http://mc-stan.org/rstanarm/dev-notes/index.html) page.
+see the [developer notes](https://mc-stan.org/rstanarm/dev-notes/index.html) page.

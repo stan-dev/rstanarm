@@ -209,7 +209,7 @@
    * Cornish-Fisher expansion for standard normal to Student t
    *
    * See result 26.7.5 of
-   * http://people.math.sfu.ca/~cbm/aands/page_949.htm
+   * https://people.math.sfu.ca/~cbm/aands/page_949.htm
    *
    * @param z A scalar distributed standard normal
    * @param df A scalar degrees of freedom

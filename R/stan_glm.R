@@ -17,7 +17,7 @@
 
 #' Bayesian generalized linear models via Stan
 #'
-#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="http://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 #' Generalized linear modeling with optional prior distributions for the
 #' coefficients, intercept, and auxiliary parameters.
 #'
@@ -84,7 +84,7 @@
 #'   \link{neg_binomial_2}(link)}.
 #'   
 #' @seealso The various vignettes for \code{stan_glm} at
-#'   \url{http://mc-stan.org/rstanarm/articles/}.
+#'   \url{https://mc-stan.org/rstanarm/articles/}.
 #' 
 #' @examples
 #' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {

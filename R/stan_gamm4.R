@@ -19,7 +19,7 @@
 #' Bayesian generalized linear additive models with optional group-specific
 #' terms via Stan
 #' 
-#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="http://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 #' Bayesian inference for GAMMs with flexible priors.
 #' 
 #' @export
@@ -99,7 +99,7 @@
 #' \url{https://www.jstatsoft.org/article/view/v014i14}
 #' 
 #' @seealso The vignette for \code{stan_glmer}, which also discusses
-#'   \code{stan_gamm4}. \url{http://mc-stan.org/rstanarm/articles/}
+#'   \code{stan_gamm4}. \url{https://mc-stan.org/rstanarm/articles/}
 #' 
 #' @examples
 #' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {

@@ -17,7 +17,7 @@
 
 #' Conditional logistic (clogit) regression models via Stan
 #'
-#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="http://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 #' A model for case-control studies with optional prior distributions for the
 #' coefficients, intercept, and auxiliary parameters.
 #'
@@ -71,7 +71,7 @@
 #'   
 #' @seealso The vignette for Bernoulli and binomial models, which has more
 #'   details on using \code{stan_clogit}.
-#'   \url{http://mc-stan.org/rstanarm/articles/}
+#'   \url{https://mc-stan.org/rstanarm/articles/}
 #' 
 #' @examples
 #' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
