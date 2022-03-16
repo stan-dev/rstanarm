@@ -1468,7 +1468,7 @@ variable itself?  Why might this be important in inference?
 
 * Stan Development Team (2015) *Stan Modeling Language User's Guide
   and Reference Manual*.  [ [web page]
-  ](https://mc-stan.org/documentation/)
+  ](https://mc-stan.org/documentation)
 
 * Tarone, R. E. (1982) The use of historical control information in
   testing for a trend in proportions. *Biometrics* **38**(1):215--220.
@@ -1509,7 +1509,7 @@ the Stan example models repository in R format.
 Carpenter (2009) updates Efron and Morris's (1975) data set for the
 entire set of players for the entire 2006 American League season of
 Major League Baseball.  The data was originally downloaded from the
-[baseball1.com](http://www.baseball1.com/).
+[baseball1.com](https://www.seanlahman.com/).
 
 * To load: `data(bball2006, package = "rstanarm")`
 * Data Source: [https://lingpipe-blog.com/2009/09/23/bayesian-estimators-for-the-beta-binomial-model-of-batting-ability](https://lingpipe-blog.com/2009/09/23/bayesian-estimators-for-the-beta-binomial-model-of-batting-ability/)

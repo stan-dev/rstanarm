@@ -386,7 +386,7 @@ any(summary(good_rhat)[, "Rhat"] > 1.1)
 ```
 
 Details on the computation of Rhat and some of its limitations can be found in
-[Stan Modeling Language User's Guide and Reference Manual](https://mc-stan.org/users/documentation/).
+[Stan Modeling Language User's Guide and Reference Manual](https://mc-stan.org/users/documentation).
 
 ### Divergent transitions
 
