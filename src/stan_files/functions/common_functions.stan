@@ -241,7 +241,7 @@
     int V[t,N];
     int pos = 1;
     if (t > 0) for (j in 1:N) for (i in 1:t) {
-      V[i,j] = v[pos] + 1;
+      V[i,j] = v[pos]; // + 1
       pos += 1;
     }
     return V;
