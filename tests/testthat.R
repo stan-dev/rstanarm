@@ -19,7 +19,7 @@ library(testthat)
 suppressPackageStartupMessages(library(rstanarm))
 Sys.unsetenv("R_TESTS")
 o <- utils::capture.output(example(example_model, echo = FALSE))
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") { # || .Platform$r_arch != "i386"
   test_check("rstanarm", invert = FALSE,
              filter = if (Sys.getenv("NOT_CRAN") != "true") "stan_functions")
 }
