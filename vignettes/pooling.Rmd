@@ -1468,7 +1468,7 @@ variable itself?  Why might this be important in inference?
 
 * Stan Development Team (2015) *Stan Modeling Language User's Guide
   and Reference Manual*.  [ [web page]
-  ](https://mc-stan.org/documentation)
+  ](https://mc-stan.org/documentation/)
 
 * Tarone, R. E. (1982) The use of historical control information in
   testing for a trend in proportions. *Biometrics* **38**(1):215--220.
