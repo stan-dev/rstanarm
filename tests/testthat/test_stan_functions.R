@@ -28,16 +28,16 @@ test_that("Stan programs are available", {
 
 library(rstan)
 Sys.unsetenv("R_TESTS")
-TBB <- system.file("lib", .Platform$r_arch, package = "RcppParallel", mustWork = TRUE)
-SH  <- system.file(ifelse(.Platform$OS.type == "windows", "libs", "lib"), 
-                   .Platform$r_arch, package = "StanHeaders",  mustWork = TRUE)
-Sys.setenv(LOCAL_LIBS = paste0("-L", shQuote(TBB), " -tbb -tbbmalloc ",
-                               "-L", shQuote(SH) , " -lStanHeaders"))
+# TBB <- system.file("lib", .Platform$r_arch, package = "RcppParallel", mustWork = TRUE)
+# SH  <- system.file(ifelse(.Platform$OS.type == "windows", "libs", "lib"), 
+#                    .Platform$r_arch, package = "StanHeaders",  mustWork = TRUE)
+# Sys.setenv(LOCAL_LIBS = paste0("-L", shQuote(TBB), " -tbb -tbbmalloc ",
+#                                "-L", shQuote(SH) , " -lStanHeaders"))
 # Sys.setenv(PKG_LIBS = Sys.getenv("LOCAL_LIBS"))
-Eigen <- dir(system.file("include", "stan", "math", "prim",
-                         package = "StanHeaders", mustWork = TRUE),
-             pattern = "Eigen.hpp$", full.names = TRUE, recursive = TRUE)[1]
-Sys.setenv(PKG_CXXFLAGS = paste("-include", shQuote(Eigen)))
+# Eigen <- dir(system.file("include", "stan", "math", "prim",
+#                          package = "StanHeaders", mustWork = TRUE),
+#              pattern = "Eigen.hpp$", full.names = TRUE, recursive = TRUE)[1]
+# Sys.setenv(PKG_CXXFLAGS = paste("-include", shQuote(Eigen)))
 
 functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
   mc <- readLines(f)
@@ -62,7 +62,8 @@ model_code <- paste(c("functions {", functions, "}"), collapse = "\n")
 stanc_ret <- stanc(model_code = model_code, model_name = "Stan Functions",
                    allow_undefined = TRUE)
 expose_stan_functions(stanc_ret, rebuild = TRUE, verbose = TRUE)
-Rcpp::sourceCpp(file.path(INCLUDE_DIR, "tests.cpp"), rebuild = TRUE, verbose = TRUE)
+# Rcpp::registerPlugin("rstan", rstan:::rstanplugin)
+# Rcpp::sourceCpp(file.path(INCLUDE_DIR, "tests.cpp"), rebuild = TRUE, verbose = TRUE)
 N <- 99L
 
 # bernoulli
