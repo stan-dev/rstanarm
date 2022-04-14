@@ -1,4 +1,4 @@
-# Items for next release
+# rstanarm 2.21.3
 
 ### Bug fixes
 
