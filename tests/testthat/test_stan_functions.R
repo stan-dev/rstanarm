@@ -15,9 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat 
-# package and then running the code
-
 Sys.setenv(USE_CXX14 = 1)
 set.seed(12345)
 
@@ -31,16 +28,16 @@ test_that("Stan programs are available", {
 
 library(rstan)
 Sys.unsetenv("R_TESTS")
-TBB <- system.file("lib", .Platform$r_arch, package = "RcppParallel", mustWork = TRUE)
-SH  <- system.file(ifelse(.Platform$OS.type == "windows", "libs", "lib"), 
-                   .Platform$r_arch, package = "StanHeaders",  mustWork = TRUE)
-Sys.setenv(LOCAL_LIBS = paste0("-L", shQuote(TBB), " -tbb -tbbmalloc ",
-                               "-L", shQuote(SH) , " -lStanHeaders"))
+# TBB <- system.file("lib", .Platform$r_arch, package = "RcppParallel", mustWork = TRUE)
+# SH  <- system.file(ifelse(.Platform$OS.type == "windows", "libs", "lib"), 
+#                    .Platform$r_arch, package = "StanHeaders",  mustWork = TRUE)
+# Sys.setenv(LOCAL_LIBS = paste0("-L", shQuote(TBB), " -tbb -tbbmalloc ",
+#                                "-L", shQuote(SH) , " -lStanHeaders"))
 # Sys.setenv(PKG_LIBS = Sys.getenv("LOCAL_LIBS"))
-Eigen <- dir(system.file("include", "stan", "math", "prim",
-                         package = "StanHeaders", mustWork = TRUE),
-             pattern = "Eigen.hpp$", full.names = TRUE, recursive = TRUE)[1]
-Sys.setenv(PKG_CXXFLAGS = paste("-include", shQuote(Eigen)))
+# Eigen <- dir(system.file("include", "stan", "math", "prim",
+#                          package = "StanHeaders", mustWork = TRUE),
+#              pattern = "Eigen.hpp$", full.names = TRUE, recursive = TRUE)[1]
+# Sys.setenv(PKG_CXXFLAGS = paste("-include", shQuote(Eigen)))
 
 functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
   mc <- readLines(f)
@@ -53,9 +50,6 @@ functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), func
   } else return(as.character(NULL))
 })
 names(functions) <- basename(names(functions))
-functions$polr.stan <- grep("csr_matrix_times_vector2", 
-                            functions$polr.stan, 
-                            value = TRUE, fixed = TRUE, invert = TRUE)
 functions <- c(unlist(lapply(file.path(MODELS_HOME, "functions", 
                              c("common_functions.stan",
                                "bernoulli_likelihoods.stan",
@@ -68,7 +62,8 @@ model_code <- paste(c("functions {", functions, "}"), collapse = "\n")
 stanc_ret <- stanc(model_code = model_code, model_name = "Stan Functions",
                    allow_undefined = TRUE)
 expose_stan_functions(stanc_ret, rebuild = TRUE, verbose = TRUE)
-Rcpp::sourceCpp(file.path(INCLUDE_DIR, "tests.cpp"), rebuild = TRUE, verbose = TRUE)
+# Rcpp::registerPlugin("rstan", rstan:::rstanplugin)
+# Rcpp::sourceCpp(file.path(INCLUDE_DIR, "tests.cpp"), rebuild = TRUE, verbose = TRUE)
 N <- 99L
 
 # bernoulli
@@ -402,16 +397,14 @@ if (require(lme4) && require(HSAUR3)) test_that("the Stan equivalent of lme4's Z
                  tol = 1e-14)
     
     parts <- extract_sparse_parts(Z)
-    Zb <- csr_matrix_times_vector2_test(nrow(Z), ncol(Z), parts$w, 
-                                        parts$v - 1L, parts$u - 1L, b)
-    expect_equal(Zb, as.vector(Z %*% b), tol = 1e-14)
+    Zb <- Z %*% b
     if (all(sapply(group$cnms, FUN = function(x) {
         length(x) == 1 && x == "(Intercept)"
       })) ) {
       V <- matrix(parts$v, nrow = sum(p), ncol = nrow(Z))
       expect_true(all(V == 
-                      t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v - 1L))))))
-      expect_equal(Zb, apply(V, 2, FUN = function(v) sum(b[v])))
+                      t(as.matrix(as.data.frame(make_V(nrow(Z), nrow(V), parts$v))))))
+      expect_equal(Zb@x, apply(V, 2, FUN = function(v) sum(b[v])))
     }
   }
   test_lme4(glFormula(Reaction ~ Days + (Days | Subject), data = sleepstudy)$reTrms)

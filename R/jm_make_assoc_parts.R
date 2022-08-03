@@ -216,5 +216,11 @@ make_assoc_parts_for_stan <- function(newdata, y_mod, include_Zt = TRUE) {
   if (include_Zt) 
     ret$Zt <- lme4::mkReTrms(bars, model_frame)$Zt
   
+  # add offset values
+  if ('offset' %in% colnames(newdata))
+    ret$offset <- newdata$offset
+  else
+    ret$offset <- NULL
+  
   ret
 }

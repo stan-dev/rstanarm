@@ -17,7 +17,7 @@
 
 #' Bayesian generalized linear models via Stan
 #'
-#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 #' Generalized linear modeling with optional prior distributions for the
 #' coefficients, intercept, and auxiliary parameters.
 #'
@@ -84,7 +84,7 @@
 #'   \link{neg_binomial_2}(link)}.
 #'   
 #' @seealso The various vignettes for \code{stan_glm} at
-#'   \url{http://mc-stan.org/rstanarm/articles/}.
+#'   \url{https://mc-stan.org/rstanarm/articles/}.
 #' 
 #' @examples
 #' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
@@ -211,7 +211,7 @@ stan_glm <-
            prior_aux = exponential(autoscale=TRUE),
            prior_PD = FALSE,
            algorithm = c("sampling", "optimizing", "meanfield", "fullrank"),
-           mean_PPD = algorithm != "optimizing",
+           mean_PPD = algorithm != "optimizing" && !prior_PD,
            adapt_delta = NULL,
            QR = FALSE,
            sparse = FALSE) {
@@ -236,6 +236,7 @@ stan_glm <-
   if (is.empty.model(mt))
     stop("No intercept or predictors specified.", call. = FALSE)
   X <- model.matrix(mt, mf, contrasts)
+  contrasts <- attr(X, "contrasts")
   weights <- validate_weights(as.vector(model.weights(mf)))
   offset <- validate_offset(as.vector(model.offset(mf)), y = Y)
   if (binom_y_prop(Y, family, weights)) {
@@ -277,7 +278,7 @@ stan_glm <-
   fit <- nlist(stanfit, algorithm, family, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
-               contrasts = attr(X, "contrasts"), 
+               contrasts = contrasts, 
                stan_function = "stan_glm")
   
   out <- stanreg(fit)

@@ -2,7 +2,7 @@
 #'   coefficients.
 #'    
 #'   The default priors are described in the vignette 
-#'   \href{http://mc-stan.org/rstanarm/articles/priors.html}{\emph{Prior
+#'   \href{https://mc-stan.org/rstanarm/articles/priors.html}{\emph{Prior
 #'   Distributions for rstanarm Models}}.
 #'   If not using the default, \code{prior} should be a call to one of the
 #'   various functions provided by \pkg{rstanarm} for specifying priors. The

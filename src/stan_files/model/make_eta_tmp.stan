@@ -6,7 +6,7 @@
                                  y1_z1q_id_eta, y1_z2q_id_eta, 
                                  yGamma1, yBeta1, bMat1, bMat2, 
                                  bMat1_colshift, bMat2_colshift, 
-                                 intercept_type[1]);
+                                 intercept_type[1], y1_offset_eta);
         }
         else if (m == 2) {
           int bMat1_colshift = bK1_len[1];
@@ -15,7 +15,7 @@
                                  y2_z1q_id_eta, y2_z2q_id_eta, 
                                  yGamma2, yBeta2, bMat1, bMat2, 
                                  bMat1_colshift, bMat2_colshift, 
-                                 intercept_type[2]);
+                                 intercept_type[2], y2_offset_eta);
         }
         else if (m == 3) {
           int bMat1_colshift = sum(bK1_len[1:2]);
@@ -24,5 +24,5 @@
                                  y3_z1q_id_eta, y3_z2q_id_eta, 
                                  yGamma3, yBeta3, bMat1, bMat2, 
                                  bMat1_colshift, bMat2_colshift, 
-                                 intercept_type[3]);
+                                 intercept_type[3], y3_offset_eta);
         }

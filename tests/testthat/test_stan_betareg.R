@@ -15,11 +15,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat 
-# package and then running the code below possibly with options(mc.cores = 4).
-
 if (.Platform$OS.type != "windows" && require(betareg)) {
-  library(rstanarm)
+  suppressPackageStartupMessages(library(rstanarm))
   SEED <- 12345
   set.seed(SEED)
   ITER <- 10
@@ -27,9 +24,6 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   REFRESH <- 0
   
   context("stan_betareg")
-  
-  source(test_path("helpers", "expect_stanreg.R"))
-  source(test_path("helpers", "SW.R"))
   
   simple_betareg_data <- function(N, draw_z = FALSE) {
     x <- rnorm(N, 2, 1)
@@ -112,6 +106,32 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     expect_equal(val, ans, tol = 0.1)
   })
   
+  test_that("QR recommended if VB and at least 2 predictors", {
+    expect_message(
+      stan_betareg(y ~ x + z, data = dat, 
+                   link = "logit", algorithm = "meanfield",
+                   prior = NULL, prior_intercept = NULL, 
+                   prior_phi = NULL, refresh = 0),
+      "Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms"
+    )
+    # no message if QR already specified
+    expect_message(
+      stan_betareg(y ~ x + z, data = dat, QR = TRUE,
+                   link = "logit", algorithm = "meanfield",
+                   prior = NULL, prior_intercept = NULL, 
+                   prior_phi = NULL, refresh = 0),
+      NA
+    )
+    # no message if only 1 predictor
+    expect_message(
+      stan_betareg(y ~ x, data = dat,
+                   link = "logit", algorithm = "meanfield",
+                   prior = NULL, prior_intercept = NULL, 
+                   prior_phi = NULL, refresh = 0),
+      NA
+    )
+  })
+  
   test_that("stan_betareg ok when modeling x and z (link.phi = 'log')", {
     N <- 200
     dat <- data.frame(x = rnorm(N, 2, 1), z = rnorm(N, 2, 1))
@@ -155,6 +175,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   
   # sqrt link is unstable so only testing that the model runs. 
   test_that("stan_betareg ok when modeling x and z (link.phi = 'sqrt')", {
+    # skip_on_ci() # seems to segfault sometimes: https://github.com/stan-dev/rstanarm/pull/496/checks?check_run_id=1582276935#step:9:397
     for (i in 1:length(link1)) {  # FIXME!
       N <- 1000
       dat <- data.frame(x = rnorm(N, 2, 1), z = rep(1, N))
@@ -162,9 +183,9 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
       phi <- poisson(link = "sqrt")$linkinv(8 + 2*dat$z)
       dat$y <- rbeta(N, mu * phi, (1 - mu) * phi)
   
-      SW(fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = link2[3], 
-                             data = dat, algorithm = "sampling", 
-                             chains = 1, iter = 1, refresh = 0)) 
+      SW(fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = "sqrt", 
+                             data = dat, chains = 1, iter = 1, refresh = 0, 
+                             algorithm = "sampling", seed = SEED)) 
       expect_stanreg(fit)
     }
   })
@@ -189,19 +210,22 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   })
   
   test_that("heavy tailed priors work with stan_betareg", {
-    expect_stanreg(stan_betareg(y ~ x | z, data = dat, 
-                               prior = product_normal(), prior_z = product_normal(), 
-                               chains = 1, iter = 1, refresh = 0))
-    expect_stanreg(stan_betareg(y ~ x | z, data = dat, 
+    # skip_on_ci()
+    SW(fit1 <- stan_betareg(y ~ x | z, data = dat, 
+                           prior = product_normal(), prior_z = product_normal(), 
+                           chains = 1, iter = 1, refresh = 0))
+    expect_stanreg(fit1)
+    SW(fit2 <- stan_betareg(y ~ x | z, data = dat, 
                                prior = laplace(), prior_z = laplace(), 
                                chains = 1, iter = 1, refresh = 0))
-    expect_stanreg(stan_betareg(y ~ x | z, data = dat, 
+    expect_stanreg(fit2)
+    SW(fit3 <- stan_betareg(y ~ x | z, data = dat, 
                                prior = lasso(), prior_z = lasso(), 
                                chains = 1, iter = 1, refresh = 0))
+    expect_stanreg(fit3)
   })
   
   test_that("loo/waic for stan_betareg works", {
-    source(test_path("helpers", "expect_equivalent_loo.R"))
     ll_fun <- rstanarm:::ll_fun
     
     data("GasolineYield", package = "betareg")
@@ -213,39 +237,35 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     expect_identical(ll_fun(fit_logit), rstanarm:::.ll_beta_i)
   })
 
-  source(test_path("helpers", "check_for_error.R"))
-  source(test_path("helpers", "expect_linpred_equal.R"))
-  SW <- suppressWarnings
-  context("posterior_predict (stan_betareg)")
   test_that("compatible with stan_betareg with z", {
     data("GasolineYield", package = "betareg")
-    fit <- SW(stan_betareg(yield ~ pressure + temp | temp, data = GasolineYield,
+    SW(fit <- stan_betareg(yield ~ pressure + temp | temp, data = GasolineYield,
                            iter = ITER*5, chains = 2*CHAINS, seed = SEED, 
                            refresh = 0))
-    check_for_error(fit)
+    check_for_pp_errors(fit)
     # expect_linpred_equal(fit)
   })
   
   test_that("compatible with stan_betareg without z", {
     data("GasolineYield", package = "betareg")
-    fit <- SW(stan_betareg(yield ~ temp, data = GasolineYield, 
+    SW(fit <- stan_betareg(yield ~ temp, data = GasolineYield, 
                            iter = ITER, chains = CHAINS, seed = SEED, refresh = 0))
-    check_for_error(fit)
+    check_for_pp_errors(fit)
     # expect_linpred_equal(fit)
   })
   
   test_that("compatible with betareg with offset", {
     GasolineYield2 <- GasolineYield
     GasolineYield2$offs <- runif(nrow(GasolineYield2))
-    fit <- SW(stan_betareg(yield ~ temp, data = GasolineYield2, offset = offs,
+    SW(fit <- stan_betareg(yield ~ temp, data = GasolineYield2, offset = offs,
                            iter = ITER*5, chains = CHAINS, seed = SEED, refresh = 0))
-    fit2 <- SW(stan_betareg(yield ~ temp + offset(offs), data = GasolineYield2,
+    SW(fit2 <- stan_betareg(yield ~ temp + offset(offs), data = GasolineYield2,
                             iter = ITER*5, chains = CHAINS, seed = SEED, refresh = 0))
     
     expect_warning(posterior_predict(fit, newdata = GasolineYield), 
                    "offset")
-    check_for_error(fit, data = GasolineYield2, offset = GasolineYield2$offs)
-    check_for_error(fit2, data = GasolineYield2, offset = GasolineYield2$offs)
+    check_for_pp_errors(fit, data = GasolineYield2, offset = GasolineYield2$offs)
+    check_for_pp_errors(fit2, data = GasolineYield2, offset = GasolineYield2$offs)
     expect_linpred_equal(fit)
     expect_linpred_equal(fit2)
   })

@@ -15,6 +15,29 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
+# drop any column of x with < 2 unique values (empty interaction levels)
+# exception is column of 1s isn't dropped 
+# @param x A design matrix
+# @param xbar Optionally a vector of column means for compatibility with center_x(). 
+# @param warn Should warning be thrown if columns are dropped? 
+# @return A list with updated x and xbar.
+drop_empty_levels <- function(x, xbar = NULL, warn = TRUE) {
+  sel <- apply(x, 2L, function(w) length(w) > 1 && !all(w == 1) && length(unique(w)) < 2)
+  if (any(sel)) {
+    dropped_cols <- colnames(x)[sel]
+    if (warn) {
+      warning("Dropped empty interaction levels: ", paste(dropped_cols, collapse = ", "), 
+              call. = FALSE)
+    }
+    x <- x[, !sel, drop = FALSE]
+    xbar <- xbar[!sel]
+  } else {
+    dropped_cols <- NULL
+  }
+  nlist(x, xbar, dropped_cols)
+}
+
 # Center a matrix x and return extra stuff
 #
 # @param x A design matrix
@@ -28,20 +51,15 @@ center_x <- function(x, sparse) {
   if (has_intercept && !sparse) {
     xbar <- colMeans(xtemp)
     xtemp <- sweep(xtemp, 2, xbar, FUN = "-")
-  }
-  else xbar <- rep(0, ncol(xtemp))
-  
-  sel <- apply(xtemp, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
-  if (any(sel)) {
-    # drop any column of x with < 2 unique values (empty interaction levels)
-    # exception is column of 1s isn't dropped 
-    warning("Dropped empty interaction levels: ",
-            paste(colnames(xtemp)[sel], collapse = ", "))
-    xtemp <- xtemp[, !sel, drop = FALSE]
-    xbar <- xbar[!sel]
+  } else {
+    xbar <- rep(0, ncol(xtemp))
   }
   
-  return(nlist(xtemp, xbar, has_intercept))
+  dropped <- drop_empty_levels(xtemp, xbar)
+  nlist(xtemp = dropped$x, 
+        xbar = dropped$xbar, 
+        has_intercept, 
+        dropped_cols = dropped$dropped_cols)
 }
 
 # Deal with priors

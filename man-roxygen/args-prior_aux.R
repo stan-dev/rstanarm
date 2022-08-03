@@ -14,7 +14,7 @@
 #'   parameters.
 #'   
 #'   The default prior is described in the vignette 
-#'   \href{http://mc-stan.org/rstanarm/articles/priors.html}{\emph{Prior
+#'   \href{https://mc-stan.org/rstanarm/articles/priors.html}{\emph{Prior
 #'   Distributions for rstanarm Models}}.
 #'   If not using the default, \code{prior_aux} can be a call to
 #'   \code{exponential} to use an exponential distribution, or \code{normal},

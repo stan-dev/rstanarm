@@ -451,10 +451,10 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 
 #' Pairs method for stanreg objects
 #' 
-#' Interface to \pkg{bayesplot}'s \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}} function 
-#' for use with \pkg{rstanarm} models. Be careful not to specify too
-#' many parameters to include or the plot will be both hard to read and slow to
-#' render.
+#' Interface to \pkg{bayesplot}'s
+#' \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}} function for use with
+#' \pkg{rstanarm} models. Be careful not to specify too many parameters to
+#' include or the plot will be both hard to read and slow to render.
 #'
 #' @method pairs stanreg
 #' @export
@@ -465,9 +465,9 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
 #' @template args-regex-pars
-#' @param pars An optional character vetor of parameter names. All parameters
-#'   are included by default, but for models with more than just a few
-#'   parameters it may be far too many to visualize on a small computer screen
+#' @param pars An optional character vector of parameter names. All parameters 
+#'   are included by default, but for models with more than just a few 
+#'   parameters it may be far too many to visualize on a small computer screen 
 #'   and also may require substantial computing time.
 #' @param condition Same as the \code{condition} argument to
 #'   \code{\link[bayesplot]{mcmc_pairs}} except the \emph{default is different}
@@ -511,16 +511,7 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' # see 'condition' argument above for details on the plots below and
 #' # above the diagonal. default is to split by accept_stat__.
 #' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
-#'
-#' pairs(
-#'   example_model,
-#'   regex_pars = "herd:[2,7,9]",
-#'   diag_fun = "dens",
-#'   off_diag_fun = "hex"
-#' )
-#' }
-#'
-#' \donttest{
+#' 
 #' # for demonstration purposes, intentionally fit a model that
 #' # will (almost certainly) have some divergences
 #' fit <- stan_glm(
@@ -534,14 +525,14 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #'
 #' pairs(fit, pars = c("wt", "sigma", "log-posterior"))
 #'
-#' pairs(
-#'   fit,
-#'   pars = c("wt", "sigma", "log-posterior"),
-#'   transformations = list(sigma = "log"), # show log(sigma) instead of sigma
-#'   off_diag_fun = "hex" # use hexagonal heatmaps instead of scatterplots
-#' )
-#'
-#'
+#' # requires hexbin package
+#' # pairs(
+#' # fit, 
+#' #   pars = c("wt", "sigma", "log-posterior"), 
+#' #   transformations = list(sigma = "log"), # show log(sigma) instead of sigma
+#' #  off_diag_fun = "hex" # use hexagonal heatmaps instead of scatterplots
+#' # )
+#' 
 #' bayesplot::color_scheme_set("brightblue")
 #' pairs(
 #'   fit,

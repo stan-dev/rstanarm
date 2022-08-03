@@ -263,15 +263,22 @@ kfold.stanreg <-
     elpds <- rep(NA, length(elpds_unord))
     elpds[obs_order] <- elpds_unord
     
-    pointwise <- cbind(elpd_kfold = elpds, p_kfold = NA, kfoldic = -2 * elpds)
+    # for computing effective number of parameters
+    ll_full <- log_lik(x)
+    lpds <- apply(ll_full, 2, log_mean_exp)
+    ps <- lpds - elpds
+    
+    pointwise <- cbind(elpd_kfold = elpds, p_kfold = ps, kfoldic = -2 * elpds)
     est <- colSums(pointwise)
     se_est <- sqrt(N * apply(pointwise, 2, var))
     
     out <- list(
       estimates = cbind(Estimate = est, SE = se_est),
       pointwise = pointwise,
-      elpd_kfold = est[1],
-      se_elpd_kfold = se_est[1]
+      elpd_kfold = est[["elpd_kfold"]],
+      se_elpd_kfold = se_est[["elpd_kfold"]], 
+      p_kfold = est[["p_kfold"]],
+      se_p_kfold = se_est[["p_kfold"]]
     )
     rownames(out$estimates) <- colnames(pointwise)
     

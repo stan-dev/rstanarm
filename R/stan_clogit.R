@@ -17,7 +17,7 @@
 
 #' Conditional logistic (clogit) regression models via Stan
 #'
-#' \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 #' A model for case-control studies with optional prior distributions for the
 #' coefficients, intercept, and auxiliary parameters.
 #'
@@ -38,7 +38,7 @@
 #' @template args-sparse
 #' @template args-dots
 #' 
-#' @param formula,data,subset,na.action Same as for \code{\link[lme4]{glmer}},
+#' @param formula,data,subset,na.action,contrasts Same as for \code{\link[lme4]{glmer}},
 #'   except that any global intercept included in the formula will be dropped.
 #'   \emph{We strongly advise against omitting the \code{data} argument}. Unless
 #'   \code{data} is specified (and is a data frame) many post-estimation
@@ -71,7 +71,7 @@
 #'   
 #' @seealso The vignette for Bernoulli and binomial models, which has more
 #'   details on using \code{stan_clogit}.
-#'   \url{http://mc-stan.org/rstanarm/articles/}
+#'   \url{https://mc-stan.org/rstanarm/articles/}
 #' 
 #' @examples
 #' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
@@ -91,7 +91,8 @@
 #' all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr)) 
 #' }
 #' @importFrom lme4 findbars
-stan_clogit <- function(formula, data, subset, na.action = NULL, ..., 
+stan_clogit <- function(formula, data, subset, na.action = NULL, contrasts = NULL,
+                        ..., 
                         strata, prior = normal(autoscale=TRUE), 
                         prior_covariance = decov(), prior_PD = FALSE, 
                         algorithm = c("sampling", "optimizing", 
@@ -124,8 +125,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
     group <- glmod$reTrms
     group$strata <- glmod$strata <- as.factor(mf[,"(weights)"])
     group$decov <- prior_covariance
-  }
-  else {
+  } else {
     validate_glm_formula(formula)
     mf[[1L]] <- as.name("model.frame")
     mf$drop.unused.levels <- TRUE
@@ -134,6 +134,10 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
     mt <- attr(mf, "terms")
     X <- model.matrix(mt, mf, contrasts)
     Y <- array1D_check(model.response(mf, type = "any"))
+  }
+  contrasts <- attr(X, "contrasts")
+  if (is.factor(Y)) {
+    Y <- fac2bin(Y)
   }
   
   ord <- order(group$strata)
@@ -175,7 +179,7 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, ...,
   fit <- nlist(stanfit, algorithm, family = f, formula, data, offset, weights,
                x = X, y = Y, model = mf,  terms = mt, call, 
                na.action = attr(mf, "na.action"), 
-               contrasts = attr(X, "contrasts"), 
+               contrasts = contrasts, 
                stan_function = "stan_clogit", 
                glmod = if(has_bars) glmod)
   out <- stanreg(fit)
