@@ -34,15 +34,7 @@ TOLSCALES <- list(
   hr_fixef  = 0.5 # how many SEs can stan_surv HRs be from coxph/stpm2 HRs
 )
 
-source(test_path("helpers", "expect_matrix.R"))
-source(test_path("helpers", "expect_stanreg.R"))
-source(test_path("helpers", "expect_stanmvreg.R"))
-source(test_path("helpers", "expect_survfit_surv.R"))
-source(test_path("helpers", "expect_ppd.R"))
-source(test_path("helpers", "expect_equivalent_loo.R"))
-source(test_path("helpers", "get_tols_surv.R"))
-source(test_path("helpers", "recover_pars_surv.R"))
-source(test_path("helpers", "SW.R"))
+content("stan_surv")
 
 eo <- function(...) { expect_output (...) }
 ee <- function(...) { expect_error  (...) }
@@ -269,17 +261,17 @@ for (j in c(1:33)) {
     if (mod$ndelayed == 0) # only test if no delayed entry
       test_that("posterior_survfit works with estimation data", {
         SW(ps <- posterior_survfit(mod))
-        expect_survfit(ps)
+        expect_survfit_surv(ps)
       })
     
     test_that("posterior_survfit works with new data (one individual)", {
       SW(ps <- posterior_survfit(mod, newdata = nd1))
-      expect_survfit(ps)
+      expect_survfit_surv(ps)
     })
     
     test_that("posterior_survfit works with new data (multiple individuals)", {
       SW(ps <- posterior_survfit(mod, newdata = nd2))
-      expect_survfit(ps)
+      expect_survfit_surv(ps)
     })
     
   }
@@ -405,9 +397,9 @@ compare_surv <- function(data, basehaz = "weibull", ...) {
                      refresh = REFRESH,
                      chains  = CHAINS,
                      seed    = SEED, ...)
-  tols <- get_tols(surv1, tolscales = TOLSCALES)
-  pars_surv <- recover_pars(surv1)
-  pars_stan <- recover_pars(stan1)
+  tols <- get_tols_surv(surv1, tolscales = TOLSCALES)
+  pars_surv <- recover_pars_surv(surv1)
+  pars_stan <- recover_pars_surv(stan1)
   for (i in names(tols$fixef))
     expect_equal(pars_surv$fixef[[i]],
                  pars_stan$fixef[[i]],
@@ -478,9 +470,9 @@ compare_surv <- function(data, basehaz = "weibull-aft", ...) {
                      chains  = CHAINS,
                      seed    = SEED, 
                      ...)
-  tols <- get_tols(surv1, tolscales = TOLSCALES)
-  pars_surv <- recover_pars(surv1)
-  pars_stan <- recover_pars(stan1)
+  tols <- get_tols_surv(surv1, tolscales = TOLSCALES)
+  pars_surv <- recover_pars_surv(surv1)
+  pars_stan <- recover_pars_surv(stan1)
   for (i in names(tols$fixef))
     expect_equal(pars_surv$fixef[[i]],
                  pars_stan$fixef[[i]],
@@ -552,10 +544,10 @@ o<-SW(stan1 <- stan_surv(
   refresh = REFRESH, 
   iter    = ITER))
 
-tols <- get_tols(surv1, tolscales = TOLSCALES)
+tols <- get_tols_surv(surv1, tolscales = TOLSCALES)
 
-pars_surv <- recover_pars(surv1)
-pars_stan <- recover_pars(stan1)
+pars_surv <- recover_pars_surv(surv1)
+pars_stan <- recover_pars_surv(stan1)
 
 for (i in names(tols$fixef))
   expect_equal(pars_surv$fixef[[i]],

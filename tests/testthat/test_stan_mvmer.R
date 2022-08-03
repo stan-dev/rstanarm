@@ -165,9 +165,9 @@ if (interactive()) {
   compare_glmer <- function(fmLong, fam = gaussian, ...) {
     SW(y1 <- stan_glmer(fmLong, pbcLong, fam, iter = 1000, chains = CHAINS, seed = SEED, refresh = 0))
     SW(y2 <- stan_mvmer(fmLong, pbcLong, fam, iter = 1000, chains = CHAINS, seed = SEED, ..., refresh = 0))
-    tols <- get_tols(y1, tolscales = TOLSCALES)
-    pars <- recover_pars(y1)
-    pars2 <- recover_pars(y2)
+    tols <- get_tols_jm(y1, tolscales = TOLSCALES)
+    pars <- recover_pars_jm(y1)
+    pars2 <- recover_pars_jm(y2)
     for (i in names(tols$fixef))
       expect_equal(pars$fixef[[i]], pars2$fixef[[i]], tol = tols$fixef[[i]])     
     for (i in names(tols$ranef))

@@ -352,9 +352,9 @@ compare_glmer <- function(fmLong, fam = gaussian, ...) {
   s1 <- coxph(fmSurv, data = pbcSurv)
   j1 <- stan_jm(fmLong, pbcLong, fmSurv, pbcSurv, time_var = "year", family = fam, 
                 assoc = NULL, iter = 1000, chains = CHAINS, seed = SEED, ...) 
-  tols <- get_tols(y1, s1, tolscales = TOLSCALES)
-  pars <- recover_pars(y1, s1)
-  parsjm <- recover_pars(j1)
+  tols <- get_tols_jm(y1, s1, tolscales = TOLSCALES)
+  pars <- recover_pars_jm(y1, s1)
+  parsjm <- recover_pars_jm(j1)
   for (i in names(tols$fixef))
     expect_equal(pars$fixef[[i]], parsjm$fixef[[i]], tol = tols$fixef[[i]], info = fam)     
   for (i in names(tols$ranef))
@@ -549,17 +549,17 @@ for (j in c(1:30)) {
     
     test_that("posterior_survfit works with estimation data", {
       SW(ps <- posterior_survfit(mod))
-      expect_survfit(ps)
+      expect_survfit_jm(ps)
     })
     
     test_that("posterior_survfit works with new data (one individual)", {
       SW(ps <- posterior_survfit(mod, newdataLong = ndL1, newdataEvent = ndE1))
-      expect_survfit(ps)
+      expect_survfit_jm(ps)
     })  
     
     test_that("posterior_survfit works with new data (multiple individuals)", {
       SW(ps <- posterior_survfit(mod, newdataLong = ndL2, newdataEvent = ndE2))
-      expect_survfit(ps)
+      expect_survfit_jm(ps)
     })
   }
 }
