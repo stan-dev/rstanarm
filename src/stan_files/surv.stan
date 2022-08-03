@@ -839,15 +839,15 @@ model {
         }
         else {
           if (nevent > 0) eta_event +=
-            csr_matrix_times_vector2(nevent, q, w_event, v_event, u_event, b);
+            csr_matrix_times_vector(nevent, q, w_event, v_event, u_event, b);
           if (nlcens > 0) eta_lcens +=
-            csr_matrix_times_vector2(nlcens, q, w_lcens, v_lcens, u_lcens, b);
+            csr_matrix_times_vector(nlcens, q, w_lcens, v_lcens, u_lcens, b);
           if (nrcens > 0) eta_rcens +=
-            csr_matrix_times_vector2(nrcens, q, w_rcens, v_rcens, u_rcens, b);
+            csr_matrix_times_vector(nrcens, q, w_rcens, v_rcens, u_rcens, b);
           if (nicens > 0) eta_icens +=
-            csr_matrix_times_vector2(nicens, q, w_icens, v_icens, u_icens, b);
+            csr_matrix_times_vector(nicens, q, w_icens, v_icens, u_icens, b);
           if (ndelay > 0) eta_delay +=
-            csr_matrix_times_vector2(ndelay, q, w_delay, v_delay, u_delay, b);
+            csr_matrix_times_vector(ndelay, q, w_delay, v_delay, u_delay, b);
         }
       }
 
@@ -1006,19 +1006,19 @@ model {
         }
         else {
           if (Nevent > 0) eta_epts_event +=
-            csr_matrix_times_vector2(Nevent, q, w_epts_event, v_epts_event, u_epts_event, b);
+            csr_matrix_times_vector(Nevent, q, w_epts_event, v_epts_event, u_epts_event, b);
           if (qevent > 0) eta_qpts_event +=
-            csr_matrix_times_vector2(qevent, q, w_qpts_event, v_qpts_event, u_qpts_event, b);
+            csr_matrix_times_vector(qevent, q, w_qpts_event, v_qpts_event, u_qpts_event, b);
           if (qlcens > 0) eta_qpts_lcens +=
-            csr_matrix_times_vector2(qlcens, q, w_qpts_lcens, v_qpts_lcens, u_qpts_lcens, b);
+            csr_matrix_times_vector(qlcens, q, w_qpts_lcens, v_qpts_lcens, u_qpts_lcens, b);
           if (qrcens > 0) eta_qpts_rcens +=
-            csr_matrix_times_vector2(qrcens, q, w_qpts_rcens, v_qpts_rcens, u_qpts_rcens, b);
+            csr_matrix_times_vector(qrcens, q, w_qpts_rcens, v_qpts_rcens, u_qpts_rcens, b);
           if (qicens > 0) eta_qpts_icenl +=
-            csr_matrix_times_vector2(qicens, q, w_qpts_icens, v_qpts_icens, u_qpts_icens, b);
+            csr_matrix_times_vector(qicens, q, w_qpts_icens, v_qpts_icens, u_qpts_icens, b);
           if (qicens > 0) eta_qpts_icenu +=
-            csr_matrix_times_vector2(qicens, q, w_qpts_icens, v_qpts_icens, u_qpts_icens, b);
+            csr_matrix_times_vector(qicens, q, w_qpts_icens, v_qpts_icens, u_qpts_icens, b);
           if (qdelay > 0) eta_qpts_delay +=
-            csr_matrix_times_vector2(qdelay, q, w_qpts_delay, v_qpts_delay, u_qpts_delay, b);
+            csr_matrix_times_vector(qdelay, q, w_qpts_delay, v_qpts_delay, u_qpts_delay, b);
         }
 
       }
