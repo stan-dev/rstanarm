@@ -2,6 +2,7 @@ exec/*.rda
 .Rproj.user
 .Rhistory
 src/stan_files/*.o
+src/stan_files/*.o.tmp
 src/stan_files/*.cc
 src/stan_files/*.hpp
 src/rstanarm.so

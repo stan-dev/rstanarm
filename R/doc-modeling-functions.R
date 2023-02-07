@@ -93,7 +93,7 @@
 #'    processes (i.e. a variety of association structures).
 #'  }
 #' }
-#'
-#' @seealso \url{http://mc-stan.org/rstanarm/}
-#'
+#' 
+#' @seealso \url{https://mc-stan.org/rstanarm/}
+#' 
 NULL

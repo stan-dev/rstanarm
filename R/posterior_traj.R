@@ -245,6 +245,7 @@
 #'   # effects distribution, and then integrating (ie, averaging) over these. 
 #'   # Our marginal prediction will therefore capture the between-individual 
 #'   # variation associated with the random effects.
+#'   
 #'   nd <- data.frame(id = rep("new1", 11), year = (0:10 / 2))
 #'   pt7 <- posterior_traj(example_jm, newdataLong = nd, dynamic = FALSE)
 #'   head(pt7)  # note the greater width of the uncertainty interval compared 
@@ -267,6 +268,7 @@
 #'   # the fixed effect component of the model, we simply specify 're.form = NA'. 
 #'   # (We will use the same covariate values as used in the prediction for 
 #'   # example for pt5).
+#'   
 #'   pt8 <- posterior_traj(example_jm, newdataLong = nd, dynamic = FALSE, 
 #'                         re.form = NA)
 #'   head(pt8)  # note the much narrower ci, compared with pt5
@@ -299,7 +301,9 @@ posterior_traj <- function(object,
   id_var    <- object$id_var
   time_var  <- object$time_var
   grp_stuff <- object$grp_stuff[[m]]
-  
+
+  glmod     <- object$glmod[[m]]
+
   if (!is.null(seed)) 
     set.seed(seed)
   
@@ -410,14 +414,20 @@ posterior_traj <- function(object,
       newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]])
     }
   }
+
+    
+  if (isTRUE(as.logical(glmod$has_offset))) {
+    # create a temporary data frame with a fake outcome to avoid error
+    response_name <- as.character(formula(object)[[m]])[2]
+    newX_temp <- cbind(0, newX)
+    colnames(newX_temp) <- c(response_name, colnames(newX))
+    newOffset <- model.offset(model.frame(terms(glmod), newX_temp))
+  } else {
+    newOffset <- NULL
+  }
   
-  # Obtain posterior predictions at specified times
-  ytilde <- posterior_predict(object, m = m, 
-                              newdata = newX, 
-                              stanmat = stanmat, 
-                              ...)
+  ytilde <- posterior_predict(object, newdata = newX, m = m, stanmat = stanmat, offset = newOffset, ...)
   
-  # Optionally return S * N matrix of draws (instead of data frame)
   if (return_matrix) {
     attr(ytilde, "mu") <- NULL # remove attribute mu
     return(ytilde)

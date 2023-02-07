@@ -13,7 +13,7 @@ citEntry(entry = "Misc",
                     person("Sam", "Brilleman")),
          note = version_note,
          year = year,
-         url = "https://mc-stan.org/rstanarm",
+         url = "https://mc-stan.org/rstanarm/",
          textVersion =
            paste0("Goodrich B, Gabry J, Ali I & Brilleman S. (", year, "). ",
                  title = "rstanarm: Bayesian applied regression modeling via Stan. ",

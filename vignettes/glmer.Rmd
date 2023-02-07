@@ -173,9 +173,10 @@ For this reason, it is sensible to use a scale-invariant prior for $\tau$.
 We choose a Gamma distribution, with shape and scale parameters both set to $1$
 by default, implying a unit-exponential distribution. Users can set the shape 
 hyperparameter to some value greater than one to ensure that the posterior trace
-is not zero. In the case where $\boldsymbol{\Sigma}$ is $1\times 1$, this shape
-parameter is the cross-group standard deviation in the parameters and its square
-is the variance.
+is not zero. In the case where $\boldsymbol{\Sigma}$ is $1\times 1$, $\tau$ is 
+the cross-group standard deviation in the parameters and its square is the 
+variance (so the Gamma prior with its shape and scale directly applies to the 
+cross-group standard deviation in the parameters).
 
 # Comparison with __lme4__
 

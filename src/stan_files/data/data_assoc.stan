@@ -9,6 +9,9 @@
 
     // used for centering assoc terms
     vector[a_K] a_xbar;
+    
+    // used for scaling assoc terms
+    vector[a_K] a_scale;
 
     // 0 = no assoc structure, 1 = any assoc structure
     int<lower=0,upper=1> assoc;
@@ -58,6 +61,11 @@
     matrix[assoc_uses[1,1] == 1 ? nrow_y_Xq[1] : 0, yK[1]] y1_xq_eta;
     matrix[assoc_uses[1,2] == 1 ? nrow_y_Xq[2] : 0, yK[2]] y2_xq_eta;
     matrix[assoc_uses[1,3] == 1 ? nrow_y_Xq[3] : 0, yK[3]] y3_xq_eta;
+    
+    // offset values at quadpoints
+    vector[has_offset[1] && assoc_uses[1,1] == 1 ? nrow_y_Xq[1] : 0] y1_offset_eta;
+    vector[has_offset[2] && assoc_uses[1,2] == 1 ? nrow_y_Xq[2] : 0] y2_offset_eta;
+    vector[has_offset[3] && assoc_uses[1,3] == 1 ? nrow_y_Xq[3] : 0] y3_offset_eta;
 
     // re design matrix at quadpoints, group factor 1
     vector[assoc_uses[1,1] == 1 && bK1_len[1] > 0 ? nrow_y_Xq[1] : 0] y1_z1q_eta[bK1_len[1]];
@@ -81,6 +89,11 @@
     matrix[assoc_uses[2,1] == 1 ? nrow_y_Xq[1] : 0, yK[1]] y1_xq_eps;
     matrix[assoc_uses[2,2] == 1 ? nrow_y_Xq[2] : 0, yK[2]] y2_xq_eps;
     matrix[assoc_uses[2,3] == 1 ? nrow_y_Xq[3] : 0, yK[3]] y3_xq_eps;
+    
+    // offset values at quadpoints
+    vector[has_offset[1] && assoc_uses[2,1] == 1 ? nrow_y_Xq[1] : 0] y1_offset_eps;
+    vector[has_offset[2] && assoc_uses[2,2] == 1 ? nrow_y_Xq[2] : 0] y2_offset_eps;
+    vector[has_offset[3] && assoc_uses[2,3] == 1 ? nrow_y_Xq[3] : 0] y3_offset_eps;
 
     // re design matrix at quadpoints, group factor 1
     vector[assoc_uses[2,1] == 1 && bK1_len[1] > 0 ? nrow_y_Xq[1] : 0] y1_z1q_eps[bK1_len[1]];
@@ -109,6 +122,11 @@
     matrix[assoc_uses[3,1] == 1 ? nrow_y_Xq_auc : 0, yK[1]] y1_xq_auc;
     matrix[assoc_uses[3,2] == 1 ? nrow_y_Xq_auc : 0, yK[2]] y2_xq_auc;
     matrix[assoc_uses[3,3] == 1 ? nrow_y_Xq_auc : 0, yK[3]] y3_xq_auc;
+    
+    // offset values at quadpoints
+    vector[has_offset[1] && assoc_uses[3,1] == 1 ? nrow_y_Xq_auc : 0] y1_offset_auc;
+    vector[has_offset[2] && assoc_uses[3,2] == 1 ? nrow_y_Xq_auc : 0] y2_offset_auc;
+    vector[has_offset[3] && assoc_uses[3,3] == 1 ? nrow_y_Xq_auc : 0] y3_offset_auc;
 
     // re design matrix at quadpoints, group factor 1
     vector[assoc_uses[3,1] == 1 && bK1_len[1] > 0 ? nrow_y_Xq_auc : 0] y1_z1q_auc[bK1_len[1]];

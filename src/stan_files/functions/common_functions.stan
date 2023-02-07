@@ -209,7 +209,7 @@
    * Cornish-Fisher expansion for standard normal to Student t
    *
    * See result 26.7.5 of
-   * http://people.math.sfu.ca/~cbm/aands/page_949.htm
+   * https://people.math.sfu.ca/~cbm/aands/page_949.htm
    *
    * @param z A scalar distributed standard normal
    * @param df A scalar degrees of freedom
@@ -241,26 +241,11 @@
     int V[t,N];
     int pos = 1;
     if (t > 0) for (j in 1:N) for (i in 1:t) {
-      V[i,j] = v[pos] + 1;
+      V[i,j] = v[pos]; // + 1
       pos += 1;
     }
     return V;
   }
-
-  /** 
-  * faster version of csr_matrix_times_vector
-  * declared here and defined in C++
-  *
-  * @param m Integer number of rows
-  * @param n Integer number of columns
-  * @param w Vector (see reference manual)
-  * @param v Integer array (see reference manual)
-  * @param u Integer array (see reference manual)
-  * @param b Vector that is multiplied from the left by the CSR matrix
-  * @return A vector that is the product of the CSR matrix and b
-  */
-  vector csr_matrix_times_vector2(int m, int n, vector w, 
-                                  int[] v, int[] u, vector b);
 
   /**
    * Calculate lower bound on intercept

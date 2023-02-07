@@ -1,8 +1,8 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.21.2
-Date: 2020-07-21
+Version: 2.21.3
+Date: 2022-04-08
 Encoding: UTF-8
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
@@ -52,6 +52,7 @@ Imports:
     RcppParallel (>= 5.0.1),
     utils
 Suggests:
+    biglm,
     betareg,
     data.table (>= 1.10.0),
     digest,
@@ -74,4 +75,4 @@ UseLTO: true
 NeedsCompilation: yes
 URL: https://mc-stan.org/rstanarm/, https://discourse.mc-stan.org
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2

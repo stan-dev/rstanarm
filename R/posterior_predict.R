@@ -66,9 +66,7 @@
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations from the
 #'   posterior predictive distribution. Each row of the matrix is a vector of 
 #'   predictions generated using a single draw of the model parameters from the 
-#'   posterior distribution. The returned matrix will also have class
-#'   \code{"ppd"} to indicate it contains draws from the posterior predictive
-#'   distribution.
+#'   posterior distribution.
 #'
 #' @note For binomial models with a number of trials greater than one (i.e., not
 #'   Bernoulli models), if \code{newdata} is specified then it must include all
@@ -168,8 +166,6 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
     stanmat <- dots[["stanmat"]] # possibly incl. new b pars (dynamic preds)
     if (is.null(m)) 
       STOP_arg_required_for_stanmvreg(m)
-    if (!is.null(offset))
-      stop2("'offset' cannot be specified for stanmvreg objects.")
   } else {
     m <- NULL
     stanmat <- NULL
@@ -239,9 +235,9 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   # if function is called from posterior_traj then add mu as attribute
   fn <- tryCatch(sys.call(-3)[[1]], error = function(e) NULL)
   if (!is.null(fn) && grepl("posterior_traj", deparse(fn), fixed = TRUE))
-    return(structure(ytilde, mu = ppargs$mu, class = c("ppd", class(ytilde))))
+    return(structure(ytilde, mu = ppargs$mu, class = class(ytilde)))
   
-  structure(ytilde, class = c("ppd", class(ytilde)))
+  ytilde
 }
 
 #' @rdname posterior_predict.stanreg
@@ -250,7 +246,8 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
 #' @template args-m
 #' 
 posterior_predict.stanmvreg <- function(object, m = 1, newdata = NULL, draws = NULL,
-                                        re.form = NULL, fun = NULL, seed = NULL, ...) {
+                                        re.form = NULL, fun = NULL, seed = NULL,
+                                        offset = NULL, ...) {
   validate_stanmvreg_object(object)
   dots <- list(...)
   if ("newdataLong" %in% names(dots))
@@ -259,7 +256,7 @@ posterior_predict.stanmvreg <- function(object, m = 1, newdata = NULL, draws = N
     stop2("'newdataEvent' should not be specified for posterior_predict.")
   out <- posterior_predict.stanreg(object, newdata = newdata, draws = draws,
                                    re.form = re.form, fun = fun, seed = seed,
-                                   offset = NULL, m = m, ...)
+                                   offset = offset, m = m, ...)
   out
 }  
   
@@ -405,6 +402,9 @@ pp_args <- function(object, data, m = NULL) {
 #   some stan_betareg models "" is also included in the list.
 pp_eta <- function(object, data, draws = NULL, m = NULL, stanmat = NULL) {
   x <- data$x
+  if (!is.null(object$dropped_cols)) {
+    x <- x[, !(colnames(x) %in% object$dropped_cols), drop = FALSE]
+  }
   S <- if (is.null(stanmat)) posterior_sample_size(object) else nrow(stanmat)
   if (is.null(draws))
     draws <- S

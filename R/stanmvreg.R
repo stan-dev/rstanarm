@@ -121,6 +121,7 @@ stanmvreg <- function(object) {
     out$epsilon   <- object$epsilon    
     out$assoc     <- object$assoc
     out$assocmod  <- list_nms(object$assocmod, M, stub) 
+    out$scale_assoc <- object$scale_assoc
     out$dataLong  <- list_nms(object$dataLong, M, stub) 
     out$dataEvent <- object$dataEvent
     out$grp_stuff <- object$grp_stuff

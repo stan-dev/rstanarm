@@ -15,10 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat 
-# package and then running the code below possibly with options(mc.cores = 4).
-
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 stopifnot(require(lme4))
 # stopifnot(require(gamm4))
 stopifnot(require(HSAUR3))
@@ -27,12 +24,12 @@ CHAINS <- 2
 SEED <- 123
 REFRESH <- ITER
 set.seed(SEED)
-if (interactive()) options(mc.cores = parallel::detectCores())
 FIXEF_tol <- 0.05
 RANEF_tol <- 0.25
 
-source(test_path("helpers", "expect_stanreg.R"))
-source(test_path("helpers", "SW.R"))
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 
 SW(fit <- stan_lmer(Reaction / 10 ~ Days + (Days | Subject), 
                     data = sleepstudy, refresh = 0,
@@ -120,9 +117,19 @@ test_that("stan_lmer returns an error when 'family' specified", {
   )
 })
 
+test_that("error if y is character", {
+  expect_error(
+    stan_lmer(as.character(mpg) ~ wt + (1|cyl),  data = mtcars),
+    "Outcome variable can't be type 'character'"
+  )
+  expect_error(
+    stan_glmer.nb(as.character(mpg) ~ wt + (1|cyl),  data = mtcars),
+    "Outcome variable can't be type 'character'"
+  )
+})
+
 
 context("stan_gamm4")
-source(test_path("helpers", "expect_gg.R"))
 test_that("stan_gamm4 returns stanreg object", {
   skip_if_not_installed("mgcv")
   sleepstudy$y <- sleepstudy$Reaction / 10
@@ -152,27 +159,33 @@ test_that("stan_gamm4 doesn't error when bs='cc", {
   data <- data.frame(x, x2, y)
   
   # only run a few iter to make sure it doesn't error
-  fit1 <- suppressWarnings(stan_gamm4(y ~ x2 + s(x, bs = "cc"), data=data, 
-                                     iter = 5, chains = 1, init = 0, refresh = 0))
+  SW(fit1 <- stan_gamm4(y ~ x2 + s(x, bs = "cc"), data=data, iter = 5, chains = 1, init = 0, refresh = 0))
   expect_stanreg(fit1)
   
   # with another smooth term
-  fit2 <- suppressWarnings(stan_gamm4(y ~ s(x2) + s(x, bs = "cc"), data=data, 
-                                     iter = 5, chains = 1, init = 0, refresh = 0))
+  SW(fit2 <- stan_gamm4(y ~ s(x2) + s(x, bs = "cc"), data=data, iter = 5, chains = 1, init = 0, refresh = 0))
   expect_stanreg(fit2)
   
   # with another 'cc' smooth term
-  fit3 <- suppressWarnings(stan_gamm4(y ~ s(x2, bs = "cc") + s(x, bs = "cc"), data=data, 
-                                     iter = 5, chains = 1, init = 0, refresh = 0))
+  SW(fit3 <- stan_gamm4(y ~ s(x2, bs = "cc") + s(x, bs = "cc"), data=data, iter = 5, chains = 1, init = 0, refresh = 0))
   expect_stanreg(fit3)
 })
 
-
+test_that("stan_gamm4 errors if no smooth terms in formula", {
+  dat <- data.frame(
+    y = rnorm(100), 
+    x = rnorm(100), 
+    id = gl(5, 20)
+  )
+  expect_error(
+    stan_gamm4(y ~ x, random = ~(1 | id), data = dat),
+    "Formula must have at least one smooth term to use stan_gamm4"
+  )
+})
 
 
 test_that("loo/waic for stan_glmer works", {
   ll_fun <- rstanarm:::ll_fun
-  source(test_path("helpers", "expect_equivalent_loo.R"))
   
   # gaussian
   expect_equivalent_loo(fit)
@@ -183,12 +196,11 @@ test_that("loo/waic for stan_glmer works", {
   expect_identical(ll_fun(example_model), rstanarm:::.ll_binomial_i)
 })
 
-SW <- suppressWarnings
 context("posterior_predict (stan_gamm4)")
 test_that("stan_gamm4 returns expected result for sleepstudy example", {
   skip_if_not_installed("mgcv")
   sleepstudy$y <- sleepstudy$Reaction / 10
-  fit <- SW(stan_gamm4(y ~ s(Days), data = sleepstudy,
+  SW(fit <- stan_gamm4(y ~ s(Days), data = sleepstudy,
                        random = ~(1|Subject), chains = CHAINS, iter = ITER, 
                        seed = SEED, refresh = 0))
   expect_silent(yrep1 <- posterior_predict(fit))
@@ -200,14 +212,12 @@ test_that("stan_gamm4 returns expected result for sleepstudy example", {
 
 
 context("posterior_predict (stan_(g)lmer)")
-source(test_path("helpers", "check_for_error.R"))
-source(test_path("helpers", "expect_linpred_equal.R"))
 test_that("compatible with stan_lmer", {
-  check_for_error(fit)
+  check_for_pp_errors(fit)
   expect_linpred_equal(fit)
 })
 test_that("compatible with stan_glmer (binomial)", {
-  check_for_error(example_model)
+  check_for_pp_errors(example_model)
   expect_linpred_equal(example_model)
   predprob <- posterior_linpred(example_model, transform = TRUE)
   expect_true(all(predprob > 0) && all(predprob < 1))
@@ -216,9 +226,9 @@ test_that("compatible with stan_(g)lmer with transformation in formula", {
   d <- mtcars
   d$cyl <- as.factor(d$cyl)
   args <- list(formula = mpg ~ log1p(wt) + (1|cyl) + (1|gear), data = d, 
-               iter = ITER, chains = CHAINS,  seed = SEED, refresh = 0)
-  fit1 <- SW(do.call("stan_lmer", args))
-  fit2 <- SW(do.call("stan_glmer", args))
+               iter = 10, chains = 1,  seed = SEED, refresh = 0)
+  SW(fit1 <- do.call("stan_lmer", args))
+  SW(fit2 <- do.call("stan_glmer", args))
   nd <- d[6:10, ]
   nd$wt <- runif(5)
   expect_silent(posterior_predict(fit1))
@@ -234,19 +244,19 @@ test_that("compatible with stan_(g)lmer with transformation in formula", {
 
 test_that("compatible with stan_lmer with offset", {
   offs <- rnorm(nrow(mtcars))
-  fit <- SW(stan_lmer(mpg ~ wt + (1|cyl) + (1 + wt|gear), data = mtcars, 
-                      prior = normal(0,1), iter = ITER, chains = CHAINS,
+  SW(fit <- stan_lmer(mpg ~ wt + (1|cyl) + (1 + wt|gear), data = mtcars, 
+                      prior = normal(0,1), iter = 10, chains = 1,
                       seed = SEED, refresh = 0, offset = offs))
   
   expect_warning(posterior_predict(fit, newdata = mtcars[1:2, ], offset = offs),
                  "STATS")
-  check_for_error(fit, offset = offs)
+  check_for_pp_errors(fit, offset = offs)
 })
 
 test_that("predition with family mgcv::betar doesn't error", {
   test_data <- data.frame(y = c(0.1, 0.3), x = c(TRUE, FALSE))
-  fit <- SW(stan_glmer(y ~ (1|x), family=mgcv::betar(link="logit"), 
-                       data=test_data,  seed = 101, iter = 200, chains = 1, refresh = 0))
+  SW(fit <- stan_glmer(y ~ (1|x), family=mgcv::betar(link="logit"), 
+                       data=test_data,  seed = 101, iter = 10, chains = 1, refresh = 0))
   expect_silent(posterior_linpred(fit, newdata=test_data))
   expect_silent(posterior_predict(fit, newdata=test_data))
 })
@@ -260,14 +270,14 @@ test_that("posterior_predict close to predict.merMod for gaussian", {
   mod4 <- as.formula(log(mpg) ~ wt + (1 + wt|cyl) + (1 + wt + am|gear))
   
   lfit1 <- lmer(mod1, data = mtcars)
-  sfit1 <- stan_glmer(mod1, data = mtcars, iter = 400,
-                      chains = CHAINS, seed = SEED, refresh = 0)
+  SW(sfit1 <- stan_glmer(mod1, data = mtcars, iter = 400,
+                      chains = CHAINS, seed = SEED, refresh = 0))
   lfit2 <- update(lfit1, formula = mod2)
-  sfit2 <- update(sfit1, formula = mod2)
+  SW(sfit2 <- update(sfit1, formula = mod2))
   lfit3 <- update(lfit1, formula = mod3)
-  sfit3 <- update(sfit1, formula = mod3)
+  SW(sfit3 <- update(sfit1, formula = mod3))
   lfit4 <- update(lfit1, formula = mod4)
-  sfit4 <- update(sfit1, formula = mod4)
+  SW(sfit4 <- update(sfit1, formula = mod4))
   
   nd <- nd2 <- mtcars[1:5, ]
   nd2$cyl[2] <- 5 # add new levels

@@ -182,7 +182,7 @@
 #' \item \code{y} Number of roaches caught
 #' \item \code{roach1} Pretreatment number of roaches
 #' \item \code{treatment} Treatment indicator
-#' \item \code{senior} Indicator for only eldery residents in building
+#' \item \code{senior} Indicator for only elderly residents in building
 #' \item \code{exposure2} Number of days for which the roach traps were used
 #' }
 #' }
@@ -215,7 +215,7 @@
 #' \item \code{arsenic} Arsenic level in respondent's well
 #' \item \code{dist} Distance (meters) from the respondent's house to the
 #' nearest well with safe drinking water.
-#' \item \code{association} Indicator for member(s) of household participate
+#' \item \code{assoc} Indicator for member(s) of household participate
 #' in community organizations
 #' \item \code{educ} Years of education (head of household)
 #' }
@@ -224,13 +224,13 @@
 #' 
 #' @references 
 #' Carpenter, B. (2009) Bayesian estimators for the beta-binomial model of
-#' batting ability. \url{http://lingpipe-blog.com/2009/09/23/}
+#' batting ability. \url{https://lingpipe-blog.com/2009/09/23/}
 #' 
 #' Efron, B. and Morris, C. (1975) Data analysis using Stein's estimator and its
 #' generalizations. \emph{Journal of the American Statistical Association}
 #' \strong{70}(350), 311--319.
 #' 
-#' @templateVar armRef \url{http://stat.columbia.edu/~gelman/arm/}
+#' @templateVar armRef \url{https://stat.columbia.edu/~gelman/arm/}
 #' @template reference-gelman-hill
 #' 
 #' @references

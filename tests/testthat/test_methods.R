@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 library(lme4)
 library(MASS)
 SEED <- 12345
@@ -24,7 +24,9 @@ ITER <- 10
 CHAINS <- 2
 REFRESH <- 0
 
-SW <- suppressWarnings
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 
 N <- 200
 x <- rnorm(N, 2, 1)
@@ -35,37 +37,37 @@ y <- rbeta(N, mu * phi, (1 - mu) * phi)
 fake_dat <- data.frame(y, x, z)
 remove(N, x, y, z, mu, phi)
 
-capture.output(
-  stan_glm1 <- SW(stan_glm(mpg ~ wt + cyl, data = mtcars, iter = ITER,
-                           chains = CHAINS, seed = SEED, refresh = 0)),
+SW({
+  stan_glm1 <- stan_glm(mpg ~ wt + cyl, data = mtcars, iter = ITER,
+                           chains = CHAINS, seed = SEED, refresh = 0)
   stan_glm_opt1 <- stan_glm(mpg ~ wt + cyl, data = mtcars, algorithm = "optimizing",
-                            seed = SEED, refresh = 0),
-  stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", QR = TRUE, iter = 10000),
-  glm1 <- glm(mpg ~ wt + cyl, data = mtcars),
+                            seed = SEED, refresh = 0)
+  stan_glm_vb1 <- update(stan_glm_opt1, algorithm = "meanfield", QR = TRUE, iter = 10000)
+  glm1 <- glm(mpg ~ wt + cyl, data = mtcars)
   
-  lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin),
-  stan_lmer1 <- SW(stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin,
+  lmer1 <- lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin)
+  stan_lmer1 <- stan_lmer(diameter ~ (1|plate) + (1|sample), data = Penicillin,
                              prior_intercept = normal(0, 50, autoscale = FALSE),
                              prior_aux = normal(0, 10),
-                             iter = ITER, chains = CHAINS, seed = SEED, refresh = 0)),
-  lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy),
-  stan_lmer2 <- SW(stan_lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy,
+                             iter = ITER, chains = CHAINS, seed = SEED, refresh = 0)
+  lmer2 <- lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy)
+  stan_lmer2 <- stan_lmer(Reaction ~ Days + (Days | Subject), data = sleepstudy,
                              iter = ITER, chains = CHAINS, seed = SEED,
-                             refresh = 0)),
+                             refresh = 0)
   
-  stan_polr1 <- SW(stan_polr(tobgp ~ agegp, data = esoph, prior = R2(0.2, "mean"),
+  stan_polr1 <- stan_polr(tobgp ~ agegp, data = esoph, prior = R2(0.2, "mean"),
                              init_r = 0.1, iter = ITER, chains = CHAINS,
-                             seed = SEED, refresh = 0)),
-  polr1 <- polr(tobgp ~ agegp, data = esoph, Hess = TRUE),
+                             seed = SEED, refresh = 0)
+  polr1 <- polr(tobgp ~ agegp, data = esoph, Hess = TRUE)
   
-  stan_gamm41 <- SW(stan_gamm4(mpg ~ s(wt) + cyl, data = mtcars, iter = ITER,
-                               chains = CHAINS, seed = SEED, refresh = 0)),
+  stan_gamm41 <- stan_gamm4(mpg ~ s(wt) + cyl, data = mtcars, iter = ITER,
+                               chains = CHAINS, seed = SEED, refresh = 0)
 
-  stan_betareg1 <- SW(stan_betareg(y ~ x | z, data = fake_dat, 
+  stan_betareg1 <- stan_betareg(y ~ x | z, data = fake_dat, 
                                    link = "logit", link.phi = "log", refresh = 0,
-                                   iter = ITER, chains = CHAINS, seed = SEED)),
+                                   iter = ITER, chains = CHAINS, seed = SEED)
   betareg1 <- betareg::betareg(y ~ x | z, data = fake_dat, link = "logit", link.phi = "log")
-)
+})
 
 att_names <- function(object) {
   nms <- names(object)
@@ -317,9 +319,7 @@ test_that("coef returns the right structure", {
   check_sizes(coef_stan2, coef_lmer2)
 })
 test_that("coef ok if any 'ranef' missing from 'fixef'", {
-  SW(capture.output(
-    stan_lmer3 <- update(stan_lmer2, formula = . ~ (Days | Subject))
-  ))
+  SW(stan_lmer3 <- update(stan_lmer2, formula = . ~ (Days | Subject)))
   lmer3 <- update(lmer2, formula = . ~ (Days | Subject))
   coef_stan3 <- coef(stan_lmer3); coef_lmer3 <- coef(lmer3)
   check_att_names(coef_stan3, coef_lmer3)
@@ -627,7 +627,21 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_s3_class(s, "summary.stanreg")
   expect_output(print(s), "stan_betareg")
   expect_identical(attr(s, "algorithm"), "sampling")
+})
+
+test_that("print and summary include subset information", {
+  SW(fit <- stan_glm(mpg ~ wt, data = mtcars, subset = cyl == 4, iter = 5, chains = 1, refresh = 0))
+  expect_output(print(fit), "subset:       cyl == 4")
+  expect_output(print(summary(fit)), "subset:       cyl == 4")
   
+  SW(fit <- stan_glm(mpg ~ wt, data = mtcars, subset = rep(TRUE, 32), iter = 5, chains = 1, refresh = 0))
+  expect_output(print(fit), "subset:       rep(TRUE, 32)", fixed = TRUE)
+  expect_output(print(summary(fit)), "subset:       rep(TRUE, 32)", fixed = TRUE)
+  
+  sub <- mtcars$cyl == 4
+  SW(fit <- stan_glm(mpg ~ wt, data = mtcars, subset = sub, iter = 5, chains = 1, refresh = 0))
+  expect_output(print(fit), "subset:       sub", fixed = TRUE)
+  expect_output(print(summary(fit)), "subset:       sub", fixed = TRUE)
 })
 
 test_that("print and summary methods ok for optimization", {
@@ -645,20 +659,17 @@ test_that("print and summary methods ok for optimization", {
   counts <- c(18,17,15,20,10,20,25,13,12)
   outcome <- gl(3,1,9)
   treatment <- gl(3,3)  
-  capture.output(
-    fit <- stan_glm.nb(counts ~ outcome + treatment, algorithm = "optimizing",
-                       seed = SEED, refresh = 0)
-  )
+  
+  SW(fit <- stan_glm.nb(counts ~ outcome + treatment, algorithm = "optimizing",
+                       seed = SEED, refresh = 0))
   expect_output(print(fit), "reciprocal_dispersion")
 
   clotting <- data.frame(log_u = log(c(5,10,15,20,30,40,60,80,100)),
                          lot1 = c(118,58,42,35,27,25,21,19,18),
                          lot2 = c(69,35,26,21,18,16,13,12,12))
-  capture.output(
-    fit2 <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma(link="log"),
-                     algorithm = "optimizing", seed = SEED, refresh = 0),
-    fit3 <- update(fit2, family = inverse.gaussian(link = "log"))
-  )
+  SW(fit2 <- stan_glm(lot1 ~ log_u, data = clotting, family = Gamma(link="log"),
+                     algorithm = "optimizing", seed = SEED, refresh = 0))
+  SW(fit3 <- update(fit2, family = inverse.gaussian(link = "log")))
   expect_output(print(fit2), "shape")
   expect_output(print(fit3), "lambda")
 })

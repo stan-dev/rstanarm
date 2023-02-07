@@ -10,9 +10,9 @@
   // stuff for the sparse case
   int<lower=0> nnz_X;                      // number of non-zero elements in the implicit X matrix
   vector[nnz_X] w_X;                       // non-zero elements in the implicit X matrix
-  int<lower=0, upper = K - 1> v_X[nnz_X];  // column indices for w_X
+  int<lower=1, upper = K> v_X[nnz_X];  // column indices for w_X
   // where the non-zeros start in each row of X
-  int<lower=0, upper = rows(w_X) + 1> u_X[dense_X ? 0 : N + 1]; 
+  int<lower=1, upper = rows(w_X) + 1> u_X[dense_X ? 0 : N + 1]; 
   
   // smooths
   int<lower=0> K_smooth;
