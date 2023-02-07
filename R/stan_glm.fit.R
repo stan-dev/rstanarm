@@ -111,16 +111,69 @@ stan_glm.fit <-
     slab_scale <- NULL
   
   if (is.list(x)) {
-    x_stuff <- center_x(x[[1]], sparse)
-    smooth_map <- unlist(lapply(1:(length(x) - 1L), FUN = function(j) {
+    x_stuff <- center_x(x$X, sparse)
+    VAE <- x$VAE
+    if (!is.null(VAE)) {
+      W <- VAE$weights
+      B <- VAE$biases
+      
+      if (length(W) == 0) stop("weights must have positive length")
+      if (length(B) == 0) stop("biases must have positive length")
+      if (length(W) != length(B)) stop("weights and biases must have the same length")
+      if (!all(sapply(W, is.matrix)))  stop("weights must be a list of matrices")
+      if (!all(sapply(B, is.vector)))  stop("biases must be a list of vectors")
+      if (!all(sapply(B, is.numeric))) stop("biases must be a list of vectors")
+      r <- nrow(W[[1]])
+      if (length(B[[1]]) != r) stop("first matrix and vector not conformable")
+      if (length(W) > 1) for (d in 2:length(W)) {
+        if (ncol(W[[d]]) != r) stop("weight matrices not conformable")
+        if (nrow(W[[d]]) != length(B[[d]])) stop("weight matrix and vector not conformable")
+        r <- nrow(W[[d]])
+      }
+      if (length(B[[d]]) != length(y)) stop("last bias must be the same size as y")
+      
+      is_vae <- 1L
+      depth_vae <- length(W) - 1L
+      p_vae <- ncol(W[[1]])
+      ncoefs_vae <- ncol(W[[length(W)]])
+      K_vae <- max(sapply(W[-length(W)], dim))
+      
+      W_vae <- array(0, dim = c(K_vae, K_vae, depth_vae))
+      B_vae <- array(0, dim = c(K_vae, depth_vae))
+      for (d in 1:depth_vae) {
+        r <- nrow(W[[d]])
+        c <- ncol(W[[d]])
+        W_vae[1:r, 1:c, d] <- W[[d]]
+        B_vae[1:r, d] <- B[[d]]
+      }
+    } else {
+      is_vae <- 0L
+      depth_vae <- 0L
+      p_vae <- 0L
+      ncoefs_vae <- 0L
+      K_vae <- 0L
+      W_vae <- array(NA_real_, c(0L, 0L, 0L))
+      B_vae <- array(NA_real_, c(0L, 0L))
+    }
+    x$X <- NULL
+    x$VAE <- NULL
+    smooth_map <- unlist(lapply(seq_along(x), FUN = function(j) {
       rep(j, NCOL(x[[j + 1L]]))
     }))
-    S <- do.call(cbind, x[-1L])
+    S <- do.call(cbind, x)
   }
   else {
     x_stuff <- center_x(x, sparse)
     S <- matrix(NA_real_, nrow = nrow(x), ncol = 0L)
     smooth_map <- integer()
+    
+    is_vae <- 0L
+    depth_vae <- 0L
+    p_vae <- 0L
+    ncoefs_vae <- 0L
+    K_vae <- 0L
+    W_vae <- array(NA_real_, c(0L, 0L, 0L))
+    B_vae <- array(NA_real_, c(0L, 0L))
   }
   for (i in names(x_stuff)) # xtemp, xbar, has_intercept
     assign(i, x_stuff[[i]])
@@ -202,11 +255,13 @@ stan_glm.fit <-
       assign(i, prior_smooth_stuff[[i]])
     
     prior_scale_for_smooth <- array(prior_scale_for_smooth)
+    len_smooth_map <- length(smooth_map)
   } else {
     prior_dist_for_smooth <- 0L
     prior_mean_for_smooth <- array(NA_real_, dim = 0)
     prior_scale_for_smooth <- array(NA_real_, dim = 0)
     prior_df_for_smooth <- array(NA_real_, dim = 0)
+    len_smooth_map <- 0L
   }
   
   famname <- supported_families[fam]
@@ -327,8 +382,9 @@ stan_glm.fit <-
     slab_df_z = 0, slab_scale_z = 0,
     num_normals = if(prior_dist == 7) as.integer(prior_df) else integer(0),
     num_normals_z = integer(0),
-    clogit = 0L, J = 0L, strata = integer()
+    clogit = 0L, J = 0L, strata = integer(),
     # mean,df,scale for aux added below depending on family
+    len_smooth_map, is_vae, depth_vae, p_vae, ncoefs_vae, K_vae, W_vae, B_vae
   )
 
   # make a copy of user specification before modifying 'group' (used for keeping
@@ -432,6 +488,11 @@ stan_glm.fit <-
     standata$SSfun <- 0L
     standata$input <- double()
     standata$Dose <- double()
+  }
+  
+  if (is_vae) {
+    offset <- offset + B[[length(B)]]
+    S <- cbind(S, W[[length(W)]])
   }
   
   if (!is_bernoulli) {

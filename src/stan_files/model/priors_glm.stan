@@ -48,7 +48,7 @@
 
   if (K_smooth) {
     target += normal_lpdf(z_beta_smooth | 0, 1);
-    if (prior_dist_for_smooth > 0) {
+    if (prior_dist_for_smooth > 0) { // will be zero if is_vae
       real log_half = -0.693147180559945286;
       if (prior_dist_for_smooth == 1) 
         target += normal_lpdf(smooth_sd_raw | 0, 1) - log_half;

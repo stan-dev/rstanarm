@@ -53,9 +53,11 @@
 #'   return the response vector. In \code{stan_glm.fit}, a response vector.
 #' @param x In \code{stan_glm}, logical scalar indicating whether to
 #'   return the design matrix. In \code{stan_glm.fit}, usually a design matrix
-#'   but can also be a list of design matrices with the same number of rows, in
-#'   which case the first element of the list is interpreted as the primary design
-#'   matrix and the remaining list elements collectively constitute a basis for a
+#'   but can also be a list of matrices, in
+#'   which case the element named \code{X} is interpreted as the primary design
+#'   matrix, the optional element named \code{VAE} is a list of weights and 
+#'   biases for a Variational Auto Encoder (see \link{VAE}), 
+#'   and any remaining list elements collectively constitute a basis for a
 #'   smooth nonlinear function of the predictors indicated by the \code{formula}
 #'   argument to \code{\link{stan_gamm4}}.
 #' @param mean_PPD A logical value indicating whether the sample mean of the

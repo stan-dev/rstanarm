@@ -216,7 +216,7 @@ stan_gamm4 <-
     if (is.list(S[[s]]))
       S[[s]] <- do.call(cbind, S[[s]])
   }
-  X <- c(list(X), S)
+  X <- c(list(X = X), S)
   
   if (is.null(prior)) prior <- list()
   if (is.null(prior_intercept)) prior_intercept <- list()

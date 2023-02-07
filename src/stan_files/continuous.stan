@@ -46,6 +46,7 @@ data {
   // declares num_not_zero, w, v, u
 #include /data/glmer_stuff2.stan
 #include /data/data_betareg.stan
+#include /data/data_vae.stan
 
   int<lower=0,upper=10> SSfun; // nonlinear function indicator, 0 for identity
   vector[SSfun > 0  ? len_y : 0] input;

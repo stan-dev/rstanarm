@@ -21,6 +21,7 @@ data {
 #include /data/glmer_stuff.stan
   // declares num_not_zero, w, v, u
 #include /data/glmer_stuff2.stan
+#include /data/data_vae.stan
 }
 transformed data{
   real poisson_max = pow(2.0, 30.0);

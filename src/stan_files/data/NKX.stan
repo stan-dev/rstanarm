@@ -17,4 +17,5 @@
   // smooths
   int<lower=0> K_smooth;
   matrix[N,K_smooth] S;
-  int<lower=1> smooth_map[K_smooth];
+  int<lower=0> len_smooth_map;
+  int<lower=1> smooth_map[len_smooth_map];

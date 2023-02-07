@@ -22,6 +22,7 @@ data {
 #include /data/glmer_stuff.stan
   // declares num_not_zero, w, v, u
 #include /data/glmer_stuff2.stan
+#include /data/data_vae.stan
 }
 transformed data {
   real aux = not_a_number();

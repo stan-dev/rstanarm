@@ -282,3 +282,23 @@
     if (family == 4 && link == 5) return 0;
     return positive_infinity();
   }
+
+  /**
+   * Create transformed parameter vector via neural-network
+   *
+   * https://arxiv.org/abs/2002.06873
+   *
+   * but we transpose the weight matrices
+   *
+   * @param input initial vector
+   * @param W array of weight matrices 
+   * @param B array of bias vectors
+   * @return vector of coefficients
+   */
+  vector generator_vae(vector input, matrix[] W, vector[] B) {
+    int depth = size(W);
+    int K = depth > 0 ? rows(W[1]) : rows(input);
+    vector[K] beta = depth > 0 ? append_row(input, rep_vector(0, K - rows(input))) : input;
+    for (d in 1:depth) beta = tanh(B[d] + W[d] * beta);
+    return beta;
+  }

@@ -269,7 +269,9 @@ stan_betareg.fit <-
     num_normals_z = if (prior_dist_z == 7) 
       as.array(as.integer(prior_df_z)) else integer(0),
     len_y = nrow(xtemp), SSfun = 0L, input = double(), Dose = double(),
-    compute_mean_PPD = TRUE
+    compute_mean_PPD = TRUE,
+    is_vae = 0L, depth_vae = 0L, p_vae = 0L, K_vae = 0L, 
+    W_vae = array(NA_real_, dim = c(0L, 0L, 0L)), B_vae = array(NA_real_, dim = c(0L, 0L))
     )
 
   # call stan() to draw from posterior distribution

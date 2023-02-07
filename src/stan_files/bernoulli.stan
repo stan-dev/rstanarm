@@ -36,7 +36,9 @@ data {
   int<lower=0> K_smooth;
   matrix[N[1], K_smooth] S0;
   matrix[N[2], K_smooth] S1;
-  int<lower=1> smooth_map[K_smooth];
+  int<lower=0> len_smooth_map;
+  int<lower=1> smooth_map[len_smooth_map];
+#include /data/data_vae.stan
   
   int<lower=5,upper=5> family;
 
