@@ -2,14 +2,15 @@
 title: "Prior Distributions for rstanarm Models"
 author: "Jonah Gabry and Ben Goodrich"
 date: "`r Sys.Date()`"
-output: 
-  html_vignette: 
+output:
+  html_vignette:
     toc: yes
+vignette: >
+     %\VignetteEngine{knitr::rmarkdown}
+     %\VignetteIndexEntry{Prior Distributions for rstanarm Models}
+     %\VignetteEncoding{UTF-8}
 ---
-<!--
-%\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{Prior Distributions}
--->
+
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
 ```{r, child="children/SETTINGS-gg.txt"}
@@ -17,7 +18,7 @@ output:
 
 # July 2020 Update
 
-As of July 2020 there are a few changes to prior distributions: 
+As of July 2020 there are a few changes to prior distributions:
 
 * Except for in default priors, `autoscale` now defaults to `FALSE`. This means
 that when specifying custom priors you no longer need to manually set
@@ -27,22 +28,22 @@ that when specifying custom priors you no longer need to manually set
 (non-hierarchical) regression coefficients. See **Default priors and scale
 adjustments** below.
 
-We recommend the new book 
-[Regression and Other Stories](https://avehtari.github.io/ROS-Examples/), 
-which discusses the background behind the default priors in **rstanarm** and 
+We recommend the new book
+[Regression and Other Stories](https://avehtari.github.io/ROS-Examples/),
+which discusses the background behind the default priors in **rstanarm** and
 also provides examples of specifying non-default priors.
 
 # Introduction
 
-This vignette provides an overview of how the specification of prior 
-distributions works in the __rstanarm__ package. It is still a work in progress 
+This vignette provides an overview of how the specification of prior
+distributions works in the __rstanarm__ package. It is still a work in progress
 and more content will be added in future versions of __rstanarm__. Before
 reading this vignette it is important to first read the
-[How to Use the __rstanarm__ Package](rstanarm.html) 
+[How to Use the __rstanarm__ Package](rstanarm.html)
 vignette, which provides a general overview of the package.
 
-Every modeling function in __rstanarm__ offers a subset of the arguments in the 
-table below which are used for specifying prior distributions for the model 
+Every modeling function in __rstanarm__ offers a subset of the arguments in the
+table below which are used for specifying prior distributions for the model
 parameters.
 
 <br>
@@ -56,7 +57,7 @@ parameters.
 \* `stan_glm` also implies `stan_glm.nb`. `stan_glmer` implies `stan_lmer` and
 `stan_glmer.nb`.
 
-<br> 
+<br>
 
 The `stan_polr`, `stan_betareg`, and `stan_gamm4` functions also provide
 additional arguments specific only to those models:
@@ -69,14 +70,14 @@ additional arguments specific only to those models:
 | `prior_intercept_z` | `stan_betareg`| Intercept in the model for `phi`. |
 | `prior_phi` | `stan_betareg`| `phi`, if not modeled as function of predictors. |
 
-<br> 
+<br>
 
 To specify these arguments the user provides a call to one of the various
-available functions for specifying priors (e.g., `prior = normal(0, 1)`, `prior = cauchy(c(0, 1), c(1, 2.5))`). 
+available functions for specifying priors (e.g., `prior = normal(0, 1)`, `prior = cauchy(c(0, 1), c(1, 2.5))`).
 The documentation for these functions can be found at `help("priors")`. The
 __rstanarm__ documentation and the other [vignettes](index.html) provide many
 examples of using these arguments to specify priors and the documentation for
-these arguments on the help pages for the various __rstanarm__ modeling 
+these arguments on the help pages for the various __rstanarm__ modeling
 functions (e.g., `help("stan_glm")`) also explains which distributions can be
 used when specifying each of the prior-related arguments.
 
@@ -84,20 +85,20 @@ used when specifying each of the prior-related arguments.
 
 # Default (Weakly Informative) Prior Distributions
 
-With very few exceptions, the default priors in __rstanarm__ ---the priors used 
-if the arguments in the tables above are untouched--- are _not_ flat priors. 
-Rather, the defaults are intended to be _weakly informative_. That is, they are 
+With very few exceptions, the default priors in __rstanarm__ ---the priors used
+if the arguments in the tables above are untouched--- are _not_ flat priors.
+Rather, the defaults are intended to be _weakly informative_. That is, they are
 designed to provide moderate regularization and help stabilize computation. For
 many (if not most) applications the defaults will perform well, but this is not
 guaranteed (there are no default priors that make sense for every possible model
 specification).
 
 The way __rstanarm__ attempts to make priors weakly informative by default is to
-internally adjust the scales of the priors. How this works (and, importantly, 
+internally adjust the scales of the priors. How this works (and, importantly,
 how to turn it off) is explained below, but first we can look at the default
-priors in action by fitting a basic linear regression model with the `stan_glm` 
-function. For specifying priors, the `stan_glm` function accepts the arguments 
-`prior_intercept`, `prior`, and `prior_aux`. To use the default priors we just 
+priors in action by fitting a basic linear regression model with the `stan_glm`
+function. For specifying priors, the `stan_glm` function accepts the arguments
+`prior_intercept`, `prior`, and `prior_aux`. To use the default priors we just
 leave those arguments at their defaults (i.e., we don't specify them):
 
 ```{r, default-prior-1, results="hide"}
@@ -105,7 +106,7 @@ library("rstanarm")
 default_prior_test <- stan_glm(mpg ~ wt + am, data = mtcars, chains = 1)
 ```
 
-The `prior_summary` function provides a concise summary of the priors used: 
+The `prior_summary` function provides a concise summary of the priors used:
 
 ```{r, default-prior-summary}
 prior_summary(default_prior_test)
@@ -121,15 +122,15 @@ Starting from the bottom up, we can see that:
 is $\mathsf{exponential}(1)$. However, as a result of the automatic rescaling,
 the actual scale used was 6.03.
 
-* __Coefficients__: By default the regression coefficients (in this case the 
+* __Coefficients__: By default the regression coefficients (in this case the
 coefficients on the `wt` and `am` variables) are treated as a priori independent
 with normal priors centered at 0 and with scale (standard deviation) $2.5$. Like
 for `sigma`, in order for the default to be weakly informative __rstanarm__ will
 adjust the scales of the priors on the coefficients. As a result, the prior
 scales actually used were 15.40 and 30.20.
 
-* __Intercept__: For the intercept, the default prior is normal with mean $0$ 
-and standard deviation $2.5$, but in this case the standard deviation was 
+* __Intercept__: For the intercept, the default prior is normal with mean $0$
+and standard deviation $2.5$, but in this case the standard deviation was
 adjusted to 15.07. There is also a
 note in parentheses informing you that the prior applies to the intercept after
 all predictors have been centered (a similar note can be found in the
@@ -150,7 +151,7 @@ disable it if desired.
 
 ### Default priors and scale adjustments
 
-Automatic scale adjustments happen in two cases: 
+Automatic scale adjustments happen in two cases:
 
 1. When the default priors are used.
 2. When the user sets `autoscale=TRUE` when specifying their own prior (e.g., `normal(0, 3, autoscale=TRUE)`). See `help("priors")` for a list of distributions to see which have an `autoscale` argument.
@@ -159,22 +160,22 @@ Here we describe how the default priors work for the intercept, regression
 coefficients, and (if applicable) auxiliary parameters. Autoscaling when not
 using default priors works analogously (if `autoscale=TRUE`).
 
-Assume we have outcome $y$ and predictors $x_1,\ldots,x_k$ and our model has linear 
-predictor 
+Assume we have outcome $y$ and predictors $x_1,\ldots,x_k$ and our model has linear
+predictor
 
 $$
 \alpha + \beta_1 x_1 + \dots + \beta_K x_K.
 $$
 
-#### Regression coefficients 
+#### Regression coefficients
 
 The default prior on regression coefficients $\beta_k$ is
 
 $$
 \beta_k \sim \mathsf{Normal}(0, \, 2.5 \cdot s_y/s_x)
 $$
-where $s_x = \text{sd}(x)$ and 
-$$ 
+where $s_x = \text{sd}(x)$ and
+$$
 s_y =
 \begin{cases}
 \text{sd}(y) & \text{if } \:\: {\tt family=gaussian(link)}, \\
@@ -183,21 +184,21 @@ s_y =
 $$
 
 
-This corresponds to `prior = normal(0, 2.5, autoscale = TRUE)` in **rstanarm** code. 
+This corresponds to `prior = normal(0, 2.5, autoscale = TRUE)` in **rstanarm** code.
 
 
-#### Intercept 
+#### Intercept
 
 The intercept is assigned a prior indirectly. The `prior_intercept` argument
 refers to the intercept after all predictors have been centered (internally by
 **rstanarm**). That is, instead of placing the prior on the expected value of
-$y$ when $x=0$, we place a prior on the expected value of $y$ when 
+$y$ when $x=0$, we place a prior on the expected value of $y$ when
 $x = \bar{x}$. The default prior for this centered intercept, say $\alpha_c$, is
 
 $$
 \alpha_c \sim \mathsf{Normal}(m_y, \, 2.5 \cdot s_y)
 $$
-where 
+where
 
 $$
 m_y =
@@ -218,7 +219,7 @@ an exponential distribution with rate $1/s_y$
 $$
 \text{aux} \sim \mathsf{Exponential}(1/s_y)
 $$
-where $s_y$ is the same as above (either 1 or $\text{sd(y)}$). 
+where $s_y$ is the same as above (either 1 or $\text{sd(y)}$).
 
 This corresponds to `prior_aux = exponential(1, autoscale=TRUE)` in **rstanarm**
 code.
@@ -227,9 +228,9 @@ code.
 
 Because the scaling is based on the scales of the predictors (and possibly the
 outcome) these are technically data-dependent priors. However, since these
-priors are quite wide (and in most cases rather conservative), the amount of 
+priors are quite wide (and in most cases rather conservative), the amount of
 information used is weak and mainly takes into account the order of magnitude of
-the variables. This enables __rstanarm__ to offer defaults that are reasonable 
+the variables. This enables __rstanarm__ to offer defaults that are reasonable
 for many models.
 
 
@@ -266,22 +267,22 @@ prior_summary(test_no_autoscale)
 
 ### Uninformative is usually unwarranted and unrealistic (flat is frequently frivolous and fictional)
 
-When "non-informative" or "uninformative" is used in the context of prior 
-distributions, it typically refers to a flat (uniform) distribution or a nearly 
-flat distribution. Sometimes it may also be used to refer to the 
+When "non-informative" or "uninformative" is used in the context of prior
+distributions, it typically refers to a flat (uniform) distribution or a nearly
+flat distribution. Sometimes it may also be used to refer to the
 parameterization-invariant Jeffreys prior. Although __rstanarm__ does not
 prevent you from using very diffuse or flat priors, unless the data is
-very strong it is wise to avoid them. 
+very strong it is wise to avoid them.
 
 Rarely is it appropriate in any applied setting to use a prior that gives the
 same (or nearly the same) probability mass to values near zero as it gives
 values bigger than the age of the universe in nanoseconds. Even a much narrower
 prior than that, e.g., a normal distribution with $\sigma = 500$, will tend to
 put much more probability mass on unreasonable parameter values than reasonable
-ones. In fact, using the prior 
-$\theta \sim \mathsf{Normal(\mu = 0, \sigma = 500)}$ 
-implies some strange prior beliefs. For example, you believe a priori that 
-$P(|\theta| < 250) < P(|\theta| > 250)$, 
+ones. In fact, using the prior
+$\theta \sim \mathsf{Normal(\mu = 0, \sigma = 500)}$
+implies some strange prior beliefs. For example, you believe a priori that
+$P(|\theta| < 250) < P(|\theta| > 250)$,
 which can easily be verified by doing the calculation with the normal CDF
 
 ```{r}
@@ -298,30 +299,30 @@ print(paste("Pr(-250 < theta < 250) =", round(p_approx, 2)))
 
 d <- data.frame(theta, clr = abs(theta) > 250)
 library(ggplot2)
-ggplot(d, aes(x = theta, fill = clr)) + 
-  geom_histogram(binwidth = 5, show.legend = FALSE) + 
-  scale_y_continuous(name = "", labels = NULL, expand = c(0,0)) + 
+ggplot(d, aes(x = theta, fill = clr)) +
+  geom_histogram(binwidth = 5, show.legend = FALSE) +
+  scale_y_continuous(name = "", labels = NULL, expand = c(0,0)) +
   scale_x_continuous(name = expression(theta), breaks = c(-1000, -250, 250, 1000))
 ```
 
 <br>
 This will almost never correspond to the prior beliefs of a researcher about a
-parameter in a well-specified applied regression model and yet priors like 
-$\theta \sim \mathsf{Normal(\mu = 0, \sigma = 500)}$ (and more extreme) remain quite popular. 
+parameter in a well-specified applied regression model and yet priors like
+$\theta \sim \mathsf{Normal(\mu = 0, \sigma = 500)}$ (and more extreme) remain quite popular.
 
-Even when you know very little, a flat or very wide prior will almost never be 
-the best approximation to your beliefs about the parameters in your model that 
-you can express using __rstanarm__ (or other software). _Some_ amount of prior 
-information will be available. For example, even if there is nothing to suggest 
-a priori that a particular coefficient will be positive or negative, there is 
+Even when you know very little, a flat or very wide prior will almost never be
+the best approximation to your beliefs about the parameters in your model that
+you can express using __rstanarm__ (or other software). _Some_ amount of prior
+information will be available. For example, even if there is nothing to suggest
+a priori that a particular coefficient will be positive or negative, there is
 almost always enough information to suggest that different orders of magnitude
 are not equally likely. Making use of this information when setting a prior
 scale parameter is simple ---one heuristic is to set the scale an order of
 magnitude bigger than you suspect it to be--- and has the added benefit of
 helping to stabilize computations.
 
-A more in-depth discussion of non-informative vs weakly informative priors is 
-available in the case study 
+A more in-depth discussion of non-informative vs weakly informative priors is
+available in the case study
 [_How the Shape of a Weakly Informative Prior Affects  Inferences_](https://mc-stan.org/users/documentation/case-studies/weakly_informative_shapes.html).
 
 
@@ -339,7 +340,7 @@ flat_prior_test <- stan_glm(mpg ~ wt, data = mtcars, prior = NULL)
 ```
 
 In this case we let __rstanarm__ use the default priors for the intercept and
-error standard deviation (we could change that if we wanted), but the 
+error standard deviation (we could change that if we wanted), but the
 coefficient on the `wt` variable will have a flat prior. To double check that
 indeed a flat prior was used for the coefficient on `wt` we can call
 `prior_summary`:
@@ -353,15 +354,15 @@ prior_summary(flat_prior_test)
 # Informative Prior Distributions
 
 Although the default priors tend to work well, prudent use of more informative
-priors is encouraged. For example, suppose we have a linear regression model 
-$$y_i \sim \mathsf{Normal}\left(\alpha + \beta_1 x_{1,i} + \beta_2 x_{2,i}, \, \sigma\right)$$ 
+priors is encouraged. For example, suppose we have a linear regression model
+$$y_i \sim \mathsf{Normal}\left(\alpha + \beta_1 x_{1,i} + \beta_2 x_{2,i}, \, \sigma\right)$$
 and we have evidence (perhaps from previous research on
-the same topic) that approximately $\beta_1 \in (-15, -5)$ and 
-$\beta_2 \in (-1, 1)$. An example of an informative prior for 
+the same topic) that approximately $\beta_1 \in (-15, -5)$ and
+$\beta_2 \in (-1, 1)$. An example of an informative prior for
 $\boldsymbol{\beta} = (\beta_1, \beta_2)'$ could be
 
 $$
-\boldsymbol{\beta} \sim \mathsf{Normal} \left( 
+\boldsymbol{\beta} \sim \mathsf{Normal} \left(
   \begin{pmatrix} -10 \\ 0 \end{pmatrix},
   \begin{pmatrix} 5^2 & 0 \\ 0 & 2^2 \end{pmatrix}
 \right),
@@ -379,7 +380,6 @@ model can be specified as
 my_prior <- normal(location = c(-10, 0), scale = c(5, 2))
 stan_glm(y ~ x1 + x2, data = dat, prior = my_prior)
 ```
-We left the priors for the intercept and error standard deviation at their 
-defaults, but informative priors can be specified for those parameters in 
+We left the priors for the intercept and error standard deviation at their
+defaults, but informative priors can be specified for those parameters in
 an analogous manner.
-

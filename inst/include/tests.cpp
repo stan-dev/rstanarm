@@ -4,7 +4,6 @@
 #include <Rcpp.h>
 #include <RcppEigen.h>
 #include <stan/math.hpp>
-#include "meta_header.hpp"
+#include "stan_meta_header.hpp"
 
 // Need test for CODOLS
-

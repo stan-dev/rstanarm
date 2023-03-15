@@ -5,11 +5,11 @@ date: "`r Sys.Date()`"
 output:
   html_vignette:
     toc: yes
+vignette: >
+     %\VignetteEngine{knitr::rmarkdown}
+     %\VignetteIndexEntry{Probabilistic A/B Testing with rstanarm}
+     %\VignetteEncoding{UTF-8}
 ---
-<!--
-%\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{Probabilistic A/B Testing with rstanarm}
--->
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)

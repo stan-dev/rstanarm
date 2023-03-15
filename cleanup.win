@@ -2,6 +2,8 @@
 
 # Note to Windows users: This is not actually platform specific.
 "${R_HOME}/bin/R" --vanilla --slave -e 'roxygen2::roxygenize(load_code = roxygen2::load_source, clean = TRUE)'
-cp -r src/stan_files tests/testthat/stan_files
+rm tests/testthat/stan_files
+rm tests/testthat/include
+cp -r inst/stan tests/testthat/stan_files
 cp -r inst/include tests/testthat/include
 exit $?

@@ -40,27 +40,31 @@ ppc_funs_discrete <- bayesplot::available_ppc("rootogram|_bars")
 
 
 test_that("pp_check.stanreg creates ggplot object", {
-  exclude <- c("ppc_bars", 
-               "ppc_loo_pit", 
-               "ppc_loo_pit_overlay", 
+  exclude <- c("ppc_bars",
+               "ppc_loo_pit",
+               "ppc_loo_pit_overlay",
                "ppc_loo_pit_qq",
-               "ppc_loo_intervals", 
-               "ppc_loo_ribbon", 
-               "ppc_rootogram", 
-               "ppc_error_binned", 
-               "ppc_km_overlay")
+               "ppc_loo_intervals",
+               "ppc_loo_ribbon",
+               "ppc_rootogram",
+               "ppc_error_binned",
+               "ppc_km_overlay",
+               "ppc_pit_ecdf")
   for (f in ppc_funs_not_grouped) for (j in 1:2) {
     if (!f %in% exclude) {
-      expect_gg(suppressWarnings(pp_check(fit, plotfun = f, nreps = j)), 
+      expect_gg(suppressWarnings(pp_check(fit, plotfun = f, nreps = j)),
                 info = f)
     }
   }
 })
 
 test_that("pp_check.stanreg creates ggplot object for grouped functions", {
+  exclude <- c("ppc_km_overlay_grouped", "ppc_pit_ecdf_grouped")
   for (f in setdiff(ppc_funs_grouped, ppc_funs_discrete)) for (j in 1:2) {
-    expect_gg(suppressWarnings(pp_check(fit2, plotfun = f, nreps = j, group = "am", x = "wt")), 
-              info = f)
+    if (!f %in% exclude) {
+      expect_gg(suppressWarnings(pp_check(fit2, plotfun = f, nreps = j, group = "am", x = "wt")),
+                info = f)
+    }
   }
 })
 
@@ -70,14 +74,14 @@ test_that("pp_check.stanreg creates ggplot object for count & ordinal outcomes",
     outcome = gl(3,1,9),
     treatment = gl(3,3)
   )
-  SW(fit3 <- stan_glm(counts ~ outcome + treatment, data = d, 
+  SW(fit3 <- stan_glm(counts ~ outcome + treatment, data = d,
                    family = poisson(link="log"),
                    iter = ITER, chains = CHAINS,
                    seed = SEED, refresh = 0))
   expect_gg(pp_check(fit3, plotfun = "rootogram"))
-  
+
   SW(fit4 <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
-                       prior = R2(0.2, "mean"), init_r = 0.1, 
+                       prior = R2(0.2, "mean"), init_r = 0.1,
                        iter = ITER, chains = CHAINS,
                        seed = SEED, refresh = 0))
   expect_gg(pp_check(fit4, plotfun = "bars"))
@@ -86,7 +90,7 @@ test_that("pp_check.stanreg creates ggplot object for count & ordinal outcomes",
 
 
 test_that("pp_check ok for vb", {
-  SW(fit3 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "meanfield", 
+  SW(fit3 <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "meanfield",
                       seed = SEED, iter = 10000, refresh = 0))
   expect_gg(pp_check(fit3))
   expect_gg(pp_check(fit3, plotfun = "error_hist"))
@@ -108,17 +112,17 @@ test_that("pp_check throws error if 'stat' arg is bad", {
                regexp = "not found")
 })
 test_that("pp_check throws error if plotfun not found", {
-  expect_error(pp_check(fit, plotfun = "9999"), 
+  expect_error(pp_check(fit, plotfun = "9999"),
                "not a valid PPC function name")
-  expect_error(pp_check(fit, plotfun = "mcmc_hist"), 
+  expect_error(pp_check(fit, plotfun = "mcmc_hist"),
                "use the 'plot' method")
 })
 test_that("pp_check throws error if 'group' variable not found", {
-  expect_error(pp_check(fit, plotfun = "stat_grouped", group = "herd2"), 
+  expect_error(pp_check(fit, plotfun = "stat_grouped", group = "herd2"),
                "not found in model frame")
 })
 test_that("pp_check throws error for optimizing", {
-  SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", 
+  SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
                       seed = SEED, refresh = 0))
   expect_error(pp_check(fito), regexp = "algorithm")
 })
@@ -144,7 +148,7 @@ test_that(".ignore_nreps and .set_nreps work", {
   set_nreps <- rstanarm:::.set_nreps
   expect_warning(ignore_nreps(10), "'nreps' is ignored")
   expect_silent(ignore_nreps(NULL))
-  
+
   expect_warning(r <- set_nreps(10, "ppc_stat"), "'nreps' is ignored")
   expect_null(r)
   expect_equal(set_nreps(10, "ppc_hist"), 10)

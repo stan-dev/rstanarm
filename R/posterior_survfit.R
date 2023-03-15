@@ -472,9 +472,9 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
   colnames(out) <- c(if ("IDVAR" %in% colnames(out)) id_var,
                      time_var, "survpred", "ci_lb", "ci_ub")  
   if (id_var %in% colnames(out)) { # data has id column -- sort by id and time
-    out <- out[order(out[, id_var, drop = F], out[, time_var, drop = F]), , drop = F]
+    out <- out[order(out[, id_var], out[, time_var]), , drop = FALSE]
   } else { # data does not have id column -- sort by time only
-    out <- out[order(out[, time_var, drop = F]), , drop = F]
+    out <- out[order(out[, time_var]), , drop = FALSE]
   }
   rownames(out) <- NULL
   

@@ -6,9 +6,7 @@ man-roxygen/*
 vignettes/_output.yaml
 README.md
 LICENSE$
-src/stan_files/.*\.o$
-src/stan_files/.*\.cc$
-src/stan_files/.*\.hpp$
+^src/$
 tests/testthat/stan_files/.*\.o$
 tests/testthat/stan_files/.*\.cc$
 tests/testthat/stan_files/.*\.hpp$
@@ -22,3 +20,4 @@ dev-notes/*
 revdep/*
 
 ^\.github$
+^doc$

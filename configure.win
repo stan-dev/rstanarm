@@ -1,0 +1,13 @@
+#! /bin/sh
+
+# Generate Makevars.win file with rstan flags
+"${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" -e "rstantools::rstan_config()"
+
+# Add configuration needed for LTO
+echo "PKG_CXXFLAGS += -flto=auto -fno-use-linker-plugin" >> ./src/Makevars.win
+echo "PKG_LIBS += -Wl,--allow-multiple-definition" >> ./src/Makevars.win
+echo "AR = gcc-ar" >> ./src/Makevars.win
+echo "NM = gcc-nm" >> ./src/Makevars.win
+echo "RANLIB = gcc-ranlib" >> ./src/Makevars.win
+rm ./src/Makevars
+

@@ -1,29 +1,29 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.21.3
-Date: 2022-04-08
+Version: 2.21.4
+Date: 2022-09-08
 Encoding: UTF-8
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
              person("Sam", "Brilleman", role = "ctb"),
-             person(given = "Jacqueline Buros", family = "Novik", 
+             person(given = "Jacqueline Buros", family = "Novik",
                     role = "ctb", comment = "R/stan_jm.R"),
              person("AstraZeneca", role = "ctb", comment = "R/stan_jm.R"),
              person("Trustees of", "Columbia University", role = "cph"),
              person("Simon", "Wood", role = "cph", comment = "R/stan_gamm4.R"),
-             person("R Core", "Deveopment Team", role = "cph", 
+             person("R Core", "Deveopment Team", role = "cph",
                      comment = "R/stan_aov.R"),
              person("Douglas", "Bates", role = "cph", comment = "R/pp_data.R"),
              person("Martin", "Maechler", role = "cph", comment = "R/pp_data.R"),
              person("Ben", "Bolker", role = "cph", comment = "R/pp_data.R"),
              person("Steve", "Walker", role = "cph", comment = "R/pp_data.R"),
-             person("Brian", "Ripley", role = "cph", 
+             person("Brian", "Ripley", role = "cph",
                     comment = "R/stan_aov.R, R/stan_polr.R"),
              person("William", "Venables", role = "cph", comment = "R/stan_polr.R"),
              person("Paul-Christian", "Burkner", email = "paul.buerkner@gmail.com",
                     role = "cph", comment = "R/misc.R"),
-             person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu", 
+             person("Ben", "Goodrich", email = "benjamin.goodrich@columbia.edu",
                     role = c("cre", "aut")))
 Description: Estimates previously compiled regression models using the 'rstan'
     package, which provides the R interface to the Stan C++ library for Bayesian
@@ -46,7 +46,6 @@ Imports:
     shinystan (>= 2.3.0),
     stats,
     survival (>= 2.40.1),
-    RcppParallel (>= 5.0.1),
     utils
 Suggests:
     biglm,
@@ -71,4 +70,4 @@ UseLTO: true
 NeedsCompilation: yes
 URL: https://mc-stan.org/rstanarm/, https://discourse.mc-stan.org
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1

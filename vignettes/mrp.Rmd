@@ -2,15 +2,15 @@
 title: "MRP with rstanarm"
 author: "Lauren Kennedy and Jonah Gabry"
 date: "`r Sys.Date()`"
-output: 
-  html_vignette: 
+output:
+  html_vignette:
     toc: yes
 bibliography: mrp-files/mrp.bib
+vignette: >
+     %\VignetteEngine{knitr::rmarkdown}
+     %\VignetteIndexEntry{MRP with rstanarm}
+     %\VignetteEncoding{UTF-8}
 ---
-<!--
-%\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{MRP with rstanarm}
--->
 
 ```{r, child="children/SETTINGS-knitr.txt"}
 ```
@@ -19,7 +19,7 @@ library(rstanarm)
 library(ggplot2)
 library(bayesplot)
 theme_set(bayesplot::theme_default())
-# options(mc.cores = 4) 
+# options(mc.cores = 4)
 ```
 
 ```{r packages-2, eval=FALSE, message=FALSE}
@@ -44,8 +44,8 @@ conducting MRP analyses. We will not delve into the details of conducting
 logistic regression with rstanarm as this is already covered in [other
 vignettes](https://mc-stan.org/rstanarm/articles/).
 
-Most of the code for data manipulation and plotting is not shown in the text 
-but is available in the R markdown 
+Most of the code for data manipulation and plotting is not shown in the text
+but is available in the R markdown
 [source code on GitHub](https://github.com/stan-dev/rstanarm/blob/master/vignettes/mrp.Rmd).
 
 ```{r, include=FALSE, collapse=TRUE}
@@ -61,7 +61,7 @@ simulate_mrp_data <- function(n) {
           for (i5 in 1:J[5]){
               count <- count + 1
               # Fill them in so we know what category we are referring to
-              poststrat[count, 1:5] <- c(i1-1, i2, i3,i4,i5) 
+              poststrat[count, 1:5] <- c(i1-1, i2, i3,i4,i5)
           }
         }
       }
@@ -79,7 +79,7 @@ simulate_mrp_data <- function(n) {
     poststrat$N[j] <- round(250e6 * p_male[poststrat[j,1]+1] * p_eth[poststrat[j,2]] *
       p_age[poststrat[j,3]]*p_income[poststrat[j,4]]*p_state[poststrat[j,5]]) #Adjust the N to be the number observed in each category in each group
   }
-  
+
   # Now let's adjust for the probability of response
   p_response_baseline <- 0.01
   p_response_male <- c(2, 0.8) / 2.8
@@ -96,14 +96,14 @@ simulate_mrp_data <- function(n) {
       p_response_inc[poststrat[j, 4]] * p_response_state[poststrat[j, 5]]
   }
   people <- sample(prod(J), n, replace = TRUE, prob = poststrat$N * p_response)
-  
+
   ## For respondent i, people[i] is that person's poststrat cell,
   ## some number between 1 and 32
   n_cell <- rep(NA, prod(J))
   for (j in 1:prod(J)) {
     n_cell[j] <- sum(people == j)
   }
-  
+
   coef_male <- c(0,-0.3)
   coef_eth <- c(0, 0.6, 0.9)
   coef_age <- c(0,-0.2,-0.3, 0.4, 0.5, 0.7, 0.8, 0.9)
@@ -120,7 +120,7 @@ simulate_mrp_data <- function(n) {
         coef_age_male[poststrat[j, 1] + 1, poststrat[j, 3]]
       )
   }
-  
+
   #male or not, eth, age, income level, state, city
   y <- rbinom(n, 1, true_popn$cat_pref[people])
   male <- poststrat[people, 1]
@@ -128,11 +128,11 @@ simulate_mrp_data <- function(n) {
   age <- poststrat[people, 3]
   income <- poststrat[people, 4]
   state <- poststrat[people, 5]
-  
-  sample <- data.frame(cat_pref = y, 
-                       male, age, eth, income, state, 
+
+  sample <- data.frame(cat_pref = y,
+                       male, age, eth, income, state,
                        id = 1:length(people))
-  
+
   #Make all numeric:
   for (i in 1:ncol(poststrat)) {
     poststrat[, i] <- as.numeric(poststrat[, i])
@@ -154,14 +154,14 @@ simulate_mrp_data <- function(n) {
 # The Data
 
 Three data sets are simulated by the function `simulate_mrp_data()`, which is
-defined in the 
-[source code](https://github.com/stan-dev/rstanarm/blob/master/vignettes/mrp.Rmd) 
+defined in the
+[source code](https://github.com/stan-dev/rstanarm/blob/master/vignettes/mrp.Rmd)
 for this R markdown document (and printed in the appendix). The first, `sample`,
 contains $n$ observations from the individuals that form our sample (i.e., $n$
 rows). For each individual we have their age (recorded as membership within a
 specific age bracket), ethnicity, income level (recorded as membership within a
 specific bracket), and gender. Participants were randomly sampled from a
-state. 
+state.
 
 MRP is often used for dichotomous fixed choice questions (e.g., McCain's
 share of two party vote [@ghitza2013deep]; support for George W Bush,
@@ -206,7 +206,7 @@ have 4 variables with 2 (male), 7 (age), 3 (ethnicity) and 3 (income) levels, so
 there are 2x7x3x3 different levels. Participants are also selected from a state
 (50), increasing the number of possible levels to $6300$.
 
-To make inference about the population, we will also need the proportion of 
+To make inference about the population, we will also need the proportion of
 individuals in each post stratification cell at the *population* level. We will
 use this information to update the estimate of our outcome variable from the
 sample so that is more representative of the population. This is particularly
@@ -215,7 +215,7 @@ proportion of females responded than males), and that the bias impacts the outco
 variable (e.g., maybe women are more likely to pick a cat than men). For each
 possible combination of factors, the post-stratification table shows the
 proportion/number of the population in that cell (rather than the
-proportion/number in the sample in the cell). 
+proportion/number in the sample in the cell).
 
 Below we read in the poststrat data our simulated data list.
 
@@ -262,7 +262,7 @@ poststrat$state <- factor(poststrat$state,levels = levels(sample$state))
 ```
 
 ```{r state-and-pop-data-for-plots, eval=FALSE, include=FALSE}
-# not evaluated to avoid tidyverse dependency 
+# not evaluated to avoid tidyverse dependency
 income_popn <- poststrat %>%
   group_by(income) %>%
   summarize(Num=sum(N)) %>%
@@ -405,7 +405,7 @@ summary_by_poststrat_var <- sample %>%
 summary_by_poststrat_var$variable <- as.factor(summary_by_poststrat_var$variable)
 levels(summary_by_poststrat_var$variable) <- list('Age'='age','Ethnicity'='eth','Income'='income','Male'='male')
 
-save(summary_by_poststrat_var, file = "mrp-files/summary_by_poststrat_var.rda", 
+save(summary_by_poststrat_var, file = "mrp-files/summary_by_poststrat_var.rda",
      version = 2)
 ```
 
@@ -447,7 +447,7 @@ variable on the x-axis.
 interaction <- sample %>%
   gather(variable, category, c("age", "eth")) %>%
   group_by(variable, category, male) %>%
-  summarise(y_mean = mean(cat_pref), 
+  summarise(y_mean = mean(cat_pref),
             y_sd = sqrt(mean(cat_pref) * (1 - mean(cat_pref)) / n())) %>%
   ungroup()
 
@@ -495,7 +495,7 @@ population, according to the sample.
 #Summarise by state
 preference_by_state <- sample %>%
   group_by(state) %>%
-  summarise(y_mean = mean(cat_pref), 
+  summarise(y_mean = mean(cat_pref),
             y_sd = sqrt(mean(cat_pref) * (1 - mean(cat_pref)) / n())) %>%
   ungroup()
 
@@ -508,8 +508,8 @@ compare <- ggplot(data=preference_by_state, aes(x=state, y=y_mean,group=1)) +
   geom_ribbon(aes(ymin=y_mean-y_sd,ymax=y_mean+y_sd,x=state),fill='lightgrey',alpha=.7)+
   geom_line(aes(x=state, y=y_mean))+
   geom_point()+
-  scale_y_continuous(breaks=c(0,.25,.5,.75,1), 
-                     labels=c("0%","25%","50%","75%","100%"), 
+  scale_y_continuous(breaks=c(0,.25,.5,.75,1),
+                     labels=c("0%","25%","50%","75%","100%"),
                      limits=c(0,1), expand=c(0,0))+
   scale_x_discrete(drop=FALSE)+
   scale_colour_manual(values=c('#1f78b4','#33a02c','#e31a1c','#ff7f00',
@@ -526,7 +526,7 @@ compare <- ggplot(data=preference_by_state, aes(x=state, y=y_mean,group=1)) +
 compare2 <- ggplot()+
   geom_hline(yintercept = mean(sample$cat_pref),size=.8)+
   geom_text(aes(x = 5.2, y = mean(sample$cat_pref)+.025, label = "Sample"))+
-  scale_y_continuous(breaks=c(0,.25,.5,.75,1), 
+  scale_y_continuous(breaks=c(0,.25,.5,.75,1),
                      labels=c("0%","25%","50%","75%","100%"),
                      limits=c(-0.25,1.25),expand=c(0,0))+
   theme_bw()+
@@ -539,7 +539,7 @@ compare2 <- ggplot()+
         legend.title=element_text(size=10),
         legend.text=element_text(size=10))
 
-bayesplot_grid(compare,compare2, 
+bayesplot_grid(compare,compare2,
                grid_args = list(nrow=1, widths = c(8,1)))
 ```
 
@@ -562,8 +562,8 @@ post-stratification matrix than the we have observed units, so there are some
 cells in the poststrat matrix that we don't observe. We can use a multi-level
 model to partially pool information across the different levels within each
 variable to assist with this. In the model described below, we use a fixed
-intercept for gender, and hierarchically modeled varying intercepts 
-for each of the other factors. 
+intercept for gender, and hierarchically modeled varying intercepts
+for each of the other factors.
 
 Let $\theta_{j}$ denote the preference for cats in the $j$th poststratification cell.
 The non-hierarchical part of the model can be written as
@@ -577,14 +577,14 @@ Adding the varying intercepts for the other variables the model becomes
 
 $$
 \theta_j = logit^{-1}(
-X_{j}\beta 
+X_{j}\beta
 + \alpha_{\rm state[j]}^{\rm state}
 + \alpha_{\rm age[j]}^{\rm age}
 + \alpha_{\rm eth[j]}^{\rm eth}
 + \alpha_{\rm inc[j]}^{\rm inc}
 )
 $$
-with 
+with
 
 $$
 \begin{align*}
@@ -597,24 +597,24 @@ $$
 $$
 
 
-Each of $\sigma^{\rm state}$, $\sigma^{\rm age}$, $\sigma^{\rm eth}$, 
-and $\sigma^{\rm inc}$ are estimated from the data (in this case using 
+Each of $\sigma^{\rm state}$, $\sigma^{\rm age}$, $\sigma^{\rm eth}$,
+and $\sigma^{\rm inc}$ are estimated from the data (in this case using
 rstanarm's default priors), which is beneficial as it means we share
-information between the levels of each variable and we can prevent levels with 
-with less data from being too sensitive to the few observed values. This also 
+information between the levels of each variable and we can prevent levels with
+with less data from being too sensitive to the few observed values. This also
 helps with the levels we don't observe at all it will use information from the
 levels that we do observe. For more on the benefits of this type of model, see
-@gelman2005analysis, and see @ghitza2013deep and @si2017bayesian for more 
+@gelman2005analysis, and see @ghitza2013deep and @si2017bayesian for more
 complicated extensions that involve deep interactions and structured prior
-distributions. 
+distributions.
 
-Here is the model specified using the `stan_glmer()` function in rstanarm, 
+Here is the model specified using the `stan_glmer()` function in rstanarm,
 which uses the same formula syntax as the `glmer()` function from the lme4
 package:
 
 ```{r, message=FALSE, warning=FALSE, results='hide'}
 fit <- stan_glmer(
-  cat_pref ~ factor(male) + factor(male) * factor(age) + 
+  cat_pref ~ factor(male) + factor(male) * factor(age) +
     (1 | state) + (1 | age) + (1 | eth) + (1 | income),
   family = binomial(link = "logit"),
   data = sample
@@ -666,7 +666,7 @@ between the sample and population estimate.
 compare2 <- compare2 +
   geom_hline(yintercept = model_popn_pref[1], colour = '#2ca25f', size = 1) +
   geom_text(aes(x = 5.2, y = model_popn_pref[1] + .025), label = "MRP", colour = '#2ca25f')
-bayesplot_grid(compare, compare2, 
+bayesplot_grid(compare, compare2,
                grid_args = list(nrow = 1, widths = c(8, 1)))
 ```
 
@@ -684,7 +684,7 @@ Which we will also add to the figure.
 compare2 <- compare2 +
   geom_hline(yintercept = mean(true_popn_pref), linetype = 'dashed', size = .8) +
   geom_text(aes(x = 5.2, y = mean(true_popn_pref) - .025), label = "True")
-bayesplot_grid(compare, compare2, 
+bayesplot_grid(compare, compare2,
                grid_args = list(nrow = 1, widths = c(8, 1)))
 ```
 
@@ -746,7 +746,7 @@ state_df$State <- factor(state_df$State, levels = levels(sample$state))
 
 Here we similar findings to when we considered the population as whole. While
 estimates for cat preference (in percent) using the sample are off by
-```{r} 
+```{r}
 round(100 * c(
   mean = mean(abs(state_df$sample_state_pref-state_df$true_state_pref), na.rm = TRUE),
   max = max(abs(state_df$sample_state_pref-state_df$true_state_pref), na.rm = TRUE)
@@ -772,14 +772,14 @@ compare <- compare +
   geom_line(data=state_df, mapping=aes(x=State, y=model_state_pref,group=1),
             inherit.aes=TRUE,colour='#238b45')+
   geom_ribbon(data=state_df,mapping=aes(x=State,ymin=model_state_pref-model_state_sd,
-                                        ymax=model_state_pref+model_state_sd,group=1), 
+                                        ymax=model_state_pref+model_state_sd,group=1),
               inherit.aes=FALSE,fill='#2ca25f',alpha=.3)+
   geom_point(data=state_df, mapping=aes(x=State, y=true_state_pref),
              alpha=.5,inherit.aes=TRUE)+
   geom_line(data=state_df, mapping=aes(x=State, y=true_state_pref),
             inherit.aes = TRUE,linetype='dashed')
 
-bayesplot_grid(compare, compare2, 
+bayesplot_grid(compare, compare2,
                grid_args = list(nrow = 1, widths = c(8, 1)))
 ```
 
@@ -819,7 +819,7 @@ We then can use these two outcome variables to model the data using the
 binomial distribution.
 ```{r, message=FALSE, warning=FALSE, results='hide'}
 fit2 <- stan_glmer(
-  cbind(N_cat_pref, N - N_cat_pref) ~ factor(male) + factor(male) * factor(age) + 
+  cbind(N_cat_pref, N - N_cat_pref) ~ factor(male) + factor(male) * factor(age) +
     (1 | state) + (1 | age) + (1 | eth) + (1 | income),
   family = binomial("logit"),
   data = sample_alt,
@@ -832,7 +832,7 @@ print(fit2)
 ```
 
 Like before, we can use the `posterior_linpred()` function to obtain an estimate of
-the preference for cats in the population. 
+the preference for cats in the population.
 
 ```{r, message=FALSE}
 posterior_prob_alt <- posterior_linpred(fit2, transform = TRUE, newdata = poststrat)
@@ -843,7 +843,7 @@ round(model_popn_pref_alt, 3)
 
 As we should, we get the same answer as when we fit the model using the binary
 outcome. The two ways are equivalent, so we can use whichever form is most
-convenient for the data at hand. More details on these two forms of binomial models 
+convenient for the data at hand. More details on these two forms of binomial models
 are available [here](https://mc-stan.org/rstanarm/articles/binomial.html).
 
 
@@ -858,7 +858,7 @@ Table 2 of the vignette for the **lme4** package, available
 
 ### Code to simulate the data
 
-Here is the source code for the `simulate_mrp_function()`, which is based off 
+Here is the source code for the `simulate_mrp_function()`, which is based off
 of some code provided by Aki Vehtari.
 
 ```{r}
@@ -868,4 +868,3 @@ print(simulate_mrp_data)
 # References
 
 <!-- mrp.bib specified at the top -->
-
