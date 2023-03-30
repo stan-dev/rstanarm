@@ -1,11 +1,11 @@
 year <- sub("-.*", "", meta$Date)
 version_note <- sprintf("R package version %s", meta$Version)
 
-citHeader("To cite rstanarm in publications please use the first citation entry.", 
+citHeader("To cite rstanarm in publications please use the first citation entry.",
           "If you were using the 'stan_jm' modelling function then, where possible,",
           "please consider including the second citation entry as well.")
-          
-citEntry(entry = "Misc", 
+
+bibentry(entry = "Misc",
          title = "rstanarm: {Bayesian} applied regression modeling via {Stan}.",
          author = c(person("Ben", "Goodrich"),
                     person("Jonah", "Gabry"),
@@ -20,7 +20,7 @@ citEntry(entry = "Misc",
                  version_note, " https://mc-stan.org/rstanarm.")
 )
 
-citEntry(entry = "Misc", 
+bibentry(entry = "Misc",
          title = "Joint longitudinal and time-to-event models via {Stan}.",
          author = c(person("SL", "Brilleman"),
                     person("MJ", "Crowther"),
