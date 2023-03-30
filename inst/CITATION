@@ -5,7 +5,7 @@ citHeader("To cite rstanarm in publications please use the first citation entry.
           "If you were using the 'stan_jm' modelling function then, where possible,",
           "please consider including the second citation entry as well.")
 
-bibentry(entry = "Misc",
+bibentry(bibtype = "Misc",
          title = "rstanarm: {Bayesian} applied regression modeling via {Stan}.",
          author = c(person("Ben", "Goodrich"),
                     person("Jonah", "Gabry"),
@@ -20,7 +20,7 @@ bibentry(entry = "Misc",
                  version_note, " https://mc-stan.org/rstanarm.")
 )
 
-bibentry(entry = "Misc",
+bibentry(bibtype = "Misc",
          title = "Joint longitudinal and time-to-event models via {Stan}.",
          author = c(person("SL", "Brilleman"),
                     person("MJ", "Crowther"),
