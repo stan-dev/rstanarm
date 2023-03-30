@@ -9,5 +9,4 @@ echo "PKG_LIBS += -Wl,--allow-multiple-definition" >> ./src/Makevars.win
 echo "AR = gcc-ar" >> ./src/Makevars.win
 echo "NM = gcc-nm" >> ./src/Makevars.win
 echo "RANLIB = gcc-ranlib" >> ./src/Makevars.win
-rm ./src/Makevars
 
