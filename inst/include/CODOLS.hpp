@@ -27,6 +27,6 @@ CODOLS(const Eigen::Matrix<double, -1, -1, 0, -1, -1>& X,
        std::ostream* pstream__) {
   using namespace Eigen;
   CompleteOrthogonalDecomposition<MatrixXd> cod(X);
-  return cod.solve(y);
+  return cod.solve(y).eval();
 }
 #endif
