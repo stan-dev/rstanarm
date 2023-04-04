@@ -20,13 +20,17 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: macOS-latest, r: 'devel'}
-          - {os: macOS-latest, r: 'release'}
-          - {os: windows-latest, r: 'devel'}
-          - {os: windows-latest, r: 'release'}
-          - {os: ubuntu-latest, r: 'devel'}
-          - {os: ubuntu-latest, r: 'release'}
-          - {os: ubuntu-latest, r: 'oldrel'}
+          - {os: macOS-latest, r: 'devel', repo: ''}
+          - {os: macOS-latest, r: 'release', repo: ''}
+          - {os: windows-latest, r: 'devel', repo: ''}
+          - {os: windows-latest, r: 'release', repo: ''}
+          - {os: ubuntu-latest, r: 'devel', repo: ''}
+          - {os: ubuntu-latest, r: 'release', repo: ''}
+          - {os: ubuntu-latest, r: 'oldrel', repo: ''}
+
+          - {os: macOS-latest, r: 'devel', repo: 'https://mc-stan.org/r-packages/'}
+          - {os: windows-latest, r: 'devel', repo: 'https://mc-stan.org/r-packages/'}
+          - {os: ubuntu-latest, r: 'devel', repo: 'https://mc-stan.org/r-packages/'}
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
       RSPM: ${{ matrix.config.rspm }}
@@ -44,6 +48,7 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.config.r }}
+          extra-repositories: ${{ matrix.config.repo }}
 
       - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
