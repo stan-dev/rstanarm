@@ -15,14 +15,13 @@ functions {
    * @param sigma positive scalar for the standard deviation of the errors
    * @param N integer equal to the number of observations
    */
-  real mvn_ols_qr_lp(vector theta, vector b,
+  real mvn_ols_qr_lpdf(vector theta, vector b,
                         real intercept, real ybar,
                         real SSR, real sigma, int N) {
-    target += -0.5 * (dot_self(theta - b) +
+    return -0.5 * (dot_self(theta - b) +
       N * square(intercept - ybar) + SSR) /
       square(sigma) -// 0.91... is log(sqrt(2 * pi()))
       N * (log(sigma) + 0.91893853320467267);
-    return target();
   }
 }
 data {
@@ -89,7 +88,7 @@ transformed parameters {
 model {
   if (prior_PD == 0) for (j in 1:J) { // likelihood contribution for each group
     real shift = dot_product(xbarR_inv[j], theta[j]);
-    target += mvn_ols_qr_lp(theta[j], Rb[j],
+    target += mvn_ols_qr_lpdf(theta[j] | Rb[j],
                                   has_intercept == 1 ? alpha[j] + shift : shift,
                                   ybar[j], SSR[j], sigma[j], N[j]);
     // implicit: u[j] is uniform on the surface of a hypersphere

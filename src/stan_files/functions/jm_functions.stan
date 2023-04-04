@@ -30,7 +30,7 @@
   * @param df Real specifying the df for the prior distribution
   * @return nothing
   */
-  real basehaz_lp(vector aux_unscaled, int dist, vector scale, vector df) {
+  real basehaz_lpdf(vector aux_unscaled, int dist, vector scale, vector df) {
     real lp = 0;
     if (dist > 0) {
       if (dist == 1)

@@ -18,7 +18,7 @@ functions {
    * @param sigma positive scalar for the standard deviation of the errors
    * @param N integer equal to the number of observations
    */
-  real mvn_ols_lp(vector coeff, vector OLS, matrix XtX,
+  real mvn_ols_lpdf(vector coeff, vector OLS, matrix XtX,
                   real SSR, real sigma, int N) {
     return -0.5 * (quad_form(XtX, coeff - OLS) + SSR) / square(sigma)
             - N * (log(sigma) + log(sqrt(2 * pi())));
@@ -138,7 +138,7 @@ model {
     vector[cols(XtX)] coeff = has_intercept ? append_row(to_vector(gamma),
                                               (K_smooth > 0 ? append_row(beta, beta_smooth) : beta)) :
                                               (K_smooth > 0 ? append_row(beta, beta_smooth) : beta);
-    target += mvn_ols_lp(coeff, OLS, XtX, SSR, aux, N);
+    target += mvn_ols_lpdf(coeff | OLS, XtX, SSR, aux, N);
   } else if (can_do_normalidglm) {
     vector[K + K_smooth] coeff = K_smooth > 0 ? append_row(beta, beta_smooth) : beta;
     target += normal_id_glm_lpdf(y | XS, has_intercept ? gamma[1] : 0.0, coeff, aux);
@@ -251,7 +251,7 @@ model {
 #include /model/priors_glm.stan
 #include /model/priors_betareg.stan
   if (t > 0) {
-    target += decov_lp(z_b, z_T, rho, zeta, tau,
+    target += decov_lpdf(z_b | z_T, rho, zeta, tau,
                           regularization, delta, shape, t, p);
   }
 }

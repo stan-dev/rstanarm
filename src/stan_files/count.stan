@@ -153,7 +153,7 @@ model {
   if (family == 8) target += gamma_lpdf(noise[1] | aux, 1);
 
   if (t > 0) {
-    target += decov_lp(z_b, z_T, rho, zeta, tau,
+    target += decov_lpdf(z_b | z_T, rho, zeta, tau,
                           regularization, delta, shape, t, p);
   }
 }

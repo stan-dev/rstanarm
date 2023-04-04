@@ -143,10 +143,10 @@ model {
     }
     // Log-likelihood
     if (clogit) {
-      target += ll_clogit_lp(eta0, eta1, successes, failures, observations);
+      target += clogit_lpdf(eta0 | eta1, successes, failures, observations);
     }
     else if (has_weights == 0) {
-      target += ll_bern_lp(eta0, eta1, link, N);
+      target += bern_lpdf(eta0 | eta1, link, N);
     }
     else {  // weighted log-likelihoods
       target += dot_product(weights0, pw_bern(0, eta0, link));
@@ -156,7 +156,7 @@ model {
 
 #include /model/priors_glm.stan
   if (t > 0) {
-    target += decov_lp(z_b, z_T, rho, zeta, tau,
+    target += decov_lpdf(z_b | z_T, rho, zeta, tau,
                           regularization, delta, shape, t, p);
   }
 }

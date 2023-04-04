@@ -25,7 +25,7 @@
    *   observations where y = 0 and y = 1 respectively
    * @return lp__
    */
-  real ll_bern_lp(vector eta0, vector eta1, int link, int[] N) {
+  real bern_lpdf(vector eta0, vector eta1, int link, int[] N) {
     real lp = 0;
     if (link == 1) { // logit
       lp += logistic_lccdf(eta0 | 0, 1);
@@ -106,7 +106,7 @@
    * @param observations Integer array with the number of observations in group j
    * @return lp__
    */
-  real ll_clogit_lp(vector eta0, vector eta1,
+  real clogit_lpdf(vector eta0, vector eta1,
                     int[] successes, int[] failures, int[] observations) {
     int J = num_elements(observations);
     int pos0 = 1;

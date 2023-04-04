@@ -134,7 +134,7 @@
    * @param p An integer array with the number variables on the LHS of each |
    * @return target()
    */
-  real decov_lp(vector z_b, vector z_T, vector rho, vector zeta, vector tau,
+  real decov_lpdf(vector z_b, vector z_T, vector rho, vector zeta, vector tau,
                 real[] regularization, real[] delta, vector shape,
                 int t, int[] p) {
     real lp = 0;

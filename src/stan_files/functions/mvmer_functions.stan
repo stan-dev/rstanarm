@@ -240,7 +240,7 @@
   *   for the prior distributions
   * @return A vector containing the population level parameters (coefficients)
   */
-  real glm_lp(vector y_real, int[] y_integer, vector eta, real[] aux,
+  real glm_lpdf(vector y_real, int[] y_integer, vector eta, real[] aux,
               int family, int link, real sum_log_y, vector sqrt_y, vector log_y) {
     real lp = 0;
     if (family == 1) {  // gaussian
@@ -288,7 +288,7 @@
   * @param one_over_lambda Real
   * @return nothing
   */
-  real beta_lp(vector z_beta, int prior_dist, vector prior_scale,
+  real beta_custom_lpdf(vector z_beta, int prior_dist, vector prior_scale,
                vector prior_df, real global_prior_df, vector[] local,
                real[] global, vector[] mix, real[] one_over_lambda,
                real slab_df, real[] caux) {
@@ -340,7 +340,7 @@
   * @param df Real, df for the prior distribution
   * @return nothing
   */
-  real gamma_lp(real gamma, int dist, real mean_, real scale, real df) {
+  real gamma_custom_lpdf(real gamma, int dist, real mean_, real scale, real df) {
     real lp = 0;
     if (dist == 1)  // normal
       lp += normal_lpdf(gamma | mean_, scale);
@@ -361,7 +361,7 @@
   * @param df Real specifying the df for the prior distribution
   * @return nothing
   */
-  real aux_lp(real aux_unscaled, int dist, real scale, real df) {
+  real aux_lpdf(real aux_unscaled, int dist, real scale, real df) {
     real lp = 0;
     if (dist > 0 && scale > 0) {
       if (dist == 1)

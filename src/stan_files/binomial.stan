@@ -71,7 +71,7 @@ model {
 
     // Log-likelihood
     if (has_weights == 0) {  // unweighted log-likelihoods
-      target += ll_binom_lp(y, trials, eta, link);
+      target += binom_lpmf(y | trials, eta, link);
     }
     else
       target += dot_product(weights, pw_binom(y, trials, eta, link));
@@ -80,7 +80,7 @@ model {
 #include /model/priors_glm.stan
 
   if (t > 0) {
-    target += decov_lp(z_b, z_T, rho, zeta, tau,
+    target += decov_lpdf(z_b | z_T, rho, zeta, tau,
                           regularization, delta, shape, t, p);
   }
 }
