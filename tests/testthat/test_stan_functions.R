@@ -113,7 +113,7 @@ test_that("pw_binom and ll_binom_lp return expected results", {
     linkinv <- binomial(link = links[i])$linkinv
     ll <- dbinom(y, size = trials, prob = linkinv(eta), log = TRUE)
     expect_true(all.equal(ll,  pw_binom(y, rep(trials, N), eta, i)), info = links[i])
-    expect_true(all.equal(sum(ll), binom_lpdf(y, rep(trials, N), eta, i), info = links[i]))
+    expect_true(all.equal(sum(ll), binom_lpmf(y, rep(trials, N), eta, i), info = links[i]))
   }
 })
 
@@ -296,7 +296,7 @@ test_that("ll_mvn_ols... returns expected results", {
   R_inv <- qr.solve(decomposition, Q)
   b <- R %*% b[-1]
   beta <- R %*% beta
-  expect_true(all.equal(ll, ll_mvn_ols_qr_lp(beta, b, intercept, mean(y),
+  expect_true(all.equal(ll, mvn_ols_qr_lpdf(beta, b, intercept, mean(y),
                                              SSR, sigma, N)))
 })
 
