@@ -1,7 +1,7 @@
   // Log-priors, auxiliary params
   if (has_aux[1] == 1)
     target += aux_lpdf(yAux1_unscaled[1] | y_prior_dist_for_aux[1],
-           y_prior_scale_for_aux[1] y_prior_df_for_aux[1]);
+           y_prior_scale_for_aux[1], y_prior_df_for_aux[1]);
   if (M > 1 && has_aux[2] == 1)
     target += aux_lpdf(yAux2_unscaled[1] | y_prior_dist_for_aux[2],
            y_prior_scale_for_aux[2], y_prior_df_for_aux[2]);
@@ -17,7 +17,7 @@
     target += gamma_custom_lpdf(yGamma2[1] | y_prior_dist_for_intercept[2], y_prior_mean_for_intercept[2],
              y_prior_scale_for_intercept[2], y_prior_df_for_intercept[2]);
   if (M > 2 && intercept_type[3] > 0)
-   target += gamma_custom_lpdf(yGamma3[1] \ y_prior_dist_for_intercept[3], y_prior_mean_for_intercept[3],
+   target += gamma_custom_lpdf(yGamma3[1] | y_prior_dist_for_intercept[3], y_prior_mean_for_intercept[3],
              y_prior_scale_for_intercept[3], y_prior_df_for_intercept[3]);
 
   // Log priors, population level params
