@@ -14,7 +14,7 @@ data {
   int<lower=0,upper=1> dense_X; // flag for dense vs. sparse
   matrix[N[1],K] X0[dense_X];   // centered (by xbar) predictor matrix | y = 0
   matrix[N[2],K] X1[dense_X];   // centered (by xbar) predictor matrix | y = 1
-  
+
   int<lower=0, upper=1> clogit; // 1 iff the number of successes is fixed in each stratum
   int<lower=0> J; // number of strata (possibly zero)
   int<lower=1,upper=J> strata[clogit == 1 ? N[1] + N[2] : 0];
@@ -24,12 +24,12 @@ data {
   vector[nnz_X0] w_X0;                       // non-zero elements in the implicit X0 matrix
   int<lower=1, upper = K> v_X0[nnz_X0];      // column indices for w_X0
   // where the non-zeros start in each row of X0
-  int<lower=1, upper = rows(w_X0) + 1> u_X0[dense_X ? 0 : N[1] + 1]; 
+  int<lower=1, upper = rows(w_X0) + 1> u_X0[dense_X ? 0 : N[1] + 1];
   int<lower=0> nnz_X1;                       // number of non-zero elements in the implicit X1 matrix
   vector[nnz_X1] w_X1;                       // non-zero elements in the implicit X1 matrix
   int<lower=1, upper = K> v_X1[nnz_X1];      // column indices for w_X1
   // where the non-zeros start in each row of X1
-  int<lower=1, upper = rows(w_X1) + 1> u_X1[dense_X ? 0 : N[2] + 1]; 
+  int<lower=1, upper = rows(w_X1) + 1> u_X1[dense_X ? 0 : N[2] + 1];
   // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
 #include /data/data_glm.stan
 
@@ -37,19 +37,19 @@ data {
   matrix[N[1], K_smooth] S0;
   matrix[N[2], K_smooth] S1;
   int<lower=1> smooth_map[K_smooth];
-  
+
   int<lower=5,upper=5> family;
 
   // weights
   int<lower=0,upper=1> has_weights;  // 0 = No, 1 = Yes
   vector[has_weights ? N[1] : 0] weights0;
   vector[has_weights ? N[2] : 0] weights1;
-  
+
   // offset
   int<lower=0,upper=1> has_offset;  // 0 = No, 1 = Yes
   vector[has_offset ? N[1] : 0] offset0;
   vector[has_offset ? N[2] : 0] offset1;
-  
+
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
 #include /data/hyperparameters.stan
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
@@ -62,9 +62,9 @@ data {
   int<lower=1, upper = q> v0[num_non_zero[1]]; // column indices for w0
   int<lower=1, upper = q> v1[num_non_zero[2]]; // column indices for w1
   // where the non-zeros start in each row of Z0
-  int<lower=1, upper = rows(w0) + 1> u0[t > 0 ? N[1] + 1 : 0];  
+  int<lower=1, upper = rows(w0) + 1> u0[t > 0 ? N[1] + 1 : 0];
   // where the non-zeros start in each row of Z1
-  int<lower=1, upper = rows(w1) + 1> u1[t > 0 ? N[2] + 1 : 0];  
+  int<lower=1, upper = rows(w1) + 1> u1[t > 0 ? N[2] + 1 : 0];
   int<lower=0, upper=1> special_case;     // whether we only have to deal with (1|group)
 }
 transformed data {
@@ -77,7 +77,7 @@ transformed data {
   int<lower=0> observations[clogit ? J : 0];
 
   int can_do_bernoullilogitglm = K != 0 &&  // remove K!=0 after rstan includes this Stan bugfix: https://github.com/stan-dev/math/issues/1398
-                                 link == 1 && clogit == 0 && has_offset == 0 && 
+                                 link == 1 && clogit == 0 && has_offset == 0 &&
                                  prior_PD == 0 && dense_X == 1 && has_weights == 0 && t == 0;
   matrix[can_do_bernoullilogitglm ? NN : 0, can_do_bernoullilogitglm ? K + K_smooth : 0] XS;
   int y[can_do_bernoullilogitglm ? NN : 0];
@@ -117,7 +117,7 @@ transformed parameters {
       }
     }
     else {
-      theta_L = make_theta_L(len_theta_L, p, 
+      theta_L = make_theta_L(len_theta_L, p,
                              1.0, tau, scale, zeta, rho, z_T);
       b = make_b(z_b, theta_L, p, l);
     }
@@ -142,33 +142,33 @@ model {
       }
     }
     // Log-likelihood
-    if (clogit) { 
-      real dummy = ll_clogit_lp(eta0, eta1, successes, failures, observations);
+    if (clogit) {
+      target += ll_clogit_lp(eta0, eta1, successes, failures, observations);
     }
     else if (has_weights == 0) {
-      real dummy = ll_bern_lp(eta0, eta1, link, N);
+      target += ll_bern_lp(eta0, eta1, link, N);
     }
     else {  // weighted log-likelihoods
       target += dot_product(weights0, pw_bern(0, eta0, link));
       target += dot_product(weights1, pw_bern(1, eta1, link));
     }
   }
-  
+
 #include /model/priors_glm.stan
   if (t > 0) {
-    real dummy = decov_lp(z_b, z_T, rho, zeta, tau, 
+    target += decov_lp(z_b, z_T, rho, zeta, tau,
                           regularization, delta, shape, t, p);
   }
 }
 generated quantities {
   real mean_PPD = compute_mean_PPD ? 0 : negative_infinity();
   real alpha[has_intercept];
-  
+
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
   }
-  
+
   if (compute_mean_PPD) {
     vector[N[1]] pi0;
     vector[N[2]] pi1;
@@ -178,7 +178,7 @@ generated quantities {
       if (link != 4) {
         eta0 += gamma[1];
         eta1 += gamma[1];
-      }      
+      }
       else {
         real shift;
         shift = fmax(max(eta0), max(eta1));
