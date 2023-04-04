@@ -52,7 +52,7 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           cache-version: 2
-          extra-packages: any::rcmdcheck any::betareg any::HSAUR3 any::biglm any::gamm4
+          extra-packages: any::rcmdcheck any::betareg any::HSAUR3 any::biglm any::gamm4 any::V8
 
       - name: Install RStan Preview if Needed
         run: |
