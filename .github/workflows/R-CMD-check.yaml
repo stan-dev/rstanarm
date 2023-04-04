@@ -14,23 +14,23 @@ jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
 
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+    name: ${{ matrix.config.rstan}} - ${{ matrix.config.os }} (${{ matrix.config.r }})
 
     strategy:
       fail-fast: false
       matrix:
         config:
-          - {os: macOS-latest, r: 'devel', repo: ''}
-          - {os: macOS-latest, r: 'release', repo: ''}
-          - {os: windows-latest, r: 'devel', repo: ''}
-          - {os: windows-latest, r: 'release', repo: ''}
-          - {os: ubuntu-latest, r: 'devel', repo: ''}
-          - {os: ubuntu-latest, r: 'release', repo: ''}
-          - {os: ubuntu-latest, r: 'oldrel', repo: ''}
+          - {os: macOS-latest, r: 'devel', rstan: 'CRAN', repo: ''}
+          - {os: macOS-latest, r: 'release', rstan: 'CRAN', repo: ''}
+          - {os: windows-latest, r: 'devel', rstan: 'CRAN', repo: ''}
+          - {os: windows-latest, r: 'release', rstan: 'CRAN', repo: ''}
+          - {os: ubuntu-latest, r: 'devel', rstan: 'CRAN', repo: ''}
+          - {os: ubuntu-latest, r: 'release', rstan: 'CRAN', repo: ''}
+          - {os: ubuntu-latest, r: 'oldrel', rstan: 'CRAN', repo: ''}
 
-          - {os: macOS-latest, r: 'devel', repo: 'https://mc-stan.org/r-packages/'}
-          - {os: windows-latest, r: 'devel', repo: 'https://mc-stan.org/r-packages/'}
-          - {os: ubuntu-latest, r: 'devel', repo: 'https://mc-stan.org/r-packages/'}
+          - {os: macOS-latest, r: 'devel', rstan: 'Preview', repo: 'https://mc-stan.org/r-packages/'}
+          - {os: windows-latest, r: 'devel', rstan: 'Preview', repo: 'https://mc-stan.org/r-packages/'}
+          - {os: ubuntu-latest, r: 'devel', rstan: 'Preview', repo: 'https://mc-stan.org/r-packages/'}
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
       RSPM: ${{ matrix.config.rspm }}
@@ -56,13 +56,10 @@ jobs:
           cache-version: 2
           extra-packages: any::rcmdcheck any::betareg any::HSAUR3 any::biglm any::gamm4
 
-      - name: Check
-        env:
-          _R_CHECK_CRAN_INCOMING_REMOTE_: false
-        run: |
-          Sys.setenv(MAKEFLAGS = "-j2") # will rcmdcheck::rcmdcheck use this?
-          rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran", "--ignore-vignettes"), build_args = c("--no-build-vignettes"), check_dir = "check")
-        shell: Rscript {0}
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          args: 'c("--no-manual", "--as-cran", "--ignore-vignettes")'
+          build_args: '"--no-build-vignettes"'
 
       - name: Upload check results
         if: failure()
