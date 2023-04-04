@@ -20,21 +20,22 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: macOS-latest, r: 'devel', rstan: 'CRAN', repo: ''}
-          - {os: macOS-latest, r: 'release', rstan: 'CRAN', repo: ''}
-          - {os: windows-latest, r: 'devel', rstan: 'CRAN', repo: ''}
-          - {os: windows-latest, r: 'release', rstan: 'CRAN', repo: ''}
-          - {os: ubuntu-latest, r: 'devel', rstan: 'CRAN', repo: ''}
-          - {os: ubuntu-latest, r: 'release', rstan: 'CRAN', repo: ''}
-          - {os: ubuntu-latest, r: 'oldrel', rstan: 'CRAN', repo: ''}
+          - {os: macOS-latest, r: 'devel', rstan: 'CRAN'}
+          - {os: macOS-latest, r: 'release', rstan: 'CRAN'}
+          - {os: windows-latest, r: 'devel', rstan: 'CRAN'}
+          - {os: windows-latest, r: 'release', rstan: 'CRAN'}
+          - {os: ubuntu-latest, r: 'devel', rstan: 'CRAN'}
+          - {os: ubuntu-latest, r: 'release', rstan: 'CRAN'}
+          - {os: ubuntu-latest, r: 'oldrel', rstan: 'CRAN'}
 
-          - {os: macOS-latest, r: 'devel', rstan: 'Preview', repo: 'https://mc-stan.org/r-packages/'}
-          - {os: windows-latest, r: 'devel', rstan: 'Preview', repo: 'https://mc-stan.org/r-packages/'}
-          - {os: ubuntu-latest, r: 'devel', rstan: 'Preview', repo: 'https://mc-stan.org/r-packages/'}
+          - {os: macOS-latest, r: 'devel', rstan: 'Preview'}
+          - {os: windows-latest, r: 'devel', rstan: 'Preview'}
+          - {os: ubuntu-latest, r: 'devel', rstan: 'Preview'}
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
       RSPM: ${{ matrix.config.rspm }}
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      MAKEFLAGS: "-j2"
 
     steps:
       - uses: n1hility/cancel-previous-runs@v2
@@ -54,9 +55,12 @@ jobs:
         with:
           cache-version: 2
           extra-packages: any::rcmdcheck any::betareg any::HSAUR3 any::biglm any::gamm4
-      - name: Install RStan
+
+      - name: Install RStan Preview if Needed
         run: |
-          install.packages("rstan", repos = c("${{ matrix.config.repo }}", getOption("repos")))
+          if ("${{ matrix.config.rstan }}" == "Preview") {
+            install.packages("rstan", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+          }
         shell: Rscript {0}
 
       - uses: r-lib/actions/check-r-package@v2

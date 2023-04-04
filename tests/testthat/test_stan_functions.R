@@ -58,7 +58,7 @@ functions <- c(unlist(lapply(file.path(MODELS_HOME, "functions",
                                "count_likelihoods.stan",
                                "SSfunctions.stan")),
                       FUN = readLines)), unlist(functions))
-model_code <- paste(c("functions {", functions, "}"), collapse = "\n")
+model_code <- paste(c("functions {", functions[grep("CODOLS", functions, invert = TRUE)], "}"), collapse = "\n")
 stanc_ret <- stanc(model_code = model_code, model_name = "Stan Functions",
                    allow_undefined = TRUE)
 expose_stan_functions(stanc_ret, rebuild = TRUE, verbose = TRUE)
