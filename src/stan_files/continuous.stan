@@ -8,7 +8,7 @@ functions {
 #include /functions/SSfunctions.stan
 
   /**
-   * Increments the log-posterior with the logarithm of a multivariate normal 
+   * Increments the log-posterior with the logarithm of a multivariate normal
    * likelihood with a scalar standard deviation for all errors
    * Equivalent to normal_lpdf(y | intercept + X * beta + Z * b, sigma) but faster
    * @param coeff vector of coefficients (including intercept)
@@ -18,7 +18,7 @@ functions {
    * @param sigma positive scalar for the standard deviation of the errors
    * @param N integer equal to the number of observations
    */
-  real ll_mvn_ols(vector coeff, vector OLS, matrix XtX,
+  real mvn_ols_lpdf(vector coeff, vector OLS, matrix XtX,
                   real SSR, real sigma, int N) {
     return -0.5 * (quad_form(XtX, coeff - OLS) + SSR) / square(sigma)
             - N * (log(sigma) + log(sqrt(2 * pi())));
@@ -57,13 +57,13 @@ transformed data {
   real sum_log_y = family == 1 ? not_a_number() : sum(log(y));
   int<lower=1> V[special_case ? t : 0, len_y] = make_V(len_y, special_case ? t : 0, v);
   int<lower=0> hs_z;                  // for tdata_betareg.stan
-  int can_do_OLS = family == 1 && link == 1 && SSfun == 0 && has_offset == 0 && t == 0 && 
+  int can_do_OLS = family == 1 && link == 1 && SSfun == 0 && has_offset == 0 && t == 0 &&
                    prior_PD == 0 && dense_X && N > 2 && len_y >= (has_intercept + K + K_smooth);
   vector[can_do_OLS ? has_intercept + K + K_smooth : 0] OLS;
   matrix[can_do_OLS ? has_intercept + K + K_smooth : 0, can_do_OLS ? has_intercept + K + K_smooth : 0] XtX;
-  int can_do_normalidglm = K != 0 &&  // remove K!=0 after rstan includes this Stan bugfix: https://github.com/stan-dev/math/issues/1398 
-                           can_do_OLS == 0 && family == 1 && link == 1 && 
-                           SSfun == 0 && has_offset == 0 && dense_X && prior_PD == 0 && 
+  int can_do_normalidglm = K != 0 &&  // remove K!=0 after rstan includes this Stan bugfix: https://github.com/stan-dev/math/issues/1398
+                           can_do_OLS == 0 && family == 1 && link == 1 &&
+                           SSfun == 0 && has_offset == 0 && dense_X && prior_PD == 0 &&
                            t == 0 && len_y < (has_intercept + K + K_smooth);
   matrix[can_do_normalidglm ? N : 0, can_do_normalidglm ? K + K_smooth : 0] XS;
   real SSR = not_a_number();
@@ -78,8 +78,8 @@ transformed data {
     log_y = log(y);
   }
   if (can_do_OLS) {
-    matrix[N, has_intercept + K + K_smooth ] X_ = has_intercept ? append_col(rep_vector(1.0, N), 
-                                                  (K_smooth > 0 ? append_col(X[1], S) : X[1])) : 
+    matrix[N, has_intercept + K + K_smooth ] X_ = has_intercept ? append_col(rep_vector(1.0, N),
+                                                  (K_smooth > 0 ? append_col(X[1], S) : X[1])) :
                                                   (K_smooth > 0 ? append_col(X[1], S) : X[1]);
     XtX = crossprod(X_);
     OLS = CODOLS(X_, y);
@@ -98,7 +98,7 @@ parameters {
 }
 transformed parameters {
   // aux has to be defined first in the hs case
-  real aux = prior_dist_for_aux == 0 ? aux_unscaled : (prior_dist_for_aux <= 2 ? 
+  real aux = prior_dist_for_aux == 0 ? aux_unscaled : (prior_dist_for_aux <= 2 ?
              prior_scale_for_aux * aux_unscaled + prior_mean_for_aux :
              prior_scale_for_aux * aux_unscaled);
 
@@ -106,7 +106,7 @@ transformed parameters {
   // defines beta, b, theta_L
 #include /tparameters/tparameters_glm.stan
 #include /tparameters/tparameters_betareg.stan
-  
+
   if (prior_dist_for_aux == 0) // none
     aux = aux_unscaled;
   else {
@@ -127,7 +127,7 @@ transformed parameters {
       }
     }
     else {
-      theta_L = make_theta_L(len_theta_L, p, 
+      theta_L = make_theta_L(len_theta_L, p,
                              aux, tau, scale, zeta, rho, z_T);
       b = make_b(z_b, theta_L, p, l);
     }
@@ -135,10 +135,10 @@ transformed parameters {
 }
 model {
   if (can_do_OLS) {
-    vector[cols(XtX)] coeff = has_intercept ? append_row(to_vector(gamma), 
-                                              (K_smooth > 0 ? append_row(beta, beta_smooth) : beta)) : 
+    vector[cols(XtX)] coeff = has_intercept ? append_row(to_vector(gamma),
+                                              (K_smooth > 0 ? append_row(beta, beta_smooth) : beta)) :
                                               (K_smooth > 0 ? append_row(beta, beta_smooth) : beta);
-    target += ll_mvn_ols(coeff, OLS, XtX, SSR, aux, N);
+    target += mvn_ols_lpdf(coeff | OLS, XtX, SSR, aux, N);
   } else if (can_do_normalidglm) {
     vector[K + K_smooth] coeff = K_smooth > 0 ? append_row(beta, beta_smooth) : beta;
     target += normal_id_glm_lpdf(y | XS, has_intercept ? gamma[1] : 0.0, coeff, aux);
@@ -198,18 +198,18 @@ model {
 #include /model/eta_z_no_intercept.stan
       }
       if (family == 1) {
-        if (link == 1) 
+        if (link == 1)
           target += normal_lpdf(y | eta, aux);
-        else if (link == 2) 
+        else if (link == 2)
           target += normal_lpdf(y | exp(eta), aux);
-        else 
+        else
           target += normal_lpdf(y | inv(eta), aux);
       }
       else if (family == 2) {
         target += GammaReg(y, eta, aux, link, sum_log_y);
       }
       else if (family == 3) {
-        target += inv_gaussian(y, linkinv_inv_gaussian(eta, link), 
+        target += inv_gaussian(y, linkinv_inv_gaussian(eta, link),
                                aux, sum_log_y, sqrt_y);
       }
       else if (family == 4 && link_phi == 0) {
@@ -222,7 +222,7 @@ model {
         vector[N] mu_z;
         mu = linkinv_beta(eta, link);
         mu_z = linkinv_beta_z(eta_z, link_phi);
-        target += beta_lpdf(y | rows_dot_product(mu, mu_z), 
+        target += beta_lpdf(y | rows_dot_product(mu, mu_z),
                             rows_dot_product((1 - mu) , mu_z));
       }
     }
@@ -244,14 +244,14 @@ model {
       target += normal_lpdf(aux_unscaled | 0, 1) - log_half;
     else if (prior_dist_for_aux == 2)
       target += student_t_lpdf(aux_unscaled | prior_df_for_aux, 0, 1) - log_half;
-    else 
+    else
      target += exponential_lpdf(aux_unscaled | 1);
   }
-    
+
 #include /model/priors_glm.stan
 #include /model/priors_betareg.stan
   if (t > 0) {
-    real dummy = decov_lp(z_b, z_T, rho, zeta, tau, 
+    target += decov_lpdf(z_b | z_T, rho, zeta, tau,
                           regularization, delta, shape, t, p);
   }
 }
@@ -259,15 +259,15 @@ generated quantities {
   real mean_PPD = compute_mean_PPD ? 0 : negative_infinity();
   real alpha[has_intercept];
   real omega_int[has_intercept_z];
-  
+
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
   }
-  if (has_intercept_z == 1) { 
-    omega_int[1] = gamma_z[1] - dot_product(zbar, omega);  // adjust betareg intercept 
+  if (has_intercept_z == 1) {
+    omega_int[1] = gamma_z[1] - dot_product(zbar, omega);  // adjust betareg intercept
   }
-  
+
   if (compute_mean_PPD) {
     vector[N] eta_z;
 #include /model/make_eta.stan
@@ -305,10 +305,10 @@ generated quantities {
     else { // has_intercept_z == 0
 #include /model/eta_z_no_intercept.stan
     }
-    
+
     if (SSfun > 0) { // nlmer
       vector[len_y] eta_nlmer;
-      matrix[len_y, K] P;      
+      matrix[len_y, K] P;
       P = reshape_vec(eta, len_y, K);
       if (SSfun < 5) {
         if (SSfun <= 2) {
@@ -344,7 +344,7 @@ generated quantities {
       vector[N] mu = link > 1 ? linkinv_inv_gaussian(eta, link) : eta;
       for (n in 1:len_y) mean_PPD += inv_gaussian_rng(mu[n], aux);
     }
-    else if (family == 4 && link_phi == 0) { 
+    else if (family == 4 && link_phi == 0) {
       vector[N] mu = linkinv_beta(eta, link);
       for (n in 1:N) {
         real mu_n = mu[n];

@@ -11,7 +11,7 @@ data {
 #include /data/NKX.stan
   int<lower=0> y[N];         // outcome: number of successes
   int<lower=0> trials[N];    // number of trials
-  // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept  
+  // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
 #include /data/data_glm.stan
   // declares has_weights, weights, has_offset, offset
 #include /data/weights_offset.stan
@@ -49,7 +49,7 @@ transformed parameters {
       }
     }
     else {
-      theta_L = make_theta_L(len_theta_L, p, 
+      theta_L = make_theta_L(len_theta_L, p,
                              1.0, tau, scale, zeta, rho, z_T);
       b = make_b(z_b, theta_L, p, l);
     }
@@ -68,31 +68,31 @@ model {
     else {
 #include /model/eta_no_intercept.stan
     }
-  
-    // Log-likelihood 
+
+    // Log-likelihood
     if (has_weights == 0) {  // unweighted log-likelihoods
-      real dummy = ll_binom_lp(y, trials, eta, link);
+      target += binom_lpmf(y | trials, eta, link);
     }
-    else 
+    else
       target += dot_product(weights, pw_binom(y, trials, eta, link));
   }
-  
+
 #include /model/priors_glm.stan
-  
+
   if (t > 0) {
-    real dummy = decov_lp(z_b, z_T, rho, zeta, tau, 
+    target += decov_lpdf(z_b | z_T, rho, zeta, tau,
                           regularization, delta, shape, t, p);
   }
 }
 generated quantities {
   real mean_PPD = compute_mean_PPD ? 0 : negative_infinity();
   real alpha[has_intercept];
-  
+
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
   }
-  
+
   if (compute_mean_PPD) {
     vector[N] pi;
 #include /model/make_eta.stan
@@ -110,7 +110,7 @@ generated quantities {
     else {
 #include /model/eta_no_intercept.stan
     }
-    
+
     pi = linkinv_binom(eta, link);
     for (n in 1:N) mean_PPD += binomial_rng(trials[n], pi[n]);
     mean_PPD /= N;

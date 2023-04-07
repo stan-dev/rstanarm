@@ -1,4 +1,4 @@
-  /** 
+  /**
    * Apply inverse link function to linear predictor
    *
    * @param eta Linear predictor vector
@@ -14,7 +14,7 @@
     else reject("Invalid link");
     return eta; // never reached
   }
-  
+
   /**
   * Increment with the unweighted log-likelihood
   * @param y An integer array indicating the number of successes
@@ -23,29 +23,30 @@
   * @param link An integer indicating the link function
   * @return lp__
   */
-  real ll_binom_lp(int[] y, int[] trials, vector eta, int link) {
-    if (link == 1) target += binomial_logit_lpmf(y | trials, eta);
-    else if (link <  4) target += binomial_lpmf( y | trials, linkinv_binom(eta, link));
+  real binom_lpmf(int[] y, int[] trials, vector eta, int link) {
+    real lp = 0;
+    if (link == 1) lp += binomial_logit_lpmf(y | trials, eta);
+    else if (link <  4) lp += binomial_lpmf( y | trials, linkinv_binom(eta, link));
     else if (link == 4) {  // log
       for (n in 1:num_elements(y)) {
-        target += y[n] * eta[n];
-        target += (trials[n] - y[n]) * log1m_exp(eta[n]);
-        target += lchoose(trials[n], y[n]);
+        lp += y[n] * eta[n];
+        lp += (trials[n] - y[n]) * log1m_exp(eta[n]);
+        lp += lchoose(trials[n], y[n]);
       }
     }
     else if (link == 5) {  // cloglog
       for (n in 1:num_elements(y)) {
         real neg_exp_eta = -exp(eta[n]);
-        target += y[n] * log1m_exp(neg_exp_eta);
-        target += (trials[n] - y[n]) * neg_exp_eta;
-        target += lchoose(trials[n], y[n]);
+        lp += y[n] * log1m_exp(neg_exp_eta);
+        lp += (trials[n] - y[n]) * neg_exp_eta;
+        lp += lchoose(trials[n], y[n]);
       }
     }
     else reject("Invalid link");
-    return target();
+    return lp;
   }
-  
-  /** 
+
+  /**
   * Pointwise (pw) log-likelihood vector
   *
   * @param y The integer array corresponding to the outcome variable.
@@ -56,7 +57,7 @@
     int N = rows(eta);
     vector[N] ll;
     if (link == 1) {  // logit
-      for (n in 1:N) 
+      for (n in 1:N)
         ll[n] = binomial_logit_lpmf(y[n] | trials[n], eta[n]);
     }
     else if (link <= 5) {  // link = probit, cauchit, log, or cloglog

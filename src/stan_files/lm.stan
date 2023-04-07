@@ -4,7 +4,7 @@
 // GLM for a Gaussian outcome with no link function
 functions {
   /**
-   * Increments the log-posterior with the logarithm of a multivariate normal 
+   * Increments the log-posterior with the logarithm of a multivariate normal
    * likelihood with a scalar standard deviation for all errors
    * Equivalent to normal_lpdf(y | intercept + Q * R * beta, sigma) but faster
    * @param theta vector of coefficients (excluding intercept), equal to R * beta
@@ -15,14 +15,13 @@ functions {
    * @param sigma positive scalar for the standard deviation of the errors
    * @param N integer equal to the number of observations
    */
-  real ll_mvn_ols_qr_lp(vector theta, vector b,
+  real mvn_ols_qr_lpdf(vector theta, vector b,
                         real intercept, real ybar,
                         real SSR, real sigma, int N) {
-    target += -0.5 * (dot_self(theta - b) + 
-      N * square(intercept - ybar) + SSR) / 
+    return -0.5 * (dot_self(theta - b) +
+      N * square(intercept - ybar) + SSR) /
       square(sigma) -// 0.91... is log(sqrt(2 * pi()))
       N * (log(sigma) + 0.91893853320467267);
-    return target();
   }
 }
 data {
@@ -33,7 +32,7 @@ data {
   int<lower=0,upper=1> prior_dist;    // 0 = uniform for R^2, 1 = Beta(K/2,eta)
   int<lower=0,upper=1> prior_PD;      // 0 = no, 1 = yes to drawing from the prior
   real<lower=0> eta;                  // shape hyperparameter
-  
+
   int<lower=1> J;                     // number of groups
   // the rest of these are indexed by group but should work even if J = 1
   int<lower=1> N[J];                  // number of observations
@@ -67,21 +66,21 @@ transformed parameters {
   real<lower=0> sigma[J];          // error standard deviations
   for (j in 1:J) {
     // marginal standard deviation of outcome for group j
-    real Delta_y = prior_PD == 0 ? s_Y[j] * exp(log_omega[j]) : 1; 
+    real Delta_y = prior_PD == 0 ? s_Y[j] * exp(log_omega[j]) : 1;
 
     // coefficients in Q-space
     if (K > 1) theta[j] = u[j] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
     else theta[j][1] = R2[j] * sqrt_Nm1[j] * Delta_y;
-    
+
     sigma[j] = Delta_y * sqrt(1 - R2[j]); // standard deviation of errors
-    
+
     if (has_intercept == 1) {
       if (prior_dist_for_intercept == 0)       // no information
         alpha[j] = z_alpha[j];
       else if (prior_scale_for_intercept == 0) // central limit theorem
         alpha[j] = z_alpha[j] * Delta_y * sqrt_inv_N[j] + prior_mean_for_intercept;
       else                                     // arbitrary informative prior
-         alpha[j] = z_alpha[j] * prior_scale_for_intercept + 
+         alpha[j] = z_alpha[j] * prior_scale_for_intercept +
                      prior_mean_for_intercept;
     }
   }
@@ -89,12 +88,12 @@ transformed parameters {
 model {
   if (prior_PD == 0) for (j in 1:J) { // likelihood contribution for each group
     real shift = dot_product(xbarR_inv[j], theta[j]);
-    real dummy = ll_mvn_ols_qr_lp(theta[j], Rb[j], 
+    target += mvn_ols_qr_lpdf(theta[j] | Rb[j],
                                   has_intercept == 1 ? alpha[j] + shift : shift,
                                   ybar[j], SSR[j], sigma[j], N[j]);
     // implicit: u[j] is uniform on the surface of a hypersphere
   }
-  if (has_intercept == 1 && prior_dist_for_intercept > 0) 
+  if (has_intercept == 1 && prior_dist_for_intercept > 0)
     target += normal_lpdf(z_alpha | 0, 1);
   if (prior_dist == 1) {
     if (K > 1) target += beta_lpdf( R2  | half_K, eta);

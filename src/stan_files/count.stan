@@ -25,12 +25,12 @@ data {
 transformed data{
   real poisson_max = pow(2.0, 30.0);
   int<lower=1> V[special_case ? t : 0, N] = make_V(N, special_case ? t : 0, v);
-  
+
   int can_do_countlogglm = K != 0 &&  // remove K!=0 after rstan includes this Stan bugfix: https://github.com/stan-dev/math/issues/1398
-                           link == 1 && prior_PD == 0 && 
-                           dense_X == 1 && has_weights == 0 && t == 0; 
+                           link == 1 && prior_PD == 0 &&
+                           dense_X == 1 && has_weights == 0 && t == 0;
   matrix[can_do_countlogglm ? N : 0, can_do_countlogglm ? K + K_smooth : 0] XS;
-  
+
   // defines hs, len_z_T, len_var_group, delta, pos
 #include /tdata/tdata_glm.stan
 
@@ -57,7 +57,7 @@ transformed parameters {
     if (prior_dist_for_aux <= 2) // normal or student_t
       aux += prior_mean_for_aux;
   }
- 
+
   if (t > 0) {
     if (special_case == 1) {
       int start = 1;
@@ -108,7 +108,7 @@ model {
     else {
 #include /model/eta_no_intercept.stan
     }
-  
+
     if (family == 8) {
       if      (link == 1) eta += log(aux) + log(noise[1]);
       else if (link == 2) {
@@ -117,7 +117,7 @@ model {
       }
       else                eta += sqrt(aux) + sqrt(noise[1]);
     }
-  
+
     // Log-likelihood
     if (has_weights == 0) {  // unweighted log-likelihoods
       if (family != 7) {
@@ -134,38 +134,38 @@ model {
     else
       target += dot_product(weights, pw_nb(y, eta, aux, link));
   }
-  
+
   // Log-prior for aux
-  if (family > 6 && 
+  if (family > 6 &&
       prior_dist_for_aux > 0 && prior_scale_for_aux > 0) {
-    real log_half = -0.693147180559945286;    
+    real log_half = -0.693147180559945286;
     if (prior_dist_for_aux == 1)
       target += normal_lpdf(aux_unscaled | 0, 1) - log_half;
     else if (prior_dist_for_aux == 2)
       target += student_t_lpdf(aux_unscaled | prior_df_for_aux, 0, 1) - log_half;
-    else 
+    else
       target += exponential_lpdf(aux_unscaled | 1);
   }
-  
+
 #include /model/priors_glm.stan
-  
+
   // Log-prior for noise
   if (family == 8) target += gamma_lpdf(noise[1] | aux, 1);
-  
+
   if (t > 0) {
-    real dummy = decov_lp(z_b, z_T, rho, zeta, tau, 
+    target += decov_lpdf(z_b | z_T, rho, zeta, tau,
                           regularization, delta, shape, t, p);
   }
 }
 generated quantities {
   real mean_PPD = compute_mean_PPD ? 0 : negative_infinity();
   real alpha[has_intercept];
-  
+
   if (has_intercept == 1) {
     if (dense_X) alpha[1] = gamma[1] - dot_product(xbar, beta);
     else alpha[1] = gamma[1];
   }
-  
+
   if (compute_mean_PPD) {
     vector[N] nu;
 #include /model/make_eta.stan

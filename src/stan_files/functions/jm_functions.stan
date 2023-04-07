@@ -3,7 +3,7 @@
   *
   * @param aux_unscaled A vector, the unscaled auxiliary parameters
   * @param prior_dist Integer, the type of prior distribution
-  * @param prior_mean,prior_scale Vectors, the mean and scale 
+  * @param prior_mean,prior_scale Vectors, the mean and scale
   *   of the prior distribution
   * @return A vector, corresponding to the scaled auxiliary parameters
   */
@@ -30,15 +30,17 @@
   * @param df Real specifying the df for the prior distribution
   * @return nothing
   */
-  void basehaz_lp(vector aux_unscaled, int dist, vector scale, vector df) {
+  real basehaz_lpdf(vector aux_unscaled, int dist, vector scale, vector df) {
+    real lp = 0;
     if (dist > 0) {
       if (dist == 1)
-        target += normal_lpdf(aux_unscaled | 0, 1);
+        lp += normal_lpdf(aux_unscaled | 0, 1);
       else if (dist == 2)
-        target += student_t_lpdf(aux_unscaled | df, 0, 1);
+        lp += student_t_lpdf(aux_unscaled | df, 0, 1);
       else
-        target += exponential_lpdf(aux_unscaled | 1);
+        lp += exponential_lpdf(aux_unscaled | 1);
     }
+    return lp;
   }
 
   /**
