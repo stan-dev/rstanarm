@@ -515,7 +515,7 @@ stan_surv <- function(formula,
   if (any(is.na(status)))
     stop2("Invalid status indicator in Surv object.")
   
-  if (any(status < 0 || status > 3))
+  if (any(status < 0 | status > 3))
     stop2("Invalid status indicator in Surv object.")
 
   # delayed entry indicator for each row of data
@@ -1793,7 +1793,7 @@ parse_formula_and_data <- function(formula, data) {
   if (any(is.na(status)))
     stop2("Invalid status indicator in Surv object.")
   
-  if (any(status < 0 || status > 3))
+  if (any(status < 0 | status > 3))
     stop2("Invalid status indicator in Surv object.")
   
   # deal with tve(x, ...)
