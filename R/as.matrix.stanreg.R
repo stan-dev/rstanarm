@@ -40,7 +40,7 @@
 #'   \code{pars} and \code{regex_pars}, as well as the model and estimation
 #'   algorithm (see the Description section above).
 #' 
-#' @seealso \code{\link{stanreg-methods}}
+#' @seealso \code{\link{stanreg-draws-formats}}, \code{\link{stanreg-methods}}
 #' 
 #' @examples
 #' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {

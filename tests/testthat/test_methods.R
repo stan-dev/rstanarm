@@ -819,3 +819,34 @@ test_that("stanreg_list works", {
   expect_identical(list1$stan_lmer1, stan_lmer1)
   expect_identical(list1$stan_lmer2, stan_lmer2)
 })
+
+
+# posterior pkg draws formats ---------------------------------------------
+test_that("as_draws methods work", {
+  draws <- as_draws_df(stan_lmer1)
+  expect_equal(posterior::variables(draws), colnames(as.matrix(stan_lmer1)))
+  expect_equal(posterior::nvariables(draws), ncol(as.matrix(stan_lmer1)))
+  expect_equal(posterior::ndraws(draws), ITER)
+  expect_equal(posterior::niterations(draws), ITER/CHAINS)
+  expect_equal(posterior::nchains(draws), CHAINS)
+  
+  draws <- as_draws_df(stan_lmer1, pars = "sigma")
+  expect_equal(posterior::variables(draws), "sigma")
+
+  draws <- as_draws_matrix(stan_lmer1)
+  expect_equal(posterior::variables(draws), colnames(as.matrix(stan_lmer1)))
+  expect_equal(posterior::nvariables(draws), ncol(as.matrix(stan_lmer1)))
+  expect_equal(posterior::ndraws(draws), ITER)
+  expect_equal(posterior::niterations(draws), ITER)
+  expect_equal(posterior::nchains(draws), 1)
+  
+  expect_equal(
+    as_draws_rvars(as_draws_array(stan_glm1)),
+    as_draws_rvars(stan_glm1)
+  )
+  expect_equal(
+    as_draws_list(as_draws_array(stan_polr1)),
+    as_draws_list(stan_polr1)
+  )
+})
+
