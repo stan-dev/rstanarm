@@ -41,6 +41,7 @@ Imports:
     loo (>= 2.1.0),
     Matrix (>= 1.2-13),
     nlme (>= 3.1-124),
+    posterior, 
     rstan (>= 2.21.1),
     rstantools (>= 2.1.0),
     shinystan (>= 2.3.0),
