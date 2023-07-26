@@ -840,13 +840,32 @@ test_that("as_draws methods work", {
   expect_equal(posterior::niterations(draws), ITER)
   expect_equal(posterior::nchains(draws), 1)
   
-  expect_equal(
-    as_draws_rvars(as_draws_array(stan_glm1)),
-    as_draws_rvars(stan_glm1)
-  )
+  draws <- as_draws_df(stan_glm_vb1)
+  expect_equal(posterior::variables(draws), colnames(as.matrix(stan_glm_vb1)))
+  expect_equal(posterior::nvariables(draws), ncol(as.matrix(stan_glm_vb1)))
+  expect_equal(posterior::ndraws(draws), 1000)
+  expect_equal(posterior::niterations(draws), 1000)
+  expect_equal(posterior::nchains(draws), 1)
+  
+  draws <- as_draws_df(stan_glm_opt1)
+  expect_equal(posterior::variables(draws), colnames(as.matrix(stan_glm_vb1)))
+  expect_equal(posterior::nvariables(draws), ncol(as.matrix(stan_glm_vb1)))
+  expect_equal(posterior::ndraws(draws), 1000)
+  expect_equal(posterior::niterations(draws), 1000)
+  expect_equal(posterior::nchains(draws), 1)
+  
   expect_equal(
     as_draws_list(as_draws_array(stan_polr1)),
     as_draws_list(stan_polr1)
+  )
+  
+  expect_error(
+    as_draws_array(stan_glm_opt1), 
+    "not fit using MCMC"
+  )
+  expect_error(
+    as_draws_array(stan_glm_vb1), 
+    "not fit using MCMC"
   )
 })
 
