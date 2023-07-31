@@ -5,7 +5,9 @@
 #'
 #' @name stanreg-draws-formats
 #' @aliases as_draws as_draws_matrix as_draws_array as_draws_df as_draws_rvars as_draws_list
-#'
+#' 
+#' @param x A \code{stanreg} object returned by one of the \pkg{rstanarm}
+#'   modeling functions.
 #' @param ... Arguments (e.g., \code{pars}, \code{regex_pars}) passed internally to
 #'   \code{\link{as.matrix.stanreg}} or \code{as.array.stanreg}.
 #'   
