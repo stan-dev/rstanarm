@@ -3,7 +3,7 @@
   int<lower=0> len_rho = sum(p) - t;
   int<lower=0, upper=1> is_continuous = 0; // changed in continuous.stan
   int<lower=1> pos = 1;
-  real<lower=0> delta[len_concentration];
+  array[len_concentration] real<lower=0> delta;
   int<lower=0> hs;
   if (prior_dist <= 2) hs = 0;
   else if (prior_dist == 3) hs = 2;

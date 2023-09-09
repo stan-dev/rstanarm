@@ -23,7 +23,7 @@
   * @param link An integer indicating the link function
   * @return lp__
   */
-  real binom_lpmf(int[] y, int[] trials, vector eta, int link) {
+  real binom_lpmf(array[] int y, array[] int trials, vector eta, int link) {
     real lp = 0;
     if (link == 1) lp += binomial_logit_lpmf(y | trials, eta);
     else if (link <  4) lp += binomial_lpmf( y | trials, linkinv_binom(eta, link));
@@ -53,7 +53,7 @@
   * @param link An integer indicating the link function
   * @return A vector
   */
-  vector pw_binom(int[] y, int[] trials, vector eta, int link) {
+  vector pw_binom(array[] int y, array[] int trials, vector eta, int link) {
     int N = rows(eta);
     vector[N] ll;
     if (link == 1) {  // logit

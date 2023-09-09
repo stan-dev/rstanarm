@@ -25,7 +25,7 @@
    *   observations where y = 0 and y = 1 respectively
    * @return lp__
    */
-  real bern_lpdf(vector eta0, vector eta1, int link, int[] N) {
+  real bern_lpdf(vector eta0, vector eta1, int link, array[] int N) {
     real lp = 0;
     if (link == 1) { // logit
       lp += logistic_lccdf(eta0 | 0, 1);
@@ -108,7 +108,7 @@
    * @return lp__
    */
   real clogit_lpdf(vector eta0, vector eta1,
-                    int[] successes, int[] failures, int[] observations) {
+                    array[] int successes, array[] int failures, array[] int observations) {
     int J = num_elements(observations);
     int pos0 = 1;
     int pos1 = 1;

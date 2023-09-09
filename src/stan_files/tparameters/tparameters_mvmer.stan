@@ -1,9 +1,9 @@
   vector[yK[1]] yBeta1; // population level params
   vector[yK[2]] yBeta2;
   vector[yK[3]] yBeta3;
-  real yAux1[has_aux[1]]; // auxiliary params
-  real yAux2[has_aux[2]];
-  real yAux3[has_aux[3]];
+  array[has_aux[1]] real yAux1; // auxiliary params
+  array[has_aux[2]] real yAux2;
+  array[has_aux[3]] real yAux3;
   vector[len_theta_L] theta_L; // cov matrix for decov prior
   real yAuxMaximum = 1.0; // used for scaling in theta_L
 

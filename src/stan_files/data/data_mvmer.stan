@@ -1,7 +1,7 @@
   // population level data
-  int<lower=0> yInt1[resp_type[1] == 2 ? yNobs[1] : 0]; // integer responses
-  int<lower=0> yInt2[resp_type[2] == 2 ? yNobs[2] : 0];
-  int<lower=0> yInt3[resp_type[3] == 2 ? yNobs[3] : 0];
+  array[resp_type[1] == 2 ? yNobs[1] : 0] int<lower=0> yInt1; // integer responses
+  array[resp_type[2] == 2 ? yNobs[2] : 0] int<lower=0> yInt2;
+  array[resp_type[3] == 2 ? yNobs[3] : 0] int<lower=0> yInt3;
   vector[resp_type[1] == 1 ? yNobs[1] : 0] yReal1; // real responses
   vector[resp_type[2] == 1 ? yNobs[2] : 0] yReal2;
   vector[resp_type[3] == 1 ? yNobs[3] : 0] yReal3;
@@ -20,32 +20,32 @@
   // 5 = binomial (n>1)
   // 6 = poisson
   // 7 = negative binomial
-  int<lower=0> family[M];
-  int<lower=0> link[M]; // varies by family
+  array[M] int<lower=0> family;
+  array[M] int<lower=0> link; // varies by family
 
   // group level data, group factor 1
-  vector[bK1_len[1] > 0 ? yNeta[1] : 0] y1_Z1[bK1_len[1]]; // re design matrix
-  vector[bK1_len[2] > 0 ? yNeta[2] : 0] y2_Z1[bK1_len[2]];
-  vector[bK1_len[3] > 0 ? yNeta[3] : 0] y3_Z1[bK1_len[3]];
-  int<lower=0> y1_Z1_id[bK1_len[1] > 0 ? yNeta[1] : 0]; // group indexing for y1_Z1
-  int<lower=0> y2_Z1_id[bK1_len[2] > 0 ? yNeta[2] : 0]; // group indexing for y2_Z1
-  int<lower=0> y3_Z1_id[bK1_len[3] > 0 ? yNeta[3] : 0]; // group indexing for y3_Z1
+  array[bK1_len[1]] vector[bK1_len[1] > 0 ? yNeta[1] : 0] y1_Z1; // re design matrix
+  array[bK1_len[2]] vector[bK1_len[2] > 0 ? yNeta[2] : 0] y2_Z1;
+  array[bK1_len[3]] vector[bK1_len[3] > 0 ? yNeta[3] : 0] y3_Z1;
+  array[bK1_len[1] > 0 ? yNeta[1] : 0] int<lower=0> y1_Z1_id; // group indexing for y1_Z1
+  array[bK1_len[2] > 0 ? yNeta[2] : 0] int<lower=0> y2_Z1_id; // group indexing for y2_Z1
+  array[bK1_len[3] > 0 ? yNeta[3] : 0] int<lower=0> y3_Z1_id; // group indexing for y3_Z1
 
   // group level data, group factor 2
-  vector[bK2_len[1] > 0 ? yNeta[1] : 0] y1_Z2[bK2_len[1]]; // re design matrix
-  vector[bK2_len[2] > 0 ? yNeta[2] : 0] y2_Z2[bK2_len[2]];
-  vector[bK2_len[3] > 0 ? yNeta[3] : 0] y3_Z2[bK2_len[3]];
-  int<lower=0> y1_Z2_id[bK2_len[1] > 0 ? yNeta[1] : 0]; // group indexing for y1_Z2
-  int<lower=0> y2_Z2_id[bK2_len[2] > 0 ? yNeta[2] : 0]; // group indexing for y2_Z2
-  int<lower=0> y3_Z2_id[bK2_len[3] > 0 ? yNeta[3] : 0]; // group indexing for y3_Z2
+  array[bK2_len[1]] vector[bK2_len[1] > 0 ? yNeta[1] : 0] y1_Z2; // re design matrix
+  array[bK2_len[2]] vector[bK2_len[2] > 0 ? yNeta[2] : 0] y2_Z2;
+  array[bK2_len[3]] vector[bK2_len[3] > 0 ? yNeta[3] : 0] y3_Z2;
+  array[bK2_len[1] > 0 ? yNeta[1] : 0] int<lower=0> y1_Z2_id; // group indexing for y1_Z2
+  array[bK2_len[2] > 0 ? yNeta[2] : 0] int<lower=0> y2_Z2_id; // group indexing for y2_Z2
+  array[bK2_len[3] > 0 ? yNeta[3] : 0] int<lower=0> y3_Z2_id; // group indexing for y3_Z2
 
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = hs, 4 = hs_plus,
   //   5 = laplace, 6 = lasso, 7 = product_normal
-  int<lower=0,upper=7> y_prior_dist[3];
-  int<lower=0,upper=2> y_prior_dist_for_intercept[M];
+  array[3] int<lower=0,upper=7> y_prior_dist;
+  array[M] int<lower=0,upper=2> y_prior_dist_for_intercept;
 
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = exponential
-  int<lower=0,upper=3> y_prior_dist_for_aux[M];
+  array[M] int<lower=0,upper=3> y_prior_dist_for_aux;
 
   // prior family: 1 = decov, 2 = lkj
   int<lower=1,upper=2> prior_dist_for_cov;
@@ -54,7 +54,7 @@
   int<lower=0,upper=1> prior_PD;  // 1 = yes
   
   // offset
-  int<lower=0,upper=1> has_offset[3];  // 0 = No, 1 = Yes
+  array[3] int<lower=0,upper=1> has_offset;  // 0 = No, 1 = Yes
   vector[has_offset[1] ? yNeta[1] : 0] y1_offset;
   vector[has_offset[2] ? yNeta[2] : 0] y2_offset;
   vector[has_offset[3] ? yNeta[3] : 0] y3_offset;
