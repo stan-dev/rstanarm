@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-Sys.setenv(USE_CXX14 = 1)
+Sys.setenv(USE_CXX17 = 1)
 set.seed(12345)
 
 MODELS_HOME <- "stan_files"
@@ -41,7 +41,7 @@ Sys.unsetenv("R_TESTS")
 
 functions <- sapply(dir(MODELS_HOME, pattern = "stan$", full.names = TRUE), function(f) {
   mc <- readLines(f)
-  mc <- grep("^#include", mc, invert = TRUE, value = TRUE)
+  mc <- grep("#include", mc, invert = TRUE, value = TRUE)
   start <- grep("^functions[[:blank:]]*\\{[[:blank:]]*$", mc)
   if (length(start) == 1) {
     end <- grep("^}[[:blank:]]*$", mc)[1]

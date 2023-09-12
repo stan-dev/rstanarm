@@ -30,8 +30,8 @@
   int<lower=0> len_regularization;
   vector<lower=0>[t] b_prior_shape;
   vector<lower=0>[t] b_prior_scale;
-  real<lower=0> b_prior_concentration[len_concentration];
-  real<lower=0> b_prior_regularization[len_regularization];
+  array[len_concentration]  real<lower=0> b_prior_concentration;
+  array[len_regularization] real<lower=0> b_prior_regularization;
 
   // lkj prior stuff
   vector<lower=0>[bK1] b1_prior_scale;

@@ -8,11 +8,11 @@
   int<lower=0> len_var_group = sum(p) * (t > 0);
   int<lower=0> len_rho = sum(p) - t;
   int<lower=1> pos = 1;
-  real<lower=0> delta[len_concentration];
+  array[len_concentration] real<lower=0> delta;
 
   // data for lkj prior
-  int bCov1_idx[prior_dist_for_cov == 2 ? (bK1 + choose(bK1, 2)) : 0];
-  int bCov2_idx[prior_dist_for_cov == 2 ? (bK2 + choose(bK2, 2)) : 0];
+  array[prior_dist_for_cov == 2 ? (bK1 + choose(bK1, 2)) : 0] int bCov1_idx;
+  array[prior_dist_for_cov == 2 ? (bK2 + choose(bK2, 2)) : 0] int bCov2_idx;
 
   // transformations of data
   real sum_log_y1 = M > 0 && (family[1] == 2 || family[1] == 3) ?
