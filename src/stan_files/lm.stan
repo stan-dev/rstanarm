@@ -103,8 +103,14 @@ model {
   if (prior_dist == 1) {
     if (K > 1) 
       target += beta_lpdf(R2 | half_K, eta);
-    else 
-      target += beta_lpdf(square(R2) | half_K, eta) + sum(log(fabs(R2)));
+    else {
+      // TODO(Andrew) remove once vectorised abs available in rstan
+      array[J] real R2_abs;
+      for (j in 1:J) {
+        R2_abs[j] = abs(R2[j]);
+      }
+      target += beta_lpdf(square(R2) | half_K, eta) + sum(log(R2_abs));
+    }
   }
   // implicit: log_omega is uniform over the real line for all j
 }

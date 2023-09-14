@@ -70,7 +70,7 @@ Because we center the covariates when there is an intercept, you have to separat
 ```
 ...
 generated quantities {
-  real alpha[has_intercept];
+  array[has_intercept] real alpha;
   if (has_intercept) {
     alpha[1] = gamma[1] - dot_product(beta, xbar)
   }
