@@ -82,7 +82,6 @@
    * @param eta_j Vector of linear predictions in the j-th group
    * @return A scalar that normalizes the probabilities on the log-scale
    */
-  real log_clogit_denom(int N_j, int D_j, vector eta_j);
   real log_clogit_denom(int N_j, int D_j, vector eta_j) {
     if (D_j == 1 && N_j == rows(eta_j)) return log_sum_exp(eta_j);
     if (D_j == 0) return 0;
