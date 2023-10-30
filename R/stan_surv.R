@@ -1306,7 +1306,7 @@ stan_surv <- function(formula,
 #' @return The exported \code{tve} function documented here just returns 
 #'   \code{x}. However, when called internally the \code{tve} function returns 
 #'   several other pieces of useful information. For the most part, these are 
-#'   added to the formula element of the returned \code{\link{stanreg}} object
+#'   added to the formula element of the returned \code{\link{stanreg-objects}}
 #'   (that is \code{object[["formula"]]} where \code{object} is the fitted
 #'   model). Information added to the formula element of the \code{stanreg} 
 #'   object includes the following:
