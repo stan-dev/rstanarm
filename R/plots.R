@@ -186,6 +186,7 @@ plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
 # plot method for stansurv ----------------------------------------------
 
 #' @rdname plot.stanreg
+#' @method plot stansurv
 #' @export
 #' @templateVar cigeomArg ci_geom_args
 #' @template args-ci-geom-args
