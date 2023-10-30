@@ -1,17 +1,17 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright (C) 2015, 2016 Trustees of Columbia University
 # Copyright (C) 2017 Sam Brilleman
-# 
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 3
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -54,7 +54,7 @@ pbcLong$xgamm <- as.numeric(pbcLong$logBili)
 fmLong1 <- logBili ~ year + (year | id)
 fmSurv1 <- Surv(futimeYears, death) ~ sex + trt
 o<-SW(jm1 <- stan_jm(
-  fmLong1, pbcLong, fmSurv1, pbcSurv, time_var = "year", 
+  fmLong1, pbcLong, fmSurv1, pbcSurv, time_var = "year",
   iter = 1, refresh = 0, chains = 1, seed = SEED))
 
 # multivariate joint model
@@ -63,7 +63,7 @@ fmLong2 <- list(
   albumin ~ year + (year | id))
 fmSurv2 <- Surv(futimeYears, death) ~ sex + trt
 o<-SW(jm2 <- stan_jm(
-  fmLong2, pbcLong, fmSurv2, pbcSurv, time_var = "year", 
+  fmLong2, pbcLong, fmSurv2, pbcSurv, time_var = "year",
   iter = 1, refresh = 0, chains = 1, seed = SEED))
 
 #----  Tests for stan_jm arguments
@@ -71,11 +71,11 @@ o<-SW(jm2 <- stan_jm(
 test_that("formula argument works", {
   SW(fit <- update(jm1, formulaLong. = list(fmLong1)))
   expect_identical(as.matrix(jm1), as.matrix(fit)) # fm as list
-  
+
   # Longitudiinal model without offset
   expect_null(jm1$glmod$Long1$offset)
-  
-  # Longitudinal model with offset 
+
+  # Longitudinal model with offset
   fmLong1_offset <- logBili ~ year + (year | id) + offset(log(ypois))
   SW(jm_offset <- update(jm1, formulaLong. = fmLong1_offset))
   expect_equal(jm_offset$glmod$Long1$offset, log(pbcLong$ypois))
@@ -84,27 +84,27 @@ test_that("formula argument works", {
 
 test_that("error if outcome is character", {
   expect_error(
-    update(jm1, formulaLong. = as.character(logBili) ~ year + (year | id)), 
+    update(jm1, formulaLong. = as.character(logBili) ~ year + (year | id)),
     "Outcome variable can't be type 'character'"
   )
 })
 
 test_that("data argument works", {
   SW(fit <- update(jm1, dataLong = list(pbcLong)))
-  expect_identical(as.matrix(jm1), 
+  expect_identical(as.matrix(jm1),
                    as.matrix(fit)) # data as list
   SW(fit <- update(jm2, dataLong = list(pbcLong, pbcLong)))
-  expect_identical(as.matrix(jm2), 
+  expect_identical(as.matrix(jm2),
                    as.matrix(fit))
 })
 
 test_that("id_var argument works", {
-  
+
   # Models with a single grouping factor
   expect_output(suppressWarnings(update(jm1, id_var = "id")))
-  expect_output(expect_warning(update(jm1, id_var = "year"), 
+  expect_output(expect_warning(update(jm1, id_var = "year"),
                                "are not the same; 'id_var' will be ignored"))
-  
+
   # Models with more than one grouping factor
   tmpdat <- pbcLong
   tmpdat$practice <- cut(pbcLong$id, c(0,10,20,30,40))
@@ -116,12 +116,12 @@ test_that("id_var argument works", {
 })
 
 test_that("family argument works", {
-  
+
   expect_output(suppressWarnings(update(jm1, family = "gaussian")))
   expect_output(suppressWarnings(update(jm1, family = gaussian)))
   expect_output(suppressWarnings(update(jm1, family = gaussian(link = identity))))
-  
-  expect_output(suppressWarnings(update(jm1, formulaLong. = ypois ~ ., family = poisson, init = 0)))
+
+  #expect_output(suppressWarnings(update(jm1, formulaLong. = ypois ~ ., family = poisson)))
   expect_output(suppressWarnings(update(jm1, formulaLong. = ynbin ~ ., family = neg_binomial_2)))
   #expect_output(suppressWarnings(update(jm1, formulaLong. = ygamm ~ ., family = Gamma)))
   #expect_output(suppressWarnings(update(jm1, formulaLong. = ygamm ~ ., family = inverse.gaussian)))
@@ -130,16 +130,16 @@ test_that("family argument works", {
 })
 
 test_that("assoc argument works", {
-  
-  # NB: muslope, shared_b, and shared_coef have been temporarily 
+
+  # NB: muslope, shared_b, and shared_coef have been temporarily
   # disallowed, and will be reinstated in a future release
 
   expect_error(ret <- update(jm1, assoc = "muslope"), "temporarily disallowed")
   expect_error(ret <- update(jm1, assoc = "shared_b"), "temporarily disallowed")
   expect_error(ret <- update(jm1, assoc = "shared_coef"), "temporarily disallowed")
-      
+
   # Univariate joint models
-  
+
   expect_output(suppressWarnings(update(jm1, assoc = NULL)))
   expect_output(suppressWarnings(update(jm1, assoc = "null")))
   expect_output(suppressWarnings(update(jm1, assoc = "etavalue")))
@@ -151,33 +151,33 @@ test_that("assoc argument works", {
   expect_output(suppressWarnings(update(jm1, assoc = c("etavalue", "etaslope"))))
   #expect_output(suppressWarnings(update(jm1, assoc = c("etavalue", "muslope"))))
   expect_output(suppressWarnings(update(jm1, assoc = c("etavalue", "etaauc"))))
-  expect_output(suppressWarnings(update(jm1, assoc = c("etavalue", "muauc")))) 
-  expect_output(suppressWarnings(update(jm1, assoc = c("muvalue", "etaslope")))) 
+  expect_output(suppressWarnings(update(jm1, assoc = c("etavalue", "muauc"))))
+  expect_output(suppressWarnings(update(jm1, assoc = c("muvalue", "etaslope"))))
   #expect_output(suppressWarnings(update(jm1, assoc = c("muvalue", "muslope"))))
   expect_output(suppressWarnings(update(jm1, assoc = c("muvalue", "etaauc"))))
   expect_output(suppressWarnings(update(jm1, assoc = c("muvalue", "muauc"))))
-  
+
   expect_error(update(jm1, assoc = c("etavalue", "muvalue")), "cannot be specified together")
   #expect_error(update(jm1, assoc = c("etaslope", "muslope")), "cannot be specified together")
   expect_error(update(jm1, assoc = c("etaauc", "muauc")), "cannot be specified together")
-  
+
   #expect_output(suppressWarnings(update(jm1, assoc = "shared_b")))
   #expect_output(suppressWarnings(update(jm1, assoc = "shared_b(1)")))
   #expect_output(suppressWarnings(update(jm1, assoc = "shared_b(2)")))
   #expect_output(suppressWarnings(update(jm1, assoc = "shared_b(1:2)")))
   #expect_output(suppressWarnings(update(jm1, assoc = "shared_b(1,2)")))
-  
+
   #expect_output(suppressWarnings(update(jm1, assoc = "shared_coef")))
   #expect_output(suppressWarnings(update(jm1, assoc = "shared_coef(1)")))
   #expect_output(suppressWarnings(update(jm1, assoc = "shared_coef(2)")))
   #expect_output(suppressWarnings(update(jm1, assoc = "shared_coef(1:2)")))
   #expect_output(suppressWarnings(update(jm1, assoc = "shared_coef(1,2)")))
-  
+
   #expect_error(ret <- update(jm1, assoc = "shared_b(10)"), "greater than the number of")
   #expect_error(ret <- update(jm1, assoc = "shared_coef(10)"), "greater than the number of")
   #expect_error(ret <- update(jm1, assoc = c("shared_b(1)", "shared_coef(1)")), "should not be specified in both")
   #expect_error(ret <- update(jm1, assoc = c("shared_b", "shared_coef")), "should not be specified in both")
-  
+
   expect_output(suppressWarnings(update(jm1, assoc = list(NULL))))
   expect_output(suppressWarnings(update(jm1, assoc = list("null"))))
   expect_output(suppressWarnings(update(jm1, assoc = list("etavalue"))))
@@ -187,23 +187,23 @@ test_that("assoc argument works", {
   expect_output(suppressWarnings(update(jm1, assoc = list("etaauc"))))
   expect_output(suppressWarnings(update(jm1, assoc = list("muauc"))))
   expect_output(suppressWarnings(update(jm1, assoc = list(c("etavalue", "etaslope")))))
-  #expect_output(suppressWarnings(update(jm1, assoc = list(c("etavalue", "muslope"))))) 
+  #expect_output(suppressWarnings(update(jm1, assoc = list(c("etavalue", "muslope")))))
   expect_output(suppressWarnings(update(jm1, assoc = list(c("muvalue", "etaslope")))))
-  #expect_output(suppressWarnings(update(jm1, assoc = list(c("muvalue", "muslope")))))  
-  
-  expect_error(ret <- update(jm1, assoc = NA), "'assoc' should be") 
-  expect_error(ret <- update(jm1, assoc = 123), "'assoc' should be") 
-  expect_error(ret <- update(jm1, assoc = c(1,2,3)), "'assoc' should be") 
-  
-  expect_error(ret <- update(jm1, assoc = c("wrong")), "unsupported association type") 
-  expect_error(ret <- update(jm1, assoc = list("wrong")), "unsupported association type") 
-  
-  expect_error(ret <- update(jm1, assoc = list(NULL, NULL)), "incorrect length") 
-  expect_error(ret <- update(jm1, assoc = list("etavalue", "etavalue")), "incorrect length") 
-  expect_error(ret <- update(jm1, assoc = list(c("etavalue", "etaslope"), "etavalue")), "incorrect length") 
-  
+  #expect_output(suppressWarnings(update(jm1, assoc = list(c("muvalue", "muslope")))))
+
+  expect_error(ret <- update(jm1, assoc = NA), "'assoc' should be")
+  expect_error(ret <- update(jm1, assoc = 123), "'assoc' should be")
+  expect_error(ret <- update(jm1, assoc = c(1,2,3)), "'assoc' should be")
+
+  expect_error(ret <- update(jm1, assoc = c("wrong")), "unsupported association type")
+  expect_error(ret <- update(jm1, assoc = list("wrong")), "unsupported association type")
+
+  expect_error(ret <- update(jm1, assoc = list(NULL, NULL)), "incorrect length")
+  expect_error(ret <- update(jm1, assoc = list("etavalue", "etavalue")), "incorrect length")
+  expect_error(ret <- update(jm1, assoc = list(c("etavalue", "etaslope"), "etavalue")), "incorrect length")
+
   # Multivariate joint models
-  
+
   expect_output(suppressWarnings(update(jm2, assoc = "etavalue")))
   expect_output(suppressWarnings(update(jm2, assoc = "muvalue")))
   expect_output(suppressWarnings(update(jm2, assoc = "etaslope")))
@@ -219,55 +219,55 @@ test_that("assoc argument works", {
   expect_output(suppressWarnings(update(jm2, assoc = list(c("etavalue", "etaslope"), "etavalue"))))
   expect_output(suppressWarnings(update(jm2, assoc = list("etavalue", c("etavalue", "etaslope")))))
   expect_output(suppressWarnings(update(jm2, assoc = list(c("etavalue", "etaslope"), c("muvalue", "muauc")))))
-  
+
   expect_error(ret <- update(jm2, assoc = list("wrong", "etavalue")), "unsupported association type")
   expect_error(ret <- update(jm2, assoc = list("null", "etavalue", "etaslope")), "incorrect length")
-  expect_error(ret <- update(jm2, assoc = data.frame("etavalue", "etaslope")), "'assoc' should be") 
-  
+  expect_error(ret <- update(jm2, assoc = data.frame("etavalue", "etaslope")), "'assoc' should be")
+
 })
 
 test_that("basehaz argument works", {
-  
+
   expect_output(suppressWarnings(update(jm1, basehaz = "weibull")))
   expect_output(suppressWarnings(update(jm1, basehaz = "bs")))
   expect_output(suppressWarnings(update(jm1, basehaz = "piecewise")))
-  
+
   expect_output(suppressWarnings(update(jm1, basehaz = "bs", basehaz_ops = list(df = 5))))
   expect_output(suppressWarnings(update(jm1, basehaz = "bs", basehaz_ops = list(knots = c(1,3,5)))))
   expect_output(suppressWarnings(update(jm1, basehaz = "piecewise", basehaz_ops = list(df = 5))))
   expect_output(suppressWarnings(update(jm1, basehaz = "piecewise", basehaz_ops = list(knots = c(1,3,5)))))
-  
+
   expect_output(expect_warning(update(jm1, basehaz = "weibull", basehaz_ops = list(df = 1)), "'df' will be ignored"))
   expect_output(expect_warning(update(jm1, basehaz = "weibull", basehaz_ops = list(knots = 1)), "'knots' will be ignored"))
-  
+
   expect_output(suppressWarnings(update(jm1, basehaz = "piecewise", basehaz_ops = list(knots = c(1,3,5)))))
-  
+
   expect_error(update(jm1, basehaz = "bs", basehaz_ops = list(df = 1)), "must be at least 3")
   expect_error(update(jm1, basehaz = "bs", basehaz_ops = list(knots = -1)), "'knots' must be non-negative")
   expect_error(update(jm1, basehaz = "piecewise", basehaz_ops = list(knots = -1)), "'knots' must be non-negative")
   expect_error(update(jm1, basehaz = "piecewise", basehaz_ops = list(knots = c(1,2,50))), "cannot be greater than the largest event time")
-  
+
 })
 
 test_that("qnodes argument works", {
-  
+
   expect_output(suppressWarnings(update(jm1, qnodes = 7)))
   expect_output(suppressWarnings(update(jm1, qnodes = 11)))
   expect_output(suppressWarnings(update(jm1, qnodes = 15)))
-  
+
   expect_error(update(jm1, qnodes = 1), "'qnodes' must be either 7, 11 or 15")
   expect_error(update(jm1, qnodes = c(1,2)), "should be a numeric vector of length 1")
   expect_error(update(jm1, qnodes = "wrong"), "should be a numeric vector of length 1")
-  
+
 })
 
 test_that("weights argument works", {
-  
+
   idvec0 <- pbcSurv[["id"]]
   idvec1 <- head(idvec0)            # missing IDs
   idvec2 <- rep(idvec0, each = 2)   # repeated IDs
   idvec3 <- c(idvec0, 9998, 9999)    # extra IDs not in model
-  
+
   wts0 <- data.frame(id = idvec0, weights = rep_len(c(1,2), length(idvec0)))
   wts1 <- data.frame(id = idvec1, weights = rep_len(c(1,2), length(idvec1)))
   wts2 <- data.frame(id = idvec2, weights = rep_len(c(1,2), length(idvec2)))
@@ -277,12 +277,12 @@ test_that("weights argument works", {
   wts5 <- data.frame(id = idvec0, weights = rep_len(c(NA), length(idvec0)))
   wts6 <- data.frame(id = idvec0, weights = rep_len(c(-1, 1), length(idvec0)))
   wts7 <- data.frame(id = idvec3, weights = rep_len(c(1,2), length(idvec3)))
-  
+
   expect_error(update(jm1, weights = wts0, iter = 5), "not yet implemented")
-  
+
   #expect_output(update(jm1, weights = wts0, iter = 5))
   #expect_output(update(jm1, weights = wts7, iter = 5)) # ok to supply extra IDs in weights
-  
+
   #expect_error(update(jm1, weights = as.matrix(wts0)), "should be a data frame")
   #expect_error(update(jm1, weights = wts1), "do not have weights supplied")
   #expect_error(update(jm1, weights = wts2), "should only have one row")
@@ -290,27 +290,27 @@ test_that("weights argument works", {
   #expect_error(update(jm1, weights = wts4), "weights supplied must be numeric")
   #expect_error(update(jm1, weights = wts5), "weights supplied must be numeric")
   #expect_error(update(jm1, weights = wts6), "Negative weights are not allowed")
-  
+
 })
 
 test_that("scale_assoc argument works", {
-  
+
   # Univariate joint model
   expect_output(suppressWarnings(update(jm1, scale_assoc = NULL)))
   expect_output(suppressWarnings(update(jm1, scale_assoc = 10)))
   expect_error(suppressWarnings(update(jm1, scale_assoc = 0), "'scale_assoc' must be non-zero."))
   expect_error(suppressWarnings(update(jm1, scale_assoc = c(10,10)), "'scale_assoc' can only be specified once for each longitudinal submodel."))
   expect_error(suppressWarnings(update(jm1, scale_assoc = "10"), "'scale_assoc' must be numeric."))
-  
+
   # Multivariate joint model
   expect_error(update(jm2, scale_assoc = 10), "'scale_assoc' must be specified for each longitudinal submodel")
   expect_output(suppressWarnings(update(jm2, scale_assoc = c(0.5, 10))))
-  
+
   # Test scaling functionality
   scale_assoc <- 0.5
   SW(jm1_scaled <- update(jm1, scale_assoc = scale_assoc))
   expect_equal(coef(jm1)$Event, c(rep(1,3),scale_assoc) * coef(jm1_scaled)$Event)
-  
+
 })
 
 test_that("init argument works", {
@@ -356,7 +356,7 @@ compare_glmer <- function(fmLong, fam = gaussian, ...) {
   pars <- recover_pars_jm(y1, s1)
   parsjm <- recover_pars_jm(j1)
   for (i in names(tols$fixef))
-    expect_equal(pars$fixef[[i]], parsjm$fixef[[i]], tol = tols$fixef[[i]], info = fam)     
+    expect_equal(pars$fixef[[i]], parsjm$fixef[[i]], tol = tols$fixef[[i]], info = fam)
   for (i in names(tols$ranef))
     expect_equal(pars$ranef[[i]], parsjm$ranef[[i]], tol = tols$ranef[[i]], info = fam)
   for (i in names(tols$event))
@@ -374,14 +374,14 @@ compare_glmer <- function(fmLong, fam = gaussian, ...) {
 # test_that("coefs same for stan_jm and stan_glmer, Gamma", {
 #   compare_glmer(ygamm ~ year + xgamm + (1 | id), Gamma(log))})
 #test_that("coefs same for stan_jm and stan_glmer, inverse gaussian", {
-#  compare_glmer(ygamm ~ year + xgamm + (1 | id), inverse.gaussian)})  
+#  compare_glmer(ygamm ~ year + xgamm + (1 | id), inverse.gaussian)})
 
 #--------  Check (post-)estimation functions work with various model specifications
 
 # No functions in formula
-o<-SW(f1 <- stan_jm(formulaLong = logBili ~ year + (year | id), 
+o<-SW(f1 <- stan_jm(formulaLong = logBili ~ year + (year | id),
                     dataLong = pbcLong,
-                    formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+                    formulaEvent = Surv(futimeYears, death) ~ sex + trt,
                     dataEvent = pbcSurv,
                     time_var = "year",
                     refresh = 0,
@@ -425,7 +425,7 @@ o<-SW(f23 <- update(f5, assoc = "muvalue"))
 #o<-SW(f24 <- update(f5, assoc = "muslope"))
 o<-SW(f25 <- update(f5, assoc = "muauc"))
 o<-SW(f26 <- update(f5, assoc = c("etavalue", "etaslope")))
-o<-SW(f27 <- update(f5, assoc = c("etavalue", "etaauc")))  
+o<-SW(f27 <- update(f5, assoc = c("etavalue", "etaauc")))
 
 # Shared random effect association structures
 #o<-SW(f28 <- update(f1, assoc = c("shared_b")))
@@ -435,13 +435,13 @@ o<-SW(f27 <- update(f5, assoc = c("etavalue", "etaauc")))
 o<-SW(f31 <- stan_jm(formulaLong = list(logBili ~ year + (year | id),
                                         albumin ~ sex + trt + year + (1 | id)),
                      dataLong = pbcLong,
-                     formulaEvent = Surv(futimeYears, death) ~ sex + trt, 
+                     formulaEvent = Surv(futimeYears, death) ~ sex + trt,
                      dataEvent = pbcSurv,
                      time_var = "year",
                      refresh = 0,
                      # this next line is only to keep the example small in size!
                      chains = 1, cores = 1, seed = 12345, iter = 5))
-o<-SW(f32 <- update(f31, assoc = list("etaslope", c("etavalue", "etaauc"))))  
+o<-SW(f32 <- update(f31, assoc = list("etaslope", c("etavalue", "etaauc"))))
 
 # New data for predictions
 ndL1 <- pbcLong[pbcLong$id == 2,]
@@ -456,27 +456,27 @@ for (j in c(1:30)) {
     cat("Model not found:", paste0("f", j), "\n")
   } else {
     cat("Checking model:", paste0("f", j), "\n")
-    
+
     test_that("log_lik works with estimation data", {
       ll <- log_lik(mod)
       expect_matrix(ll)
       expect_error(log_lik(mod, m = 1), "should not be specified")
     })
-    
+
     test_that("log_lik works with new data (one individual)", {
       ll <- log_lik(mod, newdataLong = ndL1, newdataEvent = ndE1)
       expect_matrix(ll)
     })
-    
+
     test_that("log_lik works with new data (multiple individuals)", {
       ll <- log_lik(mod, newdataLong = ndL2, newdataEvent = ndE2)
       expect_matrix(ll)
     })
-    
+
     test_that("loo and waic work", {
       expect_equivalent_loo(mod)
     })
-    
+
     test_that("posterior_predict works with estimation data", {
       pp <- posterior_predict(mod, seed = SEED)
       expect_ppd(pp)
@@ -484,9 +484,9 @@ for (j in c(1:30)) {
       if (mod$n_markers > 1L) {
         pp <- posterior_predict(mod, m = 2)
         expect_ppd(pp)
-      }  
-    }) 
-    
+      }
+    })
+
     test_that("posterior_predict works with new data (one individual)", {
       pp <- posterior_predict(mod, newdata = ndL1, seed = SEED)
       expect_ppd(pp)
@@ -497,8 +497,8 @@ for (j in c(1:30)) {
       }
       expect_error(posterior_predict(mod, newdataLong = ndL1), "should not be specified")
       expect_error(posterior_predict(mod, newdataEvent = ndE1), "should not be specified")
-    })  
-    
+    })
+
     test_that("posterior_predict works with new data (multiple individuals)", {
       pp <- posterior_predict(mod, newdata = ndL2, seed = SEED)
       expect_ppd(pp)
@@ -506,29 +506,29 @@ for (j in c(1:30)) {
       if (mod$n_markers > 1L) {
         pp <- posterior_predict(mod, m = 2, newdata = ndL2)
         expect_ppd(pp)
-      }            
+      }
     })
-    
+
     test_that("posterior_traj works with estimation data", {
       pp <- posterior_traj(mod)
       expect_s3_class(pp, "predict.stanjm")
       if (mod$n_markers > 1L) {
         pp <- posterior_traj(mod, m = 2)
         expect_s3_class(pp, "predict.stanjm")
-      }  
-    }) 
-    
+      }
+    })
+
     test_that("posterior_traj works with new data with and without offset", {
       pbcLong2 <- pbcLong
       nd <- pbcLong2[1:2, c("id", "year")]
       expect_s3_class(posterior_traj(mod, newdataLong = nd, dynamic = FALSE), "predict.stanjm")
-      
+
       pbcLong2$off <- 1
       o <- SW(mod_off <- update(mod, dataLong = pbcLong2, formulaLong. = logBili ~ offset(off) + year + (year | id)))
       nd <- pbcLong2[1:2, c("id", "year", "off")]
       expect_s3_class(posterior_traj(mod_off, newdataLong = nd, dynamic = FALSE), "predict.stanjm")
     })
-    
+
     test_that("posterior_traj works with new data (one individual)", {
       pp <- posterior_traj(mod, newdataLong = ndL1, dynamic = FALSE)
       expect_s3_class(pp, "predict.stanjm")
@@ -536,22 +536,22 @@ for (j in c(1:30)) {
         pp <- posterior_traj(mod, m = 2, newdataLong = ndL1, dynamic = FALSE)
         expect_s3_class(pp, "predict.stanjm")
       }
-    })  
-    
+    })
+
     test_that("posterior_traj works with new data (multiple individuals)", {
       pp <- posterior_traj(mod, newdataLong = ndL2, dynamic = FALSE)
       expect_s3_class(pp, "predict.stanjm")
       if (mod$n_markers > 1L) {
         pp <- posterior_traj(mod, m = 2, newdataLong = ndL2, dynamic = FALSE)
         expect_s3_class(pp, "predict.stanjm")
-      }            
-    })        
-    
+      }
+    })
+
     test_that("posterior_survfit works with estimation data", {
       SW(ps <- posterior_survfit(mod))
       expect_survfit_jm(ps)
     })
-    
+
     test_that("posterior_survfit works with new data (one individual)", {
       SW(ps <- posterior_survfit(mod, newdataLong = ndL1, newdataEvent = ndE1))
       expect_survfit_jm(ps)

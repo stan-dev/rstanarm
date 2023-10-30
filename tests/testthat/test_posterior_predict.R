@@ -122,7 +122,8 @@ test_that("lme4 tests work similarly", {
   p3 <- posterior_predict(sfit, nd, re.form = NA, seed = SEED)
   p4 <- posterior_predict(sfit, nd, re.form=~(1|plate)+(~1|sample), seed = SEED)
   p4b <- posterior_predict(sfit, nd, re.form=~(1|sample)+(~1|plate), seed = SEED)
-  expect_equal(p2,p4,p4b)
+  expect_equal(p2,p4)
+  expect_equal(p4,p4b)
   p5 <- posterior_predict(sfit, nd, re.form=~(1|plate), seed = SEED)
 })
 
@@ -236,7 +237,7 @@ test_that("posterior_predict can handle empty interaction levels", {
                                refresh = 0, iter = 20, chains = 1))
   expect_silent(ppd <- posterior_predict(fit))
   expect_equal(dim(ppd), c(10, 5))
-  
+
   # make sure it can handle this in newdata even if not a problem in original data
   d2 <- expand.grid(group1 = c("A", "B"), group2 = c("a", "b", "c"))[1:6,]
   d2$y <- c(0, 1, 0, 1, 0, 0)
@@ -244,7 +245,7 @@ test_that("posterior_predict can handle empty interaction levels", {
                                refresh = 0, iter = 20, chains = 1))
   expect_silent(posterior_predict(fit))
   expect_silent(posterior_predict(fit, newdata = d1))
-  
+
   # make sure it doesn't drop repeated rows in newdata
   nd <- data.frame(group1 = c("A", "A"), group2 = c("a", "a"))
   expect_silent(ppd <- posterior_predict(fit, newdata = nd))

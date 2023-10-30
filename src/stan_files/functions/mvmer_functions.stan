@@ -31,8 +31,8 @@
   * @param dim The number of rows in the square matrix
   * @return A vector of indices
   */
-  int[] lower_tri_indices(int dim) {
-    int indices[dim + choose(dim, 2)];
+  array[] int lower_tri_indices(int dim) {
+    array[dim + choose(dim, 2)] int indices;
     int mark = 1;
     for (r in 1:dim) {
       for (c in r:dim) {
@@ -76,8 +76,8 @@
   */
   vector make_beta(vector z_beta, int prior_dist, vector prior_mean,
                    vector prior_scale, vector prior_df, real global_prior_scale,
-                   real[] global, vector[] local, real[] ool, vector[] mix,
-                   real[] aux, int family, real slab_scale, real[] caux) {
+                   array[] real global, array[] vector local, array[] real ool, array[] vector mix,
+                   array[] real aux, int family, real slab_scale, array[] real caux) {
     vector[rows(z_beta)] beta;
     if (prior_dist == 0) beta = z_beta;
     else if (prior_dist == 1) beta = z_beta .* prior_scale + prior_mean;
@@ -118,7 +118,7 @@
   *   the group-specific coefficients for
   * @return An array of group-specific coefficients for grouping factor i
   */
-  matrix make_b_matrix(vector z_b, vector theta_L, int[] p, int[] l, int i) {
+  matrix make_b_matrix(vector z_b, vector theta_L, array[] int p, array[] int l, int i) {
     matrix[p[i],l[i]] b_matrix;
     int nc = p[i];
     int b_mark = 1;
@@ -171,8 +171,8 @@
   *   1 = unbounded, 2 = lower bound, 3 = upper bound)
   * @return A vector containing the linear predictor for the glmer submodel
   */
-  vector evaluate_eta(matrix X, vector[] Z1, vector[] Z2, int[] Z1_id, int[] Z2_id,
-                      real[] gamma, vector beta, matrix b1Mat, matrix b2Mat,
+  vector evaluate_eta(matrix X, array[] vector Z1, array[] vector Z2, array[] int Z1_id, array[] int Z2_id,
+                      array[] real gamma, vector beta, matrix b1Mat, matrix b2Mat,
                       int b1Mat_colshift, int b2Mat_colshift,
                       int intercept_type, vector Ti) {
     int N = rows(X);    // num rows in design matrix
@@ -200,7 +200,7 @@
         for (n in 1:N)
           eta[n] += (b2Mat[Z2_id[n], k+b2Mat_colshift]) * Z2[k,n];
     }
-    
+
     if (rows(Ti) > 0) eta = eta + Ti; // add offset value
 
     return eta;
@@ -240,37 +240,38 @@
   *   for the prior distributions
   * @return lp__
   */
-  real glm_lp(vector y_real, int[] y_integer, vector eta, real[] aux,
+  real glm_lpdf(vector y_real, array[] int y_integer, vector eta, array[] real aux,
               int family, int link, real sum_log_y, vector sqrt_y, vector log_y) {
+    real lp = 0;
     if (family == 1) {  // gaussian
-      if (link == 1) target += normal_lpdf(y_real | eta, aux[1]);
-      else if (link == 2) target += lognormal_lpdf(y_real | eta, aux[1]);
-      else target += normal_lpdf(y_real | inv(eta), aux[1]);
+      if (link == 1) lp += normal_lpdf(y_real | eta, aux[1]);
+      else if (link == 2) lp += lognormal_lpdf(y_real | eta, aux[1]);
+      else lp += normal_lpdf(y_real | inv(eta), aux[1]);
     }
     else if (family == 2) {  // gamma
-      target += GammaReg(y_real, eta, aux[1], link, sum_log_y);
+      lp += GammaReg(y_real, eta, aux[1], link, sum_log_y);
     }
     else if (family == 3) {  // inverse gaussian
-      target += inv_gaussian(y_real, linkinv_inv_gaussian(eta, link),
+      lp += inv_gaussian(y_real, linkinv_inv_gaussian(eta, link),
                              aux[1], sum_log_y, sqrt_y);
     }
     else if (family == 4) {  // bernoulli
-      if (link == 1) target += bernoulli_logit_lpmf(y_integer | eta);
-      else target += bernoulli_lpmf(y_integer | linkinv_bern(eta, link));
+      if (link == 1) lp += bernoulli_logit_lpmf(y_integer | eta);
+      else lp += bernoulli_lpmf(y_integer | linkinv_bern(eta, link));
     }
     else if (family == 5) {  // binomial
       reject("Binomial with >1 trials not allowed.");
     }
     else if (family == 6 || family == 8) {  // poisson or poisson-gamma
-      if (link == 1) target += poisson_log_lpmf(y_integer | eta);
-      else target += poisson_lpmf(y_integer | linkinv_count(eta, link));
+      if (link == 1) lp += poisson_log_lpmf(y_integer | eta);
+      else lp += poisson_lpmf(y_integer | linkinv_count(eta, link));
     }
     else if (family == 7) {  // negative binomial
-        if (link == 1) target += neg_binomial_2_log_lpmf(y_integer | eta, aux[1]);
-      else target += neg_binomial_2_lpmf(y_integer | linkinv_count(eta, link), aux[1]);
+        if (link == 1) lp += neg_binomial_2_log_lpmf(y_integer | eta, aux[1]);
+      else lp += neg_binomial_2_lpmf(y_integer | linkinv_count(eta, link), aux[1]);
     }
     else reject("Invalid family.");
-    return target();
+    return lp;
   }
 
   /**
@@ -287,43 +288,45 @@
   * @param one_over_lambda Real
   * @return lp__
   */
-  real beta_lp(vector z_beta, int prior_dist, vector prior_scale,
-               vector prior_df, real global_prior_df, vector[] local,
-               real[] global, vector[] mix, real[] one_over_lambda,
-               real slab_df, real[] caux) {
-    if      (prior_dist == 1) target += normal_lpdf(z_beta | 0, 1);
-    else if (prior_dist == 2) target += normal_lpdf(z_beta | 0, 1); // Student t
+  real beta_custom_lpdf(vector z_beta, int prior_dist, vector prior_scale,
+               vector prior_df, real global_prior_df, array[] vector local,
+               array[] real global, array[] vector mix, array[] real one_over_lambda,
+               real slab_df, array[] real caux) {
+    real lp = 0;
+    if      (prior_dist == 1) lp += normal_lpdf(z_beta | 0, 1);
+    else if (prior_dist == 2) lp += normal_lpdf(z_beta | 0, 1); // Student t
     else if (prior_dist == 3) { // hs
-      target += normal_lpdf(z_beta | 0, 1);
-      target += normal_lpdf(local[1] | 0, 1);
-      target += inv_gamma_lpdf(local[2] | 0.5 * prior_df, 0.5 * prior_df);
-      target += normal_lpdf(global[1] | 0, 1);
-      target += inv_gamma_lpdf(global[2] | 0.5 * global_prior_df, 0.5 * global_prior_df);
-      target += inv_gamma_lpdf(caux | 0.5 * slab_df, 0.5 * slab_df);
+      lp += normal_lpdf(z_beta | 0, 1);
+      lp += normal_lpdf(local[1] | 0, 1);
+      lp += inv_gamma_lpdf(local[2] | 0.5 * prior_df, 0.5 * prior_df);
+      lp += normal_lpdf(global[1] | 0, 1);
+      lp += inv_gamma_lpdf(global[2] | 0.5 * global_prior_df, 0.5 * global_prior_df);
+      lp += inv_gamma_lpdf(caux | 0.5 * slab_df, 0.5 * slab_df);
     }
     else if (prior_dist == 4) { // hs+
-      target += normal_lpdf(z_beta | 0, 1);
-      target += normal_lpdf(local[1] | 0, 1);
-      target += inv_gamma_lpdf(local[2] | 0.5 * prior_df, 0.5 * prior_df);
-      target += normal_lpdf(local[3] | 0, 1);
+      lp += normal_lpdf(z_beta | 0, 1);
+      lp += normal_lpdf(local[1] | 0, 1);
+      lp += inv_gamma_lpdf(local[2] | 0.5 * prior_df, 0.5 * prior_df);
+      lp += normal_lpdf(local[3] | 0, 1);
       // unorthodox useage of prior_scale as another df hyperparameter
-      target += inv_gamma_lpdf(local[4] | 0.5 * prior_scale, 0.5 * prior_scale);
-      target += normal_lpdf(global[1] | 0, 1);
-      target += inv_gamma_lpdf(global[2] | 0.5 * global_prior_df, 0.5 * global_prior_df);
-      target += inv_gamma_lpdf(caux | 0.5 * slab_df, 0.5 * slab_df);
+      lp += inv_gamma_lpdf(local[4] | 0.5 * prior_scale, 0.5 * prior_scale);
+      lp += normal_lpdf(global[1] | 0, 1);
+      lp += inv_gamma_lpdf(global[2] | 0.5 * global_prior_df, 0.5 * global_prior_df);
+      lp += inv_gamma_lpdf(caux | 0.5 * slab_df, 0.5 * slab_df);
     }
     else if (prior_dist == 5) { // laplace
-      target += normal_lpdf(z_beta | 0, 1);
-      target += exponential_lpdf(mix[1] | 1);
+      lp += normal_lpdf(z_beta | 0, 1);
+      lp += exponential_lpdf(mix[1] | 1);
     }
     else if (prior_dist == 6) { // lasso
-      target += normal_lpdf(z_beta | 0, 1);
-      target += exponential_lpdf(mix[1] | 1);
-      target += chi_square_lpdf(one_over_lambda[1] | prior_df[1]);
+      lp += normal_lpdf(z_beta | 0, 1);
+      lp += exponential_lpdf(mix[1] | 1);
+      lp += chi_square_lpdf(one_over_lambda[1] | prior_df[1]);
     }
     else if (prior_dist == 7) { // product_normal
-      target += normal_lpdf(z_beta | 0, 1);
+      lp += normal_lpdf(z_beta | 0, 1);
     }
+    return lp;
     /* else prior_dist is 0 and nothing is added */
     return target();
   }
@@ -338,13 +341,15 @@
   * @param df Real, df for the prior distribution
   * @return lp__
   */
-  real gamma_lp(real gamma, int dist, real mean_, real scale, real df) {
+  real gamma_custom_lpdf(real gamma, int dist, real mean_, real scale, real df) {
+    real lp = 0;
     if (dist == 1)  // normal
-      target += normal_lpdf(gamma | mean_, scale);
+      lp += normal_lpdf(gamma | mean_, scale);
     else if (dist == 2)  // student_t
-      target += student_t_lpdf(gamma | df, mean_, scale);
+      lp += student_t_lpdf(gamma | df, mean_, scale);
     /* else dist is 0 and nothing is added */
-    return target();
+
+    return lp;
   }
 
   /**
@@ -357,16 +362,17 @@
   * @param df Real specifying the df for the prior distribution
   * @return lp__
   */
-  real aux_lp(real aux_unscaled, int dist, real scale, real df) {
+  real aux_lpdf(real aux_unscaled, int dist, real scale, real df) {
+    real lp = 0;
     if (dist > 0 && scale > 0) {
       if (dist == 1)
-        target += normal_lpdf(aux_unscaled | 0, 1);
+        lp += normal_lpdf(aux_unscaled | 0, 1);
       else if (dist == 2)
-        target += student_t_lpdf(aux_unscaled | df, 0, 1);
+        lp += student_t_lpdf(aux_unscaled | df, 0, 1);
       else
-        target += exponential_lpdf(aux_unscaled | 1);
+        lp += exponential_lpdf(aux_unscaled | 1);
     }
-    return target();
+    return lp;
   }
 
   /**
@@ -380,7 +386,7 @@
   * @param family An integer specifying the family
   * @return A real, the mean of the posterior predictive distribution
   */
-  real mean_PPD_rng(vector mu, real[] aux, int family) {
+  real mean_PPD_rng(vector mu, array[] real aux, int family) {
     int N = rows(mu);
     real mean_PPD = 0;
     if (family == 1) { // gaussian

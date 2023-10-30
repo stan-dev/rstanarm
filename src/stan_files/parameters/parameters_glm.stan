@@ -1,11 +1,11 @@
   vector[prior_dist == 7 ? sum(num_normals) : K] z_beta;
   vector[K_smooth] z_beta_smooth;
   vector<lower=0>[K_smooth > 0 ? smooth_map[K_smooth] : 0] smooth_sd_raw;
-  real<lower=0> global[hs];
-  vector<lower=0>[K] local[hs];
-  real<lower=0> caux[hs > 0];
-  vector<lower=0>[K] mix[prior_dist == 5 || prior_dist == 6];
-  real<lower=0> one_over_lambda[prior_dist == 6];
+  array[hs] real<lower=0> global;
+  array[hs] vector<lower=0>[K] local;
+  array[hs > 0] real<lower=0> caux;
+  array[prior_dist == 5 || prior_dist == 6] vector<lower=0>[K] mix;
+  array[prior_dist == 6] real<lower=0> one_over_lambda;
   vector[q] z_b;
   vector[len_z_T] z_T;
   vector<lower=0,upper=1>[len_rho] rho;

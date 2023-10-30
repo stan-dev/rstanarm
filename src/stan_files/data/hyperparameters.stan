@@ -15,4 +15,4 @@
   real<lower=0> global_prior_scale;  // for hs priors only
   real<lower=0> slab_df;     // for hs prior only
   real<lower=0> slab_scale;  // for hs prior only
-  int<lower=2> num_normals[prior_dist == 7 ? K : 0];
+  array[prior_dist == 7 ? K : 0] int<lower=2> num_normals;
