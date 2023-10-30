@@ -44,6 +44,7 @@
 #'  
 #' @template args-dots
 #' @template args-priors
+#' @template args-prior_covariance
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
