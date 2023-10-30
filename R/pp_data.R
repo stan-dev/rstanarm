@@ -355,7 +355,7 @@ pp_data <-
     mf[, colnames(mf_s)] <- mf_s
         
     # construct time-varying predictor matrix
-    s <- make_s(formula, mf, xlevs = xlevs) 
+    s <- make_s(formula, mf, xlevs = object$xlevs) 
 
     if (all(is.na(pts))) {
       # if pts were all NA then replace the time-varying predictor
