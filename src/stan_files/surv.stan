@@ -4,8 +4,8 @@
 
 functions {
 
-#include /functions/common_functions.stan
-#include /functions/hazard_functions.stan
+  #include /functions/common_functions.stan
+  #include /functions/hazard_functions.stan
 
   /**
   * Return the lower bound for the baseline hazard parameters
@@ -48,8 +48,8 @@ functions {
   */
   vector make_beta(vector z_beta, int prior_dist, vector prior_mean,
                    vector prior_scale, vector prior_df, real global_prior_scale,
-                   real[] global, vector[] local, real[] ool, vector[] mix,
-                   real[] aux, int family, real slab_scale, real[] caux) {
+                   array[] real global, array[] vector local, array[] real ool, array[] vector mix,
+                   array[] real aux, int family, real slab_scale, array[] real caux) {
     vector[rows(z_beta)] beta;
     if (prior_dist == 0) beta = z_beta;
     else if (prior_dist == 1) beta = z_beta .* prior_scale + prior_mean;
@@ -92,9 +92,9 @@ functions {
   * @return Real, the log probability.
   */
   real beta_custom_lpdf(vector z_beta, int prior_dist, vector prior_scale,
-               vector prior_df, real global_prior_df, vector[] local,
-               real[] global, vector[] mix, real[] one_over_lambda,
-               real slab_df, real[] caux) {
+               vector prior_df, real global_prior_df, array[] vector local,
+               array[] real global, array[] vector mix, array[] real one_over_lambda,
+               real slab_df, array[] real caux) {
     real lp = 0;
     if      (prior_dist == 1) lp += normal_lpdf(z_beta | 0, 1);
     else if (prior_dist == 2) lp += normal_lpdf(z_beta | 0, 1); // Student t
