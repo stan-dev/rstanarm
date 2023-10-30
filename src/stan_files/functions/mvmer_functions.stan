@@ -232,7 +232,7 @@
   }
 
   /**
-  * Increment the target with the log-likelihood for the glmer submodel
+  * Evaluate the log-likelihood for the glmer submodel
   *
   * @param z_beta A vector of primitive parameters
   * @param prior_dist Integer, the type of prior distribution
@@ -328,7 +328,6 @@
     }
     return lp;
     /* else prior_dist is 0 and nothing is added */
-    return target();
   }
 
   /**
