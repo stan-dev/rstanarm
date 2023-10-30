@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - survival_2_26_1
   pull_request:
     branches:
       - master
