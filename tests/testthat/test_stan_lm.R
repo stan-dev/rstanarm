@@ -119,6 +119,13 @@ test_that("stan_lm doesn't break with vb algorithms", {
   expect_stanreg(fit2)
 })
 
+test_that("stan_lm works with 1 predictor", {
+  SW(fit <- stan_lm(mpg ~ wt, data = mtcars,
+                    prior = R2(0.5, "mean"), refresh = 0, 
+                    seed = SEED))
+  expect_stanreg(fit)
+})
+
 test_that("stan_lm throws error if only intercept", {
   expect_error(stan_lm(mpg ~ 1, data = mtcars, prior = R2(location = 0.75)),
                regexp = "not suitable for estimating a mean")

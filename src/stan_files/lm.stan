@@ -55,7 +55,8 @@ transformed data {
 }
 parameters {
   // must not call with init="0"
-  array[K > 1 ? J : 0] unit_vector[K] u; // primitives for coefficients
+  // https://github.com/stan-dev/rstanarm/issues/603#issuecomment-1785928224
+  array[K > 1 ? J : 0] unit_vector[K > 1 ? K : 2] u; // primitives for coefficients
   array[J * has_intercept] real z_alpha; // primitives for intercepts
   array[J] real<lower=(K > 1 ? 0 : -1), upper=1> R2; // proportions of variance explained
   vector[J * (1 - prior_PD)] log_omega; // under/overfitting factors
