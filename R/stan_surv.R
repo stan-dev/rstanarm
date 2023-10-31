@@ -748,7 +748,7 @@ stan_surv <- function(formula,
   if (has_tve) {
     
     # time-varying predictor matrix
-    s_cpts          <- make_s(formula, mf_cpts, xlevs = xlevs)
+    s_cpts          <- make_s(formula, mf_cpts)
     smooth_map      <- get_smooth_name(s_cpts, type = "smooth_map")
     smooth_idx      <- get_idx_array(table(smooth_map))
     S <- ncol(s_cpts) # number of tve coefficients
