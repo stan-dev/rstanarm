@@ -68,7 +68,7 @@ jobs:
           build_args: '"--no-build-vignettes"'
 
       - name: Upload check results
-        if: failure()
+        # if: failure()
         uses: actions/upload-artifact@main
         with:
           name: ${{ runner.os }}-r${{ matrix.config.r }}-results
