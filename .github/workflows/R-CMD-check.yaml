@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - survival_2_26_1
   pull_request:
     branches:
       - master
@@ -21,15 +20,15 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          # - {os: macOS-latest, r: 'devel', rstan: 'CRAN'}
-          # - {os: macOS-latest, r: 'release', rstan: 'CRAN'}
-          # - {os: windows-latest, r: 'devel', rstan: 'CRAN'}
+          - {os: macOS-latest, r: 'devel', rstan: 'CRAN'}
+          - {os: macOS-latest, r: 'release', rstan: 'CRAN'}
+          - {os: windows-latest, r: 'devel', rstan: 'CRAN'}
           - {os: windows-latest, r: 'release', rstan: 'CRAN'}
-          # - {os: ubuntu-latest, r: 'devel', rstan: 'CRAN'}
-          # - {os: ubuntu-latest, r: 'release', rstan: 'CRAN'}
-          # - {os: ubuntu-latest, r: 'oldrel', rstan: 'CRAN'}
+          - {os: ubuntu-latest, r: 'devel', rstan: 'CRAN'}
+          - {os: ubuntu-latest, r: 'release', rstan: 'CRAN'}
+          - {os: ubuntu-latest, r: 'oldrel', rstan: 'CRAN'}
 
-          # - {os: macOS-latest, r: 'release', rstan: 'Preview'}
+          - {os: macOS-latest, r: 'release', rstan: 'Preview'}
           - {os: windows-latest, r: 'release', rstan: 'Preview'}
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
@@ -68,7 +67,7 @@ jobs:
           build_args: '"--no-build-vignettes"'
 
       - name: Upload check results
-        # if: failure()
+        if: failure()
         uses: actions/upload-artifact@main
         with:
           name: ${{ runner.os }}-r${{ matrix.config.r }}-results
