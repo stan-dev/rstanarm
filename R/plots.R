@@ -186,6 +186,7 @@ plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
 # plot method for stansurv ----------------------------------------------
 
 #' @rdname plot.stanreg
+#' @method plot stansurv
 #' @export
 #' @templateVar cigeomArg ci_geom_args
 #' @template args-ci-geom-args
@@ -511,6 +512,7 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' # see 'condition' argument above for details on the plots below and
 #' # above the diagonal. default is to split by accept_stat__.
 #' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
+#' 
 #' # for demonstration purposes, intentionally fit a model that
 #' # will (almost certainly) have some divergences
 #' fit <- stan_glm(

@@ -17,4 +17,4 @@
   real<lower=0> global_prior_df_z;
   real<lower=0> slab_df_z;
   real<lower=0> slab_scale_z;
-  int<lower=2> num_normals_z[prior_dist_z == 7 ? z_dim : 0];
+  array[prior_dist_z == 7 ? z_dim : 0] int<lower=2> num_normals_z;

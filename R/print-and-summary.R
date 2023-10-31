@@ -503,11 +503,13 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
     cat("\n family:      ", atts$family)
     cat("\n formula:     ", formula_string(atts$formula))
     cat("\n algorithm:   ", atts$algorithm)
-    if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
-      cat("\n sample:      ", atts$posterior_sample_size, "(posterior sample size)")
+    if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling") {
+      cat("\n sample:      ", atts$posterior_sample_size, 
+          "(posterior sample size)")
+    }
     cat("\n priors:      ", "see help('prior_summary')")
     cat("\n observations:", atts$nobs)
-    if (!is.null(atts$npreds))
+    if (!is.null(atts$npreds)) {
       cat("\n predictors:  ", atts$npreds)
     }
     if (!is.null(atts$call$subset)) {
@@ -517,6 +519,7 @@ print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")),
       cat("\n groups:      ", paste0(names(atts$ngrps), " (", 
                                      unname(atts$ngrps), ")", 
                                      collapse = ", "))
+    }
   }
     
   cat("\n\nEstimates:\n")

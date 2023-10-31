@@ -1,14 +1,3 @@
-vector SS_asymp(vector input, matrix Phi_);
-vector SS_asympOff(vector input, matrix Phi_);
-vector SS_asympOrig(vector input, matrix Phi_);
-vector SS_biexp(vector input, matrix Phi_);
-vector SS_fol(vector Dose, vector input, matrix Phi_);
-vector SS_fpl(vector input, matrix Phi_);
-vector SS_gompertz(vector x, matrix Phi_);
-vector SS_logis(vector input, matrix Phi_);
-vector SS_micmen(vector input, matrix Phi_);
-vector SS_weibull(vector x, matrix Phi_);
-
 /* These functions (without the underscores) are all documented in R
    See also Appendix C of Pinheiro and Bates
 https://books.google.com/books?id=3TVDAAAAQBAJ&lpg=PR3&dq=Pinheiro%20and%20Bates&pg=PA511#v=onepage&q&f=false

@@ -1509,7 +1509,7 @@ the Stan example models repository in R format.
 Carpenter (2009) updates Efron and Morris's (1975) data set for the
 entire set of players for the entire 2006 American League season of
 Major League Baseball.  The data was originally downloaded from the
-[baseball1.com](https://www.seanlahman.com/).
+seanlahman.com, which is currently not working.
 
 * To load: `data(bball2006, package = "rstanarm")`
-* Data Source: [https://lingpipe-blog.com/2009/09/23/bayesian-estimators-for-the-beta-binomial-model-of-batting-ability](https://lingpipe-blog.com/2009/09/23/bayesian-estimators-for-the-beta-binomial-model-of-batting-ability/)
+* Data Source: [https://web.archive.org/web/20220618114439/https://lingpipe-blog.com/2009/09/23/](https://web.archive.org/web/20220618114439/https://lingpipe-blog.com/2009/09/23/)

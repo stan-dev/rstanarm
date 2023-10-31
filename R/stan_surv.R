@@ -44,6 +44,7 @@
 #'  
 #' @template args-dots
 #' @template args-priors
+#' @template args-prior_covariance
 #' @template args-prior_PD
 #' @template args-algorithm
 #' @template args-adapt_delta
@@ -747,7 +748,7 @@ stan_surv <- function(formula,
   if (has_tve) {
     
     # time-varying predictor matrix
-    s_cpts          <- make_s(formula, mf_cpts, xlevs = xlevs)
+    s_cpts          <- make_s(formula, mf_cpts)
     smooth_map      <- get_smooth_name(s_cpts, type = "smooth_map")
     smooth_idx      <- get_idx_array(table(smooth_map))
     S <- ncol(s_cpts) # number of tve coefficients
@@ -881,17 +882,17 @@ stan_surv <- function(formula,
     w_icens      = if (has_quadrature || !has_bars || nicens == 0) double(0) else parts_icens$w,
     w_delay      = if (has_quadrature || !has_bars || ndelay == 0) double(0) else parts_delay$w,
  
-    v_event      = if (has_quadrature || !has_bars || nevent == 0) integer(0) else parts_event$v - 1L,
-    v_lcens      = if (has_quadrature || !has_bars || nlcens == 0) integer(0) else parts_lcens$v - 1L,
-    v_rcens      = if (has_quadrature || !has_bars || nrcens == 0) integer(0) else parts_rcens$v - 1L,
-    v_icens      = if (has_quadrature || !has_bars || nicens == 0) integer(0) else parts_icens$v - 1L,
-    v_delay      = if (has_quadrature || !has_bars || ndelay == 0) integer(0) else parts_delay$v - 1L,    
+    v_event      = if (has_quadrature || !has_bars || nevent == 0) integer(0) else parts_event$v,
+    v_lcens      = if (has_quadrature || !has_bars || nlcens == 0) integer(0) else parts_lcens$v,
+    v_rcens      = if (has_quadrature || !has_bars || nrcens == 0) integer(0) else parts_rcens$v,
+    v_icens      = if (has_quadrature || !has_bars || nicens == 0) integer(0) else parts_icens$v,
+    v_delay      = if (has_quadrature || !has_bars || ndelay == 0) integer(0) else parts_delay$v,    
     
-    u_event      = if (has_quadrature || !has_bars || nevent == 0) integer(0) else parts_event$u - 1L,
-    u_lcens      = if (has_quadrature || !has_bars || nlcens == 0) integer(0) else parts_lcens$u - 1L,
-    u_rcens      = if (has_quadrature || !has_bars || nrcens == 0) integer(0) else parts_rcens$u - 1L,
-    u_icens      = if (has_quadrature || !has_bars || nicens == 0) integer(0) else parts_icens$u - 1L,
-    u_delay      = if (has_quadrature || !has_bars || ndelay == 0) integer(0) else parts_delay$u - 1L,    
+    u_event      = if (has_quadrature || !has_bars || nevent == 0) integer(0) else parts_event$u,
+    u_lcens      = if (has_quadrature || !has_bars || nlcens == 0) integer(0) else parts_lcens$u,
+    u_rcens      = if (has_quadrature || !has_bars || nrcens == 0) integer(0) else parts_rcens$u,
+    u_icens      = if (has_quadrature || !has_bars || nicens == 0) integer(0) else parts_icens$u,
+    u_delay      = if (has_quadrature || !has_bars || ndelay == 0) integer(0) else parts_delay$u,    
   
     nnz_event    = if (has_quadrature || !has_bars || nevent == 0) 0L else length(parts_event$w),
     nnz_lcens    = if (has_quadrature || !has_bars || nlcens == 0) 0L else length(parts_lcens$w),
@@ -958,19 +959,19 @@ stan_surv <- function(formula,
     w_qpts_icens = if (!has_quadrature || !has_bars || qicens == 0) double(0) else parts_qpts_icens$w,
     w_qpts_delay = if (!has_quadrature || !has_bars || qdelay == 0) double(0) else parts_qpts_delay$w,
     
-    v_epts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_epts_event$v - 1L,
-    v_qpts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_qpts_event$v - 1L,
-    v_qpts_lcens = if (!has_quadrature || !has_bars || qlcens == 0) integer(0) else parts_qpts_lcens$v - 1L,
-    v_qpts_rcens = if (!has_quadrature || !has_bars || qrcens == 0) integer(0) else parts_qpts_rcens$v - 1L,
-    v_qpts_icens = if (!has_quadrature || !has_bars || qicens == 0) integer(0) else parts_qpts_icens$v - 1L,
-    v_qpts_delay = if (!has_quadrature || !has_bars || qdelay == 0) integer(0) else parts_qpts_delay$v - 1L,    
+    v_epts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_epts_event$v,
+    v_qpts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_qpts_event$v,
+    v_qpts_lcens = if (!has_quadrature || !has_bars || qlcens == 0) integer(0) else parts_qpts_lcens$v,
+    v_qpts_rcens = if (!has_quadrature || !has_bars || qrcens == 0) integer(0) else parts_qpts_rcens$v,
+    v_qpts_icens = if (!has_quadrature || !has_bars || qicens == 0) integer(0) else parts_qpts_icens$v,
+    v_qpts_delay = if (!has_quadrature || !has_bars || qdelay == 0) integer(0) else parts_qpts_delay$v,    
     
-    u_epts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_epts_event$u - 1L,
-    u_qpts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_qpts_event$u - 1L,
-    u_qpts_lcens = if (!has_quadrature || !has_bars || qlcens == 0) integer(0) else parts_qpts_lcens$u - 1L,
-    u_qpts_rcens = if (!has_quadrature || !has_bars || qrcens == 0) integer(0) else parts_qpts_rcens$u - 1L,
-    u_qpts_icens = if (!has_quadrature || !has_bars || qicens == 0) integer(0) else parts_qpts_icens$u - 1L,
-    u_qpts_delay = if (!has_quadrature || !has_bars || qdelay == 0) integer(0) else parts_qpts_delay$u - 1L,    
+    u_epts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_epts_event$u,
+    u_qpts_event = if (!has_quadrature || !has_bars || qevent == 0) integer(0) else parts_qpts_event$u,
+    u_qpts_lcens = if (!has_quadrature || !has_bars || qlcens == 0) integer(0) else parts_qpts_lcens$u,
+    u_qpts_rcens = if (!has_quadrature || !has_bars || qrcens == 0) integer(0) else parts_qpts_rcens$u,
+    u_qpts_icens = if (!has_quadrature || !has_bars || qicens == 0) integer(0) else parts_qpts_icens$u,
+    u_qpts_delay = if (!has_quadrature || !has_bars || qdelay == 0) integer(0) else parts_qpts_delay$u,    
     
     nnz_epts_event = if (!has_quadrature || !has_bars || qevent == 0) 0L else length(parts_epts_event$w),
     nnz_qpts_event = if (!has_quadrature || !has_bars || qevent == 0) 0L else length(parts_qpts_event$w),
@@ -1306,7 +1307,7 @@ stan_surv <- function(formula,
 #' @return The exported \code{tve} function documented here just returns 
 #'   \code{x}. However, when called internally the \code{tve} function returns 
 #'   several other pieces of useful information. For the most part, these are 
-#'   added to the formula element of the returned \code{\link{stanreg}} object
+#'   added to the formula element of the returned \code{\link{stanreg-objects}}
 #'   (that is \code{object[["formula"]]} where \code{object} is the fitted
 #'   model). Information added to the formula element of the \code{stanreg} 
 #'   object includes the following:
@@ -1731,8 +1732,8 @@ make_basis <- function(times, basehaz, integrate = FALSE) {
 basis_matrix <- function(times, basis, integrate = FALSE) {
   out <- predict(basis, times)
   if (integrate) {
-    stopifnot(inherits(basis, "mSpline"))
-    class(basis) <- c("matrix", "iSpline")
+    stopifnot(inherits(basis, "MSpline"))
+    class(basis) <- c("ISpline", "splines2", "matrix")
     out <- predict(basis, times)
   }
   aa(out)

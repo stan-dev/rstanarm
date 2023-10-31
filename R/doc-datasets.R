@@ -224,7 +224,7 @@
 #' 
 #' @references 
 #' Carpenter, B. (2009) Bayesian estimators for the beta-binomial model of
-#' batting ability. \url{https://lingpipe-blog.com/2009/09/23/}
+#' batting ability. \url{https://web.archive.org/web/20220618114439/https://lingpipe-blog.com/2009/09/23/}
 #' 
 #' Efron, B. and Morris, C. (1975) Data analysis using Stein's estimator and its
 #' generalizations. \emph{Journal of the American Statistical Association}

@@ -1,7 +1,7 @@
-  real mean_PPD[M];
-  real yAlpha1[intercept_type[1] > 0];
-  real yAlpha2[intercept_type[2] > 0];
-  real yAlpha3[intercept_type[3] > 0];
+  array[M] real mean_PPD;
+  array[intercept_type[1] > 0] real yAlpha1;
+  array[intercept_type[2] > 0] real yAlpha2;
+  array[intercept_type[3] > 0] real yAlpha3;
   vector[prior_dist_for_cov == 2 && bK1 > 0 ? size(bCov1_idx) : 0] bCov1;
   vector[prior_dist_for_cov == 2 && bK2 > 0 ? size(bCov2_idx) : 0] bCov2;
   vector[bN1 * bK1] b1 = to_vector(bMat1'); // ensures same order as stan_glmer (make_b)

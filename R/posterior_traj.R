@@ -301,9 +301,8 @@ posterior_traj <- function(object,
   id_var    <- object$id_var
   time_var  <- object$time_var
   grp_stuff <- object$grp_stuff[[m]]
-
   glmod     <- object$glmod[[m]]
-
+  
   if (!is.null(seed)) 
     set.seed(seed)
   
@@ -414,8 +413,7 @@ posterior_traj <- function(object,
       newX <- rolling_merge(newX, time_seq[[id_var]], time_seq[[time_var]])
     }
   }
-
-    
+  
   if (isTRUE(as.logical(glmod$has_offset))) {
     # create a temporary data frame with a fake outcome to avoid error
     response_name <- as.character(formula(object)[[m]])[2]
@@ -426,8 +424,10 @@ posterior_traj <- function(object,
     newOffset <- NULL
   }
   
+  # Obtain posterior predictions at specified times
   ytilde <- posterior_predict(object, newdata = newX, m = m, stanmat = stanmat, offset = newOffset, ...)
-  
+
+  # Optionally return S * N matrix of draws (instead of data frame)
   if (return_matrix) {
     attr(ytilde, "mu") <- NULL # remove attribute mu
     return(ytilde)

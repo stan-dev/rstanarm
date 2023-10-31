@@ -33,16 +33,6 @@ TOLSCALES <- list(
   glmer_ranef = 0.1   # how many SDs can stan_jm ranefs be from glmer ranefs
 )
 
-source(test_path("helpers", "expect_matrix.R"))
-source(test_path("helpers", "expect_stanreg.R"))
-source(test_path("helpers", "expect_stanmvreg.R"))
-source(test_path("helpers", "expect_survfit_jm.R"))
-source(test_path("helpers", "expect_ppd.R"))
-source(test_path("helpers", "expect_identical_sorted_stanmats.R"))
-source(test_path("helpers", "SW.R"))
-source(test_path("helpers", "get_tols_jm.R"))
-source(test_path("helpers", "recover_pars_jm.R"))
-
 context("stan_mvmer")
 
 #----  Data (for non-Gaussian families)
@@ -175,9 +165,9 @@ if (interactive()) {
   compare_glmer <- function(fmLong, fam = gaussian, ...) {
     SW(y1 <- stan_glmer(fmLong, pbcLong, fam, iter = 1000, chains = CHAINS, seed = SEED, refresh = 0))
     SW(y2 <- stan_mvmer(fmLong, pbcLong, fam, iter = 1000, chains = CHAINS, seed = SEED, ..., refresh = 0))
-    tols <- get_tols(y1, tolscales = TOLSCALES)
-    pars <- recover_pars(y1)
-    pars2 <- recover_pars(y2)
+    tols <- get_tols_jm(y1, tolscales = TOLSCALES)
+    pars <- recover_pars_jm(y1)
+    pars2 <- recover_pars_jm(y2)
     for (i in names(tols$fixef))
       expect_equal(pars$fixef[[i]], pars2$fixef[[i]], tol = tols$fixef[[i]])     
     for (i in names(tols$ranef))
