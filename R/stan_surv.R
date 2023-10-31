@@ -1732,8 +1732,8 @@ make_basis <- function(times, basehaz, integrate = FALSE) {
 basis_matrix <- function(times, basis, integrate = FALSE) {
   out <- predict(basis, times)
   if (integrate) {
-    stopifnot(inherits(basis, "mSpline"))
-    class(basis) <- c("matrix", "iSpline")
+    stopifnot(inherits(basis, "MSpline"))
+    class(basis) <- c("ISpline", "splines2", "matrix")
     out <- predict(basis, times)
   }
   aa(out)
