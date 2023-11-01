@@ -34,7 +34,7 @@ TOLSCALES <- list(
   hr_fixef  = 0.5 # how many SEs can stan_surv HRs be from coxph/stpm2 HRs
 )
 
-content("stan_surv")
+context("stan_surv")
 
 eo <- function(...) { expect_output (...) }
 ee <- function(...) { expect_error  (...) }
