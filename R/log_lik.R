@@ -410,7 +410,7 @@ ll_args.stansurv <- function(object, newdata = NULL, ...) {
   t_end   <- make_t(y, type = "end") # exit  time
   t_upp   <- make_t(y, type = "upp") # upper time for interval censoring
   status  <- make_d(y)
-  if (any(status < 0 || status > 3)) 
+  if (any(status < 0 | status > 3)) 
     stop2("Invalid status indicator in Surv object.")
   
   # delayed entry indicator for each row of data
