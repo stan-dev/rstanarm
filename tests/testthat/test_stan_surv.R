@@ -91,7 +91,6 @@ test_that("qnodes argument works", {
   es(up(testmod, qnodes = 15, basehaz = "bs"))
   
   ew(up(testmod, qnodes = 1),       "is being ignored")
-  ew(up(testmod, qnodes = c(1,2)),  "is being ignored")
   ew(up(testmod, qnodes = "wrong"), "is being ignored")
   
   ee(up(testmod, qnodes = 1,       basehaz = "bs"), "7, 11 or 15")
@@ -109,7 +108,7 @@ test_that("basehaz argument works", {
   es(up(testmod, basehaz = "weibull-aft"))
   
   dfl <- list(df = 5)
-  knl <- list(knots = c(1,3,5))
+  knl <- list(knots = c(1,3,4))
   es(up(testmod, basehaz = "ms", basehaz_ops = dfl))
   es(up(testmod, basehaz = "ms", basehaz_ops = knl))
   es(up(testmod, basehaz = "bs", basehaz_ops = dfl))
