@@ -406,12 +406,14 @@ compare_surv <- function(data, basehaz = "weibull", ...) {
                  info = basehaz)
 }
 
+N_coxph <- 1000
+
 #---- exponential data
 
 set.seed(543634)
-covs <- data.frame(id = 1:300,
-                   X1 = rbinom(300, 1, 0.3),
-                   X2 = rnorm (300, 2, 2.0))
+covs <- data.frame(id = 1:N_coxph,
+                   X1 = rbinom(N_coxph, 1, 0.3),
+                   X2 = rnorm (N_coxph, 2, 2.0))
 dat <- simsurv(dist    = "weibull",
                lambdas = 0.1,
                gammas  = 1,
@@ -424,9 +426,9 @@ compare_surv(data = dat, basehaz = "exp")
 #---- weibull data
 
 set.seed(543634)
-covs <- data.frame(id = 1:300,
-                   X1 = rbinom(300, 1, 0.3),
-                   X2 = rnorm (300, 2, 2.0))
+covs <- data.frame(id = 1:N_coxph,
+                   X1 = rbinom(N_coxph, 1, 0.3),
+                   X2 = rnorm (N_coxph, 2, 2.0))
 dat <- simsurv(dist    = "weibull",
                lambdas = 0.1,
                gammas  = 1.3,
@@ -441,9 +443,9 @@ compare_surv(data = dat, basehaz = "bs")
 #---- gompertz data
 
 set.seed(45357)
-covs <- data.frame(id = 1:300,
-                   X1 = rbinom(300, 1, 0.3),
-                   X2 = rnorm (300, 2, 2.0))
+covs <- data.frame(id = 1:N_coxph,
+                   X1 = rbinom(N_coxph, 1, 0.3),
+                   X2 = rnorm (N_coxph, 2, 2.0))
 dat <- simsurv(dist    = "gompertz",
                lambdas = 0.1,
                gammas  = 0.05,
@@ -479,12 +481,14 @@ compare_surv <- function(data, basehaz = "weibull-aft", ...) {
                  info = basehaz)
 }
 
+N_survreg <- 300
+
 #---- exponential data
 
 set.seed(543634)
-covs <- data.frame(id = 1:300,
-                   X1 = rbinom(300, 1, 0.3),
-                   X2 = rnorm (300, 2, 2.0))
+covs <- data.frame(id = 1:N_survreg,
+                   X1 = rbinom(N_survreg, 1, 0.3),
+                   X2 = rnorm (N_survreg, 2, 2.0))
 dat <- simsurv(dist    = "weibull",
                lambdas = 0.1,
                gammas  = 1,
@@ -497,9 +501,9 @@ compare_surv(data = dat, basehaz = "exp-aft")
 #---- weibull data
 
 set.seed(543634)
-covs <- data.frame(id = 1:300,
-                   X1 = rbinom(300, 1, 0.3),
-                   X2 = rnorm (300, 2, 2.0))
+covs <- data.frame(id = 1:N_survreg,
+                   X1 = rbinom(N_survreg, 1, 0.3),
+                   X2 = rnorm (N_survreg, 2, 2.0))
 dat <- simsurv(dist    = "weibull",
                lambdas = 0.1,
                gammas  = 1.3,
@@ -740,9 +744,11 @@ get_ests <- function(mod) {
 
 # simulate datasets
 set.seed(SEED)
-dat       <- make_data(n = 20, K = 50)
-dat_delay <- make_data(n = 20, K = 50, delay = TRUE)
-dat_icens <- make_data(n = 20, K = 50, icens = TRUE)
+n <- 50
+K <- 100
+dat       <- make_data(n = n, K = K)
+dat_delay <- make_data(n = n, K = K, delay = TRUE)
+dat_icens <- make_data(n = n, K = K, icens = TRUE)
 
 # formulas
 ff  <- Surv(eventtime, status)                ~ trt + (1 | site) # right cens
@@ -759,7 +765,7 @@ o<-SW(m1  <- stan_surv(formula = ff,
                        seed    = SEED))
 
 # fit the additional models
-o<-SW(m2  <- up(m1, formula. = ff, data = dat, basehaz = "weibull"))
+o<-SW(m2  <- up(m1, formula. = ff,  data = dat,       basehaz = "weibull"))
 o<-SW(m3  <- up(m1, formula. = ff,  data = dat,       basehaz = "gompertz"))
 o<-SW(m4  <- up(m1, formula. = ff,  data = dat,       basehaz = "ms"))
 o<-SW(m5  <- up(m1, formula. = ffd, data = dat_delay, basehaz = "exp"))
