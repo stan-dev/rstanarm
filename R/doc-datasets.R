@@ -86,21 +86,21 @@
 #' 
 #' 304 obs. of 8 variables (\code{pbcLong}) and 40 obs. of 7 variables (\code{pbcSurv})
 #' \itemize{
-#' \item \code{age} {in years}
-#' \item \code{albumin} {serum albumin (g/dl)}
-#' \item \code{logBili} {logarithm of serum bilirubin}
-#' \item \code{death} {indicator of death at endpoint} 
-#' \item \code{futimeYears} {time (in years) between baseline and  
-#'     the earliest of death, transplantion or censoring}
-#' \item \code{id} {numeric ID unique to each individual}
-#' \item \code{platelet} {platelet count}
-#' \item \code{sex} {gender (m = male, f = female)}
-#' \item \code{status} {status at endpoint (0 = censored, 
-#'     1 = transplant, 2 = dead)}
-#' \item \code{trt} {binary treatment code (0 = placebo, 1 = 
-#'     D-penicillamine)}
-#' \item \code{year} {time (in years) of the longitudinal measurements,
-#'     taken as time since baseline)}
+#' \item \code{age} in years
+#' \item \code{albumin} serum albumin (g/dl)
+#' \item \code{logBili} logarithm of serum bilirubin
+#' \item \code{death} indicator of death at endpoint
+#' \item \code{futimeYears} time (in years) between baseline and  
+#'     the earliest of death, transplantion or censoring
+#' \item \code{id} numeric ID unique to each individual
+#' \item \code{platelet} platelet count
+#' \item \code{sex} gender (m = male, f = female)
+#' \item \code{status} status at endpoint (0 = censored, 
+#'     1 = transplant, 2 = dead)
+#' \item \code{trt} binary treatment code (0 = placebo, 1 = 
+#'     D-penicillamine)
+#' \item \code{year} time (in years) of the longitudinal measurements,
+#'     taken as time since baseline)
 #' }
 #' }
 #' 
