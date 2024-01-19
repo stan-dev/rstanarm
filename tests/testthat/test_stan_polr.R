@@ -56,6 +56,11 @@ test_that("stan_polr runs for esoph example", {
   expect_stanreg(fit2vb)
 })
 
+test_that("stan_polr runs with 1 predictor", {
+  esoph$x1 <- rnorm(nrow(esoph))
+  expect_stanreg(stan_polr(tobgp ~ x1, data = esoph, prior = R2(0.5, "mean")))
+})
+
 test_that("stan_polr throws error if formula excludes intercept", {
   expect_error(stan_polr(tobgp ~ 0 + agegp + alcgp, data = esoph, 
                          method = "loglog", prior = R2(0.4, "median")), 

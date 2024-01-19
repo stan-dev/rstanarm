@@ -348,6 +348,10 @@ is_binomial_ppc <- function(object, ...) {
     "violin_grouped" = nreps, # NULL ok
     "km_overlay" = nreps %ORifNULL% 50,
 
+    # PIT-ECDFs
+    "pit_ecdf" = .ignore_nreps(nreps),
+    "pit_ecdf_grouped" = .ignore_nreps(nreps),
+
     # PREDICTIVE ERRORS
     "error_binned" = nreps %ORifNULL% 3,
     "error_hist" = nreps %ORifNULL% 3,
