@@ -177,7 +177,7 @@
 
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = hs, 4 = hs_plus,
   //   5 = laplace, 6 = lasso, 7 = product_normal
-  array[3] int<lower=0,upper=7> y_prior_dist;
+  array[20] int<lower=0,upper=7> y_prior_dist;
   array[M] int<lower=0,upper=2> y_prior_dist_for_intercept;
 
   // prior family: 0 = none, 1 = normal, 2 = student_t, 3 = exponential
@@ -190,7 +190,7 @@
   int<lower=0,upper=1> prior_PD;  // 1 = yes
   
   // offset
-  array[3] int<lower=0,upper=1> has_offset;  // 0 = No, 1 = Yes
+  array[20] int<lower=0,upper=1> has_offset;  // 0 = No, 1 = Yes
   vector[has_offset[1] ? yNeta[1] : 0] y1_offset;
   vector[has_offset[2] ? yNeta[2] : 0] y2_offset;
   vector[has_offset[3] ? yNeta[3] : 0] y3_offset;
