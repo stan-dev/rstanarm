@@ -18,8 +18,8 @@
 Sys.setenv(USE_CXX17 = 1)
 set.seed(12345)
 
-MODELS_HOME <- "stan_files"
-INCLUDE_DIR <- "include"
+MODELS_HOME <- system.file("stan", package = "rstanarm")
+INCLUDE_DIR <- system.file("include", package = "rstanarm")
 
 context("setup")
 test_that("Stan programs are available", {

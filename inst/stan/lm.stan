@@ -1,5 +1,5 @@
-#include /pre/Columbia_copyright.stan
-#include /pre/license.stan
+#include /include/Columbia_copyright.stan
+#include /include/license.stan
 
 // GLM for a Gaussian outcome with no link function
 functions {
@@ -31,7 +31,7 @@ data {
   int<lower=0, upper=1> prior_dist; // 0 = uniform for R^2, 1 = Beta(K/2,eta)
   int<lower=0, upper=1> prior_PD; // 0 = no, 1 = yes to drawing from the prior
   real<lower=0> eta; // shape hyperparameter
-  
+
   int<lower=1> J; // number of groups
   // the rest of these are indexed by group but should work even if J = 1
   array[J] int<lower=1> N; // number of observations
@@ -68,15 +68,15 @@ transformed parameters {
   for (j in 1 : J) {
     // marginal standard deviation of outcome for group j
     real Delta_y = prior_PD == 0 ? s_Y[j] * exp(log_omega[j]) : 1;
-    
+
     // coefficients in Q-space
-    if (K > 1) 
+    if (K > 1)
       theta[j] = u[j] * sqrt(R2[j]) * sqrt_Nm1[j] * Delta_y;
-    else 
+    else
       theta[j][1] = R2[j] * sqrt_Nm1[j] * Delta_y;
-    
+
     sigma[j] = Delta_y * sqrt(1 - R2[j]); // standard deviation of errors
-    
+
     if (has_intercept == 1) {
       if (prior_dist_for_intercept == 0)  // no information
         alpha[j] = z_alpha[j];
@@ -84,14 +84,14 @@ transformed parameters {
         alpha[j] = z_alpha[j] * Delta_y * sqrt_inv_N[j]
                    + prior_mean_for_intercept;
       else // arbitrary informative prior
-      
+
         alpha[j] = z_alpha[j] * prior_scale_for_intercept
                    + prior_mean_for_intercept;
     }
   }
 }
 model {
-  if (prior_PD == 0) 
+  if (prior_PD == 0)
     for (j in 1 : J) {
       // likelihood contribution for each group
       real shift = dot_product(xbarR_inv[j], theta[j]);
@@ -99,10 +99,10 @@ model {
                                                   ? alpha[j] + shift : shift, ybar[j], SSR[j], sigma[j], N[j]);
       // implicit: u[j] is uniform on the surface of a hypersphere
     }
-  if (has_intercept == 1 && prior_dist_for_intercept > 0) 
+  if (has_intercept == 1 && prior_dist_for_intercept > 0)
     target += normal_lpdf(z_alpha | 0, 1);
   if (prior_dist == 1) {
-    if (K > 1) 
+    if (K > 1)
       target += beta_lpdf(R2 | half_K, eta);
     else {
       // TODO(Andrew) remove once vectorised abs available in rstan

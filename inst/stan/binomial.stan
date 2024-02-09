@@ -1,5 +1,5 @@
-#include /pre/Columbia_copyright.stan
-#include /pre/license.stan
+#include /include/Columbia_copyright.stan
+#include /include/license.stan
 
 // GLM for a binomial outcome
 functions {
@@ -9,22 +9,22 @@ functions {
 data {
   // declares N, K, X, xbar, dense_X, nnz_x, w_x, v_x, u_x
   #include /data/NKX.stan
-  
+
   array[N] int<lower=0> y; // outcome: number of successes
   array[N] int<lower=0> trials; // number of trials
   // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
   #include /data/data_glm.stan
-  
+
   // declares has_weights, weights, has_offset, offset
   #include /data/weights_offset.stan
-  
+
   int<lower=5, upper=5> family;
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_scale_{mean, scale, df}_for_aux
   #include /data/hyperparameters.stan
-  
+
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
   #include /data/glmer_stuff.stan
-  
+
   // declares num_not_zero, w, v, u
   #include /data/glmer_stuff2.stan
 }
@@ -44,14 +44,14 @@ parameters {
 transformed parameters {
   // defines beta, b, theta_L
   #include /tparameters/tparameters_glm.stan
-  
+
   if (t > 0) {
     if (special_case == 1) {
       int start = 1;
       theta_L = scale .* tau;
-      if (t == 1) 
+      if (t == 1)
         b = theta_L[1] * z_b;
-      else 
+      else
         for (i in 1 : t) {
           int end = start + l[i] - 1;
           b[start : end] = theta_L[i] * z_b[start : end];
@@ -66,29 +66,29 @@ transformed parameters {
 model {
   if (prior_PD == 0) {
     #include /model/make_eta.stan
-    
+
     if (t > 0) {
       #include /model/eta_add_Zb.stan
     }
     if (has_intercept == 1) {
-      if (link != 4) 
+      if (link != 4)
         eta += gamma[1];
-      else 
+      else
         eta += gamma[1] - max(eta);
     } else {
       #include /model/eta_no_intercept.stan
     }
-    
+
     // Log-likelihood
     if (has_weights == 0) {
       // unweighted log-likelihoods
       target += binom_lpmf(y | trials, eta, link);
-    } else 
+    } else
       target += dot_product(weights, pw_binom(y, trials, eta, link));
   }
-  
+
   #include /model/priors_glm.stan
-  
+
   if (t > 0) {
     target += decov_lpdf(z_b | z_T, rho, zeta, tau, regularization, delta, shape, t, p);
   }
@@ -96,23 +96,23 @@ model {
 generated quantities {
   real mean_PPD = compute_mean_PPD ? 0 : negative_infinity();
   array[has_intercept] real alpha;
-  
+
   if (has_intercept == 1) {
-    if (dense_X) 
+    if (dense_X)
       alpha[1] = gamma[1] - dot_product(xbar, beta);
-    else 
+    else
       alpha[1] = gamma[1];
   }
-  
+
   if (compute_mean_PPD) {
     vector[N] pi;
     #include /model/make_eta.stan
-    
+
     if (t > 0) {
       #include /model/eta_add_Zb.stan
     }
     if (has_intercept == 1) {
-      if (link != 4) 
+      if (link != 4)
         eta += gamma[1];
       else {
         real shift = max(eta);
@@ -122,9 +122,9 @@ generated quantities {
     } else {
       #include /model/eta_no_intercept.stan
     }
-    
+
     pi = linkinv_binom(eta, link);
-    for (n in 1 : N) 
+    for (n in 1 : N)
       mean_PPD += binomial_rng(trials[n], pi[n]);
     mean_PPD /= N;
   }

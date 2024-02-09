@@ -1,5 +1,5 @@
-#include /pre/Columbia_copyright.stan
-#include /pre/license.stan
+#include /include/Columbia_copyright.stan
+#include /include/license.stan
 
 // GLM for a Bernoulli outcome
 functions {
@@ -14,11 +14,11 @@ data {
   int<lower=0, upper=1> dense_X; // flag for dense vs. sparse
   array[dense_X] matrix[N[1], K] X0; // centered (by xbar) predictor matrix | y = 0
   array[dense_X] matrix[N[2], K] X1; // centered (by xbar) predictor matrix | y = 1
-  
+
   int<lower=0, upper=1> clogit; // 1 iff the number of successes is fixed in each stratum
   int<lower=0> J; // number of strata (possibly zero)
   array[clogit == 1 ? N[1] + N[2] : 0] int<lower=1, upper=J> strata;
-  
+
   // stuff for the sparse case
   int<lower=0> nnz_X0; // number of non-zero elements in the implicit X0 matrix
   vector[nnz_X0] w_X0; // non-zero elements in the implicit X0 matrix
@@ -32,30 +32,30 @@ data {
   array[dense_X ? 0 : N[2] + 1] int<lower=1, upper=rows(w_X1) + 1> u_X1;
   // declares prior_PD, has_intercept, link, prior_dist, prior_dist_for_intercept
   #include /data/data_glm.stan
-  
+
   int<lower=0> K_smooth;
   matrix[N[1], K_smooth] S0;
   matrix[N[2], K_smooth] S1;
   array[K_smooth] int<lower=1> smooth_map;
-  
+
   int<lower=5, upper=5> family;
-  
+
   // weights
   int<lower=0, upper=1> has_weights; // 0 = No, 1 = Yes
   vector[has_weights ? N[1] : 0] weights0;
   vector[has_weights ? N[2] : 0] weights1;
-  
+
   // offset
   int<lower=0, upper=1> has_offset; // 0 = No, 1 = Yes
   vector[has_offset ? N[1] : 0] offset0;
   vector[has_offset ? N[2] : 0] offset1;
-  
+
   // declares prior_{mean, scale, df}, prior_{mean, scale, df}_for_intercept, prior_{mean, scale, df}_for_aux
   #include /data/hyperparameters.stan
-  
+
   // declares t, p[t], l[t], q, len_theta_L, shape, scale, {len_}concentration, {len_}regularization
   #include /data/glmer_stuff.stan
-  
+
   // more glmer stuff
   array[2] int<lower=0> num_non_zero; // number of non-zero elements in the Z matrices
   vector[num_non_zero[1]] w0; // non-zero elements in the implicit Z0 matrix
@@ -80,7 +80,7 @@ transformed data {
   array[clogit ? J : 0] int<lower=0> successes;
   array[clogit ? J : 0] int<lower=0> failures;
   array[clogit ? J : 0] int<lower=0> observations;
-  
+
   int can_do_bernoullilogitglm = K != 0
                                  && // remove K!=0 after rstan includes this Stan bugfix: https://github.com/stan-dev/math/issues/1398
                                  link == 1 && clogit == 0 && has_offset == 0
@@ -89,23 +89,23 @@ transformed data {
   matrix[can_do_bernoullilogitglm ? NN : 0,
          can_do_bernoullilogitglm ? K + K_smooth : 0] XS;
   array[can_do_bernoullilogitglm ? NN : 0] int y;
-  
+
   // defines hs, len_z_T, len_var_group, delta, pos
   #include /tdata/tdata_glm.stan
-  
+
   for (j in 1 : J) {
     successes[j] = 0;
     failures[j] = 0;
   }
-  if (J > 0) 
-    for (i in 1 : N[2]) 
+  if (J > 0)
+    for (i in 1 : N[2])
       successes[strata[i]] += 1;
-  if (J > 0) 
-    for (i in (N[2] + 1) : NN) 
+  if (J > 0)
+    for (i in (N[2] + 1) : NN)
       failures[strata[i]] += 1;
-  for (j in 1 : J) 
+  for (j in 1 : J)
     observations[j] = failures[j] + successes[j];
-  
+
   if (can_do_bernoullilogitglm) {
     XS = K_smooth > 0
          ? append_col(append_row(X0[1], X1[1]), append_row(S0, S1))
@@ -121,14 +121,14 @@ parameters {
 transformed parameters {
   // defines beta, b, theta_L
   #include /tparameters/tparameters_glm.stan
-  
+
   if (t > 0) {
     if (special_case) {
       int start = 1;
       theta_L = scale .* tau;
-      if (t == 1) 
+      if (t == 1)
         b = theta_L[1] * z_b;
-      else 
+      else
         for (i in 1 : t) {
           int end = start + l[i] - 1;
           b[start : end] = theta_L[i] * z_b[start : end];
@@ -148,7 +148,7 @@ model {
   } else if (prior_PD == 0) {
     // defines eta0, eta1
     #include /model/make_eta_bern.stan
-    
+
     if (has_intercept == 1) {
       if (link != 4) {
         eta0 += gamma[1];
@@ -170,9 +170,9 @@ model {
       target += dot_product(weights1, pw_bern(1, eta1, link));
     }
   }
-  
+
   #include /model/priors_glm.stan
-  
+
   if (t > 0) {
     target += decov_lpdf(z_b | z_T, rho, zeta, tau, regularization, delta, shape, t, p);
   }
@@ -180,20 +180,20 @@ model {
 generated quantities {
   real mean_PPD = compute_mean_PPD ? 0 : negative_infinity();
   array[has_intercept] real alpha;
-  
+
   if (has_intercept == 1) {
-    if (dense_X) 
+    if (dense_X)
       alpha[1] = gamma[1] - dot_product(xbar, beta);
-    else 
+    else
       alpha[1] = gamma[1];
   }
-  
+
   if (compute_mean_PPD) {
     vector[N[1]] pi0;
     vector[N[2]] pi1;
     // defines eta0, eta1
     #include /model/make_eta_bern.stan
-    
+
     if (has_intercept == 1) {
       if (link != 4) {
         eta0 += gamma[1];
@@ -206,15 +206,15 @@ generated quantities {
         alpha[1] -= shift;
       }
     }
-    if (clogit) 
-      for (j in 1 : J) 
+    if (clogit)
+      for (j in 1 : J)
         mean_PPD += successes[j]; // fixed by design
     else {
       pi0 = linkinv_bern(eta0, link);
       pi1 = linkinv_bern(eta1, link);
-      for (n in 1 : N[1]) 
+      for (n in 1 : N[1])
         mean_PPD += bernoulli_rng(pi0[n]);
-      for (n in 1 : N[2]) 
+      for (n in 1 : N[2])
         mean_PPD += bernoulli_rng(pi1[n]);
     }
     mean_PPD /= NN;
