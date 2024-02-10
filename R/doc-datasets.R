@@ -150,7 +150,7 @@
 #' \item \code{platelet} Platelet count
 #' \item \code{sex} Gender (m = male, f = female)
 #' \item \code{status} Status at endpoint (0 = censored, 1 = transplant, 
-#' 2 = dead)
+#'     2 = dead)
 #' \item \code{trt} Binary treatment code (0 = placebo, 1 = D-penicillamine)
 #' \item \code{year} Time (in years) of the longitudinal measurements,
 #'     taken as time since baseline

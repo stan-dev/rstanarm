@@ -1,8 +1,8 @@
 Package: rstanarm
 Type: Package
 Title: Bayesian Applied Regression Modeling via Stan
-Version: 2.26.1
-Date: 2023-09-13
+Version: 2.32.1
+Date: 2024-01-15
 Encoding: UTF-8
 Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
@@ -43,7 +43,7 @@ Imports:
     Matrix (>= 1.2-13),
     nlme (>= 3.1-124),
     posterior, 
-    rstan (>= 2.26.1),
+    rstan (>= 2.32.0),
     rstantools (>= 2.1.0),
     shinystan (>= 2.3.0),
     splines,
@@ -68,8 +68,9 @@ Suggests:
     StanHeaders (>= 2.21.0),
     testthat (>= 1.0.2),
     gamm4,
-    shiny
-LinkingTo: StanHeaders (>= 2.21.0), rstan (>= 2.21.1), BH (>= 1.72.0-2), Rcpp (>=
+    shiny,
+    V8
+LinkingTo: StanHeaders (>= 2.32.0), rstan (>= 2.32.0), BH (>= 1.72.0-2), Rcpp (>=
     0.12.0), RcppEigen (>= 0.3.3.3.0), RcppParallel (>= 5.0.1)
 SystemRequirements: GNU make, pandoc (>= 1.12.3), pandoc-citeproc
 VignetteBuilder: knitr
