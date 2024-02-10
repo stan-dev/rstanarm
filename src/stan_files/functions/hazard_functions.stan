@@ -92,7 +92,7 @@
     return - dot_product(qwts, exp(log_hazard)); // sum across all individuals
   }
 
-  vector quadrature_log_cdf(vector qwts, vector log_hazard, int qnodes, int N) {
+  vector quadrature_log_cdf1(vector qwts, vector log_hazard, int qnodes, int N) {
     int M = rows(log_hazard);
     vector[M] hazard = exp(log_hazard);
     matrix[N,qnodes] qwts_mat = to_matrix(qwts,   N, qnodes);

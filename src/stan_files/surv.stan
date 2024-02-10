@@ -232,7 +232,7 @@ functions {
     return res;
   }
 
-  vector exponential_log_cdf(vector eta, vector t) {
+  vector exponential_log_cdf1(vector eta, vector t) {
     vector[rows(eta)] res;
     res = log(1 - exp(-t .* exp(eta)));
     return res;
@@ -260,7 +260,7 @@ functions {
     return res;
   }
 
-  vector exponentialAFT_log_cdf(vector caf) {
+  vector exponentialAFT_log_cdf1(vector caf) {
     vector[rows(caf)] res;
     res = log(1 - exp(-caf));
     return res;
@@ -289,7 +289,7 @@ functions {
     return res;
   }
 
-  vector weibull_log_cdf(vector eta, vector t, real shape) {
+  vector weibull_log_cdf1(vector eta, vector t, real shape) {
     vector[rows(eta)] res;
     res = log(1 - exp(- pow_vec(t, shape) .* exp(eta)));
     return res;
@@ -318,7 +318,7 @@ functions {
     return res;
   }
 
-  vector weibullAFT_log_cdf(vector caf, real shape) {
+  vector weibullAFT_log_cdf1(vector caf, real shape) {
     vector[rows(caf)] res;
     res = log(1 - exp(- pow_vec(caf, shape)));
     return res;
@@ -347,7 +347,7 @@ functions {
     return res;
   }
 
-  vector gompertz_log_cdf(vector eta, vector t, real scale) {
+  vector gompertz_log_cdf1(vector eta, vector t, real scale) {
     vector[rows(eta)] res;
     res = log(1 - exp(inv(scale) * -(exp(scale * t) - 1) .* exp(eta)));
     return res;
@@ -378,7 +378,7 @@ functions {
     return res;
   }
 
-  vector mspline_log_cdf(vector eta, matrix ibasis, vector coefs) {
+  vector mspline_log_cdf1(vector eta, matrix ibasis, vector coefs) {
     vector[rows(eta)] res;
     res = log(1 - exp(-(ibasis * coefs) .* exp(eta)));
     return res;
@@ -873,7 +873,7 @@ model {
         if (type == 7) { // exponential AFT model
           if (nevent > 0) target +=  exponentialAFT_log_haz (af_event);
           if (nevent > 0) target +=  exponentialAFT_log_surv(caf_event);
-          if (nlcens > 0) target +=  exponentialAFT_log_cdf (caf_lcens);
+          if (nlcens > 0) target +=  exponentialAFT_log_cdf1(caf_lcens);
           if (nrcens > 0) target +=  exponentialAFT_log_surv(caf_rcens);
           if (nicens > 0) target +=  exponentialAFT_log_cdf2(caf_icenl, caf_icenu);
           if (ndelay > 0) target += -exponentialAFT_log_surv(caf_delay);
@@ -881,7 +881,7 @@ model {
           real shape = coefs[1];
           if (nevent > 0) target +=  weibullAFT_log_haz (af_event, caf_event, shape);
           if (nevent > 0) target +=  weibullAFT_log_surv(caf_event, shape);
-          if (nlcens > 0) target +=  weibullAFT_log_cdf (caf_lcens, shape);
+          if (nlcens > 0) target +=  weibullAFT_log_cdf1(caf_lcens, shape);
           if (nrcens > 0) target +=  weibullAFT_log_surv(caf_rcens, shape);
           if (nicens > 0) target +=  weibullAFT_log_cdf2(caf_icenl, caf_icenu, shape);
           if (ndelay > 0) target += -weibullAFT_log_surv(caf_delay, shape);
@@ -896,7 +896,7 @@ model {
         if (type == 5) { // exponential model
           if (nevent > 0) target +=  exponential_log_haz (eta_event);
           if (nevent > 0) target +=  exponential_log_surv(eta_event, t_event);
-          if (nlcens > 0) target +=  exponential_log_cdf (eta_lcens, t_lcens);
+          if (nlcens > 0) target +=  exponential_log_cdf1(eta_lcens, t_lcens);
           if (nrcens > 0) target +=  exponential_log_surv(eta_rcens, t_rcens);
           if (nicens > 0) target +=  exponential_log_cdf2(eta_icens, t_icenl, t_icenu);
           if (ndelay > 0) target += -exponential_log_surv(eta_delay, t_delay);
@@ -905,7 +905,7 @@ model {
           real shape = coefs[1];
           if (nevent > 0) target +=  weibull_log_haz (eta_event, t_event, shape);
           if (nevent > 0) target +=  weibull_log_surv(eta_event, t_event, shape);
-          if (nlcens > 0) target +=  weibull_log_cdf (eta_lcens, t_lcens, shape);
+          if (nlcens > 0) target +=  weibull_log_cdf1(eta_lcens, t_lcens, shape);
           if (nrcens > 0) target +=  weibull_log_surv(eta_rcens, t_rcens, shape);
           if (nicens > 0) target +=  weibull_log_cdf2(eta_icens, t_icenl, t_icenu, shape);
           if (ndelay > 0) target += -weibull_log_surv(eta_delay, t_delay, shape);
@@ -914,7 +914,7 @@ model {
           real scale = coefs[1];
           if (nevent > 0) target +=  gompertz_log_haz (eta_event, t_event, scale);
           if (nevent > 0) target +=  gompertz_log_surv(eta_event, t_event, scale);
-          if (nlcens > 0) target +=  gompertz_log_cdf (eta_lcens, t_lcens, scale);
+          if (nlcens > 0) target +=  gompertz_log_cdf1(eta_lcens, t_lcens, scale);
           if (nrcens > 0) target +=  gompertz_log_surv(eta_rcens, t_rcens, scale);
           if (nicens > 0) target +=  gompertz_log_cdf2(eta_icens, t_icenl, t_icenu, scale);
           if (ndelay > 0) target += -gompertz_log_surv(eta_delay, t_delay, scale);
@@ -922,7 +922,7 @@ model {
         else if (type == 4) { // M-splines, on haz scale
           if (nevent > 0) target +=  mspline_log_haz (eta_event,  basis_event, ms_coefs);
           if (nevent > 0) target +=  mspline_log_surv(eta_event, ibasis_event, ms_coefs);
-          if (nlcens > 0) target +=  mspline_log_cdf (eta_lcens, ibasis_lcens, ms_coefs);
+          if (nlcens > 0) target +=  mspline_log_cdf1(eta_lcens, ibasis_lcens, ms_coefs);
           if (nrcens > 0) target +=  mspline_log_surv(eta_rcens, ibasis_rcens, ms_coefs);
           if (nicens > 0) target +=  mspline_log_cdf2(eta_icens, ibasis_icenl, ibasis_icenu, ms_coefs);
           if (ndelay > 0) target += -mspline_log_surv(eta_delay, ibasis_delay, ms_coefs);
@@ -1054,7 +1054,7 @@ model {
         if (type == 7) { // exponential AFT model
           if (Nevent > 0) target +=  exponentialAFT_log_haz (af_event);
           if (Nevent > 0) target +=  exponentialAFT_log_surv(caf_event);
-          if (Nlcens > 0) target +=  exponentialAFT_log_cdf (caf_lcens);
+          if (Nlcens > 0) target +=  exponentialAFT_log_cdf1(caf_lcens);
           if (Nrcens > 0) target +=  exponentialAFT_log_surv(caf_rcens);
           if (Nicens > 0) target +=  exponentialAFT_log_cdf2(caf_icenl, caf_icenu);
           if (Ndelay > 0) target += -exponentialAFT_log_surv(caf_delay);
@@ -1062,7 +1062,7 @@ model {
           real shape = coefs[1];
           if (Nevent > 0) target +=  weibullAFT_log_haz (af_event, caf_event, shape);
           if (Nevent > 0) target +=  weibullAFT_log_surv(caf_event, shape);
-          if (Nlcens > 0) target +=  weibullAFT_log_cdf (caf_lcens, shape);
+          if (Nlcens > 0) target +=  weibullAFT_log_cdf1(caf_lcens, shape);
           if (Nrcens > 0) target +=  weibullAFT_log_surv(caf_rcens, shape);
           if (Nicens > 0) target +=  weibullAFT_log_cdf2(caf_icenl, caf_icenu, shape);
           if (Ndelay > 0) target += -weibullAFT_log_surv(caf_delay, shape);
@@ -1136,7 +1136,7 @@ model {
         // increment target with log-lik contributions for event submodel
         if (Nevent > 0) target +=  lhaz_epts_event;
         if (qevent > 0) target +=  quadrature_log_surv(qwts_event, lhaz_qpts_event);
-        if (qlcens > 0) target +=  quadrature_log_cdf (qwts_lcens, lhaz_qpts_lcens, qnodes, Nlcens);
+        if (qlcens > 0) target +=  quadrature_log_cdf1(qwts_lcens, lhaz_qpts_lcens, qnodes, Nlcens);
         if (qrcens > 0) target +=  quadrature_log_surv(qwts_rcens, lhaz_qpts_rcens);
         if (qicens > 0) target +=  quadrature_log_cdf2(qwts_icenl, lhaz_qpts_icenl,
                                                        qwts_icenu, lhaz_qpts_icenu, qnodes, Nicens);
