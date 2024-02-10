@@ -79,7 +79,7 @@ make_assoc_parts <- function(use_function = make_assoc_parts_for_stan,
   #   observation time preceeding the quadrature point are carried forward to 
   #   represent the covariate value(s) at the quadrature point. (To avoid 
   #   missingness there is no limit on how far forwards or how far backwards 
-  #   covariate values can be carried). If no time varying covariates are 
+  #   covariate values can be carried). If no time-varying covariates are 
   #   present in the longitudinal submodel (other than the time variable) 
   #   then nothing is carried forward or backward.    
   dataQ <- rolling_merge(data = newdata, ids = ids, times = times, grps = grps)

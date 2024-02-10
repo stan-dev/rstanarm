@@ -232,13 +232,13 @@
   }
 
   /**
-  * Increment the target with the log-likelihood for the glmer submodel
+  * Evaluate the log-likelihood for the glmer submodel
   *
   * @param z_beta A vector of primitive parameters
   * @param prior_dist Integer, the type of prior distribution
   * @param prior_mean,prior_scale Vectors of mean and scale parameters
   *   for the prior distributions
-  * @return A vector containing the population level parameters (coefficients)
+  * @return lp__
   */
   real glm_lpdf(vector y_real, array[] int y_integer, vector eta, array[] real aux,
               int family, int link, real sum_log_y, vector sqrt_y, vector log_y) {
@@ -286,7 +286,7 @@
   * @param global Real, the global parameter
   * @param mix Vector of shrinkage parameters
   * @param one_over_lambda Real
-  * @return nothing
+  * @return lp__
   */
   real beta_custom_lpdf(vector z_beta, int prior_dist, vector prior_scale,
                vector prior_df, real global_prior_df, array[] vector local,
@@ -338,7 +338,7 @@
   * @param mean_ Real, mean of prior distribution
   * @param scale Real, scale for the prior distribution
   * @param df Real, df for the prior distribution
-  * @return nothing
+  * @return lp__
   */
   real gamma_custom_lpdf(real gamma, int dist, real mean_, real scale, real df) {
     real lp = 0;
@@ -359,7 +359,7 @@
   * @param dist Integer specifying the type of prior distribution
   * @param scale Real specifying the scale for the prior distribution
   * @param df Real specifying the df for the prior distribution
-  * @return nothing
+  * @return lp__
   */
   real aux_lpdf(real aux_unscaled, int dist, real scale, real df) {
     real lp = 0;

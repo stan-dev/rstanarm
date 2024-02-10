@@ -150,6 +150,11 @@
 posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
                                       re.form = NULL, fun = NULL, seed = NULL,
                                       offset = NULL, ...) {
+
+  if (is.stansurv(object))
+    stop2("'posterior_predict' is not implemented for stansurv objects. ",
+          "Use 'posterior_survfit' instead.")
+
   if (!is.null(seed))
     set.seed(seed)
   if (!is.null(fun))

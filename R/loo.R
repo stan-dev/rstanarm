@@ -233,7 +233,7 @@ loo.stanreg <-
         ))
     } else if (is_clogit(x)) {
       ll <- log_lik.stanreg(x)
-      cons <- apply(ll,MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
+      cons <- apply(ll, MARGIN = 2, FUN = function(y) sd(y) < 1e-15)
       if (any(cons)) {
         message(
           "The following strata were dropped from the ",
@@ -242,6 +242,16 @@ loo.stanreg <-
         )
         ll <- ll[,!cons, drop = FALSE]
       }
+      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      loo_x <-
+        suppressWarnings(loo.matrix(
+          ll,
+          r_eff = r_eff,
+          cores = cores,
+          save_psis = save_psis
+        ))
+    } else if (is.stansurv(x) && x$has_quadrature) {
+      ll <- log_lik.stanreg(x)
       r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
       loo_x <-
         suppressWarnings(loo.matrix(
@@ -344,6 +354,8 @@ waic.stanreg <- function(x, ...) {
     ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
     out <- waic.matrix(ll)
   } else if (is_clogit(x)) {
+    out <- waic.matrix(log_lik(x))
+  } else if (is.stansurv(x) && x$has_quadrature) {
     out <- waic.matrix(log_lik(x))
   } else {
     args <- ll_args(x)
@@ -627,7 +639,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
           open_progress = FALSE
         )
     }
-    fit_j_call$subset <- eval(fit_j_call$subset)
+    fit_j_call$subset <- if (!is.stansurv(x)) eval(fit_j_call$subset) else NULL
     fit_j_call$data <- eval(fit_j_call$data)
     if (!is.null(getCall(x)$offset)) {
       fit_j_call$offset <- x$offset[-omitted]
@@ -757,6 +769,8 @@ hash_y <- function(x, ...) {
 is_discrete <- function(object) {
   if (inherits(object, "polr"))
     return(TRUE)
+  if (inherits(object, "stansurv"))
+    return(FALSE)
   if (inherits(object, "stanmvreg")) {
     fams <- fetch(family(object), "family")
     res <- sapply(fams, function(x)

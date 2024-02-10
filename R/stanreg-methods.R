@@ -90,7 +90,7 @@ NULL
 #' @rdname stanreg-methods
 #' @export
 coef.stanreg <- function(object, ...) {
-  if (is.mer(object)) 
+  if (is.mer(object) && !is.surv(object)) 
     return(coef_mer(object, ...))
   
   object$coefficients
@@ -121,7 +121,7 @@ fitted.stanreg <- function(object, ...)  {
 #' @rdname stanreg-methods
 #' @export 
 nobs.stanreg <- function(object, ...) {
-  nrow(model.frame(object))
+  if (is.surv(object)) object$nobs else nrow(model.frame(object))
 }
 
 #' @rdname stanreg-methods
@@ -399,6 +399,9 @@ family.stanreg <- function(object, ...) object$family
 #' @param fixed.only See \code{\link[lme4:merMod-class]{model.frame.merMod}}.
 #' 
 model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
+  if (is.stansurv(formula)) {
+    return(formula$model_frame)
+  }
   if (is.mer(formula)) {
     fr <- formula$glmod$fr
     if (fixed.only) {
@@ -420,7 +423,7 @@ model.frame.stanreg <- function(formula, fixed.only = FALSE, ...) {
 #' 
 model.matrix.stanreg <- function(object, ...) {
   if (inherits(object, "gamm4")) return(object$jam$X)
-  if (is.mer(object)) return(object$glmod$X)
+  if (is.mer(object) && !is.surv(object)) return(object$glmod$X)
     
   NextMethod("model.matrix")
 }
@@ -431,10 +434,15 @@ model.matrix.stanreg <- function(object, ...) {
 #' @export
 #' @param x A stanreg object.
 #' @param ... Can contain \code{fixed.only} and \code{random.only} arguments 
-#'   that both default to \code{FALSE}.
+#'   that both default to \code{FALSE}. Also, for stan_surv models, can contain
+#'   \code{remove.tve} which defaults to FALSE, but if TRUE then any 
+#'   'tve(varname)' terms in the model formula are returned as 'varname'.
 #' 
 formula.stanreg <- function(x, ..., m = NULL) {
-  if (is.mer(x) && !isTRUE(x$stan_function == "stan_gamm4")) return(formula_mer(x, ...))
+  if (is.surv(x))
+    return(formula_surv(x, ...))
+  if (is.mer(x) && !isTRUE(x$stan_function == "stan_gamm4")) 
+	  return(formula_mer(x, ...))
   x$formula
 }
 
@@ -444,10 +452,11 @@ formula.stanreg <- function(x, ..., m = NULL) {
 #' @param x,fixed.only,random.only,... See lme4:::terms.merMod.
 #' 
 terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
-  if (!is.mer(x))
+  if (!any(is.mer(x), is.stansurv(x)))
     return(NextMethod("terms"))
   
-  fr <- x$glmod$fr
+  fr <- if (is.stansurv(x)) model.frame(x) else x$glmod$fr
+            
   if (missing(fixed.only) && random.only) 
     fixed.only <- FALSE
   if (fixed.only && random.only) 
@@ -455,11 +464,12 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
   
   Terms <- attr(fr, "terms")
   if (fixed.only) {
-    Terms <- terms.formula(formula(x, fixed.only = TRUE))
+    Terms <- terms.formula(formula(x, fixed.only = TRUE, remove.tve = TRUE))
     attr(Terms, "predvars") <- attr(terms(fr), "predvars.fixed")
   } 
   if (random.only) {
-    Terms <- terms.formula(lme4::subbars(formula.stanreg(x, random.only = TRUE)))
+    Terms <- terms.formula(lme4::subbars(formula.stanreg(x, random.only = TRUE, 
+                                                         remove.tve = TRUE)))
     attr(Terms, "predvars") <- attr(terms(fr), "predvars.random")
   }
   
@@ -479,10 +489,16 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
   .glmer_check(object)
   object$glmod$reTrms$cnms
 }
+.cnms.stansurv <- function(object, ...) {
+  object$cnms
+}
 .flist <- function(object, ...) UseMethod(".flist")
 .flist.stanreg <- function(object, ...) {
   .glmer_check(object)
   as.list(object$glmod$reTrms$flist)
+}
+.flist.stansurv <- function(object, ...) {
+  as.list(object$flist)
 }
 
 coef_mer <- function(object, ...) {
@@ -539,4 +555,26 @@ formula_mer <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
     form <- justRE(form, response = TRUE)
   
   return(form)
+}
+formula_surv <- function(x, 
+                         fixed.only  = FALSE, 
+                         random.only = FALSE, 
+                         remove.tve  = FALSE, 
+                         ...) {
+  if (missing(fixed.only) && random.only) 
+    fixed.only <- FALSE
+  if (fixed.only && random.only) 
+    stop2("'fixed.only' and 'random.only' can't both be TRUE.")
+  if (remove.tve) {
+    form <- x$formula$tf_form
+  } else {
+    form <- x$formula$formula
+  }
+  if (is.null(form))
+    stop2("Can't find formula in model object.")
+  if (fixed.only)
+    form[[length(form)]] <- lme4::nobars(form[[length(form)]])
+  if (random.only)
+    form <- justRE(form, response = TRUE)
+  return(form)  
 }

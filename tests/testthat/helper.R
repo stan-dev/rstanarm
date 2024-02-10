@@ -109,7 +109,8 @@ expect_ppd <- function(x) {
 
 expect_stanreg <- function(x) expect_s3_class(x, "stanreg")
 expect_stanmvreg  <- function(x) expect_s3_class(x, "stanmvreg")
-expect_survfit <- function(x) expect_s3_class(x, "survfit.stanjm")
+expect_survfit_jm <- function(x) expect_s3_class(x, "survfit.stanjm")
+expect_survfit_surv <- function(x) expect_s3_class(x, "survfit.stansurv")
 
 # Use the standard errors from a fitted 'comparison model' to obtain 
 # the tolerance for each parameter in the joint model
@@ -128,7 +129,7 @@ expect_survfit <- function(x) expect_s3_class(x, "survfit.stanjm")
 # @param idvar The name of the ID variable. Used to extract the SDs for
 #   group-specific terms that correspond to the individual/patient.
 #
-get_tols <- function(modLong, modEvent = NULL, tolscales, idvar = "id") {
+get_tols_jm <- function(modLong, modEvent = NULL, tolscales, idvar = "id") {
   
   if (is.null(modEvent))
     modEvent <- modLong # if modLong is already a joint model
@@ -179,6 +180,36 @@ get_tols <- function(modLong, modEvent = NULL, tolscales, idvar = "id") {
   return(ret)
 }
 
+# Use the standard errors from a fitted 'comparison model' to obtain 
+# the tolerance for each parameter in the joint model
+# Obtain parameter specific tolerances that can be used to assess the 
+# accuracy of parameter estimates in stan_jm models. The tolerances
+# are calculated by taking the SE/SD for the parameter estimate in a 
+# "gold standard" model and multiplying this by the relevant element 
+# in the 'tolscales' argument.
+#
+# @param mod The "gold standard" longitudinal model. Likely to be
+#   a model estimated using coxph.
+# @param toscales A named list with elements 'hr_fixef' and 'tve_fixef'.
+#
+get_tols_surv <- function(mod, tolscales) {
+  
+  cl <- class(mod)[1L]
+  
+  if (cl %in% c("coxph", "survreg")) {
+    fixef_ses  <- sqrt(diag(mod$var))[1:length(mod$coefficients)]
+    fixef_tols <- tolscales$hr_fixef * fixef_ses
+    names(fixef_tols) <- names(mod$coefficients)
+  }
+   
+  if ("(Intercept)" %in% names(fixef_tols))
+    fixef_tols[["(Intercept)"]] <- 2 * fixef_tols[["(Intercept)"]]
+  
+  ret <- Filter(function(x) !is.null(x), list(fixef = fixef_tols))
+  
+  return(ret)
+}
+
 # Recover parameter estimates and return a list with consistent
 # parameter names for comparing stan_jm, stan_mvmer, stan_{g}lmer,
 # {g}lmer, and coxph estimates
@@ -190,7 +221,7 @@ get_tols <- function(modLong, modEvent = NULL, tolscales, idvar = "id") {
 # @param idvar The name of the ID variable. Used to extract the estimates
 #   for group-specific parameters that correspond to the individual/patient.
 #
-recover_pars <- function(modLong, modEvent = NULL, idvar = "id") {
+recover_pars_jm <- function(modLong, modEvent = NULL, idvar = "id") {
   
   if (is.null(modEvent))
     modEvent <- modLong
@@ -215,3 +246,34 @@ recover_pars <- function(modLong, modEvent = NULL, idvar = "id") {
   return(ret)
 }
 
+# Recover parameter estimates and return a list with consistent
+# parameter names for comparing stan_surv and coxph estimates
+#
+# @param mod The fitted survival model. Likely to be a model estimated 
+#   using either coxph or stan_surv.
+#
+recover_pars_surv <- function(mod) {
+
+  cl <- class(mod)[1L]
+  
+  fixef_pars <- switch(cl,
+                       "coxph"    = mod$coefficients,
+                       "survreg"  = mod$coefficients,
+                       "stansurv" = fixef(mod),
+                       NULL)
+  
+  if (cl == "stansurv") {
+    sel <- grep(":tve-[a-z][a-z]-coef[0-9]*$", names(fixef_pars))
+    # replace stansurv tve names with coxph tt names
+    if (length(sel)) {
+      nms <- names(fixef_pars)[sel]
+      nms <- gsub(":tve-[a-z][a-z]-coef[0-9]*$", "", nms)
+      nms <- paste0("tt(", nms, ")")
+      names(fixef_pars)[sel] <- nms 
+    }
+  }
+  
+  ret <- Filter(function(x) !is.null(x), list(fixef = fixef_pars))
+  
+  return(ret)
+}

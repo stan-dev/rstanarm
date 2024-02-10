@@ -24,6 +24,9 @@ pp_data <-
            m = NULL,
            ...) {
     validate_stanreg_object(object)
+    if (is.stansurv(object)) {
+      return(.pp_data_surv(object, newdata = newdata, ...))
+    }
     if (is.mer(object)) {
       if (is.nlmer(object))
         out <- .pp_data_nlmer(object, newdata = newdata, re.form = re.form, m = m, ...)
@@ -35,7 +38,9 @@ pp_data <-
     .pp_data(object, newdata = newdata, offset = offset, ...)
   }
 
-# for models without lme4 structure
+	
+#-------------  for models without lme4 structure  -------------------------
+
 .pp_data <- function(object, newdata = NULL, offset = NULL, ...) {
   if (is(object, "gamm4")) {
     requireNamespace("mgcv", quietly = TRUE)
@@ -78,7 +83,8 @@ pp_data <-
 }
 
 
-# for models fit using stan_(g)lmer or stan_gamm4
+#---------  for models fit using stan_(g)lmer or stan_gamm4  -----------------
+
 .pp_data_mer <- function(object, newdata, re.form, m = NULL, ...) {
   if (is(object, "gamm4")) {
     requireNamespace("mgcv", quietly = TRUE)
@@ -108,44 +114,6 @@ pp_data <-
     if (!is.numeric(offset)) offset <- NULL
   }
   return(nlist(x, offset = offset, Zt = z$Zt, Z_names = z$Z_names))
-}
-
-# for models fit using stan_nlmer
-.pp_data_nlmer <- function(object, newdata, re.form, offset = NULL, m = NULL, ...) {
-  inputs <- parse_nlf_inputs(object$glmod$respMod)
-  if (is.null(newdata)) {
-    arg1 <- arg2 <- NULL
-  } else if (object$family$link == "inv_SSfol") {
-    arg1 <- newdata[[inputs[2]]]
-    arg2 <- newdata[[inputs[3]]]
-  } else {
-    arg1 <- newdata[[inputs[2]]]
-    arg2 <- NULL
-  }
-  f <- formula(object, m = m)
-  if (!is.null(re.form) && !is.na(re.form)) {
-    f <- as.character(f)
-    f[3] <- as.character(re.form)
-    f <- as.formula(f[-1])
-  }
-  if (is.null(newdata)) newdata <- model.frame(object)
-  else {
-    yname <- names(model.frame(object))[1]
-    newdata[[yname]] <- 0
-  }
-  mc <- match.call(expand.dots = FALSE)
-  mc$re.form <- mc$offset <- mc$object <- mc$newdata <- NULL
-  mc$data <- newdata
-  mc$formula <- f
-  mc$start <- fixef(object)
-  nlf <- nlformula(mc)
-  offset <- .pp_data_offset(object, newdata, offset)
-
-  group <- with(nlf$reTrms, pad_reTrms(Ztlist, cnms, flist))
-  if (!is.null(re.form) && !is(re.form, "formula") && is.na(re.form)) 
-    group$Z@x <- 0
-  return(nlist(x = nlf$X, offset = offset, Z = group$Z,
-               Z_names = make_b_nms(group), arg1, arg2))
 }
 
 # the functions below are heavily based on a combination of 
@@ -241,40 +209,213 @@ pp_data <-
 }
 
 
+#-------------  for models fit using stan_nlmer  -----------------------------
 
-# handle offsets ----------------------------------------------------------
-null_or_zero <- function(x) {
-  isTRUE(is.null(x) || all(x == 0))
-}
-
-.pp_data_offset <- function(object, newdata = NULL, offset = NULL) {
+.pp_data_nlmer <- function(object, newdata, re.form, offset = NULL, m = NULL, ...) {
+  inputs <- parse_nlf_inputs(object$glmod$respMod)
   if (is.null(newdata)) {
-    # get offset from model object (should be null if no offset)
-    if (is.null(offset)) 
-      offset <- object$offset %ORifNULL% model.offset(model.frame(object))
+    arg1 <- arg2 <- NULL
+  } else if (object$family$link == "inv_SSfol") {
+    arg1 <- newdata[[inputs[2]]]
+    arg2 <- newdata[[inputs[3]]]
   } else {
-    if (!is.null(offset))
-      stopifnot(length(offset) == nrow(newdata))
-    else {
-      # if newdata specified but not offset then confirm that model wasn't fit
-      # with an offset (warning, not error)
-      if (!is.null(object$call$offset) || 
-          !null_or_zero(object$offset) || 
-          !null_or_zero(model.offset(model.frame(object)))) {
-        warning(
-          "'offset' argument is NULL but it looks like you estimated ", 
-          "the model using an offset term.", 
-          call. = FALSE
-        )
-      }
-      offset <- rep(0, nrow(newdata))
-    }
+    arg1 <- newdata[[inputs[2]]]
+    arg2 <- NULL
   }
-  return(offset)
+  f <- formula(object, m = m)
+  if (!is.null(re.form) && !is.na(re.form)) {
+    f <- as.character(f)
+    f[3] <- as.character(re.form)
+    f <- as.formula(f[-1])
+  }
+  if (is.null(newdata)) newdata <- model.frame(object)
+  else {
+    yname <- names(model.frame(object))[1]
+    newdata[[yname]] <- 0
+  }
+  mc <- match.call(expand.dots = FALSE)
+  mc$re.form <- mc$offset <- mc$object <- mc$newdata <- NULL
+  mc$data <- newdata
+  mc$formula <- f
+  mc$start <- fixef(object)
+  nlf <- nlformula(mc)
+  offset <- .pp_data_offset(object, newdata, offset)
+
+  group <- with(nlf$reTrms, pad_reTrms(Ztlist, cnms, flist))
+  if (!is.null(re.form) && !is(re.form, "formula") && is.na(re.form)) 
+    group$Z@x <- 0
+  return(nlist(x = nlf$X, offset = offset, Z = group$Z,
+               Z_names = make_b_nms(group), arg1, arg2))
 }
 
 
-#----------------------- pp_data for joint models --------------------------
+#------------------  for models fit using stan_surv  -----------------------
+
+.pp_data_surv <- function(object, 
+                          newdata = NULL,
+                          times   = NULL,
+                          at_quadpoints = FALSE,
+                          ...) {
+
+  formula <- object$formula
+  basehaz <- object$basehaz
+  
+  # data with row subsetting etc
+  if (is.null(newdata))
+    newdata <- get_model_data(object)
+  
+  # flags
+  has_tve        <- object$has_tve
+  has_quadrature <- object$has_quadrature
+  has_bars       <- object$has_bars
+  
+  #----- dimensions and times
+  
+  if (has_quadrature && at_quadpoints) {
+    
+    if (is.null(times))
+      stop("Bug found: 'times' must be specified.")
+    
+    # error check time variables
+    if (!length(times) == nrow(newdata))
+      stop("Bug found: length of 'times' should equal number rows in the data.")
+
+    # number of nodes
+    qnodes <- object$qnodes
+    
+    # standardised weights and nodes for quadrature
+    qq <- get_quadpoints(nodes = qnodes)
+    qp <- qq$points
+    qw <- qq$weights
+    
+    # quadrature points & weights, evaluated for each row of data
+    pts <- uapply(qp, unstandardise_qpts, 0, times)
+    wts <- uapply(qw, unstandardise_qwts, 0, times)
+    
+    # id vector for quadrature points
+    ids <- rep(seq_along(times), times = qnodes)
+    
+  } else { # predictions don't require quadrature
+    
+    pts <- times
+    wts <- rep(NA, length(times))
+    ids <- seq_along(times)
+
+  }
+
+  #----- time-fixed predictor matrix
+  
+  # check all vars are in newdata
+  vars <- all.vars(delete.response(terms(object, fixed.only = FALSE)))
+  miss <- which(!vars %in% colnames(newdata))
+  if (length(miss))
+    stop2("The following variables are missing from the data: ", comma(vars[miss]))
+  
+  # drop response from fixed effect formula
+  tt <- delete.response(terms(object, fixed.only = TRUE))
+  
+  # make model frame based on time-fixed part of model formula
+  mf <- make_model_frame(tt, newdata, xlevs = object$xlevs)$mf
+  
+  # if using quadrature then expand rows of time-fixed predictor matrix
+  if (has_quadrature && at_quadpoints)
+    mf <- rep_rows(mf, times = qnodes)
+  
+  # check data classes in the model frame match those used in model fitting
+  if (!is.null(cl <- attr(tt, "dataClasses"))) 
+    .checkMFClasses(cl, mf)
+
+  # check model frame dimensions are correct (may be errors due to NAs?)
+  if (!length(pts) == nrow(mf))
+    stop("Bug found: length of 'pts' should equal number rows in model frame.")
+  
+  # construct time-fixed predictor matrix
+  x  <- make_x(tt, mf, check_constant = FALSE)$x
+  
+  #----- time-varying predictor matrix
+  
+  if (has_tve) {
+    
+    if (all(is.na(pts))) {
+      # temporary replacement to avoid error in creating spline basis
+      pts_tmp <- rep(0, length(pts))
+    } else {
+      # else use prediction times or quadrature points
+      pts_tmp <- pts
+    }
+    
+    # generate a model frame with time transformations for tve effects
+    mf_s <- make_model_frame(formula$tt_frame, data.frame(times__ = pts_tmp))$mf
+    
+    # check model frame dimensions are correct
+    if (!length(pts) == nrow(mf_s))
+      stop("Bug found: length of 'pts' should equal number rows in model frame.")
+    
+    # NB next line avoids dropping terms attribute from 'mf'
+    mf[, colnames(mf_s)] <- mf_s
+        
+    # construct time-varying predictor matrix
+    s <- make_s(formula, mf)
+
+    if (all(is.na(pts))) {
+      # if pts were all NA then replace the time-varying predictor
+      # matrix with all NA, but retain appropriate dimensions
+      s[] <- NaN
+    }    
+      
+  } else {
+    
+    s <- matrix(0, nrow(mf), 0)
+    
+  }
+  
+  #----- random effects predictor matrix
+  
+  if (has_bars) {
+
+    # drop response from random effects part of model formula
+    tt_z <- delete.response(terms(object, random.only = TRUE))
+    
+    # make model frame based on random effects part of model formula
+    mf_z <- make_model_frame(formula   = tt_z, 
+                             data      = newdata, 
+                             xlevs     = object$xlevs, 
+                             na.action = na.pass)$mf
+    
+    # if using quadrature then expand rows
+    if (has_quadrature && at_quadpoints)
+      mf_z <- rep_rows(mf_z, times = qnodes)
+    
+    # check model frame dimensions are correct
+    if (!length(pts) == nrow(mf_z))
+      stop("Bug found: length of 'pts' should equal number rows in model frame.")
+    
+    # construct random effects predictor matrix
+    ReTrms <- lme4::mkReTrms(formula$bars, mf_z)
+    z <- nlist(Zt = ReTrms$Zt, Z_names = make_b_nms(ReTrms))
+    
+  } else {
+    
+    z <- list()
+  
+  }
+
+  # return object
+  return(nlist(pts,
+               wts,
+               ids,
+               x,
+               s,
+               z,
+               has_quadrature,
+               has_tve,
+               has_bars,
+               at_quadpoints,
+               qnodes = object$qnodes))
+}
+
+
+#--------------------  for models fit using stan_jm  -----------------------
 
 # Return the design matrices required for evaluating the linear predictor or
 # log-likelihood in post-estimation functions for a \code{stan_jm} model
@@ -292,17 +433,31 @@ null_or_zero <- function(x) {
 #   the fitted object (if newdataEvent is NULL) or in newdataEvent.
 # @param long_parts,event_parts A logical specifying whether to return the
 #   design matrices for the longitudinal and/or event submodels.
+# @param response Logical specifying whether the newdataLong requires the
+#   response variable.
 # @return A named list (with components M, Npat, ndL, ndE, yX, tZt, 
 #   yZnames, eXq, assoc_parts) 
-.pp_data_jm <- function(object, newdataLong = NULL, newdataEvent = NULL, 
-                        ids = NULL, etimes = NULL, long_parts = TRUE, 
-                        event_parts = TRUE) {
+.pp_data_jm <- function(object, 
+                        newdataLong  = NULL, 
+                        newdataEvent = NULL, 
+                        ids          = NULL, 
+                        etimes       = NULL, 
+                        long_parts   = TRUE, 
+                        event_parts  = TRUE, 
+                        response     = TRUE,
+                        needs_time_var = TRUE) {
+  
   M <- get_M(object)
+  
   id_var   <- object$id_var
   time_var <- object$time_var
   
   if (!is.null(newdataLong) || !is.null(newdataEvent))
-    newdatas <- validate_newdatas(object, newdataLong, newdataEvent)
+    newdatas <- validate_newdatas(object, 
+                                  newdataLong, 
+                                  newdataEvent, 
+                                  response = response,
+                                  needs_time_var = needs_time_var)
   
   # prediction data for longitudinal submodels
   ndL <- if (is.null(newdataLong)) 
@@ -314,8 +469,8 @@ null_or_zero <- function(x) {
   
   # possibly subset
   if (!is.null(ids)) {
-    ndL <- subset_ids(object, ndL, ids)
-    ndE <- subset_ids(object, ndE, ids)
+    ndL <- subset_ids(ndL, ids, id_var)
+    ndE <- subset_ids(ndE, ids, id_var)
   }
   id_list <- unique(ndE[[id_var]]) # unique subject id list
   
@@ -344,7 +499,7 @@ null_or_zero <- function(x) {
   
   if (long_parts && event_parts)
     lapply(ndL, function(x) {
-      if (!time_var %in% colnames(x)) 
+      if (!time_var %in% colnames(x))
         STOP_no_var(time_var)
       if (!id_var %in% colnames(x)) 
         STOP_no_var(id_var)
@@ -375,6 +530,8 @@ null_or_zero <- function(x) {
     qtimes <- uapply(qq$points,  unstandardise_qpts, 0, etimes)
     qwts   <- uapply(qq$weights, unstandardise_qwts, 0, etimes)
     starttime <- deparse(formula(object, m = "Event")[[2L]][[2L]])
+    if ((!response) && (!starttime %in% colnames(ndE)))
+      ndE[[starttime]] <- 0
     edat <- prepare_data_table(ndE, id_var, time_var = starttime)
     id_rep <- rep(id_list, qnodes + 1)
     times <- c(etimes, qtimes) # times used to design event submodel matrices
@@ -418,12 +575,22 @@ null_or_zero <- function(x) {
 # need to be recalculated at quadrature points etc, for example
 # in posterior_survfit.
 #
-# @param object A stanmvreg object.
+# @param object A stansurv, stanmvreg or stanjm object.
 # @param m Integer specifying which submodel to get the
-#   prediction data frame for.
+#   prediction data frame for (for stanmvreg or stanjm objects).
 # @return A data frame or list of data frames with all the
 #   (unevaluated) variables required for predictions.
-get_model_data <- function(object, m = NULL) {
+get_model_data <- function(object, ...) UseMethod("get_model_data")
+
+get_model_data.stansurv <- function(object, ...) {
+  validate_stansurv_object(object)
+  terms <- terms(object, fixed.only = FALSE)
+  row_nms <- row.names(model.frame(object))
+  get_all_vars(terms, object$data)[row_nms, , drop = FALSE]
+}
+
+get_model_data.stanmvreg <- function(object, m = NULL, ...) {
+  
   validate_stanmvreg_object(object)
   M <- get_M(object)
   terms <- terms(object, fixed.only = FALSE)
@@ -470,4 +637,37 @@ get_model_data <- function(object, m = NULL) {
   
   mfs <- list_nms(mfs, M, stub = get_stub(object))
   if (is.null(m)) mfs else mfs[[m]]
+}
+
+
+#-----------------------  handle offsets  ----------------------------------
+
+null_or_zero <- function(x) {
+  isTRUE(is.null(x) || all(x == 0))
+}
+
+.pp_data_offset <- function(object, newdata = NULL, offset = NULL) {
+  if (is.null(newdata)) {
+    # get offset from model object (should be null if no offset)
+    if (is.null(offset)) 
+      offset <- object$offset %ORifNULL% model.offset(model.frame(object))
+  } else {
+    if (!is.null(offset))
+      stopifnot(length(offset) == nrow(newdata))
+    else {
+      # if newdata specified but not offset then confirm that model wasn't fit
+      # with an offset (warning, not error)
+      if (!is.null(object$call$offset) || 
+          !null_or_zero(object$offset) || 
+          !null_or_zero(model.offset(model.frame(object)))) {
+        warning(
+          "'offset' argument is NULL but it looks like you estimated ", 
+          "the model using an offset term.", 
+          call. = FALSE
+        )
+      }
+      offset <- rep(0, nrow(newdata))
+    }
+  }
+  return(offset)
 }
