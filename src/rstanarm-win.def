@@ -1,3 +1,10 @@
 LIBRARY rstanarm.dll
 EXPORTS
-  
+    _rcpp_module_boot_stan_fit4bernoulli_mod
+    _rcpp_module_boot_stan_fit4binomial_mod
+    _rcpp_module_boot_stan_fit4continuous_mod
+    _rcpp_module_boot_stan_fit4count_mod
+    _rcpp_module_boot_stan_fit4jm_mod
+    _rcpp_module_boot_stan_fit4lm_mod
+    _rcpp_module_boot_stan_fit4mvmer_mod
+    _rcpp_module_boot_stan_fit4polr_mod
