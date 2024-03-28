@@ -66,9 +66,7 @@
 #' @return A \code{draws} by \code{nrow(newdata)} matrix of simulations from the
 #'   posterior predictive distribution. Each row of the matrix is a vector of 
 #'   predictions generated using a single draw of the model parameters from the 
-#'   posterior distribution. The returned matrix will also have class
-#'   \code{"ppd"} to indicate it contains draws from the posterior predictive
-#'   distribution.
+#'   posterior distribution.
 #'
 #' @note For binomial models with a number of trials greater than one (i.e., not
 #'   Bernoulli models), if \code{newdata} is specified then it must include all
@@ -232,9 +230,9 @@ posterior_predict.stanreg <- function(object, newdata = NULL, draws = NULL,
   # if function is called from posterior_traj then add mu as attribute
   fn <- tryCatch(sys.call(-3)[[1]], error = function(e) NULL)
   if (!is.null(fn) && grepl("posterior_traj", deparse(fn), fixed = TRUE))
-    return(structure(ytilde, mu = ppargs$mu, class = c("ppd", class(ytilde))))
+    return(structure(ytilde, mu = ppargs$mu, class = class(ytilde)))
   
-  structure(ytilde, class = c("ppd", class(ytilde)))
+  ytilde
 }
 
 #' @rdname posterior_predict.stanreg
@@ -399,6 +397,9 @@ pp_args <- function(object, data, m = NULL) {
 #   some stan_betareg models "" is also included in the list.
 pp_eta <- function(object, data, draws = NULL, m = NULL, stanmat = NULL) {
   x <- data$x
+  if (!is.null(object$dropped_cols)) {
+    x <- x[, !(colnames(x) %in% object$dropped_cols), drop = FALSE]
+  }
   S <- if (is.null(stanmat)) posterior_sample_size(object) else nrow(stanmat)
   if (is.null(draws))
     draws <- S

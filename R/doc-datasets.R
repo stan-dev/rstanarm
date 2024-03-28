@@ -86,21 +86,21 @@
 #' 
 #' 304 obs. of 8 variables (\code{pbcLong}) and 40 obs. of 7 variables (\code{pbcSurv})
 #' \itemize{
-#' \item \code{age} {in years}
-#' \item \code{albumin} {serum albumin (g/dl)}
-#' \item \code{logBili} {logarithm of serum bilirubin}
-#' \item \code{death} {indicator of death at endpoint} 
-#' \item \code{futimeYears} {time (in years) between baseline and  
-#'     the earliest of death, transplantion or censoring}
-#' \item \code{id} {numeric ID unique to each individual}
-#' \item \code{platelet} {platelet count}
-#' \item \code{sex} {gender (m = male, f = female)}
-#' \item \code{status} {status at endpoint (0 = censored, 
-#'     1 = transplant, 2 = dead)}
-#' \item \code{trt} {binary treatment code (0 = placebo, 1 = 
-#'     D-penicillamine)}
-#' \item \code{year} {time (in years) of the longitudinal measurements,
-#'     taken as time since baseline)}
+#' \item \code{age} in years
+#' \item \code{albumin} serum albumin (g/dl)
+#' \item \code{logBili} logarithm of serum bilirubin
+#' \item \code{death} indicator of death at endpoint
+#' \item \code{futimeYears} time (in years) between baseline and  
+#'     the earliest of death, transplantion or censoring
+#' \item \code{id} numeric ID unique to each individual
+#' \item \code{platelet} platelet count
+#' \item \code{sex} gender (m = male, f = female)
+#' \item \code{status} status at endpoint (0 = censored, 
+#'     1 = transplant, 2 = dead)
+#' \item \code{trt} binary treatment code (0 = placebo, 1 = 
+#'     D-penicillamine)
+#' \item \code{year} time (in years) of the longitudinal measurements,
+#'     taken as time since baseline)
 #' }
 #' }
 #' 
@@ -162,7 +162,7 @@
 #' \item \code{arsenic} Arsenic level in respondent's well
 #' \item \code{dist} Distance (meters) from the respondent's house to the
 #' nearest well with safe drinking water.
-#' \item \code{association} Indicator for member(s) of household participate
+#' \item \code{assoc} Indicator for member(s) of household participate
 #' in community organizations
 #' \item \code{educ} Years of education (head of household)
 #' }
@@ -171,13 +171,13 @@
 #' 
 #' @references 
 #' Carpenter, B. (2009) Bayesian estimators for the beta-binomial model of
-#' batting ability. \url{http://lingpipe-blog.com/2009/09/23/}
+#' batting ability. \url{https://web.archive.org/web/20220618114439/https://lingpipe-blog.com/2009/09/23/}
 #' 
 #' Efron, B. and Morris, C. (1975) Data analysis using Stein's estimator and its
 #' generalizations. \emph{Journal of the American Statistical Association}
 #' \strong{70}(350), 311--319.
 #' 
-#' @templateVar armRef \url{http://stat.columbia.edu/~gelman/arm/}
+#' @templateVar armRef \url{https://stat.columbia.edu/~gelman/arm/}
 #' @template reference-gelman-hill
 #' 
 #' @references

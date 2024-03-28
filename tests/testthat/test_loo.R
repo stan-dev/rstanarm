@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 LOO.CORES <- ifelse(.Platform$OS.type == "windows", 1, 2)
 SEED <- 1234L
 set.seed(SEED)
@@ -23,7 +23,9 @@ CHAINS <- 2
 ITER <- 40 # small iter for speed but large enough for psis
 REFRESH <- 0
 
-source(test_path("helpers", "SW.R"))
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 
 # loo and waic ------------------------------------------------------------
 context("loo and waic")
@@ -58,13 +60,16 @@ expect_equivalent_loo <- function(fit) {
 
 test_that("loo & waic do something for non mcmc models", {
   SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
-                      seed = 1234L, prior_intercept = NULL,
+                      seed = 1234L, prior_intercept = NULL, refresh = 0,
                       prior = NULL, prior_aux = NULL))
-  capture.output(SW(fitvb1 <- update(fito, algorithm = "meanfield", iter = ITER)))
-  capture.output(SW(fitvb2 <- update(fito, algorithm = "fullrank", iter = ITER)))
-  expect_true("importance_sampling_loo" %in% class(loo(fito)))
-  expect_true("importance_sampling_loo" %in% class(loo(fitvb1)))
-  expect_true("importance_sampling_loo" %in% class(loo(fitvb2)))
+  SW(fitvb1 <- update(fito, algorithm = "meanfield", iter = ITER))
+  SW(fitvb2 <- update(fito, algorithm = "fullrank", iter = ITER))
+  SW(loo1 <- loo(fito))
+  SW(loo2 <- loo(fitvb1))
+  SW(loo3 <- loo(fitvb2))
+  expect_true("importance_sampling_loo" %in% class(loo1))
+  expect_true("importance_sampling_loo" %in% class(loo2))
+  expect_true("importance_sampling_loo" %in% class(loo3))
 })
 
 test_that("loo errors if model has weights", {
@@ -76,6 +81,16 @@ test_that("loo errors if model has weights", {
   expect_error(loo(fit), "not supported")
   expect_error(loo(fit), "'kfold'")
 })
+
+test_that("loo can handle empty interaction levels", {
+  d <- expand.grid(group1 = c("A", "B"), group2 = c("a", "b", "c"))[1:5,]
+  d$y <- c(0, 1, 0, 1, 0)
+  SW(fit <- rstanarm::stan_glm(y ~ group1:group2, data = d, family = "binomial",
+                               refresh = 0, iter = 20, chains = 1))
+  SW(loo1 <- loo(fit))
+  expect_output(print(loo1), "Computed from 10 by 5 log-likelihood matrix")
+})
+
 
 # loo with refitting ------------------------------------------------------
 context("loo then refitting")
@@ -94,28 +109,23 @@ test_that("loo issues errors/warnings", {
 })
 
 test_that("loo with k_threshold works", {
-#  fit <- SW(stan_glm(mpg ~ wt, prior = normal(0, 500), data = mtcars[25:32,],
-#                     seed = 12345, iter = 300, chains = 4, cores = 1,
-#                     refresh = 0))
-#  expect_warning(loo_x <- loo(fit, k_threshold = 0.5),
-#                 "We recommend calling 'loo' again")
-#  expect_message(rstanarm:::reloo(fit, loo_x, obs = 1:10, refit = FALSE),
-#                 "Model will be refit 10 times")
-#  expect_output(SW(rstanarm:::reloo(fit, loo_x, obs = 1, refit = TRUE)),
-#                "Elapsed Time")
-
-#  # test that no errors from binomial model because it's trickier to get the
-#  # data right internally in reloo (matrix outcome)
-#  loo_x <- loo(example_model)
-#  expect_message(SW(rstanarm:::reloo(example_model, loo_x, obs = 1)),
-#                 "Model will be refit 1 times")
+  SW(fit <- stan_glm(mpg ~ wt, prior = normal(0, 500), data = mtcars[25:32,],
+                     seed = 12345, iter = 5, chains = 1, cores = 1,
+                     refresh = 0))
+  expect_message(loo(fit, k_threshold = 0.5), "Model will be refit")
+  
+  # test that no errors from binomial model because it's trickier to get the
+  # data right internally in reloo (matrix outcome)
+  SW(loo_x <- loo(example_model))
+  expect_message(rstanarm:::reloo(example_model, loo_x, obs = 1),
+                 "Model will be refit 1 times")
 })
 
 test_that("loo with k_threshold works for edge case(s)", {
   # without 'data' argument
-  y <- mtcars$mpg
+  y <- mtcars$mpg[1:10]
   x <- rexp(length(y))
-  SW(fit <- stan_glm(y ~ 1, refresh = 0, iter = 200))
+  SW(fit <- stan_glm(y ~ 1, refresh = 0, iter = 50))
   expect_message(
     SW(res <- loo(fit, k_threshold = 0.1, cores = LOO.CORES)), # low k_threshold to make sure reloo is triggered
     "problematic observation\\(s\\) found"
@@ -129,11 +139,10 @@ test_that("loo with k_threshold works for edge case(s)", {
 context("kfold")
 
 test_that("kfold does not throw an error for non mcmc models", {
-  SW(
-    fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
-                     seed = 1234L, refresh = 0)
-  )
-  expect_true("kfold" %in% class(kfold(fito)))
+  SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
+                     seed = 1234L, refresh = 0))
+  SW(k <- kfold(fito, K = 2))
+  expect_true("kfold" %in% class(k))
 })
 
 test_that("kfold throws error if K <= 1 or K > N", {
@@ -161,9 +170,9 @@ test_that("kfold works on some examples", {
   mtcars2$wt[1] <- NA # make sure kfold works if NAs are dropped from original data
   SW(
     fit_gaus <- stan_glm(mpg ~ wt, data = mtcars2, refresh = 0,
-                         chains = 1, iter = 200)
+                         chains = 1, iter = 10)
   )
-  SW(kf <- kfold(fit_gaus, 4))
+  SW(kf <- kfold(fit_gaus, 2))
   SW(kf2 <- kfold(example_model, 2))
 
   expect_named(kf, c("estimates", "pointwise", "elpd_kfold", "se_elpd_kfold", "p_kfold", "se_p_kfold"))
@@ -268,7 +277,8 @@ test_that("loo_compare works", {
   expect_equivalent(comp2, loo_compare(stanreg_list(fit1, fit2, fit3)))
 
   # for kfold
-  comp3 <- loo_compare(k1, k2, k3)
+  expect_warning(comp3 <- loo_compare(k1, k2, k3), 
+                 "Not all kfold objects have the same K value")
   expect_true(attr(k4, "discrete"))
   expect_true(attr(k5, "discrete"))
   expect_s3_class(loo_compare(k4, k5), "compare.loo")

@@ -21,16 +21,15 @@
 #' (in-sample, for observed \eqn{y}) or \eqn{y - \tilde{y}}{y - ytilde} 
 #' (out-of-sample, for new or held-out \eqn{y}). The method for stanreg objects 
 #' calls \code{\link{posterior_predict}} internally, whereas the method for
-#' objects with class \code{"ppd"} accepts the matrix returned by 
-#' \code{posterior_predict} as input and can be used to avoid multiple calls to 
-#' \code{posterior_predict}.
+#' matrices accepts the matrix returned by \code{posterior_predict} as input and
+#' can be used to avoid multiple calls to \code{posterior_predict}.
 #' 
 #' @aliases predictive_error
 #' @export
 #' 
 #' @param object Either a fitted model object returned by one of the 
 #'   \pkg{rstanarm} modeling functions (a \link[=stanreg-objects]{stanreg 
-#'   object}) or, for the \code{"ppd"} method, a matrix of draws from the 
+#'   object}) or, for the matrix method, a matrix of draws from the 
 #'   posterior predictive distribution returned by 
 #'   \code{\link{posterior_predict}}.
 #' @param newdata,draws,seed,offset,re.form Optional arguments passed to 
@@ -72,7 +71,7 @@
 #' )
 #' err2 <- predictive_error(example_model, newdata = nd, draws = 10, seed = 1234)
 #' 
-#' # stanreg vs ppd methods
+#' # stanreg vs matrix methods
 #' fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 300)
 #' preds <- posterior_predict(fit, seed = 123)
 #' all.equal(
@@ -110,19 +109,24 @@ predictive_error.stanreg <-
       seed = seed,
       re.form = re.form
     )
-    predictive_error.ppd(ytilde, y = y)
+    predictive_error(ytilde, y = y)
   }
 
 #' @rdname predictive_error.stanreg
 #' @export
-#' @param y For the \code{"ppd"} method only, a vector of \eqn{y} values the 
+#' @param y For the matrix method only, a vector of \eqn{y} values the 
 #'   same length as the number of columns in the matrix used as \code{object}. 
 #'   The method for stanreg objects takes \code{y} directly from the fitted 
 #'   model object.
 #'   
+predictive_error.matrix <- function(object, y, ...) {
+  NextMethod("predictive_error")
+}
+
+#' @rdname predictive_error.stanreg
+#' @export
 predictive_error.ppd <- function(object, y, ...) {
-  ytilde <- unclass(object)
-  rstantools::predictive_error(ytilde, y = y)
+  predictive_error(unclass(object), y = y, ...)
 }
 
 # @rdname predictive_error.stanreg
@@ -262,6 +266,6 @@ predictive_error.stanmvreg <-
         re.form = re.form
       )
       
-      return(predictive_error.ppd(ytilde, y = y))
+      return(predictive_error(ytilde, y = y))
     }
   }

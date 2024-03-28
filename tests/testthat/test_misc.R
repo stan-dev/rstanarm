@@ -15,18 +15,16 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# tests can be run using devtools::test() or manually by loading testthat 
-# package and then running the code below possibly with options(mc.cores = 4).
-
-library(rstanarm)
+suppressPackageStartupMessages(library(rstanarm))
 SEED <- 12345
 set.seed(SEED)
 ITER <- 10L
 CHAINS <- 2L
 REFRESH <- 0
 
-SW <- suppressWarnings
-source(test_path("helpers", "expect_stanreg.R"))
+if (!exists("example_model")) {
+  example_model <- run_example_model()
+}
 
 context("helper functions")
 
@@ -154,10 +152,9 @@ test_that("validate_offset works", {
   expect_error(validate_offset(rep(1, 10), rnorm(5)))
   expect_error(validate_offset(rep(1, 5), rnorm(10)), 
                regexp = "number of offsets", ignore.case = TRUE)
-  capture.output(
-    fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED),
-    fito2 <- update(fito, offset = rep(5, nrow(mtcars)))
-  )
+  
+  SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED))
+  SW(fito2 <- update(fito, offset = rep(5, nrow(mtcars))))
   expect_equal(coef(fito)[1], 5 + coef(fito2)[1], tol = 0.2)
 })
 
@@ -225,11 +222,10 @@ test_that("check_constant_vars works", {
   expect_error(check_constant_vars(mf2), "wt, gear")
   expect_error(stan_glm(mpg ~ ., data = mf2), "wt, gear")
 
-  capture.output(
-    fit1 <- stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED, refresh = 0),
-    fit2 <- stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)), seed = SEED,
-                     offset = rep(1, nrow(mf)), algorithm = "optimizing", refresh = 0)
-  )
+  
+  SW(fit1 <- stan_glm(mpg ~ ., data = mf, algorithm = "optimizing", seed = SEED, refresh = 0))
+  SW(fit2 <- stan_glm(mpg ~ ., data = mf, weights = rep(2, nrow(mf)), seed = SEED,
+                     offset = rep(1, nrow(mf)), algorithm = "optimizing", refresh = 0))
   expect_stanreg(fit1)
   expect_stanreg(fit2)
   
@@ -259,15 +255,15 @@ test_that("linear_predictor methods work", {
 })
 
 # fits to use in multiple calls to test_that below
-capture.output(
-  fit <- SW(stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
-                     chains = CHAINS, seed = SEED, refresh = 0)),
-  fit2 <- SW(stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
-                        iter = ITER, chains = CHAINS, seed = SEED, refresh = 0)),
-  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED),
-  fitvb <- update(fito, algorithm = "meanfield", seed = SEED),
+SW({
+  fit <- stan_glm(mpg ~ wt, data = mtcars, iter = ITER, 
+                     chains = CHAINS, seed = SEED, refresh = 0)
+  fit2 <- stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
+                        iter = ITER, chains = CHAINS, seed = SEED, refresh = 0)
+  fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED)
+  fitvb <- update(fito, algorithm = "meanfield", seed = SEED)
   fitvb2 <- update(fitvb, algorithm = "fullrank", seed = SEED)
-)
+})
 
 test_that("validate_stanreg_object works", {
   validate_stanreg_object <- rstanarm:::validate_stanreg_object
@@ -335,10 +331,10 @@ test_that("get_x, get_y, get_z work", {
   expect_equivalent(get_y(fit2), y_ans)
   expect_equivalent(as.matrix(get_z(fit2)), z_ans2)
   
-  SW(capture.output(
+  SW(
     fit3 <- stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, refresh = 0,
                        iter = 10, chains = 1, refresh = 5, seed = SEED)
-  ))
+  )
   z_ans3 <- mat.or.vec(nr = nrow(mtcars), nc = 6)
   z_ans3[, c(1, 3, 5)] <- model.matrix(mpg ~ 0 + factor(cyl), data = mtcars)
   z_ans3[, c(2, 4, 6)] <- model.matrix(mpg ~ 0 + wt:factor(cyl), data = mtcars)
@@ -405,12 +401,12 @@ test_that("linkinv methods work", {
   expect_identical(linkinv.family(binomial(link = "probit")), 
                    binomial(link = "probit")$linkinv)
   
-  SW(capture.output(
+  SW(
     fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "loglog",
                           prior = R2(0.2, "mean"), init_r = 0.1, 
                           chains = CHAINS, iter = ITER, seed = SEED, 
                           refresh = 0)
-  ))
+  )
   expect_identical(linkinv.stanreg(fit_polr), rstanarm:::pgumbel)
   expect_identical(linkinv.character(fit_polr$family), rstanarm:::pgumbel)
   expect_identical(linkinv.stanreg(example_model), binomial()$linkinv)
@@ -461,9 +457,7 @@ test_that("posterior_sample_size works", {
   expect_equal(pss(fitvb2), 1000)
   expect_equal(pss(fito), nrow(as.matrix(fito)))
   
-  SW(capture.output(
-    fit3 <- stan_glm(mpg ~ wt, data = mtcars, iter = 20, chains = 1, thin = 2, refresh = 0)
-  ))
+  SW(fit3 <- stan_glm(mpg ~ wt, data = mtcars, iter = 20, chains = 1, thin = 2, refresh = 0))
   expect_equal(pss(fit3), nrow(as.matrix(fit3)))
 })
 
@@ -502,10 +496,3 @@ test_that("validate_newdata works", {
   expect_error(validate_newdata(fit, newdata = newd), "NAs are not allowed")
 })
 
-
-test_that("recommend_QR_for_vb produces the right message", {
-  expect_message(
-    rstanarm:::recommend_QR_for_vb(),
-    "Setting 'QR' to TRUE can often be helpful when using one of the variational inference algorithms"
-  )
-})

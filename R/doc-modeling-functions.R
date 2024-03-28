@@ -84,6 +84,6 @@
 #'  }
 #' }
 #' 
-#' @seealso \url{http://mc-stan.org/rstanarm/}
+#' @seealso \url{https://mc-stan.org/rstanarm/}
 #' 
 NULL

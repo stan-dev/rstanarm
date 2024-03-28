@@ -962,7 +962,7 @@ use_predvars <- function(mod, keep_response = TRUE) {
   if (keep_response && length(fm) == 3L) {
     fm <- reformulate(rhs, response = formula(mod)[[2L]])
   } else if (keep_response && length(fm) == 2L) {
-    warning2("No response variable found, reformulating RHS only.")
+    warning("No response variable found, reformulating RHS only.", call. = FALSE)
     fm <- reformulate(rhs, response = NULL)
   } else {
     fm <- reformulate(rhs, response = NULL)

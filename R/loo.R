@@ -111,8 +111,8 @@
 #'
 #' @seealso
 #' \itemize{
-#'   \item The new \href{http://mc-stan.org/loo/articles/}{\pkg{loo} package vignettes}
-#'   and various \href{http://mc-stan.org/rstanarm/articles/}{\pkg{rstanarm} vignettes}
+#'   \item The new \href{https://mc-stan.org/loo/articles/}{\pkg{loo} package vignettes}
+#'   and various \href{https://mc-stan.org/rstanarm/articles/}{\pkg{rstanarm} vignettes}
 #'   for more examples using \code{loo} and related functions with \pkg{rstanarm} models.
 #'   \item \code{\link[loo]{pareto-k-diagnostic}} in the \pkg{loo} package for
 #'   more on Pareto \eqn{k} diagnostics.

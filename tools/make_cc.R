@@ -24,12 +24,11 @@ make_cc <- function(file) {
   cppcode <- sub("(class[[:space:]][A-Za-z_][A-Za-z0-9_]*[[:space:]])",
                  paste("#include <meta_header.hpp>\n", "\\1"), cppcode)
 
-  cat(readLines(dir("stan_files", pattern = "license.stan", recursive = TRUE, full.names = TRUE)),
+  writeLines(c(readLines(dir("stan_files", pattern = "license.stan", recursive = TRUE, full.names = TRUE)),
       "#ifndef MODELS_HPP", "#define MODELS_HPP", "#define STAN__SERVICES__COMMAND_HPP",
       "#include <rstan/rstaninc.hpp>",
-      cppcode, "#endif", file = sub("\\.stan$", ".hpp", file),
-      sep = "\n", append = FALSE)
-  
+      cppcode, "#endif"), con = sub("\\.stan$", ".hpp", file))
+
   f <- sub("\\.stan$", "", basename(file))
   Rcpp::exposeClass(class = paste0("model_", f),
                     constructors = list(c("SEXP", "SEXP", "SEXP")), fields = character(),

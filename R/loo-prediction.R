@@ -155,7 +155,8 @@ loo_predictive_interval.stanreg <-
 
 # internal ----------------------------------------------------------------
 
-psis.stanreg <- function(object, ...) {
+psis.stanreg <- function(log_ratios, ...) {
+  object <- log_ratios
   message("Running PSIS to compute weights...")
   ll <- log_lik(object)
   r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(object))

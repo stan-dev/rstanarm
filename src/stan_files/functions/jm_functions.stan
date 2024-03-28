@@ -3,7 +3,7 @@
   *
   * @param aux_unscaled A vector, the unscaled auxiliary parameters
   * @param prior_dist Integer, the type of prior distribution
-  * @param prior_mean,prior_scale Vectors, the mean and scale 
+  * @param prior_mean,prior_scale Vectors, the mean and scale
   *   of the prior distribution
   * @return A vector, corresponding to the scaled auxiliary parameters
   */
@@ -30,15 +30,17 @@
   * @param df Real specifying the df for the prior distribution
   * @return nothing
   */
-  void basehaz_lp(vector aux_unscaled, int dist, vector scale, vector df) {
+  real basehaz_lpdf(vector aux_unscaled, int dist, vector scale, vector df) {
+    real lp = 0;
     if (dist > 0) {
       if (dist == 1)
-        target += normal_lpdf(aux_unscaled | 0, 1);
+        lp += normal_lpdf(aux_unscaled | 0, 1);
       else if (dist == 2)
-        target += student_t_lpdf(aux_unscaled | df, 0, 1);
+        lp += student_t_lpdf(aux_unscaled | df, 0, 1);
       else
-        target += exponential_lpdf(aux_unscaled | 1);
+        lp += exponential_lpdf(aux_unscaled | 1);
     }
+    return lp;
   }
 
   /**
@@ -55,7 +57,7 @@
   *   level units; 1=sum, 2=mean, 3=min, 4=max.
   * @return A vector
   */
-  vector collapse_within_groups(vector eta, int[,] grp_idx,
+  vector collapse_within_groups(vector eta, array[,] int grp_idx,
                                 int grp_assoc) {
     int N = size(grp_idx);
     vector[N] val;
@@ -109,8 +111,8 @@
   *   repeated (qnodes + 1) times (bounded by rows)
   */
   matrix make_x_assoc_shared_b(
-    vector b, int[] l, int[] p, int[,] pmat, int Npat, int qnodes,
-    int[] which_b, int sum_size_which_b, int[] size_which_b, int t_i, int M) {
+    vector b, array[] int l, array[] int p, array[,] int pmat, int Npat, int qnodes,
+    array[] int which_b, int sum_size_which_b, array[] int size_which_b, int t_i, int M) {
     int prior_shift; // num. ranefs prior to subject-specific ranefs
     int start_store;
     int end_store;
@@ -183,13 +185,13 @@
   *   repeated (qnodes + 1) times (bounded by rows)
   */
   matrix make_x_assoc_shared_coef(
-    vector b, vector beta, int[] KM, int M, int t_i,
-    int[] l, int[] p, int[,] pmat, int Npat, int qnodes,
-    int sum_size_which_coef, int[] size_which_coef,
-    int[] which_coef_zindex, int[] which_coef_xindex,
-    int[] has_intercept, int[] has_intercept_nob,
-    int[] has_intercept_lob, int[] has_intercept_upb,
-    real[] gamma_nob, real[] gamma_lob, real[] gamma_upb) {
+    vector b, vector beta, array[] int KM, int M, int t_i,
+    array[] int l, array[] int p, array[,] int pmat, int Npat, int qnodes,
+    int sum_size_which_coef, array[] int size_which_coef,
+    array[] int which_coef_zindex, array[] int which_coef_xindex,
+    array[] int has_intercept, array[] int has_intercept_nob,
+    array[] int has_intercept_lob, array[] int has_intercept_upb,
+    array[] real gamma_nob, array[] real gamma_lob, array[] real gamma_upb) {
 
     // in the loops below:
     //   t_i should only really ever equal 1 (since shared_coef association

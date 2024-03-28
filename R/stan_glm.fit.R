@@ -66,7 +66,7 @@ stan_glm.fit <-
     prior_aux <- tmp[["prior_aux"]]
     prior_ops <- NULL
   }
-  
+
   algorithm <- match.arg(algorithm)
   family <- validate_family(family)
   supported_families <- c("binomial", "gaussian", "Gamma", "inverse.gaussian",
@@ -379,16 +379,16 @@ stan_glm.fit <-
       standata$num_non_zero <- c(length(parts0$w), length(parts1$w))
       standata$w0 <- as.array(parts0$w)
       standata$w1 <- as.array(parts1$w)
-      standata$v0 <- as.array(parts0$v - 1L)
-      standata$v1 <- as.array(parts1$v - 1L)
-      standata$u0 <- as.array(parts0$u - 1L)
-      standata$u1 <- as.array(parts1$u - 1L)
+      standata$v0 <- as.array(parts0$v)
+      standata$v1 <- as.array(parts1$v)
+      standata$u0 <- as.array(parts0$u)
+      standata$u1 <- as.array(parts1$u)
     } else {
       parts <- extract_sparse_parts(Z)
       standata$num_non_zero <- length(parts$w)
       standata$w <- parts$w
-      standata$v <- parts$v - 1L
-      standata$u <- parts$u - 1L
+      standata$v <- parts$v
+      standata$u <- parts$u
     }
     standata$shape <- as.array(maybe_broadcast(decov$shape, t))
     standata$scale <- as.array(maybe_broadcast(decov$scale, t))
@@ -439,8 +439,8 @@ stan_glm.fit <-
       parts <- extract_sparse_parts(xtemp)
       standata$nnz_X <- length(parts$w)
       standata$w_X <- parts$w
-      standata$v_X <- parts$v - 1L
-      standata$u_X <- parts$u - 1L
+      standata$v_X <- parts$v
+      standata$u_X <- parts$u
       standata$X <- array(0, dim = c(0L, dim(xtemp)))
     } else {
       standata$X <- array(xtemp, dim = c(1L, dim(xtemp)))
@@ -482,13 +482,13 @@ stan_glm.fit <-
         parts0 <- extract_sparse_parts(xtemp[y0, , drop = FALSE])
         standata$nnz_X0 <- length(parts0$w)
         standata$w_X0 = parts0$w
-        standata$v_X0 = parts0$v - 1L
-        standata$u_X0 = parts0$u - 1L
+        standata$v_X0 = parts0$v
+        standata$u_X0 = parts0$u
         parts1 <- extract_sparse_parts(xtemp[y1, , drop = FALSE])
         standata$nnz_X1 <- length(parts1$w)
         standata$w_X1 = parts1$w
-        standata$v_X1 = parts1$v - 1L
-        standata$u_X1 = parts1$u - 1L
+        standata$v_X1 = parts1$v
+        standata$u_X1 = parts1$u
       } else {
         standata$X0 <- array(xtemp[y0, , drop = FALSE], dim = c(1, sum(y0), ncol(xtemp)))
         standata$X1 <- array(xtemp[y1, , drop = FALSE], dim = c(1, sum(y1), ncol(xtemp)))
@@ -654,7 +654,7 @@ stan_glm.fit <-
     ## end: psis diagnostics and SIR
     out$stanfit <- suppressMessages(sampling(stanfit, data = standata, 
                                              chains = 0))
-    return(structure(out, prior.info = prior_info))
+    return(structure(out, prior.info = prior_info, dropped_cols = x_stuff$dropped_cols))
     
   } else {
     if (algorithm == "sampling") {
@@ -679,8 +679,9 @@ stan_glm.fit <-
       vb_args$algorithm <- algorithm
       vb_args$importance_resampling <- importance_resampling
       stanfit <- do.call(vb, args = vb_args)
-      if (!QR) 
+      if (!QR && standata$K > 1) {
         recommend_QR_for_vb()
+      }
     }
     check <- try(check_stanfit(stanfit))
     if (!isTRUE(check)) return(standata)
@@ -737,7 +738,7 @@ stan_glm.fit <-
                    if (mean_PPD && !standata$clogit) "mean_PPD", 
                    "log-posterior")
     stanfit@sim$fnames_oi <- new_names
-    return(structure(stanfit, prior.info = prior_info))
+    return(structure(stanfit, prior.info = prior_info, dropped_cols = x_stuff$dropped_cols))
   }
 }
 
@@ -788,6 +789,10 @@ stan_family_number <- function(famname) {
 # @return y (possibly slightly modified) unless an error is thrown
 #
 validate_glm_outcome_support <- function(y, family) {
+  if (is.character(y)) {
+    stop("Outcome variable can't be type 'character'.", call. = FALSE)
+  }
+  
   if (is.null(y)) {
     return(y)
   }

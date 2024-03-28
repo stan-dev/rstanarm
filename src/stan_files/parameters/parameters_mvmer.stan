@@ -1,10 +1,10 @@
   // intercepts
-  real<lower=lb(intercept_type[1]),upper=ub(intercept_type[1])>
-    yGamma1[intercept_type[1] > 0];
-  real<lower=lb(intercept_type[2]),upper=ub(intercept_type[2])>
-    yGamma2[intercept_type[2] > 0];
-  real<lower=lb(intercept_type[3]),upper=ub(intercept_type[3])>
-    yGamma3[intercept_type[3] > 0];
+  array[intercept_type[1] > 0] real<lower=lb(intercept_type[1]),upper=ub(intercept_type[1])>
+    yGamma1;
+  array[intercept_type[2] > 0] real<lower=lb(intercept_type[2]),upper=ub(intercept_type[2])>
+    yGamma2;
+  array[intercept_type[3] > 0] real<lower=lb(intercept_type[3]),upper=ub(intercept_type[3])>
+    yGamma3;
 
   // population level primitive params
   vector[yK[1]] z_yBeta1;
@@ -35,23 +35,23 @@
     cholesky_factor_corr[prior_dist_for_cov == 2 && bK2 > 1 ? bK2 : 0] bCholesky2;
 
   // auxiliary params, interpretation depends on family
-  real<lower=0> yAux1_unscaled[has_aux[1]];
-  real<lower=0> yAux2_unscaled[has_aux[2]];
-  real<lower=0> yAux3_unscaled[has_aux[3]];
+  array[has_aux[1]] real<lower=0> yAux1_unscaled;
+  array[has_aux[2]] real<lower=0> yAux2_unscaled;
+  array[has_aux[3]] real<lower=0> yAux3_unscaled;
 
   // params for priors
-  real<lower=0> yGlobal1[yHs1];
-  real<lower=0> yGlobal2[yHs2];
-  real<lower=0> yGlobal3[yHs3];
-  vector<lower=0>[yK[1]] yLocal1[yHs1];
-  vector<lower=0>[yK[2]] yLocal2[yHs2];
-  vector<lower=0>[yK[3]] yLocal3[yHs3];
-  real<lower=0> y_caux1[yHs1 > 0];
-  real<lower=0> y_caux2[yHs2 > 0];
-  real<lower=0> y_caux3[yHs3 > 0];
-  real<lower=0> yOol1[y_prior_dist[1] == 6]; // one_over_lambda
-  real<lower=0> yOol2[y_prior_dist[2] == 6];
-  real<lower=0> yOol3[y_prior_dist[3] == 6];
-  vector<lower=0>[yK[1]] yMix1[y_prior_dist[1] == 5 || y_prior_dist[1] == 6];
-  vector<lower=0>[yK[2]] yMix2[y_prior_dist[2] == 5 || y_prior_dist[2] == 6];
-  vector<lower=0>[yK[3]] yMix3[y_prior_dist[3] == 5 || y_prior_dist[3] == 6];
+  array[yHs1] real<lower=0> yGlobal1;
+  array[yHs2] real<lower=0> yGlobal2;
+  array[yHs3] real<lower=0> yGlobal3;
+  array[yHs1] vector<lower=0>[yK[1]] yLocal1;
+  array[yHs2] vector<lower=0>[yK[2]] yLocal2;
+  array[yHs3] vector<lower=0>[yK[3]] yLocal3;
+  array[yHs1 > 0] real<lower=0> y_caux1;
+  array[yHs2 > 0] real<lower=0> y_caux2;
+  array[yHs3 > 0] real<lower=0> y_caux3;
+  array[y_prior_dist[1] == 6] real<lower=0> yOol1; // one_over_lambda
+  array[y_prior_dist[2] == 6] real<lower=0> yOol2;
+  array[y_prior_dist[3] == 6] real<lower=0> yOol3;
+  array[y_prior_dist[1] == 5 || y_prior_dist[1] == 6] vector<lower=0>[yK[1]] yMix1;
+  array[y_prior_dist[2] == 5 || y_prior_dist[2] == 6] vector<lower=0>[yK[2]] yMix2;
+  array[y_prior_dist[3] == 5 || y_prior_dist[3] == 6] vector<lower=0>[yK[3]] yMix3;
