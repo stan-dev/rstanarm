@@ -334,7 +334,7 @@ the relevant issues.
 
 ### Markov chains did not converge
 
-__Recommendation:__ run the chains for more iterations. <br>
+__Recommendation:__ run the chains for more iterations (in certain cases, see qualification below). <br>
 
 By default, all __rstanarm__ modeling functions will run four randomly
 initialized Markov chains, each for 2000 iterations (including a warmup period
@@ -342,7 +342,11 @@ of 1000 iterations that is discarded). All chains must converge to the target
 distribution for inferences to be valid. For most models, the default settings
 are sufficient, but if you see a warning message about Markov chains not
 converging, the first thing to try is increasing the number of iterations. This
-can be done by specifying the `iter` argument (e.g. `iter = 3000`).
+can be done by specifying the `iter` argument. However, if all parameters have
+proper priors (no priors were set to `NULL`), and you used the default values
+for iterations (2000) and chains (4), and Rhats (explained below) are greater
+than 2, then increasing the number of iterations alone is unlikely to solve to
+the problem.
 
 One way to monitor whether a chain has converged to the equilibrium distribution
 is to compare its behavior to other randomly initialized chains. This is the
@@ -388,6 +392,7 @@ any(summary(good_rhat)[, "Rhat"] > 1.1)
 Details on the computation of Rhat and some of its limitations can be found in
 [Stan Modeling Language User's Guide and Reference Manual](https://mc-stan.org/users/documentation/).
 
+
 ### Divergent transitions
 
 __Recommendation:__ increase the target acceptance rate `adapt_delta`. <br>
@@ -418,7 +423,8 @@ the slower sampling is a minor cost.
 
 ### Maximum treedepth exceeded
 
-__Recommendation:__ increase the maximum allowed treedepth `max_treedepth`. <br>
+__Recommendation:__ increase the maximum allowed treedepth `max_treedepth` unless
+all other convergence diagnostics are ok. <br>
 
 Configuring the No-U-Turn-Sampler (the variant of HMC used by Stan) involves
 putting a cap on the depth of the trees that it evaluates during each iteration.
@@ -427,10 +433,16 @@ maximum allowed tree depth is reached it indicates that NUTS is terminating
 prematurely to avoid excessively long execution time. If __rstanarm__ prints a
 warning about transitions exceeding the maximum treedepth you should try
 increasing the `max_treedepth` parameter using the optional `control` argument.
-For example, to increase `max_treedepth` to 20 (the default used __rstanarm__ is
-15) you can provide the argument `control = list(max_treedepth = 20)` to any of
+For example, to increase `max_treedepth` to 16 (the default used __rstanarm__ is
+15) you can provide the argument `control = list(max_treedepth = 16)` to any of
 the __rstanarm__ modeling functions. If you do not see a warning about hitting
 the maximum treedepth (which is rare), then you do not need to worry.
+
+With the models __rstanarm__ is capable of fitting, when you get a warning about
+max treedepth you will typically also get warnings about other diagnostics. However,
+if you see a max treedepth warning but all other convergence diagnostics
+are fine, you can typically ignore the warning. In that case the warning
+likely indicates efficiency issues but not that the results are invalid to analyze.
 
 # Conclusion
 
