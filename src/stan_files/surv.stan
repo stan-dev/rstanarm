@@ -418,14 +418,14 @@ data {
   int<lower=0> qicens;     // num. quadrature points for rows w/ interval censoring
   int<lower=0> qdelay;     // num. quadrature points for rows w/ delayed entry
   int<lower=0> nvars;      // num. aux parameters for baseline hazard
-  int<lower=1> smooth_map[S]; // indexing of smooth sds for tve spline coefs
-  int<lower=0> smooth_idx[S > 0 ? max(smooth_map) : 0, 2];
+  array[S] int<lower=1> smooth_map; // indexing of smooth sds for tve spline coefs
+  array[S > 0 ? max(smooth_map) : 0, 2] int<lower=0> smooth_idx;
 
   // dimensions for random efffects structure, see table 3 of
   // https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf
   int<lower=0> t;          // num. terms (maybe 0) with a | in the glmer formula
-  int<lower=1> p[t];       // num. variables on the LHS of each |
-  int<lower=1> l[t];       // num. levels for the factor(s) on the RHS of each |
+  array[t] int<lower=1> p;       // num. variables on the LHS of each |
+  array[t] int<lower=1> l;       // num. levels for the factor(s) on the RHS of each |
   int<lower=0> q;          // conceptually equals \sum_{i=1}^t p_i \times l_i
 
   // log crude event rate / time (for centering linear predictor)
@@ -489,17 +489,17 @@ data {
   vector[nnz_icens] w_icens;
   vector[nnz_delay] w_delay;
 
-  int<lower=0,upper=q-1> v_event[nnz_event];
-  int<lower=0,upper=q-1> v_lcens[nnz_lcens];
-  int<lower=0,upper=q-1> v_rcens[nnz_rcens];
-  int<lower=0,upper=q-1> v_icens[nnz_icens];
-  int<lower=0,upper=q-1> v_delay[nnz_delay];
+  array[nnz_event] int<lower=0,upper=q-1> v_event;
+  array[nnz_lcens] int<lower=0,upper=q-1> v_lcens;
+  array[nnz_rcens] int<lower=0,upper=q-1> v_rcens;
+  array[nnz_icens] int<lower=0,upper=q-1> v_icens;
+  array[nnz_delay] int<lower=0,upper=q-1> v_delay;
 
-  int<lower=0,upper=rows(w_event)+1> u_event[(t > 0 && nevent > 0) ? nevent + 1 : 0];
-  int<lower=0,upper=rows(w_lcens)+1> u_lcens[(t > 0 && nlcens > 0) ? nlcens + 1 : 0];
-  int<lower=0,upper=rows(w_rcens)+1> u_rcens[(t > 0 && nrcens > 0) ? nrcens + 1 : 0];
-  int<lower=0,upper=rows(w_icens)+1> u_icens[(t > 0 && nicens > 0) ? nicens + 1 : 0];
-  int<lower=0,upper=rows(w_delay)+1> u_delay[(t > 0 && ndelay > 0) ? ndelay + 1 : 0];
+  array[(t > 0 && nevent > 0) ? nevent + 1 : 0] int<lower=0,upper=rows(w_event)+1> u_event;
+  array[(t > 0 && nlcens > 0) ? nlcens + 1 : 0] int<lower=0,upper=rows(w_lcens)+1> u_lcens;
+  array[(t > 0 && nrcens > 0) ? nrcens + 1 : 0] int<lower=0,upper=rows(w_rcens)+1> u_rcens;
+  array[(t > 0 && nicens > 0) ? nicens + 1 : 0] int<lower=0,upper=rows(w_icens)+1> u_icens;
+  array[(t > 0 && ndelay > 0) ? ndelay + 1 : 0] int<lower=0,upper=rows(w_delay)+1> u_delay;
 
   // random effects structure, with quadrature
   //   nnz: number of non-zero elements in the Z matrix
@@ -520,19 +520,19 @@ data {
   vector[nnz_qpts_icens] w_qpts_icens;
   vector[nnz_qpts_delay] w_qpts_delay;
 
-  int<lower=0,upper=q-1> v_epts_event[nnz_epts_event];
-  int<lower=0,upper=q-1> v_qpts_event[nnz_qpts_event];
-  int<lower=0,upper=q-1> v_qpts_lcens[nnz_qpts_lcens];
-  int<lower=0,upper=q-1> v_qpts_rcens[nnz_qpts_rcens];
-  int<lower=0,upper=q-1> v_qpts_icens[nnz_qpts_icens];
-  int<lower=0,upper=q-1> v_qpts_delay[nnz_qpts_delay];
+  array[nnz_epts_event] int<lower=0,upper=q-1> v_epts_event;
+  array[nnz_qpts_event] int<lower=0,upper=q-1> v_qpts_event;
+  array[nnz_qpts_lcens] int<lower=0,upper=q-1> v_qpts_lcens;
+  array[nnz_qpts_rcens] int<lower=0,upper=q-1> v_qpts_rcens;
+  array[nnz_qpts_icens] int<lower=0,upper=q-1> v_qpts_icens;
+  array[nnz_qpts_delay] int<lower=0,upper=q-1> v_qpts_delay;
 
-  int<lower=0,upper=rows(w_epts_event)+1> u_epts_event[(t > 0 && Nevent > 0) ? Nevent + 1 : 0];
-  int<lower=0,upper=rows(w_qpts_event)+1> u_qpts_event[(t > 0 && qevent > 0) ? qevent + 1 : 0];
-  int<lower=0,upper=rows(w_qpts_lcens)+1> u_qpts_lcens[(t > 0 && qlcens > 0) ? qlcens + 1 : 0];
-  int<lower=0,upper=rows(w_qpts_rcens)+1> u_qpts_rcens[(t > 0 && qrcens > 0) ? qrcens + 1 : 0];
-  int<lower=0,upper=rows(w_qpts_icens)+1> u_qpts_icens[(t > 0 && qicens > 0) ? qicens + 1 : 0];
-  int<lower=0,upper=rows(w_qpts_delay)+1> u_qpts_delay[(t > 0 && qdelay > 0) ? qdelay + 1 : 0];
+  array[(t > 0 && Nevent > 0) ? Nevent + 1 : 0] int<lower=0,upper=rows(w_epts_event)+1> u_epts_event;
+  array[(t > 0 && qevent > 0) ? qevent + 1 : 0] int<lower=0,upper=rows(w_qpts_event)+1> u_qpts_event;
+  array[(t > 0 && qlcens > 0) ? qlcens + 1 : 0] int<lower=0,upper=rows(w_qpts_lcens)+1> u_qpts_lcens;
+  array[(t > 0 && qrcens > 0) ? qrcens + 1 : 0] int<lower=0,upper=rows(w_qpts_rcens)+1> u_qpts_rcens;
+  array[(t > 0 && qicens > 0) ? qicens + 1 : 0] int<lower=0,upper=rows(w_qpts_icens)+1> u_qpts_icens;
+  array[(t > 0 && qdelay > 0) ? qdelay + 1 : 0] int<lower=0,upper=rows(w_qpts_delay)+1> u_qpts_delay;
 
   // basis matrices for M-splines / I-splines, without quadrature
   matrix[nevent,nvars] basis_event;  // at event time
@@ -637,8 +637,8 @@ data {
   int<lower=0>         len_theta_L; // length of the theta_L vector
   int<lower=0>         len_concentration;
   int<lower=0>         len_regularization;
-  real<lower=0>        concentration[len_concentration];
-  real<lower=0>        regularization[len_regularization];
+  array[len_concentration] real<lower=0>        concentration;
+  array[len_regularization] real<lower=0>        regularization;
   int<lower=0,upper=1> special_case; // is the only term (1|group)
 
 }
@@ -649,23 +649,23 @@ transformed data {
 
   int sc = special_case;
 
-  int<lower=1> V_event[sc ? t : 0, nevent] = make_V(nevent, sc ? t : 0, v_event);
-  int<lower=1> V_lcens[sc ? t : 0, nlcens] = make_V(nlcens, sc ? t : 0, v_lcens);
-  int<lower=1> V_rcens[sc ? t : 0, nrcens] = make_V(nrcens, sc ? t : 0, v_rcens);
-  int<lower=1> V_icens[sc ? t : 0, nicens] = make_V(nicens, sc ? t : 0, v_icens);
-  int<lower=1> V_delay[sc ? t : 0, ndelay] = make_V(ndelay, sc ? t : 0, v_delay);
+  array[sc ? t : 0, nevent] int<lower=1> V_event = make_V(nevent, sc ? t : 0, v_event);
+  array[sc ? t : 0, nlcens] int<lower=1> V_lcens = make_V(nlcens, sc ? t : 0, v_lcens);
+  array[sc ? t : 0, nrcens] int<lower=1> V_rcens = make_V(nrcens, sc ? t : 0, v_rcens);
+  array[sc ? t : 0, nicens] int<lower=1> V_icens = make_V(nicens, sc ? t : 0, v_icens);
+  array[sc ? t : 0, ndelay] int<lower=1> V_delay = make_V(ndelay, sc ? t : 0, v_delay);
 
-  int<lower=1> V_epts_event[sc ? t : 0, Nevent] = make_V(Nevent, sc ? t : 0, v_epts_event);
-  int<lower=1> V_qpts_event[sc ? t : 0, qevent] = make_V(qevent, sc ? t : 0, v_qpts_event);
-  int<lower=1> V_qpts_lcens[sc ? t : 0, qlcens] = make_V(qlcens, sc ? t : 0, v_qpts_lcens);
-  int<lower=1> V_qpts_rcens[sc ? t : 0, qrcens] = make_V(qrcens, sc ? t : 0, v_qpts_rcens);
-  int<lower=1> V_qpts_icens[sc ? t : 0, qicens] = make_V(qicens, sc ? t : 0, v_qpts_icens);
-  int<lower=1> V_qpts_delay[sc ? t : 0, qdelay] = make_V(qdelay, sc ? t : 0, v_qpts_delay);
+  array[sc ? t : 0, Nevent] int<lower=1> V_epts_event = make_V(Nevent, sc ? t : 0, v_epts_event);
+  array[sc ? t : 0, qevent] int<lower=1> V_qpts_event = make_V(qevent, sc ? t : 0, v_qpts_event);
+  array[sc ? t : 0, qlcens] int<lower=1> V_qpts_lcens = make_V(qlcens, sc ? t : 0, v_qpts_lcens);
+  array[sc ? t : 0, qrcens] int<lower=1> V_qpts_rcens = make_V(qrcens, sc ? t : 0, v_qpts_rcens);
+  array[sc ? t : 0, qicens] int<lower=1> V_qpts_icens = make_V(qicens, sc ? t : 0, v_qpts_icens);
+  array[sc ? t : 0, qdelay] int<lower=1> V_qpts_delay = make_V(qdelay, sc ? t : 0, v_qpts_delay);
 
   int<lower=1>  pos = 1;
   int<lower=0>  len_z_T = 0;
   int<lower=0>  len_rho = sum(p) - t;
-  real<lower=0> delta[len_concentration];
+  array[len_concentration] real<lower=0> delta;
 
   for (i in 1:t) {
     if (p[i] > 1) {
@@ -687,7 +687,7 @@ parameters {
   vector[K] z_beta;
 
   // intercept
-  real gamma[has_intercept == 1];
+  array[has_intercept == 1] real gamma;
 
   // unscaled basehaz parameters
   //   exp model:      nvars = 0, ie. no aux parameter
@@ -712,11 +712,11 @@ parameters {
   vector<lower=0>[t] tau;
 
   // parameters for priors
-  real<lower=0> global[hs];
-  vector<lower=0>[hs > 0 ? K : 0] local[hs];
-  real<lower=0> caux[hs > 0];
-  vector<lower=0>[K] mix[prior_dist == 5 || prior_dist == 6];
-  real<lower=0> ool[prior_dist == 6];
+  array[hs] real<lower=0> global;
+  array[hs] vector<lower=0>[hs > 0 ? K : 0] local;
+  array[hs > 0] real<lower=0> caux;
+  array[prior_dist == 5 || prior_dist == 6] vector<lower=0>[K] mix;
+  array[prior_dist == 6] real<lower=0> ool;
 }
 
 transformed parameters {
@@ -822,7 +822,7 @@ model {
       if (nrcens > 0) eta_rcens += log_crude_event_rate;
       if (nicens > 0) eta_icens += log_crude_event_rate;
       if (ndelay > 0) eta_delay += log_crude_event_rate;
-      
+
       // add on intercept to linear predictor
       if (has_intercept == 1) {
         if (nevent > 0) eta_event += gamma[1];
@@ -984,8 +984,8 @@ model {
       if (qrcens > 0) eta_qpts_rcens += log_crude_event_rate;
       if (qicens > 0) eta_qpts_icenl += log_crude_event_rate;
       if (qicens > 0) eta_qpts_icenu += log_crude_event_rate;
-      if (qdelay > 0) eta_qpts_delay += log_crude_event_rate;      
-      
+      if (qdelay > 0) eta_qpts_delay += log_crude_event_rate;
+
       // add on intercept to linear predictor
       if (has_intercept == 1) {
         if (Nevent > 0) eta_epts_event += gamma[1];
