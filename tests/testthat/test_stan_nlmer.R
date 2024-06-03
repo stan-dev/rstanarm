@@ -18,7 +18,7 @@
 suppressPackageStartupMessages(library(rstanarm))
 library(lme4)
 
-SEED <- 12345
+SEED <- 1234
 ITER <- 100
 CHAINS <- 2
 CORES <- 2

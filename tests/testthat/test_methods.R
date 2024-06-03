@@ -786,7 +786,7 @@ test_that("predictive_error stanreg and ppd methods return the same thing", {
   preds <- posterior_predict(stan_betareg1, seed = 123)
   expect_equal(
     predictive_error(stan_betareg1, seed = 123),
-    predictive_error(preds, y = stan_betareg2$y)
+    predictive_error(preds, y = stan_betareg1$y)
   )
 })
 test_that("predictive_interval stanreg and ppd methods return the same thing", {

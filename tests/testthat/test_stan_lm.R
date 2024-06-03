@@ -156,7 +156,6 @@ test_that("loo/waic for stan_lm works", {
 })
 
 test_that("posterior_predict compatible with stan_lm", {
-  skip_on_os("mac")
   check_for_pp_errors(fit)
   expect_linpred_equal(fit)
 })
