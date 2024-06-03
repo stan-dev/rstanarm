@@ -239,7 +239,7 @@ If installation fails, please let us know by [filing an issue](https://github.co
 The `feature/survival` branch on GitHub contains a development version of **rstanarm** that includes survival analysis functionality (via the `stan_surv` modelling function). Until this functionality is available in the CRAN release of **rstanarm**, users who wish to use the survival analysis functionality can install a binary version of the survival branch of **rstanarm** from the Stan R packages repository with:
 
 ```
-install.packages("rstanarm", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+install.packages("rstanarm", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
 ```
 
 Note that this binary is static (i.e. it is not automatically updated) and is only hosted so that users can access the (experimental) survival analysis functionality without needing to go through the time consuming (and sometimes painful) task of installing the development version of **rstanarm** from source.
