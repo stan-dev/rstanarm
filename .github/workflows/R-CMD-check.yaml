@@ -38,19 +38,19 @@ jobs:
       TESTTHAT_CPUS: 4
 
     steps:
-      - uses: n1hility/cancel-previous-runs@v2
+      - uses: n1hility/cancel-previous-runs@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
         if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/master'"
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@main
 
-      - uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r@v2-branch
         with:
           r-version: ${{ matrix.config.r }}
 
-      - uses: r-lib/actions/setup-pandoc@v2
-      - uses: r-lib/actions/setup-r-dependencies@v2
+      - uses: r-lib/actions/setup-pandoc@v2-branch
+      - uses: r-lib/actions/setup-r-dependencies@v2-branch
         with:
           extra-packages: any::rcmdcheck any::betareg any::HSAUR3 any::biglm any::gamm4 any::V8
-      - uses: r-lib/actions/check-r-package@v2
+      - uses: r-lib/actions/check-r-package@v2-branch
