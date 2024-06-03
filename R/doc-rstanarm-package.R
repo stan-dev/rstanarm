@@ -104,4 +104,4 @@
 #' @template reference-bayesvis
 #' @template reference-muth
 #'
-NULL
+"_PACKAGE"

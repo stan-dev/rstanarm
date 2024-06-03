@@ -297,7 +297,6 @@
 #'   \strong{67}, 819.
 #'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'   # Run example model if not already loaded
 #'   if (!exists("example_jm")) example(example_jm)
@@ -1129,7 +1128,6 @@ print.survfit.stanjm <- function(x, digits = 4, ...) {
 #'   \code{\link{posterior_traj}}, \code{\link{plot.predict.stanjm}}
 #'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'   # Run example model if not already loaded
 #'   if (!exists("example_jm")) example(example_jm)

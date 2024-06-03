@@ -41,7 +41,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   # sparse currently not used in stan_betareg
   test_that("sparse = TRUE errors", {
     expect_error(
-      stan_betareg(y ~ x, link = "logit", seed = SEED, sparse = TRUE, data = dat),
+      stan_betareg(y ~ x, link = "logit", sparse = TRUE, data = dat),
       "unknown arguments: sparse"
     )
   })
@@ -49,23 +49,23 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   # test QR 
   test_that("QR errors when number of x and/or z predictors is <= 1", {
     expect_error(
-      stan_betareg(y ~ x, link = "logit", seed = SEED, QR = TRUE, data = dat),
+      stan_betareg(y ~ x, link = "logit", QR = TRUE, data = dat),
       "'QR' can only be specified when there are multiple predictors"
     )
     expect_error(
-      stan_betareg(y ~ x | z, link = "logit", seed = SEED, QR = TRUE, data = dat),
+      stan_betareg(y ~ x | z, link = "logit", QR = TRUE, data = dat),
       "'QR' can only be specified when there are multiple predictors"
     )
   })
   
   test_that("QR works when number of x and/or z predictors is >= 1", {
-    SW(fit1 <- stan_betareg(y ~ x + z, link = "logit", seed = SEED, QR = TRUE,
+    SW(fit1 <- stan_betareg(y ~ x + z, link = "logit", QR = TRUE,
                             prior = NULL, prior_intercept = NULL, refresh = 0,
                             data = dat, algorithm = "optimizing"))
     expect_stanreg(fit1)
     expect_output(print(prior_summary(fit1)), "Q-space")
     
-    SW(fit2 <- stan_betareg(y ~ x + z | z, link = "logit", seed = SEED, QR = TRUE,
+    SW(fit2 <- stan_betareg(y ~ x + z | z, link = "logit", QR = TRUE,
                             prior = NULL, prior_intercept = NULL, refresh = 0,
                             data = dat, algorithm = "optimizing"))
     expect_stanreg(fit2)
@@ -73,7 +73,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   
   test_that("stan_betareg returns expected result when modeling x and dispersion", {
     for (i in 1:length(link1)) {
-      SW(fit <- stan_betareg(y ~ x, link = link1[i], seed = SEED,
+      SW(fit <- stan_betareg(y ~ x, link = link1[i],
                              prior = NULL, prior_intercept = NULL,
                              prior_phi = NULL, refresh = 0,
                              data = dat, algorithm = "optimizing"))
@@ -85,7 +85,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   })
   
   test_that("stan_betareg works with QR = TRUE and algorithm = 'optimizing'", {
-    SW(fit <- stan_betareg(y ~ x + z, link = "logit", seed = SEED, QR = TRUE,
+    SW(fit <- stan_betareg(y ~ x + z, link = "logit", QR = TRUE,
                            prior = NULL, prior_intercept = NULL,
                            prior_phi = NULL, refresh = 0,
                            data = dat, algorithm = "optimizing"))
@@ -185,7 +185,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   
       SW(fit <- stan_betareg(y ~ x | 1, link = link1[i], link.phi = "sqrt", 
                              data = dat, chains = 1, iter = 1, refresh = 0, 
-                             algorithm = "sampling", seed = SEED)) 
+                             algorithm = "sampling")) 
       expect_stanreg(fit)
     }
   })
@@ -199,7 +199,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     mu <- binomial(link="logit")$linkinv(1+0.2*dat$x)
     phi <- 20
     dat$y <- rbeta(N, mu * phi, (1 - mu) * phi)
-    SW(fit <- stan_betareg(y ~ x, link = "logit", seed = SEED,
+    SW(fit <- stan_betareg(y ~ x, link = "logit",
                            prior = NULL, prior_intercept = NULL, prior_phi = NULL,
                            data = dat, weights = weights, offset = offset, 
                            algorithm = "optimizing", iter = 2000, refresh = 0))
@@ -240,7 +240,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   test_that("compatible with stan_betareg with z", {
     data("GasolineYield", package = "betareg")
     SW(fit <- stan_betareg(yield ~ pressure + temp | temp, data = GasolineYield,
-                           iter = ITER*5, chains = 2*CHAINS, seed = SEED, 
+                           iter = ITER*5, chains = 2*CHAINS, 
                            refresh = 0))
     check_for_pp_errors(fit)
     # expect_linpred_equal(fit)
@@ -249,7 +249,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   test_that("compatible with stan_betareg without z", {
     data("GasolineYield", package = "betareg")
     SW(fit <- stan_betareg(yield ~ temp, data = GasolineYield, 
-                           iter = ITER, chains = CHAINS, seed = SEED, refresh = 0))
+                           iter = ITER, chains = CHAINS, refresh = 0))
     check_for_pp_errors(fit)
     # expect_linpred_equal(fit)
   })
@@ -258,9 +258,9 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     GasolineYield2 <- GasolineYield
     GasolineYield2$offs <- runif(nrow(GasolineYield2))
     SW(fit <- stan_betareg(yield ~ temp, data = GasolineYield2, offset = offs,
-                           iter = ITER*5, chains = CHAINS, seed = SEED, refresh = 0))
+                           iter = ITER*5, chains = CHAINS, refresh = 0))
     SW(fit2 <- stan_betareg(yield ~ temp + offset(offs), data = GasolineYield2,
-                            iter = ITER*5, chains = CHAINS, seed = SEED, refresh = 0))
+                            iter = ITER*5, chains = CHAINS, refresh = 0))
     
     expect_warning(posterior_predict(fit, newdata = GasolineYield), 
                    "offset")
@@ -284,7 +284,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     betaregfit <- betareg(y ~ x | z, data = dat)
     SW(capture.output(
       stanfit <- stan_betareg(y ~ x | z, data = dat, chains = CHAINS,
-                              iter = ITER, seed = SEED, refresh = 0)
+                              iter = ITER, refresh = 0)
     ))
     
     pb <- predict(betaregfit, type = "response")

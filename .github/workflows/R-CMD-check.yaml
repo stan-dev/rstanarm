@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - master
+      - survival-rstantools
   pull_request:
     branches:
       - master
+      - survival-rstantools
 
 name: R-CMD-check
 
@@ -20,26 +22,25 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - {os: macOS-latest, r: 'devel', rstan: 'CRAN'}
-          - {os: macOS-latest, r: 'release', rstan: 'CRAN'}
-          - {os: windows-latest, r: 'devel', rstan: 'CRAN'}
-          - {os: windows-latest, r: 'release', rstan: 'CRAN'}
-          - {os: ubuntu-latest, r: 'devel', rstan: 'CRAN'}
-          - {os: ubuntu-latest, r: 'release', rstan: 'CRAN'}
-          - {os: ubuntu-latest, r: 'oldrel', rstan: 'CRAN'}
-
-          - {os: macOS-latest, r: 'release', rstan: 'Preview'}
-          - {os: windows-latest, r: 'release', rstan: 'Preview'}
+          - { os: macOS-latest, r: 'devel' }
+          - { os: macOS-latest, r: 'release' }
+          - { os: macOS-latest, r: 'oldrel' }
+          - { os: windows-latest, r: 'devel' }
+          - { os: windows-latest, r: 'release' }
+          - { os: windows-latest, r: 'oldrel' }
+          - { os: ubuntu-latest, r: 'devel' }
+          - { os: ubuntu-latest, r: 'release' }
+          - { os: ubuntu-latest, r: 'oldrel' }
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
       RSPM: ${{ matrix.config.rspm }}
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      TESTTHAT_CPUS: 4
 
     steps:
       - uses: n1hility/cancel-previous-runs@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: R-CMD-check.yaml
         if: "!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/master'"
 
       - uses: actions/checkout@v3
@@ -51,24 +52,5 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          cache-version: 2
           extra-packages: any::rcmdcheck any::betareg any::HSAUR3 any::biglm any::gamm4 any::V8
-
-      - name: Install RStan Preview if Needed
-        run: |
-          if ("${{ matrix.config.rstan }}" == "Preview") {
-            install.packages("rstan", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-          }
-        shell: Rscript {0}
-
       - uses: r-lib/actions/check-r-package@v2
-        with:
-          args: 'c("--no-manual", "--as-cran", "--ignore-vignettes")'
-          build_args: '"--no-build-vignettes"'
-
-      - name: Upload check results
-        if: failure()
-        uses: actions/upload-artifact@main
-        with:
-          name: ${{ runner.os }}-r${{ matrix.config.r }}-results
-          path: check

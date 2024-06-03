@@ -8,7 +8,6 @@ src/stan_files/*.hpp
 src/rstanarm.so
 src/rstanarm.dll
 src/init.o
-man/*.Rd
 !man/rstanarm-internal.Rd
 vignettes/*.R
 !vignettes/*.Rmd
@@ -16,3 +15,8 @@ vignettes/*.html
 vignettes/*_files
 .DS_Store
 revdep/*
+*.o
+*.cc
+*.h
+src/Makevars
+R/stanmodels.R

@@ -181,7 +181,6 @@
 #'   \code{\link{posterior_survfit}}
 #' 
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'   # Run example model if not already loaded
 #'   if (!exists("example_jm")) example(example_jm)
@@ -553,7 +552,6 @@ posterior_traj <- function(object,
 #'   \code{\link{posterior_survfit}}, \code{\link{plot.survfit.stanjm}}   
 #'     
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #'   # Run example model if not already loaded
 #'   if (!exists("example_jm")) example(example_jm)

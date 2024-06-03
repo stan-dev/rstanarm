@@ -1,8 +1,8 @@
 ---
-title: "Estimating Survival (Time-to-Event) Models with rstanarm"
+title: "stan_surv: Estimating Survival (Time-to-Event) Models with rstanarm"
 author: "Sam Brilleman"
 date: "`r Sys.Date()`"
-output: 
+output:
   html_vignette:
     toc: true
     number_sections: false
@@ -12,7 +12,7 @@ params:
 
 <!--
 %\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{stan_surv: Survival (Time-to-Event) Models}
+%\VignetteIndexEntry{stan_surv: Estimating Survival (Time-to-Event) Models with rstanarm}
 -->
 
 <style type="text/css">
@@ -50,7 +50,7 @@ This vignette provides an introduction to the `stan_surv` modelling function in 
 
 Survival (or time-to-event) analysis is concerned with the analysis of an outcome variable that corresponds to the time from some defined baseline until an event of interest occurs. The methodology is used in a range of disciplines where it is known by a variety of different names. These include survival analysis (medicine), duration analysis (economics), reliability analysis (engineering), and event history analysis (sociology). Survival analyses are particularly common in health and medical research, where a classic example of survival outcome data is the time from diagnosis of a disease until the occurrence of death.
 
-In standard survival analysis, one event time is measured for each observational unit. In practice however that event time may be unobserved due to left, right, or interval censoring, in which case the event time is only known to have occurred within the relevant censoring interval. The combined aspects of time and censoring make survival analysis methodology distinct from many other regression modelling approaches. 
+In standard survival analysis, one event time is measured for each observational unit. In practice however that event time may be unobserved due to left, right, or interval censoring, in which case the event time is only known to have occurred within the relevant censoring interval. The combined aspects of time and censoring make survival analysis methodology distinct from many other regression modelling approaches.
 
 There are two common approaches to modelling survival data. The first is to model the instantaneous rate of the event (known as the hazard) as a function of time. This includes the class of models known as proportional and non-proportional hazards regression models. The second is to model the event time itself. This includes the class of models known as accelerated failure time (AFT) models. Under both of these modelling frameworks a number of extensions have been proposed. For instance the handling of recurrent events, competing events, clustered survival data, cure models, and more. More recently, methods for modelling both longitudinal (e.g. a repeatedly measured biomarker) and survival data have become increasingly popular (as described in the `stan_jm` [vignette](priors.html)).
 
@@ -75,7 +75,7 @@ The hazard is the instantaneous rate of occurrence for the event at time $t$. Ma
 \
 \begin{equation}
 \begin{split}
-h_i(t) = \lim_{\Delta t \to 0} 
+h_i(t) = \lim_{\Delta t \to 0}
   \frac{P(t \leq T_i^* < t + \Delta t | T_i^* > t)}{\Delta t}
 \end{split}
 \end{equation}
@@ -320,7 +320,7 @@ When $\beta_p(t)$ is time-varying we must determine how we wish to model it. In 
 \end{split}
 \end{equation}
 /
-where $\theta_{p0}$ is a constant, $B_{l}(t; \boldsymbol{k}, \delta)$ is the $l^{\text{th}}$ $(l = 1,...,L)$ basis term for a degree $\delta$ B-spline function evaluated at a vector of knot locations $\boldsymbol{k} = \{k_{1},...,k_{J}\}$, and $\theta_{pl}$ is the $l^{\text{th}}$ B-spline coefficient. By default cubic B-splines are used (i.e. $\delta = 3$). These allow the log hazard ratio (or log survival time ratio) to be modelled as a smooth function of time. 
+where $\theta_{p0}$ is a constant, $B_{l}(t; \boldsymbol{k}, \delta)$ is the $l^{\text{th}}$ $(l = 1,...,L)$ basis term for a degree $\delta$ B-spline function evaluated at a vector of knot locations $\boldsymbol{k} = \{k_{1},...,k_{J}\}$, and $\theta_{pl}$ is the $l^{\text{th}}$ B-spline coefficient. By default cubic B-splines are used (i.e. $\delta = 3$). These allow the log hazard ratio (or log survival time ratio) to be modelled as a smooth function of time.
 
 However an alternative is to model $\beta_p(t)$ using a piecewise constant function:
 /
@@ -343,7 +343,7 @@ Specifically, the following relationship applies for the exponential model:
 \begin{equation}
 \begin{split}
 \beta_0 & = - \beta_0^* \\
-\beta_p & = - \beta_p^*  
+\beta_p & = - \beta_p^*
 \end{split}
 \end{equation}
 /
@@ -352,7 +352,7 @@ and for the Weibull model:
 \begin{equation}
 \begin{split}
 \beta_0 & = -\gamma \beta_0^* \\
-\beta_p & = -\gamma \beta_p^*  
+\beta_p & = -\gamma \beta_p^*
 \end{split}
 \end{equation}
 /
@@ -374,7 +374,7 @@ To allow for intra-cluster correlation in the event times we include cluster-spe
 /
 where $\boldsymbol{Z}_{ij}$ denotes a vector of covariates for the $i^{th}$ individual in the $j^{th}$ cluster, with an associated vector of cluster-specific parameters $\boldsymbol{b}_{j}$. We assume that the cluster-specific parameters are normally distributed such that $\boldsymbol{b}_{j} \sim N(0, \boldsymbol{\Sigma}}_{b})$ for some variance-covariance matrix $\boldsymbol{\Sigma}}_{b}$. We assume that $\boldsymbol{\Sigma}}_{b}$ is unstructured, that is each variance and covariance term is allowed to be different.
 
-In most cases $\boldsymbol{b}_{j}$ will correspond to just a cluster-specific random intercept (often known as a "shared frailty" term) but more complex random effects structures are possible. 
+In most cases $\boldsymbol{b}_{j}$ will correspond to just a cluster-specific random intercept (often known as a "shared frailty" term) but more complex random effects structures are possible.
 
 For simplicitly of notation Equation \ref{eq:multileveleta} also assumes just one clustering factor in the model (indexed by $j = 1,...,J$). However, it is possible to extend the model to multiple clustering factors (in __rstanarm__ there is no limit to the number of clustering factors that can be included). For example, suppose that the $i^{th}$ individual was clustered within the $j^{th}$ hospital that was clustered within the $k^{th}$ geographical region. Then we would have hospital-specific random effects $\boldsymbol{b}_j \sim N(0, \boldsymbol{\Sigma}}_{b})$ and region-specific random effects $\boldsymbol{u}_k \sim N(0, \boldsymbol{\Sigma}}_{u})$ and assume $\boldsymbol{b}_j$ and $\boldsymbol{u}_k$ are independent for all $(j,k)$.
 
@@ -390,7 +390,7 @@ The log posterior for the $i^{th}$ individual in the $j^{th}$ cluster can be spe
   \propto
     \log p(\mathcal{D}_{ij} \mid \boldsymbol{\theta}, \boldsymbol{b}_{j}) +
     \log p(\boldsymbol{b}_{j} \mid \boldsymbol{\theta}) +
-    \log p(\boldsymbol{\theta})  
+    \log p(\boldsymbol{\theta})
 \end{split}
 \end{equation}
 /
@@ -412,7 +412,7 @@ Allowing for the three forms of censoring (left, right, and interval censoring) 
 \end{split}
 \end{equation}
 /
-where $I(x)$ is an indicator function taking value 1 if $x$ is true and 0 otherwise. That is, each individual's contribution to the likelihood depends on the type of censoring for their event time. 
+where $I(x)$ is an indicator function taking value 1 if $x$ is true and 0 otherwise. That is, each individual's contribution to the likelihood depends on the type of censoring for their event time.
 
 The last term on the right hand side of Equation \ref{eq:loglik} accounts for delayed entry. When an individual is at risk from time zero (i.e. no delayed entry) then $T_{ij}^E = 0$ and $S_{ij}(0) = 1$ meaning that the last term disappears from the likelihood.
 
@@ -484,7 +484,7 @@ The prior distribution is based on a decomposition of the covariance matrix. The
 
 The prior distribution for the correlation matrix $\boldsymbol{\Omega}$ is the LKJ distribution \citep{Lewandowski:2009}. It is parameterised through a regularisation parameter $\zeta > 0$. The default is $\zeta = 1$ such that the LKJ prior distribution is jointly uniform over all possible correlation matrices. When $\zeta > 1$ the mode of the LKJ distribution is the identity matrix and as $\zeta$ increases the distribution becomes more sharply peaked at the mode. When $0 < \zeta < 1$ the prior has a trough at the identity matrix.
 
-The prior distribution for the simplex $\boldsymbol{\pi}$ is a symmetric Dirichlet distribution with a single concentration parameter $\phi > 0$. The default is $\phi = 1$ such that the prior is jointly uniform over all possible simplexes. If $\phi > 1$ then the prior mode corresponds to all entries of the simplex being equal (i.e. equal variances for the random effects) and the larger the value of $\phi$ then the more pronounced the mode of the prior. If $0 < \phi < 1$ then the variances are polarised. 
+The prior distribution for the simplex $\boldsymbol{\pi}$ is a symmetric Dirichlet distribution with a single concentration parameter $\phi > 0$. The default is $\phi = 1$ such that the prior is jointly uniform over all possible simplexes. If $\phi > 1$ then the prior mode corresponds to all entries of the simplex being equal (i.e. equal variances for the random effects) and the larger the value of $\phi$ then the more pronounced the mode of the prior. If $0 < \phi < 1$ then the variances are polarised.
 
 The prior distribution for the scale parameter $\tau$ is a Gamma distribution. The shape and scale parameter for the Gamma distribution are both set equal to 1 by default, however the user can change the value of the shape parameter. The behaviour is such that increasing the shape parameter will help enforce that the trace of $\boldsymbol{\Sigma}_b$ (i.e. sum of the variances of the random effects) be non-zero.
 
@@ -506,7 +506,7 @@ Suppose that for some individual $i^*$ (who may or may not have been in our samp
 /
 \begin{equation}
 \begin{split}
-p \Big( \hat{S}_{i^*}(t) \mid \boldsymbol{x}_{i^*}, \mathcal{D} \Big) = 
+p \Big( \hat{S}_{i^*}(t) \mid \boldsymbol{x}_{i^*}, \mathcal{D} \Big) =
   \int
     p \Big( \hat{S}_{i^*}(t) \mid \boldsymbol{x}_{i^*}, \boldsymbol{\theta} \Big)
     p \Big( \boldsymbol{\theta} \mid \mathcal{D} \Big)
@@ -514,7 +514,7 @@ p \Big( \hat{S}_{i^*}(t) \mid \boldsymbol{x}_{i^*}, \mathcal{D} \Big) =
 \end{split}
 \end{equation}
 
-We approximate this posterior predictive distribution by drawing from $p(\hat{S}_{i^*}(t) \mid \boldsymbol{x}_{i^*}, \boldsymbol{\theta}^{(l)})$ where $\boldsymbol{\theta}^{(l)}$ is the $l^{th}$ $(l = 1,...,L)$ MCMC draw from the posterior distribution $p(\boldsymbol{\theta} \mid \mathcal{D})$. 
+We approximate this posterior predictive distribution by drawing from $p(\hat{S}_{i^*}(t) \mid \boldsymbol{x}_{i^*}, \boldsymbol{\theta}^{(l)})$ where $\boldsymbol{\theta}^{(l)}$ is the $l^{th}$ $(l = 1,...,L)$ MCMC draw from the posterior distribution $p(\boldsymbol{\theta} \mid \mathcal{D})$.
 
 ## Survival predictions with clustering
 
@@ -526,7 +526,7 @@ If individual $i^*$ does in fact come from a cluster $j^* = j$ (for some $j \in 
 /
 \begin{equation}
 \begin{split}
-p \Big( \hat{S}_{i^*j}(t) \mid \boldsymbol{x}_{i^*j}, \boldsymbol{z}_{i^*j}, \mathcal{D} \Big) = 
+p \Big( \hat{S}_{i^*j}(t) \mid \boldsymbol{x}_{i^*j}, \boldsymbol{z}_{i^*j}, \mathcal{D} \Big) =
   \int
     \int
       p \Big( \hat{S}_{i^*j}(t) \mid \boldsymbol{x}_{i^*j}, \boldsymbol{z}_{i^*j}, \boldsymbol{\theta}, \boldsymbol{b}_j \Big)
@@ -535,20 +535,20 @@ p \Big( \hat{S}_{i^*j}(t) \mid \boldsymbol{x}_{i^*j}, \boldsymbol{z}_{i^*j}, \ma
 \end{split}
 \end{equation}
 
-Since cluster $j$ was included in our sample data it is easy for us to approximate this posterior predictive distribution by drawing from $p(\hat{S}_{i^*j}(t) \mid \boldsymbol{x}_{i^*j}, \boldsymbol{z}_{i^*j}, \boldsymbol{\theta}^{(l)}, \boldsymbol{b}_j^{(l)})$ where $\boldsymbol{\theta}^{(l)}$ and $\boldsymbol{b}_j^{(l)}$ are the $l^{th}$ $(l = 1,...,L)$ MCMC draws from the joint posterior distribution $p(\boldsymbol{\theta}, \boldsymbol{b}_j \mid \mathcal{D})$. 
+Since cluster $j$ was included in our sample data it is easy for us to approximate this posterior predictive distribution by drawing from $p(\hat{S}_{i^*j}(t) \mid \boldsymbol{x}_{i^*j}, \boldsymbol{z}_{i^*j}, \boldsymbol{\theta}^{(l)}, \boldsymbol{b}_j^{(l)})$ where $\boldsymbol{\theta}^{(l)}$ and $\boldsymbol{b}_j^{(l)}$ are the $l^{th}$ $(l = 1,...,L)$ MCMC draws from the joint posterior distribution $p(\boldsymbol{\theta}, \boldsymbol{b}_j \mid \mathcal{D})$.
 
 Alternatively, individual $i^*$ may come from a new cluster $j^* \neq j$ (for all $j \in \{1,...,J\}$) that was not in our sample. The predicted probability of being event-free at time $0 < t \leq T_{\max}$ is therefore denoted $\hat{S}_{i^*j^*}(t)$ and can be generated from the posterior predictive distribution:
 /
 \begin{equation}
 \begin{aligned}
-p \Big( \hat{S}_{i^*j^*}(t) \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \mathcal{D} \Big) 
-& = 
+p \Big( \hat{S}_{i^*j^*}(t) \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \mathcal{D} \Big)
+& =
   \int
     \int
       p \Big( \hat{S}_{i^*j^*}(t) \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \boldsymbol{\theta}, \boldsymbol{\tilde{b}}_{j^*} \Big)
       p \Big( \boldsymbol{\theta}, \boldsymbol{\tilde{b}}_{j^*} \mid \mathcal{D} \Big)
     d \boldsymbol{\tilde{b}}_{j^*} \space d \boldsymbol{\theta} \\
-& = 
+& =
   \int
     \int
       p \Big( \hat{S}_{i^*j^*}(t) \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \boldsymbol{\theta}, \boldsymbol{\tilde{b}}_{j^*} \Big)
@@ -568,7 +568,7 @@ Suppose that individual $i^*$ is known to be event-free up until $C_{i^*}$ and w
 /
 \begin{equation}
 \begin{split}
-p \Big( \hat{S}_{i^*}(t) \mid \boldsymbol{x}_{i^*}, \mathcal{D}, t > C_{i^*} \Big) = 
+p \Big( \hat{S}_{i^*}(t) \mid \boldsymbol{x}_{i^*}, \mathcal{D}, t > C_{i^*} \Big) =
   \frac
     {p \Big( \hat{S}_{i^*}(t)      \mid \boldsymbol{x}_{i^*}, \mathcal{D} \Big)}
     {p \Big( \hat{S}_{i^*}(C_{i^*}) \mid \boldsymbol{x}_{i^*}, \mathcal{D} \Big)}
@@ -579,7 +579,7 @@ or -- equivalently -- for multilevel survival models we have individual $i^*$ in
 /
 \begin{equation}
 \begin{split}
-p \Big( \hat{S}_{i^*j^*}(t) \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \mathcal{D}, t > C_{i^*j^*} \Big) = 
+p \Big( \hat{S}_{i^*j^*}(t) \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \mathcal{D}, t > C_{i^*j^*} \Big) =
   \frac
     {p \Big( \hat{S}_{i^*j^*}(t)        \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \mathcal{D} \Big)}
     {p \Big( \hat{S}_{i^*j^*}(C_{i^*j^*}) \mid \boldsymbol{x}_{i^*j^*}, \boldsymbol{z}_{i^*j^*}, \mathcal{D} \Big)}
@@ -612,7 +612,7 @@ It is therefore better to calculate standardised survival probabilities by setti
 
 ## Overview
 
-The __rstanarm__ package is built on top of the __rstan__ R package \citep{Stan:2019}, which is the R interface for Stan. 
+The __rstanarm__ package is built on top of the __rstan__ R package \citep{Stan:2019}, which is the R interface for Stan.
 Models in __rstanarm__ are written in the Stan programming language, translated into C++ code, and then compiled at the time the package is built. This means that for most users -- who install a binary version of __rstanarm__ from the Comprehensive R Archive Network (CRAN) -- the models in __rstanarm__ will be pre-compiled. This is beneficial for users because there is no compilation time either during installation or when they estimate a model.
 
 ## Main modelling function
@@ -647,29 +647,29 @@ By default, any covariate effects specified in the fixed-effect part of the mode
 \item The \code{prior} family of arguments allow the user to specify the prior distributions for each of the parameters, as follows:
 
   \begin{itemize}
-  
+
   \item \code{prior} relates to the time-fixed regression coefficients;
-  
+
   \item \code{prior_intercept} relates to the intercept in the linear predictor;
-  
+
   \item \code{prior_aux} relates to the so-called "auxiliary" parameters in the baseline hazard ($\gamma$ for the Weibull and Gompertz models or $\boldsymbol{\gamma}$ for the M-spline and B-spline models);
-  
+
   \item \code{prior_smooth} relates to the hyperparameter $\tau_p$ when the $p^{th}$ covariate has a time-varying effect; and
-  
+
   \item \code{prior_covariance} relates to the covariance matrix for the random effects when a multilevel survival model is being estimated.
-  
+
   \end{itemize}
 
 \item The remaining arguments (\code{prior_PD}, \code{algorithm}, and \code{adapt_delta}) are optional control arguments related to estimation in Stan:
 
   \begin{itemize}
-  
+
   \item Setting \code{prior_PD = TRUE} states that the user only wants to draw from the prior predictive distribution and not condition on the data.
-  
+
   \item The \code{algorithm} argument specifies the estimation routine to use. This includes either Hamiltonian Monte Carlo (\code{"sampling"}) or one of the variational Bayes algorithms (\code{"meanfield"} or \code{"fullrank"}). The model specification is agnostic to the chosen \code{algorithm}. That is, the user can choose from any of the available algorithms regardless of the specified model.
-  
+
   \item The \code{adapt_delta} argument controls the target average acceptance probability. It is only relevant when \code{algorithm = "sampling"} in which case \code{adapt_delta} should be between 0 and 1, with higher values leading to smaller step sizes and therefore a more robust sampler but longer estimation times.
-  
+
   \end{itemize}
 
 \end{itemize}
@@ -678,9 +678,9 @@ The model returned by \fct{stan_surv} is an object of class \class{stansurv} and
 
 ### Default knot locations
 
-Default knot locations for the M-spline, B-spline, or piecewise constant functions are the same regardless of whether they are used for modelling the baseline hazard or time-varying effects. By default the vector of knot locations $\boldsymbol{k} = \{k_{1},...,k_{J}\}$ includes a lower boundary knot $k_{1}$ at the earliest entry time (equal to zero if there isn't delayed entry) and an upper boundary knot $k_{J}$ at the latest event or censoring time. The location of the boundary knots cannot be changed by the user. 
+Default knot locations for the M-spline, B-spline, or piecewise constant functions are the same regardless of whether they are used for modelling the baseline hazard or time-varying effects. By default the vector of knot locations $\boldsymbol{k} = \{k_{1},...,k_{J}\}$ includes a lower boundary knot $k_{1}$ at the earliest entry time (equal to zero if there isn't delayed entry) and an upper boundary knot $k_{J}$ at the latest event or censoring time. The location of the boundary knots cannot be changed by the user.
 
-Internal knot locations -- that is $k_{2},...,k_{(J-1)}$ when $J \geq 3$ -- can be explicitly specified by the user or are determined by default. The number of internal knots and/or their locations can be controlled via the \code{basehaz_ops} argument to \fct{stan_surv} (for modelling the baseline hazard) or via the arguments to the \fct{tve} function (for modelling a time-varying effect). If knot locations are not explicitly specified by the user, then the default is to place the internal knots at equally spaced percentiles of the distribution of uncensored event times. For instance, if there are three internal knots they would be placed at the $25^{\text{th}}$, $50^{\text{th}}$, and $75^{\text{th}}$ percentiles of the distribution of the uncensored event times. 
+Internal knot locations -- that is $k_{2},...,k_{(J-1)}$ when $J \geq 3$ -- can be explicitly specified by the user or are determined by default. The number of internal knots and/or their locations can be controlled via the \code{basehaz_ops} argument to \fct{stan_surv} (for modelling the baseline hazard) or via the arguments to the \fct{tve} function (for modelling a time-varying effect). If knot locations are not explicitly specified by the user, then the default is to place the internal knots at equally spaced percentiles of the distribution of uncensored event times. For instance, if there are three internal knots they would be placed at the $25^{\text{th}}$, $50^{\text{th}}$, and $75^{\text{th}}$ percentiles of the distribution of the uncensored event times.
 
 ## Post-estimation functions
 
@@ -695,7 +695,7 @@ The __rstanarm__ package provides a range of post-estimation functions that can 
 \item The \fct{posterior_survfit} function is the primary function for generating survival predictions. The type of prediction is specified via the \code{type} arguments and can currently be any of the following:
 
   \begin{itemize}
-  
+
   \item \code{"surv"}: the estimated survival probability;
   \item \code{"cumhaz"}: the estimated cumulative hazard;
   \item \code{"haz"}: the estimated hazard rate;
@@ -704,7 +704,7 @@ The __rstanarm__ package provides a range of post-estimation functions that can 
   \item \code{"logcumhaz"}: the estimated log cumulative hazard;
   \item \code{"loghaz"}: the estimated log hazard rate; or
   \item \code{"logcdf"}: the estimated log failure probability.
-  
+
   \end{itemize}
 
 There are additional arguments to \fct{posterior_survfit} that control the time at which the predictions are generated (\code{times}), whether they are generated across a time range (referred to as extrapolation, see \code{extrapolate}), whether they are conditional on a last known survival time (\code{condition}), and whether they are averaged across individuals (referred to as standardised predictions, see \code{standardise}). The returned predictions are a data frame with a special class called \class{survfit.stansurv}. The \class{survfit.stansurv} class has both \fct{print} and \fct{plot} methods that can be called on it. These will be demonstrated as part of the examples in Section \ref{sec:usage}.
@@ -729,15 +729,15 @@ $N = 686$ patients with primary node positive breast cancer recruited between 19
 First, let us load the data and fit the proportional hazards model
 
 ```{r, warning = FALSE, message = FALSE, results='hide'}
-mod1 <- stan_surv(formula = Surv(recyrs, status) ~ group, 
-                  data    = bcancer, 
-                  chains  = CHAINS, 
-                  cores   = CORES, 
+mod1 <- stan_surv(formula = Surv(recyrs, status) ~ group,
+                  data    = bcancer,
+                  chains  = CHAINS,
+                  cores   = CORES,
                   seed    = SEED,
                   iter    = ITER)
 ```
 
-The model here is estimated using the default cubic M-splines (with 5 degrees of freedom) for modelling the baseline hazard. Since there are no time-varying effects in the model (i.e. we did not wrap any covariates in the `tve()` function) there is a closed form expression for the cumulative hazard and survival function and so the model is relatively fast to fit. Specifically, the model takes ~3.5 sec for each MCMC chain based on the default 2000 (1000 warm up, 1000 sampling) MCMC iterations. 
+The model here is estimated using the default cubic M-splines (with 5 degrees of freedom) for modelling the baseline hazard. Since there are no time-varying effects in the model (i.e. we did not wrap any covariates in the `tve()` function) there is a closed form expression for the cumulative hazard and survival function and so the model is relatively fast to fit. Specifically, the model takes ~3.5 sec for each MCMC chain based on the default 2000 (1000 warm up, 1000 sampling) MCMC iterations.
 
 We can easily obtain the estimated hazard ratios for the 3-catgeory group covariate using the generic `print` method for `stansurv` objects, as follows
 
@@ -747,7 +747,7 @@ print(mod1, digits = 3)
 
 We see from this output we see that individuals in the groups with `Poor` or `Medium` prognosis have much higher rates of death relative to the group with `Good` prognosis (as we might expect!). The hazard of death in the `Poor` prognosis group is approximately 5.0-fold higher than the hazard of death in the `Good` prognosis group. Similarly, the hazard of death in the `Medium` prognosis group is approximately 2.3-fold higher than the hazard of death in the `Good` prognosis group.
 
-It may also be of interest to compare the different types of the baseline hazard we could potentially use. Here, we will fit a series of models, each with a different baseline hazard specification 
+It may also be of interest to compare the different types of the baseline hazard we could potentially use. Here, we will fit a series of models, each with a different baseline hazard specification
 
 ```{r, warning = FALSE, message = FALSE, results='hide'}
 mod1_exp      <- update(mod1, basehaz = "exp")
@@ -806,7 +806,7 @@ nd <- data.frame(group = c("Good", "Medium", "Poor"))
 head(nd)
 ```
 
-and then we will generate the posterior predictions 
+and then we will generate the posterior predictions
 
 ```{r predresults}
 ps <- posterior_survfit(mod1, newdata = nd, times = 0, extrapolate = TRUE,
@@ -824,7 +824,7 @@ Let us now plot the survival predictions. We will relabel the `id` variable with
 
 ```{r predplot}
 panel_labels <- c('1' = "Good", '2' = "Medium", '3' = "Poor")
-plot(ps) + 
+plot(ps) +
   ggplot2::facet_wrap(~ id, labeller = ggplot2::labeller(id = panel_labels))
 ```
 
@@ -834,7 +834,7 @@ Alternatively, if we wanted to obtain and plot the predicted *hazard* function f
 
 ```{r predhaz}
 ph <- posterior_survfit(mod1, newdata = nd, type = "haz")
-plot(ph) + 
+plot(ph) +
   ggplot2::facet_wrap(~ id, labeller = ggplot2::labeller(id = panel_labels))
 ```
 
@@ -860,15 +860,15 @@ library(simsurv)
 set.seed(999111)
 
 # simulate covariate data
-covs <- data.frame(id  = 1:200, 
+covs <- data.frame(id  = 1:200,
                    trt = rbinom(200, 1L, 0.5))
 
 # simulate event times
-dat  <- simsurv(lambdas = 0.1, 
-                gammas  = 1.5, 
+dat  <- simsurv(lambdas = 0.1,
+                gammas  = 1.5,
                 betas   = c(trt = -0.5),
                 tde     = c(trt = 0.2),
-                x       = covs, 
+                x       = covs,
                 maxt    = 5)
 
 # merge covariate data and event times
@@ -881,15 +881,15 @@ head(dat)
 Now that we have our simulated dataset, let us fit a model with time-varying hazard ratio for `trt`
 
 ```{r tve_fit1, warning = FALSE, message = FALSE, results='hide'}
-mod2 <- stan_surv(formula = Surv(eventtime, status) ~ tve(trt), 
-                  data    = dat, 
-                  chains  = CHAINS, 
-                  cores   = CORES, 
+mod2 <- stan_surv(formula = Surv(eventtime, status) ~ tve(trt),
+                  data    = dat,
+                  chains  = CHAINS,
+                  cores   = CORES,
                   seed    = SEED,
                   iter    = ITER)
 ```
 
-The `tve` function is used in the model formula to state that we want a time-varying effect (i.e. a time-varying coefficient) to be estimated for the variable `trt`. By default, a cubic B-spline basis with 3 degrees of freedom (i.e. two boundary knots placed at the limits of the range of event times, but no internal knots) is used for modelling the time-varying log hazard ratio. If we wanted to change the degree, knot locations, or degrees of freedom for the B-spline function we can specify additional arguments to the `tve` function. 
+The `tve` function is used in the model formula to state that we want a time-varying effect (i.e. a time-varying coefficient) to be estimated for the variable `trt`. By default, a cubic B-spline basis with 3 degrees of freedom (i.e. two boundary knots placed at the limits of the range of event times, but no internal knots) is used for modelling the time-varying log hazard ratio. If we wanted to change the degree, knot locations, or degrees of freedom for the B-spline function we can specify additional arguments to the `tve` function.
 
 For example, to model the time-varying log hazard ratio using quadratic B-splines with 4 degrees of freedom (i.e. two boundary knots placed at the limits of the range of event times, as well as two internal knots placed -- by default -- at the 33.3rd and 66.6th percentiles of the distribution of uncensored event times) we could specify the model formula as
 
@@ -903,7 +903,7 @@ Let us now plot the estimated time-varying hazard ratio from the fitted model. W
 plot(mod2, plotfun = "tve")
 ```
 
-From the plot, we can see how the hazard ratio (i.e. the effect of treatment on the hazard of the event) changes as a function of time. The treatment appears to be protective during the first few years following baseline (i.e. HR < 1), and then the treatment appears to become harmful after about 4 years post-baseline. Thankfully, this is a reflection of the model we simulated under! 
+From the plot, we can see how the hazard ratio (i.e. the effect of treatment on the hazard of the event) changes as a function of time. The treatment appears to be protective during the first few years following baseline (i.e. HR < 1), and then the treatment appears to become harmful after about 4 years post-baseline. Thankfully, this is a reflection of the model we simulated under!
 
 The plot shows a large amount of uncertainty around the estimated time-varying hazard ratio. This is to be expected, since we only simulated a dataset of 200 individuals of which only around 70% experienced the event before being censored at 5 years. So, there is very little data (i.e. very few events) with which to reliably estimate the time-varying hazard ratio. We can also see this reflected in the differences between our data generating model and the estimates from our fitted model. In our data generating model, the time-varying hazard ratio equals 1 (i.e. the log hazard ratio equals 0) at 2.5 years, but in our fitted model the median estimate for our time-varying hazard ratio equals 1 at around ~3 years. This is a reflection of the large amount of sampling error, due to our simulated dataset being so small.
 
@@ -923,16 +923,16 @@ library(simsurv)
 set.seed(888222)
 
 # simulate covariate data
-covs <- data.frame(id  = 1:500, 
+covs <- data.frame(id  = 1:500,
                    trt = rbinom(500, 1L, 0.5))
 
 # simulate event times
-dat  <- simsurv(lambdas = 0.1, 
-                gammas  = 1.5, 
+dat  <- simsurv(lambdas = 0.1,
+                gammas  = 1.5,
                 betas   = c(trt = -0.5),
                 tde     = c(trt = 0.7),
                 tdefun  = function(t) (t > 2.5),
-                x       = covs, 
+                x       = covs,
                 maxt    = 5)
 
 # merge covariate data and event times
@@ -945,11 +945,11 @@ head(dat)
 We now estimate a model with a piecewise constant time-varying effect for the covariate `trt` as
 
 ```{r tve-fit2, warning = FALSE, message = FALSE, results='hide'}
-mod3 <- stan_surv(formula = Surv(eventtime, status) ~ 
+mod3 <- stan_surv(formula = Surv(eventtime, status) ~
                     tve(trt, degree = 0, knots = 2.5),
-                  data    = dat, 
-                  chains  = CHAINS, 
-                  cores   = CORES, 
+                  data    = dat,
+                  chains  = CHAINS,
+                  cores   = CORES,
                   seed    = SEED,
                   iter    = ITER)
 ```
@@ -981,8 +981,8 @@ mod_randint <- stan_surv(
   formula = Surv(eventtime, status) ~ trt + (1 | site),
   data    = frail,
   basehaz = "exp",
-  chains  = CHAINS, 
-  cores   = CORES, 
+  chains  = CHAINS,
+  cores   = CORES,
   seed    = SEED,
   iter    = ITER)
 ```
@@ -998,7 +998,7 @@ We see that the estimated log hazard ratio for treatment ($\hat{\beta}_{\text{(t
 If this were a real analysis, we might wonder whether the site-specific estimates are necessary! Well, we can assess that by fitting an alternative model that does **not** include the site-specific intercepts and compare it to the model we just estimated. We will compare it using the `loo` function. We first need to fit the model without the site-specific intercept. To do this, we will just use the generic `update` method for `stansurv` objects, since all we are changing is the model formula:
 
 ```{r frail-fixed-model, warning = FALSE, message = FALSE}
-mod_fixed <- update(mod_randint, formula. = Surv(eventtime, status) ~ trt) 
+mod_fixed <- update(mod_randint, formula. = Surv(eventtime, status) ~ trt)
 ```
 
 Let's calculate the `loo` for both these models and compare them:
@@ -1014,8 +1014,8 @@ We see strong evidence in favour of the model with the site-specific intercepts!
 But let's not quite finish there. What about if we want to generalise the random effects structure further. For instance, is the site-specific intercept enough? Perhaps we should consider estimating both a site-specific intercept and a site-specific treatment effect. We have minimal data to estimate such a model (recall that there is only 20 sites and 10 patients per site) but for the sake of demonstration we will forge on nonetheless. Let's fit a model with both a site-specific intercept and a site-specific coefficient for the covariate `trt` (i.e. treatment):
 
 ```{r frail-random-trt, warning = FALSE, message = FALSE}
-mod_randtrt <- update(mod_randint, formula. = 
-                        Surv(eventtime, status) ~ trt + (trt | site)) 
+mod_randtrt <- update(mod_randint, formula. =
+                        Surv(eventtime, status) ~ trt + (trt | site))
 print(mod_randtrt, digits = 2)
 ```
 
@@ -1057,19 +1057,19 @@ For individual $i$ we have:
 
 \begin{align}
 \begin{split}
-  h_i(T_i) 
+  h_i(T_i)
     & = \lambda_i \\
     & = \exp(\eta_i) \\
-  H_i(T_i) 
+  H_i(T_i)
     & = T_i \lambda_i \\
     & = T_i \exp(\eta_i) \\
-  S_i(T_i) 
+  S_i(T_i)
     & = \exp \left( - T_i \lambda_i \right) \\
     & = \exp \left( - T_i \exp(\eta_i) \right) \\
-  F_i(T_i) 
+  F_i(T_i)
     & = 1 - \exp \left( - T_i \lambda_i \right) \\
     & = 1 - \exp \left( - T_i \exp(\eta_i) \right) \\
-  S_i(T_i) - S_i(T_i^U) 
+  S_i(T_i) - S_i(T_i^U)
     & = \exp \left( - T_i \lambda_i \right) - \exp \left( - T_i^U \lambda_i \right) \\
     & = \exp \left( - T_i \exp(\eta_i) \right) - \exp \left( - T_i^U \exp(\eta_i) \right)
 \end{split}
@@ -1079,19 +1079,19 @@ or on the log scale:
 
 \begin{align}
 \begin{split}
-  \log h_i(T_i) 
+  \log h_i(T_i)
     & = \log \lambda_i \\
     & = \eta_i \\
-  \log H_i(T_i) 
+  \log H_i(T_i)
     & = \log(T_i) + \log \lambda_i \\
     & = \log(T_i) + \eta_i \\
-  \log S_i(T_i) 
+  \log S_i(T_i)
     & = - T_i \lambda_i \\
     & = - T_i \exp(\eta_i) \\
-  \log F_i(T_i) 
+  \log F_i(T_i)
     & = \log \left( 1 - \exp \left( - T_i \lambda_i \right) \right) \\
     & = \log \left( 1 - \exp \left( - T_i \exp(\eta_i) \right) \right) \\
-  \log (S_i(T_i) - S_i(T_i^U)) 
+  \log (S_i(T_i) - S_i(T_i^U))
     & = \log \left[ \exp \left( - T_i \lambda_i \right) - \exp \left( - T_i^U \lambda_i \right) \right] \\
     & = \log \left[ \exp \left( - T_i \exp(\eta_i) \right) - \exp \left( - T_i^U \exp(\eta_i) \right) \right]
 \end{split}
@@ -1103,30 +1103,30 @@ The definition of $\lambda$ for the baseline is:
 \begin{split}
   \lambda_0 = \exp(\beta_0) \Longleftrightarrow \beta_0 = \log(\lambda_0)
 \end{split}
-\end{align}  
-  
+\end{align}
+
 
 ### Weibull model
 
-The Weibull model is parameterised with scale parameter $\lambda_i = \exp(\eta_i)$ and shape parameter $\gamma > 0$ where $\eta_i = \beta_0 + \sum_{p=1}^P \beta_p x_{ip}$ denotes our linear predictor. 
+The Weibull model is parameterised with scale parameter $\lambda_i = \exp(\eta_i)$ and shape parameter $\gamma > 0$ where $\eta_i = \beta_0 + \sum_{p=1}^P \beta_p x_{ip}$ denotes our linear predictor.
 
 For individual $i$ we have:
 
 \begin{align}
 \begin{split}
-  h_i(T_i) 
+  h_i(T_i)
     & = \gamma t^{\gamma-1} \lambda_i \\
     & = \gamma t^{\gamma-1} \exp(\eta_i) \\
-  H_i(T_i) 
+  H_i(T_i)
     & = T_i^{\gamma} \lambda_i \\
     & = T_i^{\gamma} \exp(\eta_i) \\
-  S_i(T_i) 
+  S_i(T_i)
     & = \exp \left( - T_i^{\gamma} \lambda_i \right) \\
     & = \exp \left( - T_i^{\gamma} \exp(\eta_i) \right) \\
-  F_i(T_i) 
+  F_i(T_i)
     & = 1 - \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) \\
     & = 1 - \exp \left( - {(T_i)}^{\gamma} \exp(\eta_i) \right) \\
-  S_i(T_i) - S_i(T_i^U) 
+  S_i(T_i) - S_i(T_i^U)
     & = \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) - \exp \left( - {(T_i^U)}^{\gamma} \lambda_i \right) \\
     & = \exp \left( - {(T_i)}^{\gamma} \exp(\eta_i) \right) - \exp \left( - {(T_i^U)}^{\gamma} \exp(\eta_i) \right)
 \end{split}
@@ -1136,19 +1136,19 @@ or on the log scale:
 
 \begin{align}
 \begin{split}
-  \log h_i(T_i) 
+  \log h_i(T_i)
     & = \log(\gamma) + (\gamma-1) \log(t) + \log \lambda_i \\
     & = \log(\gamma) + (\gamma-1) \log(t) + \eta_i \\
-  \log H_i(T_i) 
+  \log H_i(T_i)
     & = \gamma \log(T_i) + \log \lambda_i \\
     & = \gamma \log(T_i) + \eta_i \\
-  \log S_i(T_i) 
+  \log S_i(T_i)
     & = - T_i^{\gamma} \lambda_i \\
     & = - T_i^{\gamma} \exp(\eta_i) \\
-  \log F_i(T_i) 
+  \log F_i(T_i)
     & = \log \left( 1 - \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) \right) \\
     & = \log \left( 1 - \exp \left( - {(T_i)}^{\gamma} \exp(\eta_i) \right) \right) \\
-  \log (S_i(T_i) - S_i(T_i^U)) 
+  \log (S_i(T_i) - S_i(T_i^U))
     & = \log \left[ \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) - \exp \left( - {(T_i^U)}^{\gamma} \lambda_i \right) \right] \\
     & = \log \left[ \exp \left( - {(T_i)}^{\gamma} \exp(\eta_i) \right) - \exp \left( - {(T_i^U)}^{\gamma} \exp(\eta_i) \right) \right]
 \end{split}
@@ -1165,25 +1165,25 @@ The definition of $\lambda$ for the baseline is:
 
 ### Gompertz model
 
-The Gompertz model is parameterised with shape parameter $\lambda_i = \exp(\eta_i)$ and scale parameter $\gamma > 0$ where $\eta_i = \beta_0 + \sum_{p=1}^P \beta_p x_{ip}$ denotes our linear predictor. 
+The Gompertz model is parameterised with shape parameter $\lambda_i = \exp(\eta_i)$ and scale parameter $\gamma > 0$ where $\eta_i = \beta_0 + \sum_{p=1}^P \beta_p x_{ip}$ denotes our linear predictor.
 
 For individual $i$ we have:
 
 \begin{align}
 \begin{split}
-  h_i(T_i) 
+  h_i(T_i)
     & = \exp(\gamma T_i) \lambda_i \\
     & = \exp(\gamma T_i) \exp(\eta_i) \\
-  H_i(T_i) 
+  H_i(T_i)
     & = \frac{\exp(\gamma T_i) - 1}{\gamma} \lambda_i \\
     & = \frac{\exp(\gamma T_i) - 1}{\gamma} \exp(\eta_i) \\
-  S_i(T_i) 
+  S_i(T_i)
     & = \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \lambda_i \right) \\
     & = \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \exp(\eta_i) \right) \\
-  F_i(T_i) 
+  F_i(T_i)
     & = 1 - \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \lambda_i \right) \\
     & = 1 - \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \exp(\eta_i) \right) \\
-  S_i(T_i) - S_i(T_i^U) 
+  S_i(T_i) - S_i(T_i^U)
     & = \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \lambda_i \right) - \exp \left( \frac{-(\exp(\gamma T_i^U) - 1)}{\gamma} \lambda_i \right) \\
     & = \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \exp(\eta_i) \right) - \exp \left( \frac{-(\exp(\gamma T_i^U) - 1)}{\gamma} \exp(\eta_i) \right)
 \end{split}
@@ -1193,19 +1193,19 @@ or on the log scale:
 
 \begin{align}
 \begin{split}
-  \log h_i(T_i) 
+  \log h_i(T_i)
     & = \gamma T_i + \log \lambda_i \\
     & = \gamma T_i + \eta_i \\
-  \log H_i(T_i) 
+  \log H_i(T_i)
     & = \log(\exp(\gamma T_i) - 1) - \log(\gamma) + \log \lambda_i \\
     & = \log(\exp(\gamma T_i) - 1) - \log(\gamma) + \eta_i \\
-  \log S_i(T_i) 
+  \log S_i(T_i)
     & = \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \lambda_i \\
     & = \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \exp(\eta_i) \\
-  \log F_i(T_i) 
+  \log F_i(T_i)
     & = \log \left( 1 - \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \lambda_i \right) \right) \\
     & = \log \left( 1 - \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \exp(\eta_i) \right) \right) \\
-  \log (S_i(T_i) - S_i(T_i^U)) 
+  \log (S_i(T_i) - S_i(T_i^U))
     & = \log \left[ \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \lambda_i \right) - \exp \left( \frac{-(\exp(\gamma T_i^U) - 1)}{\gamma} \lambda_i \right) \right] \\
     & = \log \left[ \exp \left( \frac{-(\exp(\gamma T_i) - 1)}{\gamma} \exp(\eta_i) \right) - \exp \left( \frac{-(\exp(\gamma T_i^U) - 1)}{\gamma} \exp(\eta_i) \right) \right]
 \end{split}
@@ -1228,15 +1228,15 @@ For individual $i$ we have:
 
 \begin{align}
 \begin{split}
-  h_i(T_i) 
+  h_i(T_i)
     & = M(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \\
-  H_i(T_i) 
+  H_i(T_i)
     & = I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \\
-  S_i(T_i) 
+  S_i(T_i)
     & = \exp \left( - I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right) \\
-  F_i(T_i) 
+  F_i(T_i)
     & = 1 - \exp \left( - I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right) \\
-  S_i(T_i) - S_i(T_i^U) 
+  S_i(T_i) - S_i(T_i^U)
     & = \exp \left( - I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right) - \exp \left( - I(T_i^U; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right)
 \end{split}
 \end{align}
@@ -1245,15 +1245,15 @@ or on the log scale:
 
 \begin{align}
 \begin{split}
-  \log h_i(T_i) 
+  \log h_i(T_i)
     & = \log(M(T_i; \boldsymbol{\theta}, \boldsymbol{k_0})) + \eta_i \\
-  \log H_i(T_i) 
+  \log H_i(T_i)
     & = \log(I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0})) + \eta_i \\
-  \log S_i(T_i) 
+  \log S_i(T_i)
     & = - I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \\
-  \log F_i(T_i) 
+  \log F_i(T_i)
     & = \log \left[ 1 - \exp \left( - I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right) \right] \\
-  \log (S_i(T_i) - S_i(T_i^U)) 
+  \log (S_i(T_i) - S_i(T_i^U))
     & = \log \left[ \exp \left( - I(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right) - \exp \left( - I(T_i^U; \boldsymbol{\theta}, \boldsymbol{k_0}) \exp(\eta_i) \right) \right]
 \end{split}
 \end{align}
@@ -1270,7 +1270,7 @@ For individual $i$ we have:
 
 \begin{align}
 \begin{split}
-  h_i(T_i) 
+  h_i(T_i)
     & = \exp \left( B(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) + \eta_i \right)
 \end{split}
 \end{align}
@@ -1279,7 +1279,7 @@ or on the log scale:
 
 \begin{align}
 \begin{split}
-  \log h_i(T_i) 
+  \log h_i(T_i)
     & = B(T_i; \boldsymbol{\theta}, \boldsymbol{k_0}) + \eta_i
 \end{split}
 \end{align}
@@ -1288,13 +1288,13 @@ The cumulative hazard, survival function, and CDF for the B-spline model cannot 
 
 \begin{align}
 \begin{split}
-  H_i(T_i) 
+  H_i(T_i)
     & = \int_0^{T_i} h_i(u) du \\
-  S_i(T_i) 
+  S_i(T_i)
     & = \exp \left( - \int_0^{T_i} h_i(u) du \right) \\
-  F_i(T_i) 
+  F_i(T_i)
     & = 1 - \exp \left( - \int_0^{T_i} h_i(u) du \right) \\
-  S_i(T_i) - S_i(T_i^U) 
+  S_i(T_i) - S_i(T_i^U)
     & = \exp \left( -\int_0^{T_i} h_i(u) du \right) - \exp \left( - \int_0^{T_i^U} h_i(u) du \right)
 \end{split}
 \end{align}
@@ -1306,13 +1306,13 @@ We can extend the previous model formulations to allow for time-varying coeffici
 
 \begin{align}
 \begin{split}
-  H_i(T_i) 
+  H_i(T_i)
     & = \int_0^{T_i} h_i(u) du \\
-  S_i(T_i) 
+  S_i(T_i)
     & = \exp \left( - \int_0^{T_i} h_i(u) du \right) \\
-  F_i(T_i) 
+  F_i(T_i)
     & = 1 - \exp \left( - \int_0^{T_i} h_i(u) du \right) \\
-  S_i(T_i) - S_i(T_i^U) 
+  S_i(T_i) - S_i(T_i^U)
     & = \exp \left( -\int_0^{T_i} h_i(u) du \right) - \exp \left( - \int_0^{T_i^U} h_i(u) du \right)
 \end{split}
 \end{align}
@@ -1331,19 +1331,19 @@ For individual $i$ we have:
 
 \begin{align}
 \begin{split}
-  h_i(T_i) 
+  h_i(T_i)
     & = \lambda_i \\
     & = \exp(-\eta_i) \\
-  H_i(T_i) 
-    & = T_i \lambda_i \\ 
+  H_i(T_i)
+    & = T_i \lambda_i \\
     & = T_i \exp(-\eta_i) \\
-  S_i(T_i) 
+  S_i(T_i)
     & = \exp \left( - T_i \lambda_i \right) \\
     & = \exp \left( - T_i \exp(-\eta_i) \right) \\
-  F_i(T_i) 
+  F_i(T_i)
     & = 1 - \exp \left( - T_i \lambda_i \right) \\
     & = 1 - \exp \left( - T_i \exp(-\eta_i) \right) \\
-  S_i(T_i) - S_i(T_i^U) 
+  S_i(T_i) - S_i(T_i^U)
     & = \exp \left( - T_i \lambda_i \right) - \exp \left( - T_i^U \lambda_i \right) \\
     & = \exp \left( - T_i \exp(-\eta_i) \right) - \exp \left( - T_i^U \exp(-\eta_i) \right)
 \end{split}
@@ -1353,19 +1353,19 @@ or on the log scale:
 
 \begin{align}
 \begin{split}
-  \log h_i(T_i) 
+  \log h_i(T_i)
     & = \log \lambda_i \\
     & = -\eta_i \\
-  \log H_i(T_i) 
+  \log H_i(T_i)
     & = \log(T_i) + \log \lambda_i \\
     & = \log(T_i) - \eta_i \\
-  \log S_i(T_i) 
+  \log S_i(T_i)
     & = - T_i \lambda_i \\
     & = - T_i \exp(-\eta_i) \\
-  \log F_i(T_i) 
+  \log F_i(T_i)
     & = \log \left( 1 - \exp \left( - T_i \lambda_i \right) \right) \\
     & = \log \left( 1 - \exp \left( - T_i \exp(-\eta_i) \right) \right) \\
-  \log (S_i(T_i) - S_i(T_i^U)) 
+  \log (S_i(T_i) - S_i(T_i^U))
     & = \log \left[ \exp \left( - T_i \lambda_i) \right) - \exp \left( - T_i^U \lambda_i \right) \right] \\
     & = \log \left[ \exp \left( - T_i \exp(-\eta_i) \right) - \exp \left( - T_i^U \exp(-\eta_i) \right) \right]
 \end{split}
@@ -1377,8 +1377,8 @@ The definition of $\lambda$ for the baseline is:
 \begin{split}
   \lambda_0 = \exp(-\beta_0^*) \Longleftrightarrow \beta_0^* = -\log(\lambda_0)
 \end{split}
-\end{align}  
-  
+\end{align}
+
 The relationship between coefficients under the PH (unstarred) and AFT (starred) parameterisations are as follows:
 
 \begin{align}
@@ -1392,7 +1392,7 @@ Lastly, the general form for the hazard function and survival function under an 
 
 \begin{align}
 \begin{split}
-  h_i(T_i) 
+  h_i(T_i)
     & = \exp(-\eta_i) h_0(t \exp(-\eta_i)) \\
     & = \exp(-\eta_i) \\
     & = \lambda_i
@@ -1401,7 +1401,7 @@ Lastly, the general form for the hazard function and survival function under an 
 
 \begin{align}
 \begin{split}
-  S_i(T_i) 
+  S_i(T_i)
     & = S_0(t \exp(-\eta_i)) \\
     & = \exp(-T_i \exp(-\eta_i)) \\
     & = \exp(-T_i \lambda_i)
@@ -1417,19 +1417,19 @@ For individual $i$ we have:
 
 \begin{align}
 \begin{split}
-  h_i(T_i) 
+  h_i(T_i)
     & = \gamma t^{\gamma-1} \lambda_i \\
     & = \gamma t^{\gamma-1} \exp(-\gamma \eta_i) \\
-  H_i(T_i) 
+  H_i(T_i)
     & = T_i^{\gamma} \lambda_i \\
     & = T_i^{\gamma} \exp(-\gamma \eta_i) \\
-  S_i(T_i) 
+  S_i(T_i)
     & = \exp \left( - T_i^{\gamma} \lambda_i \right) \\
     & = \exp \left( - T_i^{\gamma} \exp(-\gamma \eta_i) \right) \\
-  F_i(T_i) 
+  F_i(T_i)
     & = 1 - \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) \\
     & = 1 - \exp \left( - {(T_i)}^{\gamma} \exp(-\gamma \eta_i) \right) \\
-  S_i(T_i) - S_i(T_i^U) 
+  S_i(T_i) - S_i(T_i^U)
     & = \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) - \exp \left( - {(T_i^U)}^{\gamma} \lambda_i \right) \\
     & = \exp \left( - {(T_i)}^{\gamma} \exp(-\gamma \eta_i) \right) - \exp \left( - {(T_i^U)}^{\gamma} \exp(-\gamma \eta_i) \right)
 \end{split}
@@ -1439,19 +1439,19 @@ or on the log scale:
 
 \begin{align}
 \begin{split}
-  \log h_i(T_i) 
+  \log h_i(T_i)
     & = \log(\gamma) + (\gamma-1) \log(t) + \log \lambda_i \\
     & = \log(\gamma) + (\gamma-1) \log(t) - \gamma \eta_i \\
-  \log H_i(T_i) 
+  \log H_i(T_i)
     & = \gamma \log(T_i) + \log \lambda_i \\
     & = \gamma \log(T_i) - \gamma \eta_i \\
-  \log S_i(T_i) 
+  \log S_i(T_i)
     & = - T_i^{\gamma} \lambda_i \\
     & = - T_i^{\gamma} \exp(-\gamma \eta_i) \\
-  \log F_i(T_i) 
+  \log F_i(T_i)
     & = \log \left( 1 - \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) \right) \\
     & = \log \left( 1 - \exp \left( - {(T_i)}^{\gamma} \exp(-\gamma \eta_i) \right) \right) \\
-  \log (S_i(T_i) - S_i(T_i^U)) 
+  \log (S_i(T_i) - S_i(T_i^U))
     & = \log \left[ \exp \left( - {(T_i)}^{\gamma} \lambda_i \right) - \exp \left( - {(T_i^U)}^{\gamma} \lambda_i \right) \right] \\
     & = \log \left[ \exp \left( - {(T_i)}^{\gamma} \exp(-\gamma \eta_i) \right) - \exp \left( - {(T_i^U)}^{\gamma} \exp(-\gamma \eta_i) \right) \right]
 \end{split}
@@ -1463,14 +1463,14 @@ The definition of $\lambda$ for the baseline is:
 \begin{split}
   \lambda_0 = \exp(-\gamma \beta_0^*) \Longleftrightarrow \beta_0^* = \frac{-\log(\lambda_0)}{\gamma}
 \end{split}
-\end{align}  
-  
+\end{align}
+
 The relationship between coefficients under the PH (unstarred) and AFT (starred) parameterisations are as follows:
 
 \begin{align}
 \begin{split}
   \beta_0 & = -\gamma \beta_0^* \\
-  \beta_p & = -\gamma \beta_p^*  
+  \beta_p & = -\gamma \beta_p^*
 \end{split}
 \end{align}
 
@@ -1478,7 +1478,7 @@ Lastly, the general form for the hazard function and survival function under an 
 
 \begin{align}
 \begin{split}
-  h_i(T_i) 
+  h_i(T_i)
     & = \exp(-\eta_i) h_0(t \exp(-\eta_i)) \\
     & = \exp(-\eta_i) \gamma {(t \exp(-\eta_i))}^{\gamma - 1} \\
     & = \exp(-\gamma \eta_i) \gamma t^{\gamma - 1} \\
@@ -1488,7 +1488,7 @@ Lastly, the general form for the hazard function and survival function under an 
 
 \begin{align}
 \begin{split}
-  S_i(T_i) 
+  S_i(T_i)
     & = S_0(t \exp(-\eta_i)) \\
     & = \exp(-(T_i \exp(-\eta_i))^{\gamma}) \\
     & = \exp(-T_i^{\gamma} [\exp(-\eta_i)]^{\gamma}) \\
@@ -1500,9 +1500,9 @@ Lastly, the general form for the hazard function and survival function under an 
 
 ### Extension to time-varying coefficients (i.e. time-varying acceleration factors)
 
-We can extend the previous model formulations to allow for time-varying coefficients (i.e. time-varying acceleration factors). 
+We can extend the previous model formulations to allow for time-varying coefficients (i.e. time-varying acceleration factors).
 
-The so-called "unmoderated" survival probability for an individual at time $t$ is defined as the baseline survival probability at time $t$, i.e. $S_i(t) = S_0(t)$. With a time-fixed acceleration factor, the survival probability for a so-called "moderated" individual is defined as the baseline survival probability but evaluated at "time $t$ multiplied by the acceleration factor $\exp(-\eta_i)$". That is, the survival probability for the moderated individual is $S_i(t) = S_0(t \exp(-\eta_i))$. 
+The so-called "unmoderated" survival probability for an individual at time $t$ is defined as the baseline survival probability at time $t$, i.e. $S_i(t) = S_0(t)$. With a time-fixed acceleration factor, the survival probability for a so-called "moderated" individual is defined as the baseline survival probability but evaluated at "time $t$ multiplied by the acceleration factor $\exp(-\eta_i)$". That is, the survival probability for the moderated individual is $S_i(t) = S_0(t \exp(-\eta_i))$.
 
 However, with time-varying acceleration we cannot simply multiply time by a fixed (acceleration) constant. Instead, we must integrate the function for the time-varying acceleration factor over the interval $0$ to $t$. In other words, we must evaluate:
 \
@@ -1528,7 +1528,7 @@ For the exponential distribution, this leads to:
 
 \begin{align}
 \begin{split}
-  S_i(T_i) 
+  S_i(T_i)
     & = S_0 \left( \int_0^{T_i} \exp(-\eta_i(u)) du \right) \\
     & = \exp \left(- \int_0^{T_i} \exp(-\eta_i(u)) du \right)
 \end{split}
@@ -1536,7 +1536,7 @@ For the exponential distribution, this leads to:
 
 \begin{align}
 \begin{split}
-  h_i(T_i) 
+  h_i(T_i)
     & = \exp \left(-\eta_i(T_i) \right) h_0 \left( \int_0^{T_i} \exp(-\eta_i(u)) du \right) \\
     & = \exp \left(-\eta_i(T_i) \right) \exp \left(- \int_0^{T_i} \exp(-\eta_i(u)) du \right)
 \end{split}
@@ -1546,7 +1546,7 @@ and for the Weibull distribution, this leads to:
 
 \begin{align}
 \begin{split}
-  S_i(T_i) 
+  S_i(T_i)
     & = S_0 \left( \int_0^{T_i} \exp(-\eta_i(u)) du \right) \\
     & = \exp \left(- \left[\int_0^{T_i} \exp (-\eta_i(u)) du \right]^{\gamma} \right)
 \end{split}
@@ -1554,7 +1554,7 @@ and for the Weibull distribution, this leads to:
 
 \begin{align}
 \begin{split}
-  h_i(T_i) 
+  h_i(T_i)
     & = \exp \left(-\eta_i(T_i) \right) h_0 \left( \int_0^{T_i} \exp(-\eta_i(u)) du \right) \\
     & = \exp \left(-\eta_i(T_i) \right) \exp \left(- \left[\int_0^{T_i} \exp (-\eta_i(u)) du \right]^{\gamma} \right)
 \end{split}

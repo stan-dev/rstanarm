@@ -20,7 +20,7 @@ library(lme4)
 library(MASS)
 SEED <- 12345
 set.seed(SEED)
-ITER <- 10
+ITER <- 100
 CHAINS <- 2
 REFRESH <- 0
 
@@ -719,7 +719,7 @@ test_that("prior_summary returns correctly named list", {
 # predictive_error,predictive_interval ------------------------------------
 context("predictive error and interval methods")
 test_that("predictive_error works", {
-  expect_error(predictive_error(stan_glm1, draws = 100),
+  expect_error(predictive_error(stan_glm1, draws = 500),
                "'draws' should be <= posterior sample size")
   expect_error(predictive_error(stan_polr1),
                "not currently available for stan_polr")
@@ -748,7 +748,7 @@ test_that("predictive_error works", {
   expect_equal(dim(err3), c(5, 2))
 })
 test_that("predictive_interval works", {
-  expect_error(predictive_interval(stan_glm1, draws = 100),
+  expect_error(predictive_interval(stan_glm1, draws = 500),
                "'draws' should be <= posterior sample size")
   expect_error(predictive_interval(stan_glm1, prob = c(0.25, 0.76)),
                "'prob' should be a single number greater than 0 and less than 1")
@@ -786,7 +786,7 @@ test_that("predictive_error stanreg and ppd methods return the same thing", {
   preds <- posterior_predict(stan_betareg1, seed = 123)
   expect_equal(
     predictive_error(stan_betareg1, seed = 123),
-    predictive_error(preds, y = stan_betareg1$y)
+    predictive_error(preds, y = stan_betareg2$y)
   )
 })
 test_that("predictive_interval stanreg and ppd methods return the same thing", {

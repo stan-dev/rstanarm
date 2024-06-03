@@ -1,0 +1,26 @@
+name: Update Branch
+permissions:
+  contents: write
+  
+on:
+  push:
+    branches:
+      - feature/survival
+
+jobs:
+  update-branch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Rebase survival-rstantools branch
+        run: |
+          git checkout survival-rstantools
+          git pull origin survival-rstantools
+          git rebase feature/survival
+
+      - name: Push changes
+        run: |
+          git push origin survival-rstantools

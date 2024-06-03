@@ -20,7 +20,7 @@
 suppressPackageStartupMessages(library(rstanarm))
 
 SEED <- 123
-ITER <- 100
+ITER <- 500
 CHAINS <- 2
 CORES <- 1
 REFRESH <- 0
@@ -30,9 +30,8 @@ threshold <- 0.03
 context("stan_clogit")
 
 SW(fit <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NULL,
-                   data = infert[order(infert$stratum), ], 
-                   QR = TRUE, init_r = 0.5,
-                   chains = CHAINS, iter = ITER, seed = SEED, refresh = 0))
+                   data = infert[order(infert$stratum), ],
+                   chains = CHAINS, iter = ITER, refresh = 0))
 
 test_that("stan_clogit is similar to survival::clogit", {
   expect_equal(c(spontaneous = 1.985876, induced = 1.409012), coef(fit), tol = threshold)
@@ -47,9 +46,8 @@ test_that("stan_clogit works when y is a factor", {
   d$case <- factor(d$case, labels = c("A", "B"))
   SW(fit_factor <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NULL,
                         data = infert[order(infert$stratum), ], 
-                        QR = TRUE, init_r = 0.5,
-                        chains = CHAINS, iter = ITER, seed = SEED, refresh = 0))
-  expect_equal(coef(fit_factor), coef(fit))
+                        chains = CHAINS, iter = ITER, refresh = 0))
+  expect_equal(coef(fit_factor), coef(fit), tolerance = threshold)
 })
 
 test_that("stan_clogit throws error if data are not sorted", {

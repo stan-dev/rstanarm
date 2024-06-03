@@ -376,21 +376,36 @@ get_element <- function(parts, m = 1, which = "eta", ...) {
   }
 }
 
-# Collapse the linear predictor across the lower level units
-# clustered an individual, using the function specified in the
-# 'grp_assoc' argument
-#
-# @param eta The linear predictor evaluated for all lower level groups
-#   at the quadrature points.
-# @param grp_idx An N*2 array providing the indices of the first (col 1)
-#   and last (col 2) observations in eta that correspond to individuals
-#   i = 1,...,N.
-# @param grp_assoc Character string, the function to use to collapse
-#   across the lower level units clustered within individuals.
-# @return A vector or matrix, depending on the method called.
+#' Collapse the linear predictor across the lower level units
+#' clustered an individual, using the function specified in the
+#' 'grp_assoc' argument
+#'
+#' @param eta The linear predictor evaluated for all lower level groups
+#'   at the quadrature points.
+#' @param grp_idx An N*2 array providing the indices of the first (col 1)
+#'   and last (col 2) observations in eta that correspond to individuals
+#'   i = 1,...,N.
+#' @param grp_assoc Character string, the function to use to collapse
+#'   across the lower level units clustered within individuals.
+#' @return A vector or matrix, depending on the method called.
+#' @export
 collapse_within_groups <- function(eta, grp_idx, grp_assoc = "sum") {
   UseMethod("collapse_within_groups")
 }
+
+#' Collapse the linear predictor across the lower level units
+#' clustered an individual, using the function specified in the
+#' 'grp_assoc' argument
+#'
+#' @param eta The linear predictor evaluated for all lower level groups
+#'   at the quadrature points.
+#' @param grp_idx An N*2 array providing the indices of the first (col 1)
+#'   and last (col 2) observations in eta that correspond to individuals
+#'   i = 1,...,N.
+#' @param grp_assoc Character string, the function to use to collapse
+#'   across the lower level units clustered within individuals.
+#' @return A vector or matrix, depending on the method called.
+#' @export
 collapse_within_groups.default <- function(eta, grp_idx, grp_assoc) {
   N <- nrow(grp_idx)
   val <- rep(NA, N)
@@ -400,6 +415,19 @@ collapse_within_groups.default <- function(eta, grp_idx, grp_assoc) {
   }
   val
 }
+#' Collapse the linear predictor across the lower level units
+#' clustered an individual, using the function specified in the
+#' 'grp_assoc' argument
+#'
+#' @param eta The linear predictor evaluated for all lower level groups
+#'   at the quadrature points.
+#' @param grp_idx An N*2 array providing the indices of the first (col 1)
+#'   and last (col 2) observations in eta that correspond to individuals
+#'   i = 1,...,N.
+#' @param grp_assoc Character string, the function to use to collapse
+#'   across the lower level units clustered within individuals.
+#' @return A vector or matrix, depending on the method called.
+#' @export
 collapse_within_groups.matrix <- function(eta, grp_idx, grp_assoc) {
   N <- nrow(grp_idx)
   val <- matrix(NA, nrow = nrow(eta), ncol = N)

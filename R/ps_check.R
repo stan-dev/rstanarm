@@ -69,7 +69,6 @@
 #'   (for \code{\link{stan_jm}} models only)
 #'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #' if (!exists("example_jm")) example(example_jm)
 #' # Compare estimated survival function to Kaplan-Meier curve

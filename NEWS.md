@@ -14,7 +14,7 @@ models fit with `stan_polr()`. (#450)
 
 * Fix bug where `stan_glmer()` would error if `prior_aux=NULL`. (#482)
 
-* `posterior_predict()` and `posterior_epred()` don't error  with `newdata` for 
+* `posterior_predict()` and `posterior_epred()` don't error  with `newdata` for
 intercept only models by allowing data frames with 0 columns and multiple rows. (#492)
 
 ### New features
@@ -30,23 +30,23 @@ intercept only models by allowing data frames with 0 columns and multiple rows. 
 # rstanarm 2.21.1
 
 * Compatible with rstan v2.21.1
-* Consistent with new book [Regression and Other Stories](https://statmodeling.stat.columbia.edu/2020/07/08/regression-and-other-stories-is-available/)
+* Consistent with new book 'Regression and Other Stories'
 
 ### Backwards incompatible changes
 
 * `stan_jm()` is not available for 32bit Windows
 
 * Some improvements to prior distributions, as described in detail in the
-vignette *Prior Distributions for rstanarm Models* and book 
+vignette *Prior Distributions for rstanarm Models* and book
 *Regression and Other Stories*. These changes shouldn't cause any existing code
 to error, but default priors have changed in some cases:
-  - default prior on intercept is still Gaussian but the way the location and 
+  - default prior on intercept is still Gaussian but the way the location and
     scale are determined has been updated (#432)
-  - `autoscale` argument to functions like `normal()`, `student_t()`, etc., 
+  - `autoscale` argument to functions like `normal()`, `student_t()`, etc.,
     now defaults to `FALSE` except when used by default priors (default
     priors still do autoscalinng). This makes it simpler to specify non-default
     priors. (#432)
-  
+
 ### Bug fixes
 
 * Fixed error in `kfold()` for `stan_gamm4()` models that used `random` argument (#435)
@@ -77,11 +77,11 @@ package. (#432)
 
 * src/Makevars{.win} now uses a more robust way to find StanHeaders
 
-* Fixed bug where `ranef()` and `coef()` methods for `glmer`-style models 
+* Fixed bug where `ranef()` and `coef()` methods for `glmer`-style models
 printed the wrong output for certain combinations of varying intercepts
 and slopes.
 
-* Fixed a bug where `posterior_predict()` failed for `stan_glmer()` models 
+* Fixed a bug where `posterior_predict()` failed for `stan_glmer()` models
 estimated with `family = mgcv::betar`.
 
 * Fixed bug in `bayes_R2()` for bernoulli models. (Thanks to @mcol)
@@ -96,10 +96,10 @@ with identical (not just up to rng noise) results. (Thanks to @mcol)
 * 4x speedup for most GLMs (`stan_glm()`) and GAMs (`stan_gamm4()` without
 `random` argument). This comes from using Stan's new compound `_glm` functions
 (`normal_id_glm`, `bernoulli_logit_glm`, `poisson_log_glm`,
-`neg_binomial_2_log_glm`) under the hood whenever possible. (Thanks 
+`neg_binomial_2_log_glm`) under the hood whenever possible. (Thanks
 to @avehtari and @VMatthijs)
 
-* `compare_models()` is deprecated in favor of `loo_compare()` to keep up 
+* `compare_models()` is deprecated in favor of `loo_compare()` to keep up
 with the loo package ([loo::loo_compare()](https://mc-stan.org/loo/reference/loo_compare))
 
 * The `kfold()` method now has a `cores` argument and parallelizes by fold
@@ -111,7 +111,7 @@ sampling ([arxiv.org/abs/1507.02646](https://arxiv.org/abs/1507.02646),
 [mc-stan.org/loo/reference/psis.html](https://mc-stan.org/loo/reference/psis.html))
 is now used to diagnose and improve inference (see
 https://avehtari.github.io/RAOS-Examples/BigData/bigdata.html). This also now
-means that we can use PSIS-LOO also when `algorithm='optimizing'`. (Thanks 
+means that we can use PSIS-LOO also when `algorithm='optimizing'`. (Thanks
 to @avehtari)
 
 * For `stan_glm()` the `"meanfield"` and `"fullrank"` ADVI algorithms also
@@ -150,13 +150,13 @@ longitudinal submodel
 
 * `posterior_linpred()` now has a draws argument like for `posterior_predict()`
 
-* Dynamic predictions are now supported in `posterior_traj()` for 
+* Dynamic predictions are now supported in `posterior_traj()` for
 `stan_jm` models.
 
 * More options for K-fold CV, including manually specifying the folds or using helper functions to create them for particular model/data combinations.
 
 
-# rstanarm 2.17.3 
+# rstanarm 2.17.3
 
 Minor release for build fixes for Solaris and avoiding a test failure
 
@@ -186,7 +186,7 @@ normal variate
 
 * The build system is more conventional now. It should require less RAM to build
 from source but it is slower unless you utilize parallel make and LTO
-    
+
 ### Big new features
 
 * `stan_jm()` and `stan_mvmer()` contributed by Sam Brilleman
@@ -229,7 +229,7 @@ prior is specified for their standard deviation
 
 * Fix for off-by-one error in some lme4-style models with multiple grouping
 terms
-  
+
 ### New features
 
 * New methods `loo_linpred()`, `loo_pit()`, `loo_predict()`, and `loo_predictive_interval()`
@@ -245,11 +245,11 @@ terms
 ### Bug fixes
 
   * `VarCorr()` could return duplicates in cases where a `stan_{g}lmer` model used grouping factor level names with spaces
-  
+
   * `The pairs()` function now works with group-specific parameters
-  
+
   * The `stan_gamm4()` function works better now
-  
+
   * Fix a problem with factor levels after estimating a model via `stan_lm()`
 
 ### New features
@@ -287,14 +287,14 @@ parameter of various GLM-like models
 
   * Fix bug in `reloo()` if data was not specified
   * Fix bug in `pp_validate()` that was only introduced on GitHub
-  
+
 ### New features
 
 * Uses the new **bayesplot** and **rstantools** R packages
 
 * The new `prior_summary()` function can be used to figure out what priors were actually used
 
-* `stan_gamm4()` is better implemented, can be followed by `plot_nonlinear()`, 
+* `stan_gamm4()` is better implemented, can be followed by `plot_nonlinear()`,
 `posterior_predict()` (with newdata), etc.
 
 * Hyperparameters (i.e. covariance matrices in general) for lme4 style models
@@ -321,7 +321,7 @@ inference was used to estimate the original model
 ### Bug fixes
 
 * Requiring manually specifying offsets when model has an offset and newdata is not NULL
-  
+
 ### New features
 
 * `stan_biglm()` function that somewhat supports `biglm::biglm`
@@ -336,7 +336,7 @@ inference was used to estimate the original model
 
 ### New features
 
-* `k_threshold` argument to `loo()` to do PSIS-LOO+ 
+* `k_threshold` argument to `loo()` to do PSIS-LOO+
 
 * `kfold()` for K-fold CV
 
@@ -344,7 +344,7 @@ inference was used to estimate the original model
 
 ### rstanarm 2.9.0-4
 
-### Bug fixes 
+### Bug fixes
 
 * `posterior_predict()` with newdata now works correctly for ordinal models
 
@@ -392,7 +392,7 @@ problem out on stan-users.
 * The `log_lik()` function now has a `newdata` argument
 
 * New vignette on hierarchical partial pooling
-  
+
 
 # rstanarm 2.9.0-1
 
