@@ -1,5 +1,5 @@
-#include /pre/Columbia_copyright.stan
-#include /pre/license.stan
+#include /include/Columbia_copyright.stan
+#include /include/license.stan
 
 // GLM for a binomial outcome
 functions {

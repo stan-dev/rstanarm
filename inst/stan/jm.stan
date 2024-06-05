@@ -1,6 +1,6 @@
-#include /pre/Columbia_copyright.stan
-#include /pre/Brilleman_copyright.stan
-#include /pre/license.stan
+#include /include/Columbia_copyright.stan
+#include /include/Brilleman_copyright.stan
+#include /include/license.stan
 
 // Shared parameter joint model
 functions {

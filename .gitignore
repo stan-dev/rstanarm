@@ -16,3 +16,8 @@ vignettes/*.html
 vignettes/*_files
 .DS_Store
 revdep/*
+*.o
+*.cc
+*.h
+src/Makevars
+R/stanmodels.R
