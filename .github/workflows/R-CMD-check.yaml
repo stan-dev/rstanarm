@@ -15,7 +15,7 @@ jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
 
-    name: ${{ matrix.config.rstan }} RStan - ${{ matrix.config.os }} (${{ matrix.config.r }})
+    name: ${{ matrix.config.rstan }} R CMD CHECK - ${{ matrix.config.os }} (${{ matrix.config.r }})
 
     strategy:
       fail-fast: false
