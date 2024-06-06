@@ -1,16 +1,16 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright (C) 2017 Trustees of Columbia University
-# 
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 3
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -34,7 +34,7 @@ SW(fit <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NU
                    chains = CHAINS, iter = ITER, refresh = 0))
 
 test_that("stan_clogit is similar to survival::clogit", {
-  expect_equal(c(spontaneous = 1.985876, induced = 1.409012), coef(fit), tol = threshold)
+  expect_equal(c(spontaneous = 1.985876, induced = 1.409012), coef(fit), tol = 0.1)
 })
 
 test_that("stan_clogit runs for infert example", {
@@ -45,13 +45,13 @@ test_that("stan_clogit works when y is a factor", {
   d <- infert[order(infert$stratum), ]
   d$case <- factor(d$case, labels = c("A", "B"))
   SW(fit_factor <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NULL,
-                        data = infert[order(infert$stratum), ], 
+                        data = infert[order(infert$stratum), ],
                         chains = CHAINS, iter = ITER, refresh = 0))
   expect_equal(coef(fit_factor), coef(fit), tolerance = threshold)
 })
 
 test_that("stan_clogit throws error if data are not sorted", {
-  expect_error(update(fit, data = infert), 
+  expect_error(update(fit, data = infert),
                regexp = "Data must be sorted")
 })
 

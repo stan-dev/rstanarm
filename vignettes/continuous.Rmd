@@ -205,10 +205,10 @@ in the __loo__ package:
 
 ```{r, continuous-kidiq-loo}
 # Compare them with loo
-loo1 <- loo(post1, cores = 2)
-loo2 <- loo(post2, cores = 2)
-loo3 <- loo(post3, cores = 2)
-loo4 <- loo(post4, cores = 2)
+loo1 <- loo(post1, cores = 1)
+loo2 <- loo(post2, cores = 1)
+loo3 <- loo(post3, cores = 1)
+loo4 <- loo(post4, cores = 1)
 (comp <- loo_compare(loo1, loo2, loo3, loo4))
 ```
 
