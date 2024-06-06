@@ -22,84 +22,84 @@ stan_surv(
 )
 }
 \arguments{
-\item{formula}{A two-sided formula object describing the model. 
-The left hand side of the formula should be a \code{Surv()} 
-object. Left censored, right censored, and interval censored data 
-are allowed, as well as delayed entry (i.e. left truncation). See 
-\code{\link[survival]{Surv}} for how to specify these outcome types. 
+\item{formula}{A two-sided formula object describing the model.
+The left hand side of the formula should be a \code{Surv()}
+object. Left censored, right censored, and interval censored data
+are allowed, as well as delayed entry (i.e. left truncation). See
+\code{\link[survival]{Surv}} for how to specify these outcome types.
 The right hand side of the formula can include fixed and/or random
-effects of covariates, with random effects specified in the same 
+effects of covariates, with random effects specified in the same
 way as for the \code{\link[lme4]{lmer}} function in the \pkg{lme4}
-package. If you wish to include time-varying effects (i.e. time-varying 
+package. If you wish to include time-varying effects (i.e. time-varying
 coefficients, e.g. non-proportional hazards) in the model
-then any covariate(s) that you wish to estimate a time-varying 
-coefficient for should be specified as \code{tve(varname)} where 
-\code{varname} is the name of the covariate. For more information on 
+then any covariate(s) that you wish to estimate a time-varying
+coefficient for should be specified as \code{tve(varname)} where
+\code{varname} is the name of the covariate. For more information on
 how time-varying effects are formulated see the documentation
-for the \code{\link{tve}} function as well as the \strong{Details} 
+for the \code{\link{tve}} function as well as the \strong{Details}
 and \strong{Examples} sections below.}
 
-\item{data}{A data frame containing the variables specified in 
+\item{data}{A data frame containing the variables specified in
 \code{formula}.}
 
 \item{basehaz}{A character string indicating which baseline hazard or
-baseline survival distribution to use for the event submodel. 
+  baseline survival distribution to use for the event submodel.
 
-The following are available under a hazard scale formulation: 
-\itemize{
-  \item \code{"ms"}: A flexible parametric model using cubic M-splines to 
-  model the baseline hazard. The default locations for the internal knots, 
-  as well as the basis terms for the splines, are calculated with respect
-  to time. If the model does \emph{not} include any time-dependendent 
-  effects then a closed form solution is available for both the hazard
-  and cumulative hazard and so this approach should be relatively fast.
-  On the other hand, if the model does include time-varying effects then
-  quadrature is used to evaluate the cumulative hazard at each MCMC
-  iteration and, therefore, estimation of the model will be slower.
-  \item \code{"bs"}: A flexible parametric model using cubic B-splines to 
-  model the \emph{log} baseline hazard. The default locations for the  
-  internal knots, as well as the basis terms for the splines, are calculated 
-  with respect to time. A closed form solution for the cumulative hazard 
-  is \strong{not} available regardless of whether or not the model includes
-  time-varying effects; instead, quadrature is used to evaluate 
-  the cumulative hazard at each MCMC iteration. Therefore, if your model
-  does not include any time-varying effects, then estimation using the 
-  \code{"ms"} baseline hazard will be faster.
-  \item \code{"exp"}: An exponential distribution for the event times
-  (i.e. a constant baseline hazard).
-  \item \code{"weibull"}: A Weibull distribution for the event times.
-  \item \code{"gompertz"}: A Gompertz distribution for the event times.
-}
+  The following are available under a hazard scale formulation:
+  \itemize{
+    \item \code{"ms"}: A flexible parametric model using cubic M-splines to
+    model the baseline hazard. The default locations for the internal knots,
+    as well as the basis terms for the splines, are calculated with respect
+    to time. If the model does \emph{not} include any time-dependendent
+    effects then a closed form solution is available for both the hazard
+    and cumulative hazard and so this approach should be relatively fast.
+    On the other hand, if the model does include time-varying effects then
+    quadrature is used to evaluate the cumulative hazard at each MCMC
+    iteration and, therefore, estimation of the model will be slower.
+    \item \code{"bs"}: A flexible parametric model using cubic B-splines to
+    model the \emph{log} baseline hazard. The default locations for the
+    internal knots, as well as the basis terms for the splines, are calculated
+    with respect to time. A closed form solution for the cumulative hazard
+    is \strong{not} available regardless of whether or not the model includes
+    time-varying effects; instead, quadrature is used to evaluate
+    the cumulative hazard at each MCMC iteration. Therefore, if your model
+    does not include any time-varying effects, then estimation using the
+    \code{"ms"} baseline hazard will be faster.
+    \item \code{"exp"}: An exponential distribution for the event times
+    (i.e. a constant baseline hazard).
+    \item \code{"weibull"}: A Weibull distribution for the event times.
+    \item \code{"gompertz"}: A Gompertz distribution for the event times.
+  }
 
-The following are available under an accelerated failure time (AFT)
-formulation: 
-\itemize{
-  \item \code{"exp-aft"}: an exponential distribution for the event times.
-  \item \code{"weibull-aft"}: a Weibull distribution for the event times.
-}}
+  The following are available under an accelerated failure time (AFT)
+  formulation:
+  \itemize{
+    \item \code{"exp-aft"}: an exponential distribution for the event times.
+    \item \code{"weibull-aft"}: a Weibull distribution for the event times.
+  }}
 
 \item{basehaz_ops}{A named list specifying options related to the baseline
 hazard. Currently this can include: \cr
 \itemize{
-  \item \code{degree}: A positive integer specifying the degree for the 
+  \item \code{degree}: A positive integer specifying the degree for the
   M-splines or B-splines. The default is \code{degree = 3}, which
   corresponds to cubic splines. Note that specifying \code{degree = 0}
   is also allowed and corresponds to piecewise constant.
-  \item \code{df}: A positive integer specifying the degrees of freedom 
-  for the M-splines or B-splines. For M-splines (i.e. when 
-  \code{basehaz = "ms"}), two boundary knots and \code{df - degree - 1} 
-  internal knots are used to generate the spline basis. For B-splines 
-  (i.e. when \code{basehaz = "bs"}), two boundary knots and 
-  \code{df - degree} internal knots are used to generate the spline 
+  \item \code{df}: A positive integer specifying the degrees of freedom
+  for the M-splines or B-splines. For M-splines (i.e. when
+  \code{basehaz = "ms"}), two boundary knots and \code{df - degree - 1}
+  internal knots are used to generate the spline basis. For B-splines
+  (i.e. when \code{basehaz = "bs"}), two boundary knots and
+  \code{df - degree} internal knots are used to generate the spline
   basis. The difference is due to the fact that the M-spline basis
-  includes an intercept, whereas the B-spline basis does not. The 
+  includes an intercept, whereas the B-spline basis does not. The
   default is \code{df = 6} for M-splines and \code{df = 5} for
   B-splines (i.e. two boundary knots and two internal knots when the
-  default cubic splines are being used). The internal knots are placed 
-  at equally spaced percentiles of the distribution of uncensored event 
+  default cubic splines are being used). The internal knots are placed
+  at equally spaced percentiles of the distribution of uncensored event
   times.
-  \item \code{knots}: A numeric vector explicitly specifying internal 
-  knot locations for the M-splines or B-splines. Note that \code{knots} 
+  \item \code{knots}: A numeric vector explicitly specifying internal
+  knot locations for the M-splines or B-splines. Note that \code{knots}
   cannot be specified if \code{df} is specified.
 }
 Note that for the M-splines and B-splines -- in addition to any internal
@@ -110,7 +110,7 @@ user.}
 
 \item{qnodes}{The number of nodes to use for the Gauss-Kronrod quadrature
 that is used to evaluate the cumulative hazard when \code{basehaz = "bs"}
-or when time-varying effects are specified in the linear predictor. 
+or when time-varying effects are specified in the linear predictor.
 Options are 15 (the default), 11 or 7.}
 
 \item{prior}{The prior distribution for the (non-hierarchical) regression
@@ -148,88 +148,88 @@ scales of the predictors. See the \link[=priors]{priors help page} and the
 \code{\link{prior_summary}} function for a summary of the priors used for a
 particular model.}
 
-\item{prior_intercept}{The prior distribution for the intercept in the 
-linear predictor. All models include an intercept parameter.
-\code{prior_intercept} can be a call to \code{normal}, 
-\code{student_t} or \code{cauchy}. See the \link[=priors]{priors help page} 
-for details on these functions. However, note that default scale for 
-\code{prior_intercept} is 20 for \code{stan_surv} models (rather than 10,
-which is the default scale used for \code{prior_intercept} by most 
-\pkg{rstanarm} modelling functions). To omit a prior on the intercept 
----i.e., to use a flat (improper) uniform prior--- \code{prior_intercept} 
-can be set to \code{NULL}.
+\item{prior_intercept}{The prior distribution for the intercept in the
+  linear predictor. All models include an intercept parameter.
+  \code{prior_intercept} can be a call to \code{normal},
+  \code{student_t} or \code{cauchy}. See the \link[=priors]{priors help page}
+  for details on these functions. However, note that default scale for
+  \code{prior_intercept} is 20 for \code{stan_surv} models (rather than 10,
+  which is the default scale used for \code{prior_intercept} by most
+  \pkg{rstanarm} modelling functions). To omit a prior on the intercept
+  ---i.e., to use a flat (improper) uniform prior--- \code{prior_intercept}
+  can be set to \code{NULL}.
 
-\strong{Note:} The prior distribution for the intercept is set so it
-applies to the value \emph{when all predictors are centered} and with an  
-adjustment ("constant shift") equal to the \emph{log crude event rate}.
-However, the reported \emph{estimates} for the intercept always correspond 
-to a parameterization without centered predictors and without the 
-"constant shift". That is, these adjustments are made internally to help
-with numerical stability and sampling, but the necessary 
-back-transformations are made so that they are not relevant for the 
-estimates returned to the user.}
+  \strong{Note:} The prior distribution for the intercept is set so it
+  applies to the value \emph{when all predictors are centered} and with an
+  adjustment ("constant shift") equal to the \emph{log crude event rate}.
+  However, the reported \emph{estimates} for the intercept always correspond
+  to a parameterization without centered predictors and without the
+  "constant shift". That is, these adjustments are made internally to help
+  with numerical stability and sampling, but the necessary
+  back-transformations are made so that they are not relevant for the
+  estimates returned to the user.}
 
-\item{prior_aux}{The prior distribution for "auxiliary" parameters related 
-to the baseline hazard. The relevant parameters differ depending 
-on the type of baseline hazard specified in the \code{basehaz} 
-argument. The following applies (for further technical details, 
+\item{prior_aux}{The prior distribution for "auxiliary" parameters related
+to the baseline hazard. The relevant parameters differ depending
+on the type of baseline hazard specified in the \code{basehaz}
+argument. The following applies (for further technical details,
 refer to the \emph{stan_surv: Survival (Time-to-Event) Models vignette}):
 \itemize{
-  \item \code{basehaz = "ms"}: the auxiliary parameters are the 
-  coefficients for the M-spline basis terms on the baseline hazard. 
-  These coefficients are defined using a simplex; that is, they are 
-  all between 0 and 1, and constrained to sum to 1. This constraint 
-  is necessary for identifiability of the intercept in the linear 
-  predictor. The default prior is a Dirichlet distribution with all 
-  concentration parameters set equal to 1. That is, a uniform 
-  prior over all points defined within the support of the simplex. 
-  Specifying all concentration parameters equal and > 1 supports a more 
-  even distribution (i.e. a smoother spline function), while specifying a 
-  all concentration parameters equal and < 1 supports a more sparse 
+  \item \code{basehaz = "ms"}: the auxiliary parameters are the
+  coefficients for the M-spline basis terms on the baseline hazard.
+  These coefficients are defined using a simplex; that is, they are
+  all between 0 and 1, and constrained to sum to 1. This constraint
+  is necessary for identifiability of the intercept in the linear
+  predictor. The default prior is a Dirichlet distribution with all
+  concentration parameters set equal to 1. That is, a uniform
+  prior over all points defined within the support of the simplex.
+  Specifying all concentration parameters equal and > 1 supports a more
+  even distribution (i.e. a smoother spline function), while specifying a
+  all concentration parameters equal and < 1 supports a more sparse
   distribution (i.e. a less smooth spline function).
-  \item \code{basehaz = "bs"}: the auxiliary parameters are the 
-  coefficients for the B-spline basis terms on the log baseline hazard. 
-  These parameters are unbounded. The default prior is a normal 
+  \item \code{basehaz = "bs"}: the auxiliary parameters are the
+  coefficients for the B-spline basis terms on the log baseline hazard.
+  These parameters are unbounded. The default prior is a normal
   distribution with mean 0 and scale 20.
-  \item \code{basehaz = "exp"} or \code{basehaz = "exp-aft"}: 
+  \item \code{basehaz = "exp"} or \code{basehaz = "exp-aft"}:
   there is \strong{no} auxiliary parameter,
-  since the log scale parameter for the exponential distribution is 
+  since the log scale parameter for the exponential distribution is
   incorporated as an intercept in the linear predictor.
-  \item \code{basehaz = "weibull"} or \code{basehaz = "weibull-aft"}: 
-  the auxiliary parameter is the Weibull 
-  shape parameter, while the log scale parameter for the Weibull 
+  \item \code{basehaz = "weibull"} or \code{basehaz = "weibull-aft"}:
+  the auxiliary parameter is the Weibull
+  shape parameter, while the log scale parameter for the Weibull
   distribution is incorporated as an intercept in the linear predictor.
-  The auxiliary parameter has a lower bound at zero. The default prior is  
+  The auxiliary parameter has a lower bound at zero. The default prior is
   a half-normal distribution with mean 0 and scale 2.
-  \item \code{basehaz = "gompertz"}: the auxiliary parameter is the Gompertz 
-  scale parameter, while the log shape parameter for the Gompertz 
+  \item \code{basehaz = "gompertz"}: the auxiliary parameter is the Gompertz
+  scale parameter, while the log shape parameter for the Gompertz
   distribution is incorporated as an intercept in the linear predictor.
-  The auxiliary parameter has a lower bound at zero. The default prior is  
+  The auxiliary parameter has a lower bound at zero. The default prior is
   a half-normal distribution with mean 0 and scale 0.5.
 }
-Currently, \code{prior_aux} can be a call to \code{dirichlet}, 
-\code{normal}, \code{student_t}, \code{cauchy} or \code{exponential}. 
-See \code{\link{priors}} for details on these functions. Note that not 
-all prior distributions are allowed with all types of baseline hazard. 
-To omit a prior ---i.e., to use a flat (improper) uniform prior--- set 
+Currently, \code{prior_aux} can be a call to \code{dirichlet},
+\code{normal}, \code{student_t}, \code{cauchy} or \code{exponential}.
+See \code{\link{priors}} for details on these functions. Note that not
+all prior distributions are allowed with all types of baseline hazard.
+To omit a prior ---i.e., to use a flat (improper) uniform prior--- set
 \code{prior_aux} to \code{NULL}.}
 
-\item{prior_smooth}{This is only relevant when time-varying effects are 
-specified in the model (i.e. the \code{tve()} function is used in the 
+\item{prior_smooth}{This is only relevant when time-varying effects are
+specified in the model (i.e. the \code{tve()} function is used in the
 model formula. When that is the case, \code{prior_smooth} determines the
-prior distribution given to the hyperparameter (standard deviation) 
-contained in a random-walk prior for the parameters of the function 
+prior distribution given to the hyperparameter (standard deviation)
+contained in a random-walk prior for the parameters of the function
 used to generate the time-varying coefficient (i.e. the B-spline
 coefficients when a B-spline function is used to model the time-varying
 coefficient, or the deviations in the log hazard ratio specific to each
-time interval when a piecewise constant function is used to model the 
+time interval when a piecewise constant function is used to model the
 time-varying coefficient). Lower values for the hyperparameter
-yield a less flexible function for the time-varying coefficient. 
-Specifically, \code{prior_smooth} can be a call to \code{exponential} to 
-use an exponential distribution, or \code{normal}, \code{student_t} or 
-\code{cauchy}, which results in a half-normal, half-t, or half-Cauchy 
-prior. See \code{\link{priors}} for details on these functions. To omit a 
-prior ---i.e., to use a flat (improper) uniform prior--- set 
+yield a less flexible function for the time-varying coefficient.
+Specifically, \code{prior_smooth} can be a call to \code{exponential} to
+use an exponential distribution, or \code{normal}, \code{student_t} or
+\code{cauchy}, which results in a half-normal, half-t, or half-Cauchy
+prior. See \code{\link{priors}} for details on these functions. To omit a
+prior ---i.e., to use a flat (improper) uniform prior--- set
 \code{prior_smooth} to \code{NULL}. The number of hyperparameters depends
 on the model specification (i.e. the number of time-varying effects
 specified in the model) but a scalar prior will be recycled as necessary
@@ -269,79 +269,79 @@ turns off the iteration updates.}
 }
 \description{
 \if{html}{\figure{stanlogo.png}{options: width="25px" alt="http://mc-stan.org/about/logo/"}}
-Bayesian inference for survival models (sometimes known as models for 
+Bayesian inference for survival models (sometimes known as models for
 time-to-event data). Currently, the command fits:
-(i) flexible parametric (cubic spline-based) survival 
-models on the hazard scale, with covariates included under assumptions of 
+(i) flexible parametric (cubic spline-based) survival
+models on the hazard scale, with covariates included under assumptions of
 either proportional or non-proportional hazards;
-(ii) standard parametric (exponential, Weibull and Gompertz) survival 
-models on the hazard scale, with covariates included under assumptions of 
+(ii) standard parametric (exponential, Weibull and Gompertz) survival
+models on the hazard scale, with covariates included under assumptions of
 either proportional or non-proportional hazards; and
 (iii) standard parametric (exponential, Weibull) accelerated failure time
-models, with covariates included under assumptions of either time-fixed or 
-time-varying survival time ratios. Left, right, and interval censored 
+models, with covariates included under assumptions of either time-fixed or
+time-varying survival time ratios. Left, right, and interval censored
 survival data are allowed. Delayed entry is allowed. Both fixed and random
 effects can be estimated for covariates (i.e. group-specific parameters
-are allowed). Time-varying covariates and time-varying coefficients are 
-both allowed. For modelling each time-varying coefficient (i.e. time-varying 
-log hazard ratio or time-varying log survival time ratio) the user can 
-choose between either a smooth B-spline function or a piecewise constant  
+are allowed). Time-varying covariates and time-varying coefficients are
+both allowed. For modelling each time-varying coefficient (i.e. time-varying
+log hazard ratio or time-varying log survival time ratio) the user can
+choose between either a smooth B-spline function or a piecewise constant
 function.
 }
 \details{
 \subsection{Model formulations}{
-  Let \eqn{h_i(t)} denote the hazard for individual \eqn{i} at time 
-  \eqn{t}, \eqn{h_0(t)} the baseline hazard at time \eqn{t}, \eqn{X_i} 
-  a vector of covariates for individual \eqn{i}, \eqn{\beta} a vector of 
-  coefficients, \eqn{S_i(t)} the survival probability for individual 
-  \eqn{i} at time \eqn{t}, and \eqn{S_0(t)} the baseline survival 
-  probability at time \eqn{t}. Without time-varying effects in the 
+  Let \eqn{h_i(t)} denote the hazard for individual \eqn{i} at time
+  \eqn{t}, \eqn{h_0(t)} the baseline hazard at time \eqn{t}, \eqn{X_i}
+  a vector of covariates for individual \eqn{i}, \eqn{\beta} a vector of
+  coefficients, \eqn{S_i(t)} the survival probability for individual
+  \eqn{i} at time \eqn{t}, and \eqn{S_0(t)} the baseline survival
+  probability at time \eqn{t}. Without time-varying effects in the
   model formula our linear predictor is \eqn{\eta_i = X_i \beta}, whereas
   with time-varying effects in the model formula our linear predictor
-  is \eqn{\eta_i(t) = X_i(t) \beta(t)}. Then the following definitions of 
+  is \eqn{\eta_i(t) = X_i(t) \beta(t)}. Then the following definitions of
   the hazard function and survival function apply:
-  
+
   \tabular{llll}{
-    \strong{Scale    }                                                \tab 
+    \strong{Scale    }                                                \tab
     \strong{TVE      }                                                \tab
-    \strong{Hazard   }                                                \tab 
+    \strong{Hazard   }                                                \tab
     \strong{Survival }                                                \cr
-    \emph{Hazard}                                                     \tab 
+    \emph{Hazard}                                                     \tab
     \emph{No}                                                         \tab
     \eqn{h_i(t) = h_0(t) \exp(\eta_i)}                                \tab
-    \eqn{S_i(t) = [S_0(t)]^{\exp(\eta_i)}}                            \cr 
-    \emph{Hazard}                                                     \tab 
+    \eqn{S_i(t) = [S_0(t)]^{\exp(\eta_i)}}                            \cr
+    \emph{Hazard}                                                     \tab
     \emph{Yes}                                                        \tab
     \eqn{h_i(t) = h_0(t) \exp(\eta_i(t))}                             \tab
     \eqn{S_i(t) = \exp(- \int_0^t h_i(u) du )}                        \cr
-    \emph{AFT}                                                        \tab 
+    \emph{AFT}                                                        \tab
     \emph{No}                                                         \tab
     \eqn{h_i(t) = \exp(-\eta_i) h_0 (t \exp(-\eta_i))}                \tab
-    \eqn{S_i(t) = S_0 ( t \exp(-\eta_i) )}                            \cr     
-    \emph{AFT}                                                        \tab 
+    \eqn{S_i(t) = S_0 ( t \exp(-\eta_i) )}                            \cr
+    \emph{AFT}                                                        \tab
     \emph{Yes}                                                        \tab
     \eqn{h_i(t) = \exp(-\eta_i(t)) h_0(\int_0^t \exp(-\eta_i(u)) du)} \tab
     \eqn{S_i(t) = S_0 (\int_0^t \exp(-\eta_i(u)) du)}                 \cr
   }
-  
-  where \emph{AFT} stands for an accelerated failure time formulation, 
+
+  where \emph{AFT} stands for an accelerated failure time formulation,
   and \emph{TVE} stands for time-varying effects in the model formula.
-  
+
   For models without time-varying effects, the value of \eqn{S_i(t)} can
-  be calculated analytically (with the one exception being when B-splines 
+  be calculated analytically (with the one exception being when B-splines
   are used to model the log baseline hazard, i.e. \code{basehaz = "bs"}).
-  
-  For models with time-varying effects \eqn{S_i(t)} cannot be calculated 
-  analytically and so Gauss-Kronrod quadrature is used to approximate the 
-  relevant integral. The number of nodes used in the quadrature can be 
+
+  For models with time-varying effects \eqn{S_i(t)} cannot be calculated
+  analytically and so Gauss-Kronrod quadrature is used to approximate the
+  relevant integral. The number of nodes used in the quadrature can be
   controlled via the \code{nodes} argument.
-  
-  For models estimated on the hazard scale, a hazard ratio can be calculated 
-  as \eqn{\exp(\beta)}. For models estimated on the AFT scale, a survival 
-  time ratio can be calculated as \eqn{\exp(\beta)} and an acceleration 
+
+  For models estimated on the hazard scale, a hazard ratio can be calculated
+  as \eqn{\exp(\beta)}. For models estimated on the AFT scale, a survival
+  time ratio can be calculated as \eqn{\exp(\beta)} and an acceleration
   factor can be calculated as \eqn{\exp(-\beta)}.
-  
-  Note that the \emph{stan_surv: Survival (Time-to-Event) Models} vignette 
+
+  Note that the \emph{stan_surv: Survival (Time-to-Event) Models} vignette
   provides more extensive details on the model formulations, including the
   parameterisations for each of the parametric distributions.
 }
@@ -351,73 +351,73 @@ function.
   estimated using a hazard scale formulation) or under the assumption of
   time-fixed acceleration factors (for models estimated using an accelerated
   failure time formulation).
-  
-  To relax this assumption, it is possible to 
-  estimate a time-varying effect (i.e. a time-varying coefficient) for a 
-  given covariate. A time-varying effect is specified in the model 
-  \code{formula} by wrapping the covariate name in the \code{\link{tve}} 
-  function. 
-  
+
+  To relax this assumption, it is possible to
+  estimate a time-varying effect (i.e. a time-varying coefficient) for a
+  given covariate. A time-varying effect is specified in the model
+  \code{formula} by wrapping the covariate name in the \code{\link{tve}}
+  function.
+
   The following applies:
-  
+
   \itemize{
-  \item Estimating a time-varying effect within a hazard scale model 
-  formulation (i.e. when \code{basehaz} is set equal to \code{"ms"}, 
+  \item Estimating a time-varying effect within a hazard scale model
+  formulation (i.e. when \code{basehaz} is set equal to \code{"ms"},
   \code{"bs"}, \code{"exp"}, \code{"weibull"} or \code{"gompertz"}) leads
-  to the estimation of a time-varying hazard ratio for the relevant 
+  to the estimation of a time-varying hazard ratio for the relevant
   covariate (i.e. non-proportional hazards).
-  \item Estimating a time-varying effect within an accelerated failure 
-  time model formulation (i.e. when \code{basehaz} is set equal to 
-  \code{"exp-aft"}, or \code{"weibull-aft"}) leads to the estimation of a 
-  time-varying survival time ratio -- or equivalently, a time-varying 
+  \item Estimating a time-varying effect within an accelerated failure
+  time model formulation (i.e. when \code{basehaz} is set equal to
+  \code{"exp-aft"}, or \code{"weibull-aft"}) leads to the estimation of a
+  time-varying survival time ratio -- or equivalently, a time-varying
   acceleration factor -- for the relevant covariate.
   }
-  
-  For example, if we wish to estimate a time-varying effect for the 
-  covariate \code{sex} then we can specify \code{tve(sex)} in the 
-  \code{formula}, e.g. \code{Surv(time, status) ~ tve(sex) + age + trt}. 
-  The coefficient for \code{sex} will then be modelled using a flexible 
+
+  For example, if we wish to estimate a time-varying effect for the
+  covariate \code{sex} then we can specify \code{tve(sex)} in the
+  \code{formula}, e.g. \code{Surv(time, status) ~ tve(sex) + age + trt}.
+  The coefficient for \code{sex} will then be modelled using a flexible
   smooth function based on a cubic B-spline expansion of time.
-  
-  Additional arguments used to control the modelling of the time-varying 
+
+  Additional arguments used to control the modelling of the time-varying
   effect are explained in the \code{\link{tve}} documentation.
-  Of particular note is the fact that a piecewise constant basis is 
+  Of particular note is the fact that a piecewise constant basis is
   allowed as a special case of the B-splines. For example, specifying
   \code{tve(sex, degree = 0)} in the model formula instead of just
   \code{tve(sex)} would request a piecewise constant time-varying effect.
   The user can also control the degrees of freedom or knot locations for
   the B-spline (or piecewise constant) function.
-  
+
   It is worth noting that an additional way to control the
   flexibility of the function used to model the time-varying effect
-  is through priors. A random walk prior is used for the piecewise 
-  constant or B-spline coefficients, and the hyperparameter (standard 
-  deviation) of the random walk prior can be controlled via the 
-  \code{prior_smooth} argument. This is a more indirect way to 
+  is through priors. A random walk prior is used for the piecewise
+  constant or B-spline coefficients, and the hyperparameter (standard
+  deviation) of the random walk prior can be controlled via the
+  \code{prior_smooth} argument. This is a more indirect way to
   control the "smoothness" of the function used to model the time-varying
   effect, but it nonetheless might be useful in some settings. The
   \emph{stan_surv: Survival (Time-to-Event) Models} vignette provides
   more explicit details on the formulation of the time-varying effects
   and the prior distributions used for their coefficients.
-  
-  It is worth noting that reliable estimation of a time-varying effect  
-  usually requires a relatively large number of events in the data (e.g. 
+
+  It is worth noting that reliable estimation of a time-varying effect
+  usually requires a relatively large number of events in the data (e.g.
   say >1000 depending on the setting).
 }
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 \donttest{
 #----- Proportional hazards
 
 # Simulated data
 library(simsurv)
-covs <- data.frame(id  = 1:200, 
+covs <- data.frame(id  = 1:200,
                    trt = stats::rbinom(200, 1L, 0.5))
-d1 <- simsurv(lambdas = 0.1, 
-              gammas  = 1.5, 
+d1 <- simsurv(lambdas = 0.1,
+              gammas  = 1.5,
               betas   = c(trt = -0.5),
-              x       = covs, 
+              x       = covs,
               maxt    = 5)
 d1 <- merge(d1, covs)
 f1 <- Surv(eventtime, status) ~ trt
@@ -427,16 +427,16 @@ m1c <- stan_surv(f1, d1, basehaz = "weibull",  chains=1,refresh=0,iter=600)
 m1d <- stan_surv(f1, d1, basehaz = "gompertz", chains=1,refresh=0,iter=600)
 get_est <- function(x) { fixef(x)["trt"] }
 do.call(rbind, lapply(list(m1a, m1b, m1c, m1d), get_est))
-bayesplot::bayesplot_grid(plot(m1a), # compare baseline hazards 
-                          plot(m1b), 
-                          plot(m1c), 
-                          plot(m1d), 
+bayesplot::bayesplot_grid(plot(m1a), # compare baseline hazards
+                          plot(m1b),
+                          plot(m1c),
+                          plot(m1d),
                           ylim = c(0, 0.8))
-    
+
 #----- Left and right censored data
 
 # Mice tumor data
-m2 <- stan_surv(Surv(l, u, type = "interval2") ~ grp, 
+m2 <- stan_surv(Surv(l, u, type = "interval2") ~ grp,
                 data = mice, chains = 1, refresh = 0, iter = 600)
 print(m2, 4)
 
@@ -444,16 +444,16 @@ print(m2, 4)
 
 # Simulated data
 library(simsurv)
-covs <- data.frame(id  = 1:250, 
+covs <- data.frame(id  = 1:250,
                    trt = stats::rbinom(250, 1L, 0.5))
-d3 <- simsurv(lambdas = 0.1, 
-              gammas  = 1.5, 
+d3 <- simsurv(lambdas = 0.1,
+              gammas  = 1.5,
               betas   = c(trt = -0.5),
               tve     = c(trt = 0.2),
-              x       = covs, 
+              x       = covs,
               maxt    = 5)
 d3 <- merge(d3, covs)
-m3 <- stan_surv(Surv(eventtime, status) ~ tve(trt), 
+m3 <- stan_surv(Surv(eventtime, status) ~ tve(trt),
                 data = d3, chains = 1, refresh = 0, iter = 600)
 print(m3, 4)
 plot(m3, "tve") # time-varying hazard ratio
@@ -462,18 +462,18 @@ plot(m3, "tve") # time-varying hazard ratio
 
 # Simulated data
 library(simsurv)
-covs <- data.frame(id  = 1:250, 
+covs <- data.frame(id  = 1:250,
                    trt = stats::rbinom(250, 1L, 0.5))
-d4 <- simsurv(lambdas = 0.1, 
-              gammas  = 1.5, 
+d4 <- simsurv(lambdas = 0.1,
+              gammas  = 1.5,
               betas   = c(trt = -0.5),
               tve     = c(trt = 0.4),
               tvefun  = function(t) { (t > 2.5) },
-              x       = covs, 
+              x       = covs,
               maxt    = 5)
 d4 <- merge(d4, covs)
-m4 <- stan_surv(Surv(eventtime, status) ~ 
-                  tve(trt, degree = 0, knots = c(2.5)), 
+m4 <- stan_surv(Surv(eventtime, status) ~
+                  tve(trt, degree = 0, knots = c(2.5)),
                 data = d4, chains = 1, refresh = 0, iter = 600)
 print(m4, 4)
 plot(m4, "tve") # time-varying hazard ratio
@@ -483,16 +483,16 @@ plot(m4, "tve") # time-varying hazard ratio
 # Breast cancer data
 sel <- sample(1:nrow(bcancer), 100)
 
-m_ph  <- stan_surv(Surv(recyrs, status) ~ group, 
-                   data    = bcancer[sel,], 
-                   basehaz = "weibull", 
+m_ph  <- stan_surv(Surv(recyrs, status) ~ group,
+                   data    = bcancer[sel,],
+                   basehaz = "weibull",
                    chains  = 1,
                    refresh = 0,
                    iter    = 600,
                    seed    = 123)
-m_aft <- stan_surv(Surv(recyrs, status) ~ group, 
-                   data    = bcancer[sel,], 
-                   basehaz = "weibull-aft", 
+m_aft <- stan_surv(Surv(recyrs, status) ~ group,
+                   data    = bcancer[sel,],
+                   basehaz = "weibull-aft",
                    chains  = 1,
                    refresh = 0,
                    iter    = 600,
@@ -502,15 +502,15 @@ exp(fixef(m_ph)) [c('groupMedium', 'groupPoor')] # hazard ratios
 exp(fixef(m_aft))[c('groupMedium', 'groupPoor')] # survival time ratios
 
 # same model (...slight differences due to sampling)
-summary(m_ph,  par = "log-posterior")[, 'mean'] 
+summary(m_ph,  par = "log-posterior")[, 'mean']
 summary(m_aft, par = "log-posterior")[, 'mean']
 
 #----- Frailty model, i.e. site-specific intercepts
 
 m_frail <- stan_surv(
-  formula = Surv(eventtime, status) ~ trt + (1 | site), 
-  data    = frail[1:40,], 
-  basehaz = "exp", 
+  formula = Surv(eventtime, status) ~ trt + (1 | site),
+  data    = frail[1:40,],
+  basehaz = "exp",
   chains  = 1,
   refresh = 0,
   iter    = 600,

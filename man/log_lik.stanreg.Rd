@@ -53,7 +53,7 @@ model objects) an \eqn{S} by \eqn{Npat} matrix where \eqn{Npat} is the number
 of individuals.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 \donttest{
  roaches$roach100 <- roaches$roach1 / 100
  fit <- stan_glm(

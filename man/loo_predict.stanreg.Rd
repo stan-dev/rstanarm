@@ -70,7 +70,7 @@ These functions are wrappers around the \code{\link[loo]{E_loo}} function
 (\pkg{loo} package) that provide compatibility for \pkg{rstanarm} models.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 \dontrun{
 if (!exists("example_model")) example(example_model)
 

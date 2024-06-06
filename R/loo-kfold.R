@@ -1,5 +1,5 @@
 #' K-fold cross-validation
-#' 
+#'
 #' The \code{kfold} method performs exact \eqn{K}-fold cross-validation. First
 #' the data are randomly partitioned into \eqn{K} subsets of equal size (or as close
 #' to equal as possible), or the user can specify the \code{folds} argument
@@ -13,7 +13,7 @@
 #' @importFrom loo kfold is.kfold
 #' @export
 #' @template reference-loo
-#' 
+#'
 #' @param x A fitted model object returned by one of the rstanarm modeling
 #'   functions. See \link{stanreg-objects}.
 #' @param K For \code{kfold}, the number of subsets (folds) into which the data
@@ -35,7 +35,7 @@
 #'   functions available in the \pkg{loo} package that create integer vectors to
 #'   use for this purpose (see the \strong{Examples} section below and also the
 #'   \link[loo]{kfold-helpers} page).
-#'   
+#'
 #' @param cores The number of cores to use for parallelization. Instead fitting
 #'   separate Markov chains for the same model on different cores, by default
 #'   \code{kfold} will distribute the \code{K} models to be fit across the cores
@@ -49,16 +49,16 @@
 #'   for the Markov chains \emph{and} also manually specifying \code{cores=1}
 #'   when calling the \code{kfold} function. See the end of the
 #'   \strong{Examples} section for a demonstration.
-#'   
+#'
 #' @param ... Currently ignored.
 #'
 #' @return An object with classes 'kfold' and 'loo' that has a similar structure
 #'   as the objects returned by the \code{\link{loo}} and \code{\link{waic}}
 #'   methods and is compatible with the \code{\link{loo_compare}} function for
 #'   comparing models.
-#'   
+#'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' if (.Platform$OS.type != "windows") {
 #' \donttest{
 #' fit1 <- stan_glm(mpg ~ wt, data = mtcars, refresh = 0)
 #' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, refresh = 0)
@@ -68,11 +68,11 @@
 #' # (if possible also specify the 'cores' argument to use multiple cores)
 #' (kfold1 <- kfold(fit1, K = 10))
 #' kfold2 <- kfold(fit2, K = 10)
-#' kfold3 <- kfold(fit3, K = 10) 
+#' kfold3 <- kfold(fit3, K = 10)
 #' loo_compare(kfold1, kfold2, kfold3)
 #'
 #' # stratifying by a grouping variable
-#' # (note: might get some divergences warnings with this model but 
+#' # (note: might get some divergences warnings with this model but
 #' # this is just intended as a quick example of how to code this)
 #' fit4 <- stan_lmer(mpg ~ disp + (1|cyl), data = mtcars, refresh = 0)
 #' table(mtcars$cyl)
@@ -82,18 +82,18 @@
 #' print(kfold4)
 #' }
 #' }
-#' # Example code demonstrating the different ways to specify the number 
+#' # Example code demonstrating the different ways to specify the number
 #' # of cores and how the cores are used
-#' # 
+#' #
 #' # options(mc.cores = NULL)
-#' # 
+#' #
 #' # # spread the K models over N_CORES cores (method 1)
 #' # kfold(fit, K, cores = N_CORES)
-#' # 
+#' #
 #' # # spread the K models over N_CORES cores (method 2)
 #' # options(mc.cores = N_CORES)
 #' # kfold(fit, K)
-#' #  
+#' #
 #' # # fit K models sequentially using N_CORES cores for the Markov chains each time
 #' # options(mc.cores = N_CORES)
 #' # kfold(fit, K, cores = 1)
@@ -105,25 +105,25 @@ kfold.stanreg <-
            folds = NULL,
            save_fits = FALSE,
            cores = getOption("mc.cores", 1)) {
-    
+
     if (is.stanmvreg(x)) {
       STOP_if_stanmvreg("kfold")
     }
     if (model_has_weights(x)) {
       stop("kfold is not currently available for models fit using weights.")
     }
-    
+
     stopifnot(length(cores) == 1, cores == as.integer(cores), cores >= 1)
-    stan_cores <- 1 
+    stan_cores <- 1
     kfold_cores <- cores
     if (kfold_cores == 1) {
       stan_cores <- getOption("mc.cores", 1)
     }
-    
-    
+
+
     d <- kfold_and_reloo_data(x) # defined in loo.R
     N <- nrow(d)
-    
+
     if (is.null(folds)) {
       stopifnot(K > 1, K <= nobs(x))
       K <- as.integer(K)
@@ -138,7 +138,7 @@ kfold.stanreg <-
       )
       folds <- as.integer(folds)
     }
-    
+
     calls <- list()
     omitteds <- list()
     for (k in 1:K) {
@@ -171,12 +171,12 @@ kfold.stanreg <-
       fit_k_call$subset <- eval(fit_k_call$subset)
       fit_k_call$data <- eval(fit_k_call$data)
       fit_k_call$offset <- eval(fit_k_call$offset)
-      
+
       omitteds[[k]] <- omitted_k
       calls[[k]] <- fit_k_call
     }
-    
-    
+
+
     fits <- array(list(), c(K, 2), list(NULL, c("fit", "omitted")))
     if (kfold_cores == 1) {
       lppds <- list()
@@ -185,7 +185,7 @@ kfold.stanreg <-
         capture.output(
           fit_k <- eval(calls[[k]])
         )
-        
+
         omitted_k <- omitteds[[k]]
         lppds[[k]] <-
           log_lik.stanreg(
@@ -206,7 +206,7 @@ kfold.stanreg <-
         out <- parallel::mclapply(
           mc.cores = kfold_cores,
           mc.preschedule = FALSE,
-          X = 1:K, 
+          X = 1:K,
           FUN = function(k) {
             fit_k <- eval(calls[[k]])
             omitted_k <- omitteds[[k]]
@@ -245,7 +245,7 @@ kfold.stanreg <-
           }
         )
       }
-      
+
       lppds <- lapply(out, "[[", "lppds")
       if (save_fits) {
         for (k in 1:K) {
@@ -253,35 +253,35 @@ kfold.stanreg <-
         }
       }
     }
-    
+
     elpds_unord <- unlist(lapply(lppds, function(x) {
       apply(x, 2, log_mean_exp)
     }))
-    
+
     # make sure elpds are put back in the right order
     obs_order <- unlist(lapply(1:K, function(k) which(folds == k)))
     elpds <- rep(NA, length(elpds_unord))
     elpds[obs_order] <- elpds_unord
-    
+
     # for computing effective number of parameters
     ll_full <- log_lik(x)
     lpds <- apply(ll_full, 2, log_mean_exp)
     ps <- lpds - elpds
-    
+
     pointwise <- cbind(elpd_kfold = elpds, p_kfold = ps, kfoldic = -2 * elpds)
     est <- colSums(pointwise)
     se_est <- sqrt(N * apply(pointwise, 2, var))
-    
+
     out <- list(
       estimates = cbind(Estimate = est, SE = se_est),
       pointwise = pointwise,
       elpd_kfold = est[["elpd_kfold"]],
-      se_elpd_kfold = se_est[["elpd_kfold"]], 
+      se_elpd_kfold = se_est[["elpd_kfold"]],
       p_kfold = est[["p_kfold"]],
       se_p_kfold = se_est[["p_kfold"]]
     )
     rownames(out$estimates) <- colnames(pointwise)
-    
+
     if (save_fits) {
       out$fits <- fits
     }
@@ -295,4 +295,3 @@ kfold.stanreg <-
               yhash = hash_y(x),
               formula = loo_model_formula(x))
   }
-

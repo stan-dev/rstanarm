@@ -4,7 +4,7 @@
 \alias{example_model}
 \title{Example model}
 \format{
-Calling \code{example("example_model")} will run the model in the 
+Calling \code{example("example_model")} will run the model in the
   Examples section, below, and the resulting stanreg object will then be
   available in the global environment. The \code{chains} and \code{iter}
   arguments are specified to make this example be small in size. In practice,
@@ -18,8 +18,8 @@ Calling \code{example("example_model")} will run the model in the
 A model for use in \pkg{rstanarm} examples.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
-example_model <- 
+if (.Platform$OS.type != "windows") {
+example_model <-
   stan_glmer(cbind(incidence, size - incidence) ~ size + period + (1|herd),
              data = lme4::cbpp, family = binomial, QR = TRUE,
              # this next line is only to keep the example small in size!

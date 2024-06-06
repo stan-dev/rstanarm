@@ -16,21 +16,21 @@ An object of class \code{\link[stats]{family}} very similar to
   that of \code{\link[stats:family]{poisson}} but with a different family name.
 }
 \description{
-Specifies the information required to fit a Negative Binomial GLM in a 
-similar way to \code{\link[MASS]{negative.binomial}}. However, here the 
+Specifies the information required to fit a Negative Binomial GLM in a
+similar way to \code{\link[MASS]{negative.binomial}}. However, here the
 overdispersion parameter \code{theta} is not specified by the user and always
 estimated (really the \emph{reciprocal} of the dispersion parameter is
 estimated). A call to this function can be passed to the \code{family}
 argument of \code{\link{stan_glm}} or \code{\link{stan_glmer}} to estimate a
-Negative Binomial model. Alternatively, the \code{\link{stan_glm.nb}} and 
-\code{\link{stan_glmer.nb}} wrapper functions may be used, which call 
+Negative Binomial model. Alternatively, the \code{\link{stan_glm.nb}} and
+\code{\link{stan_glmer.nb}} wrapper functions may be used, which call
 \code{neg_binomial_2} internally.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386")
+if (.Platform$OS.type != "windows")
 stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, seed = 123,
-         family = neg_binomial_2, QR = TRUE, algorithm = "optimizing") 
-                
+         family = neg_binomial_2, QR = TRUE, algorithm = "optimizing")
+
 # or, equivalently, call stan_glm.nb() without specifying the family
 
 }

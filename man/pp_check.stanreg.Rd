@@ -61,7 +61,7 @@ For binomial data, plots of \eqn{y} and \eqn{y^{rep}}{yrep} show the
   plots.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 fit <- stan_glmer(
   mpg ~ wt + am + (1|cyl),
   data = mtcars,

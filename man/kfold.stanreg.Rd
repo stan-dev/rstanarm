@@ -73,7 +73,7 @@ equivalent to exact leave-one-out cross-validation (to which
 \code{\link[=loo.stanreg]{loo}} is an efficient approximation).
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 \donttest{
 fit1 <- stan_glm(mpg ~ wt, data = mtcars, refresh = 0)
 fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, refresh = 0)
@@ -83,11 +83,11 @@ fit3 <- stan_glm(mpg ~ disp * as.factor(cyl), data = mtcars, refresh = 0)
 # (if possible also specify the 'cores' argument to use multiple cores)
 (kfold1 <- kfold(fit1, K = 10))
 kfold2 <- kfold(fit2, K = 10)
-kfold3 <- kfold(fit3, K = 10) 
+kfold3 <- kfold(fit3, K = 10)
 loo_compare(kfold1, kfold2, kfold3)
 
 # stratifying by a grouping variable
-# (note: might get some divergences warnings with this model but 
+# (note: might get some divergences warnings with this model but
 # this is just intended as a quick example of how to code this)
 fit4 <- stan_lmer(mpg ~ disp + (1|cyl), data = mtcars, refresh = 0)
 table(mtcars$cyl)
@@ -97,18 +97,18 @@ kfold4 <- kfold(fit4, folds = folds_cyl, cores = 2)
 print(kfold4)
 }
 }
-# Example code demonstrating the different ways to specify the number 
+# Example code demonstrating the different ways to specify the number
 # of cores and how the cores are used
-# 
+#
 # options(mc.cores = NULL)
-# 
+#
 # # spread the K models over N_CORES cores (method 1)
 # kfold(fit, K, cores = N_CORES)
-# 
+#
 # # spread the K models over N_CORES cores (method 2)
 # options(mc.cores = N_CORES)
 # kfold(fit, K)
-#  
+#
 # # fit K models sequentially using N_CORES cores for the Markov chains each time
 # options(mc.cores = N_CORES)
 # kfold(fit, K, cores = 1)

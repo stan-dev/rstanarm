@@ -31,7 +31,7 @@ and diagnostics use the \code{\link[=summary.stanreg]{summary}} method.
 }
 \details{
 \subsection{Point estimates}{
-Regardless of the estimation algorithm, point estimates are medians computed 
+Regardless of the estimation algorithm, point estimates are medians computed
 from simulations. For models fit using MCMC (\code{"sampling"}) the posterior
 sample is used. For optimization (\code{"optimizing"}), the simulations are
 generated from the asymptotic Gaussian sampling distribution of the
@@ -50,8 +50,8 @@ returned by \code{\link[=se.stanreg]{se}}.
 }
 \subsection{Additional output}{
 \itemize{
-\item For GLMs with group-specific terms (see \code{\link{stan_glmer}}) the printed 
-output also shows point estimates of the standard deviations of the group 
+\item For GLMs with group-specific terms (see \code{\link{stan_glmer}}) the printed
+output also shows point estimates of the standard deviations of the group
 effects (and correlations if there are both intercept and slopes that vary by
 group).
 
@@ -59,7 +59,7 @@ group).
 ANOVA-like table is also displayed.
 
 \item For joint longitudinal and time-to-event (see \code{\link{stan_jm}}) models
-the estimates are presented separately for each of the distinct submodels.  
+the estimates are presented separately for each of the distinct submodels.
 }
 }
 }

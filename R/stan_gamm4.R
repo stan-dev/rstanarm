@@ -102,7 +102,7 @@
 #'   \code{stan_gamm4}. \url{https://mc-stan.org/rstanarm/articles/}
 #'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' if (.Platform$OS.type != "windows") {
 #' # from example(gamm4, package = "gamm4"), prefixing gamm4() call with stan_
 #' \donttest{
 #' dat <- mgcv::gamSim(1, n = 400, scale = 2) ## simulate 4 term additive truth

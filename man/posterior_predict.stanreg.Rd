@@ -74,8 +74,8 @@ indicating the submodel for which you wish to obtain predictions.}
 }
 \value{
 A \code{draws} by \code{nrow(newdata)} matrix of simulations from the
-  posterior predictive distribution. Each row of the matrix is a vector of 
-  predictions generated using a single draw of the model parameters from the 
+  posterior predictive distribution. Each row of the matrix is a vector of
+  predictions generated using a single draw of the model parameters from the
   posterior distribution.
 }
 \description{
@@ -104,15 +104,15 @@ For binomial models with a number of trials greater than one (i.e., not
   the number of trials. See the Examples section below and the
   \emph{How to Use the rstanarm Package} for examples.
 
-For models estimated with \code{\link{stan_clogit}}, the number of 
+For models estimated with \code{\link{stan_clogit}}, the number of
   successes per stratum is ostensibly fixed by the research design. Thus, when
   doing posterior prediction with new data, the \code{data.frame} passed to
   the \code{newdata} argument must contain an outcome variable and a stratifying
-  factor, both with the same name as in the original \code{data.frame}. Then, the 
+  factor, both with the same name as in the original \code{data.frame}. Then, the
   posterior predictions will condition on this outcome in the new data.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 if (!exists("example_model")) example(example_model)
 yrep <- posterior_predict(example_model)
 table(yrep)
@@ -124,10 +124,10 @@ outcome <- gl(3,1,9)
 treatment <- gl(3,3)
 dat <- data.frame(counts, treatment, outcome)
 fit3 <- stan_glm(
-  counts ~ outcome + treatment, 
+  counts ~ outcome + treatment,
   data = dat,
   family = poisson(link="log"),
-  prior = normal(0, 1, autoscale = FALSE), 
+  prior = normal(0, 1, autoscale = FALSE),
   prior_intercept = normal(0, 5, autoscale = FALSE),
   refresh = 0
 )

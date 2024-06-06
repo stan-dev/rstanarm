@@ -89,7 +89,7 @@ more models become available.
 }
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 if (!exists("example_model")) example(example_model)
 posterior_interval(example_model)
 posterior_interval(example_model, regex_pars = "herd")

@@ -191,7 +191,7 @@ The \code{stan_lm} function is similar in syntax to the
   addition to the output printed for \code{stan_lm} models.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 \donttest{
 op <- options(contrasts = c("contr.helmert", "contr.poly"))
 fit_aov <- stan_aov(yield ~ block + N*P*K, data = npk,

@@ -1,26 +1,26 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
-# 
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 3
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #' Bayesian generalized linear models with group-specific terms via Stan
-#' 
+#'
 #' \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
-#' Bayesian inference for GLMs with group-specific coefficients that have 
+#' Bayesian inference for GLMs with group-specific coefficients that have
 #' unknown covariance matrices with flexible priors.
-#' 
+#'
 #' @export
 #' @templateVar armRef (Ch. 11-15)
 #' @templateVar fun stan_glmer, stan_lmer, stan_glmer.nb
@@ -39,62 +39,62 @@
 #' @template args-sparse
 #' @template reference-gelman-hill
 #' @template reference-muth
-#' 
+#'
 #' @param formula,data Same as for \code{\link[lme4]{glmer}}. \emph{We
-#'   strongly advise against omitting the \code{data} argument}. Unless 
-#'   \code{data} is specified (and is a data frame) many post-estimation 
-#'   functions (including \code{update}, \code{loo}, \code{kfold}) are not 
+#'   strongly advise against omitting the \code{data} argument}. Unless
+#'   \code{data} is specified (and is a data frame) many post-estimation
+#'   functions (including \code{update}, \code{loo}, \code{kfold}) are not
 #'   guaranteed to work properly.
 #' @param family Same as for \code{\link[lme4]{glmer}} except it is also
 #'   possible to use \code{family=mgcv::betar} to estimate a Beta regression
 #'   with \code{stan_glmer}.
 #' @param subset,weights,offset Same as \code{\link[stats]{glm}}.
-#' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely 
+#' @param na.action,contrasts Same as \code{\link[stats]{glm}}, but rarely
 #'   specified.
-#' @param ... For \code{stan_glmer}, further arguments passed to 
-#'   \code{\link[rstan:stanmodel-method-sampling]{sampling}} (e.g. \code{iter}, \code{chains}, 
-#'   \code{cores}, etc.) or to \code{\link[rstan:stanmodel-method-vb]{vb}} (if \code{algorithm} is 
-#'   \code{"meanfield"} or \code{"fullrank"}). For \code{stan_lmer} and 
+#' @param ... For \code{stan_glmer}, further arguments passed to
+#'   \code{\link[rstan:stanmodel-method-sampling]{sampling}} (e.g. \code{iter}, \code{chains},
+#'   \code{cores}, etc.) or to \code{\link[rstan:stanmodel-method-vb]{vb}} (if \code{algorithm} is
+#'   \code{"meanfield"} or \code{"fullrank"}). For \code{stan_lmer} and
 #'   \code{stan_glmer.nb}, \code{...} should also contain all relevant arguments
 #'   to pass to \code{stan_glmer} (except \code{family}).
 #'
-#' @details The \code{stan_glmer} function is similar in syntax to 
-#'   \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum 
-#'   likelihood estimation of generalized linear models, Bayesian estimation is 
-#'   performed via MCMC. The Bayesian model adds priors on the 
+#' @details The \code{stan_glmer} function is similar in syntax to
+#'   \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum
+#'   likelihood estimation of generalized linear models, Bayesian estimation is
+#'   performed via MCMC. The Bayesian model adds priors on the
 #'   regression coefficients (in the same way as \code{\link{stan_glm}}) and
 #'   priors on the terms of a decomposition of the covariance matrices of the
 #'   group-specific parameters. See \code{\link{priors}} for more information
 #'   about the priors.
-#'   
-#'   The \code{stan_lmer} function is equivalent to \code{stan_glmer} with 
-#'   \code{family = gaussian(link = "identity")}. 
-#'   
-#'   The \code{stan_glmer.nb} function, which takes the extra argument 
-#'   \code{link}, is a wrapper for \code{stan_glmer} with \code{family = 
+#'
+#'   The \code{stan_lmer} function is equivalent to \code{stan_glmer} with
+#'   \code{family = gaussian(link = "identity")}.
+#'
+#'   The \code{stan_glmer.nb} function, which takes the extra argument
+#'   \code{link}, is a wrapper for \code{stan_glmer} with \code{family =
 #'   \link{neg_binomial_2}(link)}.
-#'   
-#' @return A list with classes \code{stanreg}, \code{glm}, \code{lm}, 
+#'
+#' @return A list with classes \code{stanreg}, \code{glm}, \code{lm},
 #'   and \code{lmerMod}. The conventions for the parameter names are the
 #'   same as in the lme4 package with the addition that the standard
 #'   deviation of the errors is called \code{sigma} and the variance-covariance
 #'   matrix of the group-specific deviations from the common parameters is
 #'   called \code{Sigma}, even if this variance-covariance matrix only has
 #'   one row and one column (in which case it is just the group-level variance).
-#' 
-#' 
-#' @seealso The vignette for \code{stan_glmer} and the \emph{Hierarchical 
+#'
+#'
+#' @seealso The vignette for \code{stan_glmer} and the \emph{Hierarchical
 #'   Partial Pooling} vignette. \url{https://mc-stan.org/rstanarm/articles/}
-#'    
+#'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' if (.Platform$OS.type != "windows") {
 #' # see help(example_model) for details on the model below
-#' if (!exists("example_model")) example(example_model) 
+#' if (!exists("example_model")) example(example_model)
 #' print(example_model, digits = 1)
 #' }
 #' @importFrom lme4 glFormula
 #' @importFrom Matrix Matrix t
-stan_glmer <- 
+stan_glmer <-
   function(formula,
            data = NULL,
            family = gaussian,
@@ -113,14 +113,14 @@ stan_glmer <-
            adapt_delta = NULL,
            QR = FALSE,
            sparse = FALSE) {
-  
+
   call <- match.call(expand.dots = TRUE)
   mc <- match.call(expand.dots = FALSE)
   data <- validate_data(data) #, if_missing = environment(formula))
   family <- validate_family(family)
   mc[[1]] <- quote(lme4::glFormula)
   mc$control <- make_glmerControl(
-    ignore_lhs = prior_PD,  
+    ignore_lhs = prior_PD,
     ignore_x_scale = prior$autoscale %ORifNULL% FALSE
   )
   mc$data <- data
@@ -130,14 +130,14 @@ stan_glmer <-
   glmod <- eval(mc, parent.frame())
   X <- glmod$X
   if ("b" %in% colnames(X)) {
-    stop("stan_glmer does not allow the name 'b' for predictor variables.", 
+    stop("stan_glmer does not allow the name 'b' for predictor variables.",
          call. = FALSE)
   }
-  
+
   if (prior_PD && !has_outcome_variable(formula)) {
     y <- NULL
   } else {
-    y <- glmod$fr[, as.character(glmod$formula[2L])]  
+    y <- glmod$fr[, as.character(glmod$formula[2L])]
     if (is.matrix(y) && ncol(y) == 1L) {
       y <- as.vector(y)
     }
@@ -150,7 +150,7 @@ stan_glmer <-
     y <- cbind(y1, y0 = weights - y1)
     weights <- double(0)
   }
-  
+
   if (is.null(prior_covariance))
     stop("'prior_covariance' can't be NULL.", call. = FALSE)
   group <- glmod$reTrms
@@ -159,12 +159,12 @@ stan_glmer <-
   stanfit <- stan_glm.fit(x = X, y = y, weights = weights,
                           offset = offset, family = family,
                           prior = prior, prior_intercept = prior_intercept,
-                          prior_aux = prior_aux, prior_PD = prior_PD, 
+                          prior_aux = prior_aux, prior_PD = prior_PD,
                           algorithm = algorithm, adapt_delta = adapt_delta,
-                          group = group, QR = QR, sparse = sparse, 
+                          group = group, QR = QR, sparse = sparse,
                           mean_PPD = !prior_PD,
                           ...)
-  
+
   add_classes <- "lmerMod" # additional classes to eventually add to stanreg object
   if (family$family == "Beta regression") {
     add_classes <- c(add_classes, "betareg")
@@ -172,24 +172,24 @@ stan_glmer <-
   }
   sel <- apply(X, 2L, function(x) !all(x == 1) && length(unique(x)) < 2)
   X <- X[ , !sel, drop = FALSE]
-  Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms, 
+  Z <- pad_reTrms(Ztlist = group$Ztlist, cnms = group$cnms,
                   flist = group$flist)$Z
   colnames(Z) <- b_names(names(stanfit), value = TRUE)
-  
-  fit <- nlist(stanfit, family, formula, offset, weights, 
+
+  fit <- nlist(stanfit, family, formula, offset, weights,
                x = cbind(X, Z), y = y, data, call, terms = NULL, model = NULL,
-               na.action = attr(glmod$fr, "na.action"), contrasts, algorithm, glmod, 
+               na.action = attr(glmod$fr, "na.action"), contrasts, algorithm, glmod,
                stan_function = "stan_glmer")
   out <- stanreg(fit)
   class(out) <- c(class(out), add_classes)
-  
+
   return(out)
 }
 
 
 #' @rdname stan_glmer
 #' @export
-stan_lmer <- 
+stan_lmer <-
   function(formula,
            data = NULL,
            subset,
@@ -208,7 +208,7 @@ stan_lmer <-
            QR = FALSE) {
   if ("family" %in% names(list(...))) {
     stop(
-      "'family' should not be specified. ", 
+      "'family' should not be specified. ",
       "To specify a family use stan_glmer instead of stan_lmer."
     )
   }
@@ -227,10 +227,10 @@ stan_lmer <-
 
 #' @rdname stan_glmer
 #' @export
-#' @param link For \code{stan_glmer.nb} only, the link function to use. See 
+#' @param link For \code{stan_glmer.nb} only, the link function to use. See
 #'   \code{\link{neg_binomial_2}}.
-#' 
-stan_glmer.nb <- 
+#'
+stan_glmer.nb <-
   function(formula,
            data = NULL,
            subset,
@@ -248,7 +248,7 @@ stan_glmer.nb <-
            algorithm = c("sampling", "meanfield", "fullrank"),
            adapt_delta = NULL,
            QR = FALSE) {
-    
+
   if ("family" %in% names(list(...)))
     stop("'family' should not be specified.")
   mc <- call <- match.call(expand.dots = TRUE)

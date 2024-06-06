@@ -18,9 +18,9 @@
 \item{x}{A fitted model object returned by one of the 
 \pkg{rstanarm} modeling functions. See \code{\link{stanreg-objects}}.}
 
-\item{pars}{An optional character vector of parameter names. All parameters 
-are included by default, but for models with more than just a few 
-parameters it may be far too many to visualize on a small computer screen 
+\item{pars}{An optional character vector of parameter names. All parameters
+are included by default, but for models with more than just a few
+parameters it may be far too many to visualize on a small computer screen
 and also may require substantial computing time.}
 
 \item{regex_pars}{An optional character vector of \link[=grep]{regular 
@@ -44,11 +44,11 @@ realizations that are above the median \code{accept_stat__}. To change this
 behavior see the documentation of the \code{condition} argument at
 \code{\link[bayesplot]{mcmc_pairs}}.}
 
-\item{...}{Optional arguments passed to 
-\code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}. 
-The \code{np}, \code{lp}, and \code{max_treedepth} arguments to 
-\code{mcmc_pairs} are handled automatically by \pkg{rstanarm} and do not 
-need to be specified by the user in \code{...}. The arguments that can be 
+\item{...}{Optional arguments passed to
+\code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}.
+The \code{np}, \code{lp}, and \code{max_treedepth} arguments to
+\code{mcmc_pairs} are handled automatically by \pkg{rstanarm} and do not
+need to be specified by the user in \code{...}. The arguments that can be
 specified in \code{...} include \code{transformations}, \code{diag_fun},
 \code{off_diag_fun}, \code{diag_args}, \code{off_diag_args},
 and \code{np_style}. These arguments are
@@ -62,7 +62,7 @@ Interface to \pkg{bayesplot}'s
 include or the plot will be both hard to read and slow to render.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 \donttest{
 if (!exists("example_model")) example(example_model)
 
@@ -87,8 +87,8 @@ pairs(fit, pars = c("wt", "sigma", "log-posterior"))
 
 # requires hexbin package
 # pairs(
-# fit, 
-#   pars = c("wt", "sigma", "log-posterior"), 
+# fit,
+#   pars = c("wt", "sigma", "log-posterior"),
 #   transformations = list(sigma = "log"), # show log(sigma) instead of sigma
 #  off_diag_fun = "hex" # use hexagonal heatmaps instead of scatterplots
 # )

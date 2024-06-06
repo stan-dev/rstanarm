@@ -22,8 +22,8 @@
 #'   Information Criterion (WAIC) using the \pkg{\link[=loo-package]{loo}}
 #'   package. (For \eqn{K}-fold cross-validation see \code{\link{kfold.stanreg}}.)
 #'   Functions for  model comparison, and model weighting/averaging are also
-#'   provided. 
-#'   
+#'   provided.
+#'
 #'   \strong{Note}: these functions are not guaranteed to work
 #'   properly unless the \code{data} argument was specified when the model was
 #'   fit. Also, as of \pkg{loo} version \code{2.0.0} the default number of cores
@@ -121,7 +121,7 @@
 #' }
 #'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' if (.Platform$OS.type != "windows") {
 #' \donttest{
 #' fit1 <- stan_glm(mpg ~ wt, data = mtcars, refresh = 0)
 #' fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, refresh = 0)
@@ -136,21 +136,21 @@
 #' # as individual arguments or as a list of loo objects
 #' loo_compare(loo1, loo2)
 #' loo_compare(list(loo1, loo2))
-#' 
+#'
 #' # if the fitted model objects contain a loo object in the component "loo"
 #' # then the model objects can be passed directly or as a stanreg_list
 #' fit1$loo <- loo1
 #' fit2$loo <- loo2
 #' loo_compare(fit1, fit2)
-#' 
+#'
 #' # if the fitted model objects contain a loo object _and_ a waic or kfold
 #' # object, then the criterion argument determines which of them the comparison
-#' # is based on 
+#' # is based on
 #' fit1$waic <- waic(fit1)
 #' fit2$waic <- waic(fit2)
 #' loo_compare(fit1, fit2, criterion = "waic")
-#' 
-#' # the models can also be combined into a stanreg_list object, and more 
+#'
+#' # the models can also be combined into a stanreg_list object, and more
 #' # informative model names can be provided to use when printing
 #' model_list <- stanreg_list(fit1, fit2, model_names = c("Fewer predictors", "More predictors"))
 #' loo_compare(model_list)
@@ -195,7 +195,7 @@ loo.stanreg <-
       k_threshold <- 0.7
     }
 
-    
+
     if (used.sampling(x)) # chain_id to pass to loo::relative_eff
       chain_id <- chain_id_for_loo(x)
     else { # ir_idx to pass to ...
@@ -438,20 +438,20 @@ loo_compare.stanreg_list <-
   }
   loos <- validate_loos(loos)
   comp <- loo::loo_compare(x = loos)
-  
+
   if (!detail) {
     formulas <- NULL
   } else {
     formulas <- lapply(loos, attr, "formula")
     names(formulas) <- sapply(loos, attr, "model_name")
   }
-  
+
   # Note : rows of comp are ordered by ELPD, but formulas are in same order as
   # as initial order of models when passed in by user
   structure(
     comp,
     class = c("compare_rstanarm_loos", class(comp)),
-    formulas = formulas, 
+    formulas = formulas,
     criterion = criterion
   )
 }
@@ -484,11 +484,11 @@ print.compare_rstanarm_loos <- function(x, ...) {
       cat("\n\nModel comparison based on", paste0(criterion, ":"), "\n")
     }
   }
-  
+
   xcopy <- x
   class(xcopy) <- "compare.loo"
   print(xcopy, ...)
-  
+
   return(invisible(x))
 }
 
@@ -514,7 +514,7 @@ loo_model_weights.stanreg_list <-
            ...,
            cores = getOption("mc.cores", 1),
            k_threshold = NULL) {
-    
+
     loos <- lapply(x, function(object) object[["loo"]])
     no_loo <- sapply(loos, is.null)
     if (!any(no_loo)) {
@@ -527,7 +527,7 @@ loo_model_weights.stanreg_list <-
           loo.stanreg(x[[j]], cores = cores, k_threshold = k_threshold)
       }
     } else {
-      stop("Found some models with 'loo' components and some without, ", 
+      stop("Found some models with 'loo' components and some without, ",
            "but either all or none should have 'loo' components.")
     }
     wts <- loo::loo_model_weights.default(x = loo_list, ...)
@@ -596,7 +596,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
   if (is.stanmvreg(x))
     STOP_if_stanmvreg("reloo")
   stopifnot(!is.null(x$data), is.loo(loo_x))
-  
+
   J <- length(obs)
   d <- kfold_and_reloo_data(x)
   lls <- vector("list", J)
@@ -604,17 +604,17 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     J, " problematic observation(s) found.",
     "\nModel will be refit ", J, " times."
   )
-  
+
   if (!refit)
     return(NULL)
-  
+
   for (j in 1:J) {
     message(
       "\nFitting model ", j, " out of ", J,
       " (leaving out observation ", obs[j], ")"
     )
     omitted <- obs[j]
-    
+
     if (is_clogit(x)) {
       strata_id <- model.weights(model.frame(x))
       omitted <- which(strata_id == strata_id[obs[j]])
@@ -647,7 +647,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     capture.output(
       fit_j <- suppressWarnings(eval(fit_j_call))
     )
-    
+
     lls[[j]] <-
       log_lik.stanreg(
         fit_j,
@@ -658,10 +658,10 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
         stanmat = as.matrix.stanreg(fit_j)
       )
   }
-  
+
   # compute elpd_{loo,j} for each of the held out observations
   elpd_loo <- unlist(lapply(lls, log_mean_exp))
-  
+
   # compute \hat{lpd}_j for each of the held out observations (using log-lik
   # matrix from full posterior, not the leave-one-out posteriors)
   ll_x <- log_lik(
@@ -670,10 +670,10 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     offset = x$offset[obs]
   )
   hat_lpd <- apply(ll_x, 2, log_mean_exp)
-  
+
   # compute effective number of parameters
   p_loo <- hat_lpd - elpd_loo
-  
+
   # replace parts of the loo object with these computed quantities
   sel <- c("elpd_loo", "p_loo", "looic")
   loo_x$pointwise[obs, sel] <- cbind(elpd_loo, p_loo,  -2 * elpd_loo)
@@ -683,7 +683,7 @@ reloo <- function(x, loo_x, obs, ..., refit = TRUE) {
     sqrt(N * apply(pointwise[, sel], 2, var))
   })
   loo_x$diagnostics$pareto_k[obs] <- NA
-  
+
   return(loo_x)
 }
 
@@ -709,7 +709,7 @@ log_mean_exp <- function(x) {
 # @return data frame
 kfold_and_reloo_data <- function(x) {
   # either data frame or environment
-  d <- x[["data"]] 
+  d <- x[["data"]]
   form <- formula(x)
   if (!inherits(form, "formula")) {
     # may be a string
@@ -719,10 +719,10 @@ kfold_and_reloo_data <- function(x) {
   if (!is.null(sub)) {
     keep <- eval(substitute(sub), envir = d)
   }
-  
+
   if (is.environment(d)) {
     # make data frame
-    d <- get_all_vars(form, data = d) 
+    d <- get_all_vars(form, data = d)
   } else {
     # already a data frame
     all_vars <- all.vars(form)
@@ -735,18 +735,18 @@ kfold_and_reloo_data <- function(x) {
     }
     d <- d[, all_vars, drop=FALSE]
   }
-  
+
   if (!is.null(sub)) {
     d <- d[keep,, drop=FALSE]
   }
-  
+
   d <- na.omit(d)
-  
+
   if (is_clogit(x)) {
     strata_var <- as.character(getCall(x)$strata)
     d[[strata_var]] <- model.weights(model.frame(x))
   }
-  
+
   return(d)
 }
 
@@ -783,7 +783,7 @@ is_discrete <- function(object) {
 
 # validate objects for model comparison
 validate_loos <- function(loos = list()) {
-  
+
   if (utils::packageVersion("loo") <= "2.1.0") {
     # will be checked by loo in later versions
     yhash <- lapply(loos, attr, which = "yhash")
@@ -794,13 +794,13 @@ validate_loos <- function(loos = list()) {
       warning("Not all models have the same y variable.", call. = FALSE)
     }
   }
-  
+
   discrete <- sapply(loos, attr, which = "discrete")
   if (!all(discrete == discrete[1])) {
     stop("Discrete and continuous observation models can't be compared.",
          call. = FALSE)
   }
-  
+
   setNames(loos, nm = lapply(loos, attr, which = "model_name"))
 }
 
@@ -829,10 +829,10 @@ loo_model_formula <- function(x) {
 # deprecated --------------------------------------------------------------
 #' @rdname loo.stanreg
 #' @param loos a list of objects produced by the \code{\link{loo}} function
-#' @export 
+#' @export
 compare_models <- function(..., loos = list(), detail = FALSE) {
   .Deprecated("loo_compare")
-  
+
   dots <- list(...)
   if (length(dots) && length(loos)) {
     stop("'...' and 'loos' can't both be specified.", call. = FALSE)
@@ -841,7 +841,7 @@ compare_models <- function(..., loos = list(), detail = FALSE) {
   } else {
     stopifnot(is.list(loos))
   }
-  
+
   loos <- validate_loos(loos)
   comp <- loo::compare(x = loos)
   structure(

@@ -137,7 +137,7 @@ easily understood by running the \strong{Examples} below.
                           control = list(epoints = 20))
   plot(ps2)
 }
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 \donttest{
   if (!exists("example_jm")) example(example_jm)
   ps1 <- posterior_survfit(example_jm, ids = c(7,13,15))

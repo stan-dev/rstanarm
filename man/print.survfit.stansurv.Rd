@@ -3,7 +3,7 @@
 \name{print.survfit.stansurv}
 \alias{print.survfit.stansurv}
 \alias{print.survfit.stanjm}
-\title{Generic print method for \code{survfit.stansurv} and \code{survfit.stanjm} 
+\title{Generic print method for \code{survfit.stansurv} and \code{survfit.stanjm}
 objects}
 \usage{
 \method{print}{survfit.stansurv}(x, digits = 4, ...)
@@ -11,16 +11,16 @@ objects}
 \method{print}{survfit.stanjm}(x, digits = 4, ...)
 }
 \arguments{
-\item{x}{An object of class \code{survfit.stansurv} or \code{survfit.stanjm}, 
+\item{x}{An object of class \code{survfit.stansurv} or \code{survfit.stanjm},
 returned by a call to \code{\link{posterior_survfit}}.}
 
-\item{digits}{Number of digits to use for formatting the time variable and 
+\item{digits}{Number of digits to use for formatting the time variable and
 the survival probabilities.}
 
 \item{...}{Ignored.}
 }
 \description{
-Generic print method for \code{survfit.stansurv} and \code{survfit.stanjm} 
+Generic print method for \code{survfit.stansurv} and \code{survfit.stanjm}
 objects
 }
 \keyword{internal}

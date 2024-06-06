@@ -83,8 +83,8 @@ For models fit using MCMC, compute approximate leave-one-out
   Information Criterion (WAIC) using the \pkg{\link[=loo-package]{loo}}
   package. (For \eqn{K}-fold cross-validation see \code{\link{kfold.stanreg}}.)
   Functions for  model comparison, and model weighting/averaging are also
-  provided. 
-  
+  provided.
+
   \strong{Note}: these functions are not guaranteed to work
   properly unless the \code{data} argument was specified when the model was
   fit. Also, as of \pkg{loo} version \code{2.0.0} the default number of cores
@@ -170,7 +170,7 @@ For models fit using MCMC, compute approximate leave-one-out
 }
 
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 \donttest{
 fit1 <- stan_glm(mpg ~ wt, data = mtcars, refresh = 0)
 fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, refresh = 0)
@@ -194,12 +194,12 @@ loo_compare(fit1, fit2)
 
 # if the fitted model objects contain a loo object _and_ a waic or kfold
 # object, then the criterion argument determines which of them the comparison
-# is based on 
+# is based on
 fit1$waic <- waic(fit1)
 fit2$waic <- waic(fit2)
 loo_compare(fit1, fit2, criterion = "waic")
 
-# the models can also be combined into a stanreg_list object, and more 
+# the models can also be combined into a stanreg_list object, and more
 # informative model names can be provided to use when printing
 model_list <- stanreg_list(fit1, fit2, model_names = c("Fewer predictors", "More predictors"))
 loo_compare(model_list)

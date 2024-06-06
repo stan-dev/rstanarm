@@ -37,33 +37,33 @@
 \pkg{rstanarm} modeling functions. See \code{\link{stanreg-objects}}.}
 
 \item{pars}{An optional character vector specifying a subset of parameters to
-display. Parameters can be specified by name or several shortcuts can be 
-used. Using \code{pars="beta"} will restrict the displayed parameters to 
-only the regression coefficients (without the intercept). \code{"alpha"} 
-can also be used as a shortcut for \code{"(Intercept)"}. If the model has 
-varying intercepts and/or slopes they can be selected using \code{pars = 
-"varying"}.
+  display. Parameters can be specified by name or several shortcuts can be
+  used. Using \code{pars="beta"} will restrict the displayed parameters to
+  only the regression coefficients (without the intercept). \code{"alpha"}
+  can also be used as a shortcut for \code{"(Intercept)"}. If the model has
+  varying intercepts and/or slopes they can be selected using \code{pars =
+  "varying"}.
 
-In addition, for \code{stanmvreg} objects there are some additional shortcuts 
-available. Using \code{pars = "long"} will display the 
-parameter estimates for the longitudinal submodels only (excluding group-specific
-pparameters, but including auxiliary parameters).
-Using \code{pars = "event"} will display the 
-parameter estimates for the event submodel only, including any association
-parameters. 
-Using \code{pars = "assoc"} will display only the 
-association parameters. 
-Using \code{pars = "fixef"} will display all fixed effects, but not
-the random effects or the auxiliary parameters. 
- \code{pars} and \code{regex_pars} are set to \code{NULL} then all 
-fixed effect regression coefficients are selected, as well as any 
-auxiliary parameters and the log posterior.   
+  In addition, for \code{stanmvreg} objects there are some additional shortcuts
+  available. Using \code{pars = "long"} will display the
+  parameter estimates for the longitudinal submodels only (excluding group-specific
+  pparameters, but including auxiliary parameters).
+  Using \code{pars = "event"} will display the
+  parameter estimates for the event submodel only, including any association
+  parameters.
+  Using \code{pars = "assoc"} will display only the
+  association parameters.
+  Using \code{pars = "fixef"} will display all fixed effects, but not
+  the random effects or the auxiliary parameters.
+   \code{pars} and \code{regex_pars} are set to \code{NULL} then all
+  fixed effect regression coefficients are selected, as well as any
+  auxiliary parameters and the log posterior.
 
-If \code{pars} is \code{NULL} all parameters are selected for a \code{stanreg}
-object, while for a \code{stanmvreg} object all 
-fixed effect regression coefficients are selected as well as any 
-auxiliary parameters and the log posterior. See 
-\strong{Examples}.}
+  If \code{pars} is \code{NULL} all parameters are selected for a \code{stanreg}
+  object, while for a \code{stanmvreg} object all
+  fixed effect regression coefficients are selected as well as any
+  auxiliary parameters and the log posterior. See
+  \strong{Examples}.}
 
 \item{regex_pars}{An optional character vector of \link[=grep]{regular 
 expressions} to use for parameter selection. \code{regex_pars} can be used
@@ -71,32 +71,32 @@ in place of \code{pars} or in addition to \code{pars}. Currently, all
 functions that accept a \code{regex_pars} argument ignore it for models fit
 using optimization.}
 
-\item{probs}{For models fit using MCMC or one of the variational algorithms, 
-an optional numeric vector of probabilities passed to 
+\item{probs}{For models fit using MCMC or one of the variational algorithms,
+an optional numeric vector of probabilities passed to
 \code{\link[stats]{quantile}}.}
 
 \item{...}{Currently ignored.}
 
-\item{digits}{Number of digits to use for formatting numbers when printing. 
-When calling \code{summary}, the value of digits is stored as the 
+\item{digits}{Number of digits to use for formatting numbers when printing.
+When calling \code{summary}, the value of digits is stored as the
 \code{"print.digits"} attribute of the returned object.}
 
 \item{x}{An object of class \code{"summary.stanreg"}.}
 }
 \value{
-The \code{summary} method returns an object of class 
-  \code{"summary.stanreg"} (or \code{"summary.stanmvreg"}, inheriting 
-  \code{"summary.stanreg"}), which is a matrix of 
-  summary statistics and 
+The \code{summary} method returns an object of class
+  \code{"summary.stanreg"} (or \code{"summary.stanmvreg"}, inheriting
+  \code{"summary.stanreg"}), which is a matrix of
+  summary statistics and
   diagnostics, with attributes storing information for use by the
   \code{print} method. The \code{print} method for \code{summary.stanreg} or
-  \code{summary.stanmvreg} objects is called for its side effect and just returns 
-  its input. The \code{as.data.frame} method for \code{summary.stanreg} 
-  objects converts the matrix to a data.frame, preserving row and column 
+  \code{summary.stanmvreg} objects is called for its side effect and just returns
+  its input. The \code{as.data.frame} method for \code{summary.stanreg}
+  objects converts the matrix to a data.frame, preserving row and column
   names but dropping the \code{print}-related attributes.
 }
 \description{
-Summaries of parameter estimates and MCMC convergence diagnostics 
+Summaries of parameter estimates and MCMC convergence diagnostics
 (Monte Carlo error, effective sample size, Rhat).
 }
 \details{
@@ -112,13 +112,13 @@ data, computational issues, etc.).
 }
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
-if (!exists("example_model")) example(example_model) 
+if (.Platform$OS.type != "windows") {
+if (!exists("example_model")) example(example_model)
 summary(example_model, probs = c(0.1, 0.9))
 
-# These produce the same output for this example, 
+# These produce the same output for this example,
 # but the second method can be used for any model
-summary(example_model, pars = c("(Intercept)", "size", 
+summary(example_model, pars = c("(Intercept)", "size",
                                 paste0("period", 2:4)))
 summary(example_model, pars = c("alpha", "beta"))
 
@@ -128,6 +128,6 @@ as.data.frame(summary(example_model, pars = "varying"))
 }
 }
 \seealso{
-\code{\link{prior_summary}} to extract or print a summary of the 
+\code{\link{prior_summary}} to extract or print a summary of the
   priors used for a particular model.
 }

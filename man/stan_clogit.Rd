@@ -42,8 +42,8 @@ Another useful argument that can be passed to \pkg{rstan} via \code{...} is
 (i.e., show the progress every \code{refresh} iterations). \code{refresh=0}
 turns off the iteration updates.}
 
-\item{strata}{A factor indicating the groups in the data where the number of 
-successes (possibly one) is fixed by the research design. It may be useful 
+\item{strata}{A factor indicating the groups in the data where the number of
+successes (possibly one) is fixed by the research design. It may be useful
 to use \code{\link{interaction}} or \code{\link[survival]{strata}} to
 create this factor. However, the \code{strata} argument must not rely on
 any object besides the \code{data} \code{\link{data.frame}}.}
@@ -131,25 +131,25 @@ A model for case-control studies with optional prior distributions for the
 coefficients, intercept, and auxiliary parameters.
 }
 \details{
-The \code{stan_clogit} function is mostly similar in syntax to 
+The \code{stan_clogit} function is mostly similar in syntax to
   \code{\link[survival]{clogit}} but rather than performing maximum
   likelihood estimation of generalized linear models, full Bayesian
   estimation is performed (if \code{algorithm} is \code{"sampling"}) via
   MCMC. The Bayesian model adds priors (independent by default) on the
   coefficients of the GLM.
-  
-  The \code{data.frame} passed to the \code{data} argument must be sorted by 
+
+  The \code{data.frame} passed to the \code{data} argument must be sorted by
   the variable passed to the \code{strata} argument.
-  
+
   The \code{formula} may have group-specific terms like in
   \code{\link{stan_glmer}} but should not allow the intercept to vary by the
   stratifying variable, since there is no information in the data with which
   to estimate such deviations in the intercept.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 dat <- infert[order(infert$stratum), ] # order by strata
-post <- stan_clogit(case ~ spontaneous + induced + (1 | education), 
+post <- stan_clogit(case ~ spontaneous + induced + (1 | education),
                     strata = stratum,
                     data = dat,
                     subset = parity <= 2,
@@ -157,11 +157,11 @@ post <- stan_clogit(case ~ spontaneous + induced + (1 | education),
                     chains = 2, iter = 500) # for speed only
 
 nd <- dat[dat$parity > 2, c("case", "spontaneous", "induced", "education", "stratum")]
-# next line would fail without case and stratum variables                                 
+# next line would fail without case and stratum variables
 pr <- posterior_epred(post, newdata = nd) # get predicted probabilities
 
 # not a random variable b/c probabilities add to 1 within strata
-all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr)) 
+all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr))
 }
 }
 \seealso{

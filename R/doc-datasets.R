@@ -1,34 +1,34 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
-# 
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 3
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 #' Datasets for rstanarm examples
-#' 
+#'
 #' Small datasets for use in \pkg{rstanarm} examples and vignettes.
 #'
 #' @name rstanarm-datasets
 #' @aliases bball1970 bball2006 bcancer frail kidiq mice mortality pbcLong pbcSurv tumors radon roaches wells
-#' @format 
+#' @format
 #' \describe{
 #' \item{\code{bball1970}}{
 #' Data on hits and at-bats from the 1970 Major League Baseball season for 18
 #' players.
-#' 
+#'
 #' Source: Efron and Morris (1975).
-#' 
+#'
 #' 18 obs. of 5 variables
 #' \itemize{
 #' \item \code{Player} Player's last name
@@ -41,9 +41,9 @@
 #' \item{\code{bball2006}}{
 #' Hits and at-bats for the entire 2006 American League season of Major League
 #' Baseball.
-#' 
+#'
 #' Source: Carpenter (2009)
-#' 
+#'
 #' 302 obs. of 2 variables
 #' \itemize{
 #' \item \code{y} Number of hits
@@ -52,11 +52,11 @@
 #' }
 #' \item{\code{bcancer}}{
 #' The German Breast Cancer Study Group dataset, containing time to death or
-#' recurrence for 686 patients with primary node positive breast cancer 
-#' recruited between 1984-1989. 
-#' 
+#' recurrence for 686 patients with primary node positive breast cancer
+#' recruited between 1984-1989.
+#'
 #' Source: Royston and Parmar (2002)
-#' 
+#'
 #' 686 obs. of 4 variables
 #' \itemize{
 #' \item \code{recdays} Time to death or censoring (in days)
@@ -68,30 +68,30 @@
 #' }
 #' \item{\code{frail}}{
 #' A simulated dataset of event times (i.e. survival data) for 200 patients
-#' clustered within 20 hospital sites (10 patients per hospital site). 
-#' The event times are simulated from a parametric proportional hazards model 
-#' under the following assumptions: (i) a constant (i.e. exponential) baseline 
-#' hazard rate of 0.1; (ii) a fixed treatment effect with log hazard ratio of 
-#' 0.3; and (iii) a site-specific random intercept (specified on the log 
+#' clustered within 20 hospital sites (10 patients per hospital site).
+#' The event times are simulated from a parametric proportional hazards model
+#' under the following assumptions: (i) a constant (i.e. exponential) baseline
+#' hazard rate of 0.1; (ii) a fixed treatment effect with log hazard ratio of
+#' 0.3; and (iii) a site-specific random intercept (specified on the log
 #' hazard scale) drawn from a \eqn{N(0,1)} distribution.
-#' 
+#'
 #' 200 obs. of 6 variables
 #' \itemize{
 #' \item \code{id} ID unique to each patient
 #' \item \code{site} ID unique to each hospital site (i.e. cluster)
 #' \item \code{trt} Treatment indicator (0 = untreated, 1 = treated)
-#' \item \code{b} Cluster-specific random intercept used to simulate the 
+#' \item \code{b} Cluster-specific random intercept used to simulate the
 #' event times
 #' \item \code{eventtime} Event or censoring time
 #' \item \code{status} Event indicator (0 = right censored, 1 = event)
 #' }
 #' }
 #' \item{\code{kidiq}}{
-#' Data from a survey of adult American women and their children 
+#' Data from a survey of adult American women and their children
 #' (a subsample from the National Longitudinal Survey of Youth).
-#' 
+#'
 #' Source: Gelman and Hill (2007)
-#' 
+#'
 #' 434 obs. of 4 variables
 #' \itemize{
 #' \item \code{kid_score} Child's IQ score
@@ -102,12 +102,12 @@
 #' }
 #' \item{\code{mice}}{
 #' Lung tumor development in 144 RFM mice allocated to either a conventional
-#' environment or germ-free environment. Mice were sacrificed and examined 
-#' for presence of a lung tumor. The outcome variables in the dataset 
-#' (\code{l} and \code{u}) denote a left-censored or right-censored time 
-#' interval within which the development of the first lung tumor must have 
-#' occurred. 
-#' 
+#' environment or germ-free environment. Mice were sacrificed and examined
+#' for presence of a lung tumor. The outcome variables in the dataset
+#' (\code{l} and \code{u}) denote a left-censored or right-censored time
+#' interval within which the development of the first lung tumor must have
+#' occurred.
+#'
 #' Source: Hoel and Walburg (1972)
 #'
 #' 144 obs. of 3 variables
@@ -121,7 +121,7 @@
 #' \item{\code{mortality}}{
 #' Surgical mortality rates in 12 hospitals performing cardiac surgery
 #' in babies.
-#' 
+#'
 #' Source: Spiegelhalter et al. (1996).
 #'
 #' 12 obs. of 2 variables
@@ -131,37 +131,37 @@
 #' }
 #' }
 #' \item{\code{pbcLong,pbcSurv}}{
-#' Longitudinal biomarker and time-to-event survival data for 40 patients 
-#' with primary biliary cirrhosis who participated in a randomised 
+#' Longitudinal biomarker and time-to-event survival data for 40 patients
+#' with primary biliary cirrhosis who participated in a randomised
 #' placebo controlled trial of D-penicillamine conducted at the Mayo
 #' Clinic between 1974 and 1984.
-#' 
+#'
 #' Source: Therneau and Grambsch (2000)
-#' 
+#'
 #' 304 obs. of 8 variables (\code{pbcLong}) and 40 obs. of 7 variables (\code{pbcSurv})
 #' \itemize{
 #' \item \code{age} Age (in years)
 #' \item \code{albumin} Serum albumin (g/dl)
 #' \item \code{logBili} Logarithm of serum bilirubin
 #' \item \code{death} Indicator of death at endpoint
-#' \item \code{futimeYears} Time (in years) between baseline and  
+#' \item \code{futimeYears} Time (in years) between baseline and
 #'     the earliest of death, transplantion or censoring
 #' \item \code{id} Numeric ID unique to each individual
 #' \item \code{platelet} Platelet count
 #' \item \code{sex} Gender (m = male, f = female)
-#' \item \code{status} Status at endpoint (0 = censored, 1 = transplant, 
+#' \item \code{status} Status at endpoint (0 = censored, 1 = transplant,
 #'     2 = dead)
 #' \item \code{trt} Binary treatment code (0 = placebo, 1 = D-penicillamine)
 #' \item \code{year} Time (in years) of the longitudinal measurements,
 #'     taken as time since baseline
 #' }
 #' }
-#' 
+#'
 #' \item{\code{radon}}{
-#' Data on radon levels in houses in the state of Minnesota. 
-#' 
+#' Data on radon levels in houses in the state of Minnesota.
+#'
 #' Source: Gelman and Hill (2007)
-#' 
+#'
 #' 919 obs. of 4 variables
 #' \itemize{
 #' \item \code{log_radon} Radon measurement from the house (log scale)
@@ -174,9 +174,9 @@
 #' \item{\code{roaches}}{
 #' Data on the efficacy of a pest management system at reducing the number of
 #' roaches in urban apartments.
-#' 
+#'
 #' Source: Gelman and Hill (2007)
-#' 
+#'
 #' 262 obs. of 6 variables
 #' \itemize{
 #' \item \code{y} Number of roaches caught
@@ -189,10 +189,10 @@
 #' \item{\code{tumors}}{
 #' Tarone (1982) provides a data set of tumor incidence in historical
 #' control groups of rats; specifically endometrial stromal polyps in
-#' female lab rats of type F344.  
-#' 
+#' female lab rats of type F344.
+#'
 #' Source: Gelman and Hill (2007)
-#' 
+#'
 #' 71 obs. of 2 variables
 #' \itemize{
 #' \item \code{y} Number of rats with tumors
@@ -206,9 +206,9 @@
 #' safe public or private well in the nearby area and the survey was conducted
 #' several years later to learn which of the affected residents had switched
 #' wells.
-#' 
+#'
 #' Souce: Gelman and Hill (2007)
-#' 
+#'
 #' 3020 obs. of 5 variables
 #' \itemize{
 #' \item \code{switch} Indicator for well-switching
@@ -221,52 +221,52 @@
 #' }
 #' }
 #' }
-#' 
-#' @references 
+#'
+#' @references
 #' Carpenter, B. (2009) Bayesian estimators for the beta-binomial model of
 #' batting ability. \url{https://web.archive.org/web/20220618114439/https://lingpipe-blog.com/2009/09/23/}
-#' 
+#'
 #' Efron, B. and Morris, C. (1975) Data analysis using Stein's estimator and its
 #' generalizations. \emph{Journal of the American Statistical Association}
 #' \strong{70}(350), 311--319.
-#' 
+#'
 #' @templateVar armRef \url{https://stat.columbia.edu/~gelman/arm/}
 #' @template reference-gelman-hill
-#' 
+#'
 #' @references
-#' Hoel, D. and Walburg, H. (1972) Statistical analysis of survival experiments. 
+#' Hoel, D. and Walburg, H. (1972) Statistical analysis of survival experiments.
 #' \emph{The Annals of Statistics} \strong{18}:1259--1294.
-#' 
-#' Royston, P. and Parmar, M. (2002) Flexible parametric proportional-hazards 
-#' and proportional-odds models for censored survival data, with application 
-#' to prognostic modelling and estimation of treatment effects. 
+#'
+#' Royston, P. and Parmar, M. (2002) Flexible parametric proportional-hazards
+#' and proportional-odds models for censored survival data, with application
+#' to prognostic modelling and estimation of treatment effects.
 #' \emph{Statistics in Medicine} \strong{21}(1):2175--2197.
-#' 
-#' Sauerbrei, W. and Royston, P. (1999) Building multivariable prognostic and 
-#' diagnostic models: transformation of the predictors using fractional 
+#'
+#' Sauerbrei, W. and Royston, P. (1999) Building multivariable prognostic and
+#' diagnostic models: transformation of the predictors using fractional
 #' polynomials. \emph{Journal of the Royal Statistical Society, Series A}
 #' \strong{162}:71--94.
-#' 
-#' Spiegelhalter, D., Thomas, A., Best, N., and Gilks, W. (1996) BUGS 0.5 
+#'
+#' Spiegelhalter, D., Thomas, A., Best, N., and Gilks, W. (1996) BUGS 0.5
 #' Examples. MRC Biostatistics Unit, Institute of Public health, Cambridge, UK.
-#' 
+#'
 #' Tarone, R. E. (1982) The use of historical control information in testing for
 #' a trend in proportions. \emph{Biometrics} \strong{38}(1):215--220.
-#' 
-#' Therneau, T. and Grambsch, P. (2000) \emph{Modeling Survival Data: Extending 
+#'
+#' Therneau, T. and Grambsch, P. (2000) \emph{Modeling Survival Data: Extending
 #' the Cox Model}. Springer-Verlag, New York, US.
-#' 
+#'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
-#' # Using 'kidiq' dataset 
-#' fit <- stan_lm(kid_score ~ mom_hs * mom_iq, data = kidiq, 
+#' if (.Platform$OS.type != "windows") {
+#' # Using 'kidiq' dataset
+#' fit <- stan_lm(kid_score ~ mom_hs * mom_iq, data = kidiq,
 #'                prior = R2(location = 0.30, what = "mean"),
 #'                # the next line is only to make the example go fast enough
 #'                chains = 1, iter = 500, seed = 12345)
 #' pp_check(fit, nreps = 20)
 #' \donttest{
 #' bayesplot::color_scheme_set("brightblue")
-#' pp_check(fit, plotfun = "stat_grouped", stat = "median", 
+#' pp_check(fit, plotfun = "stat_grouped", stat = "median",
 #'          group = factor(kidiq$mom_hs, labels = c("No HS", "HS")))
 #' }
 #' }

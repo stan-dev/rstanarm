@@ -40,16 +40,16 @@ plot_nonlinear(
 )
 }
 \arguments{
-\item{formula, random, family, data, knots, drop.unused.levels}{Same as for 
+\item{formula, random, family, data, knots, drop.unused.levels}{Same as for
 \code{\link[gamm4]{gamm4}}. \emph{We strongly advise against
 omitting the \code{data} argument}. Unless \code{data} is specified (and is
 a data frame) many post-estimation functions (including \code{update},
 \code{loo}, \code{kfold}) are not guaranteed to work properly.}
 
-\item{subset, weights, na.action}{Same as \code{\link[stats]{glm}}, 
+\item{subset, weights, na.action}{Same as \code{\link[stats]{glm}},
 but rarely specified.}
 
-\item{...}{Further arguments passed to \code{\link[rstan:stanmodel-method-sampling]{sampling}} (e.g. 
+\item{...}{Further arguments passed to \code{\link[rstan:stanmodel-method-sampling]{sampling}} (e.g.
 \code{iter}, \code{chains}, \code{cores}, etc.) or to
 \code{\link[rstan:stanmodel-method-vb]{vb}} (if \code{algorithm} is \code{"meanfield"} or
 \code{"fullrank"}).}
@@ -198,10 +198,10 @@ include all smooth terms.}
 \item{prob}{For univarite smooths, a scalar between 0 and 1 governing the
 width of the uncertainty interval.}
 
-\item{facet_args}{An optional named list of arguments passed to 
+\item{facet_args}{An optional named list of arguments passed to
 \code{\link[ggplot2]{facet_wrap}} (other than the \code{facets} argument).}
 
-\item{alpha, size}{For univariate smooths, passed to 
+\item{alpha, size}{For univariate smooths, passed to
 \code{\link[ggplot2]{geom_ribbon}}. For bivariate smooths, \code{size/2} is
 passed to \code{\link[ggplot2]{geom_contour}}.}
 }
@@ -216,23 +216,23 @@ for \code{stan_gamm4}.
 Bayesian inference for GAMMs with flexible priors.
 }
 \details{
-The \code{stan_gamm4} function is similar in syntax to 
-  \code{\link[gamm4]{gamm4}} in the \pkg{gamm4} package. But rather than performing 
+The \code{stan_gamm4} function is similar in syntax to
+  \code{\link[gamm4]{gamm4}} in the \pkg{gamm4} package. But rather than performing
   (restricted) maximum likelihood estimation with the \pkg{lme4} package,
-  the \code{stan_gamm4} function utilizes MCMC to perform Bayesian 
-  estimation. The Bayesian model adds priors on the common regression 
-  coefficients (in the same way as \code{\link{stan_glm}}), priors on the 
+  the \code{stan_gamm4} function utilizes MCMC to perform Bayesian
+  estimation. The Bayesian model adds priors on the common regression
+  coefficients (in the same way as \code{\link{stan_glm}}), priors on the
   standard deviations of the smooth terms, and a prior on the decomposition
-  of the covariance matrices of any group-specific parameters (as in 
+  of the covariance matrices of any group-specific parameters (as in
   \code{\link{stan_glmer}}). Estimating these models via MCMC avoids
   the optimization issues that often crop up with GAMMs and provides better
-  estimates for the uncertainty in the parameter estimates. 
-  
+  estimates for the uncertainty in the parameter estimates.
+
   See \code{\link[gamm4]{gamm4}} for more information about the model
   specicification and \code{\link{priors}} for more information about the
   priors on the main coefficients. The \code{formula} should include at least
   one smooth term, which can be specified in any way that is supported by the
-  \code{\link[mgcv]{jagam}} function in the \pkg{mgcv} package. The 
+  \code{\link[mgcv]{jagam}} function in the \pkg{mgcv} package. The
   \code{prior_smooth} argument should be used to specify a prior on the unknown
   standard deviations that govern how smooth the smooth function is. The
   \code{prior_covariance} argument can be used to specify the prior on the
@@ -241,23 +241,23 @@ The \code{stan_gamm4} function is similar in syntax to
   group-specific terms to implement the departure from linearity in the smooth
   terms, but that is not the case for \code{stan_gamm4} where the group-specific
   terms are exactly the same as in \code{\link{stan_glmer}}.
-  
+
   The \code{plot_nonlinear} function creates a ggplot object with one facet for
   each smooth function specified in the call to \code{stan_gamm4} in the case
-  where all smooths are univariate. A subset of the smooth functions can be 
+  where all smooths are univariate. A subset of the smooth functions can be
   specified using the \code{smooths} argument, which is necessary to plot a
   bivariate smooth or to exclude the bivariate smooth and plot the univariate
-  ones. In the bivariate case, a plot is produced using 
+  ones. In the bivariate case, a plot is produced using
   \code{\link[ggplot2]{geom_contour}}. In the univariate case, the resulting
-  plot is conceptually similar to \code{\link[mgcv]{plot.gam}} except the 
-  outer lines here demark the edges of posterior uncertainty intervals 
+  plot is conceptually similar to \code{\link[mgcv]{plot.gam}} except the
+  outer lines here demark the edges of posterior uncertainty intervals
   (credible intervals) rather than confidence intervals and the inner line
   is the posterior median of the function rather than the function implied
-  by a point estimate. To change the colors used in the plot see 
+  by a point estimate. To change the colors used in the plot see
   \code{\link[bayesplot:bayesplot-colors]{color_scheme_set}}.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 # from example(gamm4, package = "gamm4"), prefixing gamm4() call with stan_
 \donttest{
 dat <- mgcv::gamSim(1, n = 400, scale = 2) ## simulate 4 term additive truth
@@ -265,7 +265,7 @@ dat <- mgcv::gamSim(1, n = 400, scale = 2) ## simulate 4 term additive truth
 dat$fac <- fac <- as.factor(sample(1:20, 400, replace = TRUE))
 dat$y <- dat$y + model.matrix(~ fac - 1) \%*\% rnorm(20) * .5
 
-br <- stan_gamm4(y ~ s(x0) + x1 + s(x2), data = dat, random = ~ (1 | fac), 
+br <- stan_gamm4(y ~ s(x0) + x1 + s(x2), data = dat, random = ~ (1 | fac),
                  chains = 1, iter = 500) # for example speed
 print(br)
 plot_nonlinear(br)
@@ -274,10 +274,10 @@ plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 }
 }
 \references{
-Crainiceanu, C., Ruppert D., and Wand, M. (2005). Bayesian analysis for 
+Crainiceanu, C., Ruppert D., and Wand, M. (2005). Bayesian analysis for
 penalized spline regression using WinBUGS. \emph{Journal of Statistical
-Software}. \strong{14}(14), 1--22. 
-\url{https://www.jstatsoft.org/article/view/v014i14}
+Software}. \strong{14}(14), 1--22.
+\doi{10.18637/jss.v014.i14}
 }
 \seealso{
 \code{\link{stanreg-methods}} and 

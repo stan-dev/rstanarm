@@ -59,13 +59,13 @@ is provided and any variables were transformed (e.g. rescaled) in the data
 used to fit the model, then these variables must also be transformed in
 \code{newdata}. This only applies if variables were transformed before
 passing the data to one of the modeling functions and \emph{not} if
-transformations were specified inside the model formula. Also, 
-\code{newdata} can optionally include a variable with information 
-about the last known survival time for the new individuals -- 
+transformations were specified inside the model formula. Also,
+\code{newdata} can optionally include a variable with information
+about the last known survival time for the new individuals --
 see the description for the \code{last_time} argument below
--- however also note that when generating the survival probabilities it 
-is of course assumed that all individuals in \code{newdata} have not 
-yet experienced the event (that is, any variable in \code{newdataEvent} 
+-- however also note that when generating the survival probabilities it
+is of course assumed that all individuals in \code{newdata} have not
+yet experienced the event (that is, any variable in \code{newdataEvent}
 that corresponds to the event indicator will be ignored).}
 
 \item{type}{The type of prediction to return. The following are currently
@@ -81,7 +81,7 @@ allowed:
   \item \code{"logcdf"}: the estimated log failure probability.
 }}
 
-\item{extrapolate}{A logical specifying whether to extrapolate the estimated 
+\item{extrapolate}{A logical specifying whether to extrapolate the estimated
 survival probabilities beyond the times specified in the \code{times} argument.
 If \code{TRUE} then the extrapolation can be further controlled using
 the \code{control} argument.}
@@ -90,24 +90,24 @@ the \code{control} argument.}
 of the estimated survival function when \code{extrapolate = TRUE}. The list
 can contain one or more of the following named elements: \cr
 \itemize{
-  \item \code{epoints}: a positive integer specifying the number of 
-  discrete time points at which to calculate the forecasted survival 
+  \item \code{epoints}: a positive integer specifying the number of
+  discrete time points at which to calculate the forecasted survival
   probabilities. The default is 100.
-  \item \code{edist}: a positive scalar specifying the amount of time 
-  across which to forecast the estimated survival function, represented 
-  in the same units of time as were used for the event times in the fitted 
-  model. The default is to extrapolate between the times specified in the 
-  \code{times} argument and the maximum event or censoring time found in 
-  the original data used to fit the model. If \code{edist} leads to times 
-  that are beyond the maximum event or censoring time in the original data 
-  then the estimated survival probabilities will be truncated at that 
-  point, since an estimate for the baseline hazard is not available 
+  \item \code{edist}: a positive scalar specifying the amount of time
+  across which to forecast the estimated survival function, represented
+  in the same units of time as were used for the event times in the fitted
+  model. The default is to extrapolate between the times specified in the
+  \code{times} argument and the maximum event or censoring time found in
+  the original data used to fit the model. If \code{edist} leads to times
+  that are beyond the maximum event or censoring time in the original data
+  then the estimated survival probabilities will be truncated at that
+  point, since an estimate for the baseline hazard is not available
   beyond that time.
 }}
 
-\item{condition}{A logical specifying whether the estimated 
-subject-specific survival probabilities at time \code{t} should be 
-conditioned on survival up to a fixed time point \code{u}. The default 
+\item{condition}{A logical specifying whether the estimated
+subject-specific survival probabilities at time \code{t} should be
+conditioned on survival up to a fixed time point \code{u}. The default
 is for \code{condition} to be set to \code{TRUE}, unless standardised survival
 probabilities have been requested (by specifying \code{standardise = TRUE}),
 in which case \code{condition} must (and will) be set to \code{FALSE}.
@@ -165,50 +165,50 @@ same time for all individuals.}
 
 \item{draws}{An integer specifying the number of MCMC draws to use when
 evaluating the predicted quantities. For \code{stan_surv} models, the
-default number of draws is 400 (or the size of the posterior sample if 
-that is less than 400). For \code{stan_jm} models, the default number 
-of draws is 200 (or the size of the posterior sample if that is less 
-than 200). The smaller default number of draws for \code{stan_jm} 
-models is because dynamic predictions (when \code{dynamic = TRUE}) 
+default number of draws is 400 (or the size of the posterior sample if
+that is less than 400). For \code{stan_jm} models, the default number
+of draws is 200 (or the size of the posterior sample if that is less
+than 200). The smaller default number of draws for \code{stan_jm}
+models is because dynamic predictions (when \code{dynamic = TRUE})
 can be slow.}
 
 \item{seed}{An optional \code{\link[=set.seed]{seed}} to use.}
 
-\item{return_matrix}{A logical. If \code{TRUE} then a list of \code{draws} by 
+\item{return_matrix}{A logical. If \code{TRUE} then a list of \code{draws} by
 \code{nrow(newdata)} matrices is returned. Each matrix contains the actual
 simulations or draws from the posterior predictive distribution. Otherwise
-if \code{return_matrix} is set to \code{FALSE} (the default) then a 
-data frame is returned. See the \strong{Value} section below for more 
+if \code{return_matrix} is set to \code{FALSE} (the default) then a
+data frame is returned. See the \strong{Value} section below for more
 detail.}
 
-\item{newdataLong, newdataEvent}{An optional data frame (or in the case of 
-\code{newdataLong} this can be a list of data frames) in which to look 
-for variables with which to predict. If omitted, the model matrices are 
-used. If new data is provided, then it should also contain the longitudinal 
-outcome data on which to condition when drawing the new group-specific 
+\item{newdataLong, newdataEvent}{An optional data frame (or in the case of
+\code{newdataLong} this can be a list of data frames) in which to look
+for variables with which to predict. If omitted, the model matrices are
+used. If new data is provided, then it should also contain the longitudinal
+outcome data on which to condition when drawing the new group-specific
 coefficients for individuals in the new data unless the \code{dynamic}
 argument is set to \code{FALSE}. Note that there is only
-allowed to be one row of data for each individual in \code{newdataEvent}, 
+allowed to be one row of data for each individual in \code{newdataEvent},
 that is, time-varying covariates are not allowed in the prediction data for
 the event submodel. Also, \code{newdataEvent} can optionally include a
 variable with information about the last known survival time for the new
 individuals -- see the description for the \code{last_time} argument below
--- however also note that when generating the survival probabilities it 
-is of course assumed that all individuals in \code{newdataEvent} have not 
-yet experienced the event (that is, any variable in \code{newdataEvent} 
+-- however also note that when generating the survival probabilities it
+is of course assumed that all individuals in \code{newdataEvent} have not
+yet experienced the event (that is, any variable in \code{newdataEvent}
 that corresponds to the event indicator will be ignored).}
 
-\item{ids}{For \code{stan_jm} models. An optional vector specifying 
-a subset of IDs for whom the predictions should be obtained. 
+\item{ids}{For \code{stan_jm} models. An optional vector specifying
+a subset of IDs for whom the predictions should be obtained.
 The default is to predict for all individuals
-who were used in estimating the model or, if \code{newdataLong} and 
-\code{newdataEvent} are specified, then all individuals contained in 
+who were used in estimating the model or, if \code{newdataLong} and
+\code{newdataEvent} are specified, then all individuals contained in
 the new data.}
 
-\item{dynamic}{A logical that is only relevant for \code{stan_jm} models 
-when new data is provided via the \code{newdataLong} and \code{newdataEvent} 
-arguments. If \code{dynamic = TRUE}, then new group-specific parameters are 
-drawn for the individuals in the new data, conditional on their longitudinal 
+\item{dynamic}{A logical that is only relevant for \code{stan_jm} models
+when new data is provided via the \code{newdataLong} and \code{newdataEvent}
+arguments. If \code{dynamic = TRUE}, then new group-specific parameters are
+drawn for the individuals in the new data, conditional on their longitudinal
 biomarker data contained in \code{newdataLong}. These group-specific
 parameters are then used to generate individual-specific survival probabilities
 for these individuals. These are often referred to as "dynamic predictions"
@@ -217,112 +217,112 @@ each time additional longitudinal biomarker data is collected on the individual.
 On the other hand, if \code{dynamic = FALSE} then the survival probabilities
 will be obtained by marginalising over the distribution of the group-specific
 coefficients; this has the benefit that the user does not need to provide
-longitudinal outcome data for the new individuals, but it will also 
-mean that the survival predictions will incorporate all uncertainty due 
-to between-individual variation in the longitudinal trajectories and so 
-there is likely to be very wide credible intervals on the predicted 
+longitudinal outcome data for the new individuals, but it will also
+mean that the survival predictions will incorporate all uncertainty due
+to between-individual variation in the longitudinal trajectories and so
+there is likely to be very wide credible intervals on the predicted
 survival probabilities.}
 
 \item{scale}{Only relevant for \code{stan_jm} models when new data
-is supplied and \code{dynamic = TRUE}, in which case new random effects 
-are simulated for the individuals in the new data using a 
-Metropolis-Hastings algorithm. The \code{scale} argument should be a 
-scalar. It specifies how much to multiply the asymptotic 
+is supplied and \code{dynamic = TRUE}, in which case new random effects
+are simulated for the individuals in the new data using a
+Metropolis-Hastings algorithm. The \code{scale} argument should be a
+scalar. It specifies how much to multiply the asymptotic
 variance-covariance matrix for the random effects by, which is then
 used as the "width" (ie. variance-covariance matrix) of the multivariate
 Student-t proposal distribution in the Metropolis-Hastings algorithm.}
 }
 \value{
-When \code{return_matrix = FALSE} (the default), a data frame of 
+When \code{return_matrix = FALSE} (the default), a data frame of
   class \code{survfit.stansurv} or \code{survfit.stanjm}. The data frame
-  includes columns for each of the following: 
+  includes columns for each of the following:
   (i) the median of the posterior predictions (\code{median});
-  (ii) each of the lower and upper limits of the corresponding uncertainty 
+  (ii) each of the lower and upper limits of the corresponding uncertainty
   interval for the posterior predictions (\code{ci_lb} and \code{ci_ub});
-  (iii) an observation identifier (for \code{stan_surv} models) or an 
-  individual identifier (for \code{stan_jm} models), unless standardised 
+  (iii) an observation identifier (for \code{stan_surv} models) or an
+  individual identifier (for \code{stan_jm} models), unless standardised
   predictions were requested;
   (iv) the time that the prediction corresponds to (\code{time}).
-  (v) the last known survival time on which the prediction is conditional 
+  (v) the last known survival time on which the prediction is conditional
   (\code{cond_time}); this will be set to NA if not relevant.
   The returned object also includes a number of additional attributes.
-  
-  When \code{return_matrix = TRUE} a list of matrices is returned. Each 
-  matrix contains the predictions evaluated at one step of the 
-  extrapolation time sequence (note that if \code{extrapolate = FALSE} 
-  then the list will be of length one, i.e. the predictions are only 
-  evaluated at \code{times} which corresponds to just one time point 
-  for each individual). Each matrix will have \code{draws} rows and 
-  \code{nrow(newdata)} columns, such that each row contains a 
-  vector of predictions generated using a single draw of the model 
-  parameters from the posterior distribution. The returned 
+
+  When \code{return_matrix = TRUE} a list of matrices is returned. Each
+  matrix contains the predictions evaluated at one step of the
+  extrapolation time sequence (note that if \code{extrapolate = FALSE}
+  then the list will be of length one, i.e. the predictions are only
+  evaluated at \code{times} which corresponds to just one time point
+  for each individual). Each matrix will have \code{draws} rows and
+  \code{nrow(newdata)} columns, such that each row contains a
+  vector of predictions generated using a single draw of the model
+  parameters from the posterior distribution. The returned
   list also includes a number of additional attributes.
 }
 \description{
 This function allows us to generate predicted quantities for survival
-models at specified times. These quantities include the hazard rate, 
+models at specified times. These quantities include the hazard rate,
 cumulative hazard, survival probability, or failure probability (i.e. CDF).
-Note that the cumulative hazard, survival probability, or failure 
-probability may be conditional on a last known survival time (see the 
-\code{condition} argument discussed below). Predictions are obtained 
-using unique draws from the posterior distribution of each of the model 
-parameters and then summarised into a median and posterior uncertainty 
+Note that the cumulative hazard, survival probability, or failure
+probability may be conditional on a last known survival time (see the
+\code{condition} argument discussed below). Predictions are obtained
+using unique draws from the posterior distribution of each of the model
+parameters and then summarised into a median and posterior uncertainty
 interval. For \code{stan_jm} models "dynamic" predictions are allowed and
 are in fact the default when new data is provided (see the \code{dynamic}
 argument discussed below).
 }
 \details{
-By default, the predicted quantities are evaluated conditional on observed 
-  values of the fixed effect covariates. That is, predictions will be 
-  obtained using either: 
+By default, the predicted quantities are evaluated conditional on observed
+  values of the fixed effect covariates. That is, predictions will be
+  obtained using either:
   \itemize{
     \item the design matrices used in the original \code{\link{stan_surv}}
     or \code{\link{stan_jm}} model call, or
     \item the covariate values provided in the \code{newdata} argument
     (or \code{newdataLong} and \code{newdataEvent} arugments for the
-    \code{stanjm} method). 
+    \code{stanjm} method).
   }
-  However, if you wish to average over the observed distribution 
+  However, if you wish to average over the observed distribution
   of the fixed effect covariates then this is possible -- such predictions
-  are sometimes referred to as standardised survival probabilties -- see the 
+  are sometimes referred to as standardised survival probabilties -- see the
   \code{standardise} argument.
-  
-  For \code{stansurv} objects, the predicted quantities are calculated for  
+
+  For \code{stansurv} objects, the predicted quantities are calculated for
   \emph{each row of the prediction data}, at the specified \code{times} as
-  well as any times generated through extrapolation (when 
+  well as any times generated through extrapolation (when
   \code{extrapolate = TRUE}).
-  
-  For \code{stanjm} objects, the predicted quantities are calculated for 
-  \emph{each individual}, at the specified \code{times} as well as any times 
+
+  For \code{stanjm} objects, the predicted quantities are calculated for
+  \emph{each individual}, at the specified \code{times} as well as any times
   generated through extrapolation (when \code{extrapolate = TRUE}).
-  
+
   \subsection{Dynamic versus marginalised predictions}{
   The following also applies for \code{stanjm} objects.
-  By default the survival probabilities are conditional on an individual's 
+  By default the survival probabilities are conditional on an individual's
   group-specific coefficients (i.e. their individual-level random
-  effects). If prediction data is provided via the \code{newdataLong}  
+  effects). If prediction data is provided via the \code{newdataLong}
   and \code{newdataEvent} arguments, then the default behaviour is to
-  sample new group-specific coefficients for the individuals in the  
-  new data using a Monte Carlo scheme that conditions on their 
-  longitudinal outcome data provided in \code{newdataLong} 
+  sample new group-specific coefficients for the individuals in the
+  new data using a Monte Carlo scheme that conditions on their
+  longitudinal outcome data provided in \code{newdataLong}
   (sometimes referred to as "dynamic predictions", see Rizopoulos
-  (2011)). This default behaviour can be stopped by specifying 
+  (2011)). This default behaviour can be stopped by specifying
   \code{dynamic = FALSE}, in which case the predicted survival
-  probabilities will be marginalised over the distribution of the 
+  probabilities will be marginalised over the distribution of the
   group-specific coefficients. This has the benefit that the user does
-  not need to provide longitudinal outcome measurements for the new 
+  not need to provide longitudinal outcome measurements for the new
   individuals, however, it does mean that the predictions will incorporate
   all the uncertainty associated with between-individual variation in the
-  biomarker (longitudinal outcome) values since the predictions aren't 
-  conditional on any observed biomarker (longitudinal outcome) data for 
+  biomarker (longitudinal outcome) values since the predictions aren't
+  conditional on any observed biomarker (longitudinal outcome) data for
   the individual.
   }
 }
 \note{
-Note that if any variables were transformed (e.g. rescaled) in the data 
-  used to fit the model, then these variables must also be transformed in 
-  \code{newdataLong} and \code{newdataEvent}. This only applies if variables  
-  were transformed before passing the data to one of the modeling functions 
+Note that if any variables were transformed (e.g. rescaled) in the data
+  used to fit the model, then these variables must also be transformed in
+  \code{newdataLong} and \code{newdataEvent}. This only applies if variables
+  were transformed before passing the data to one of the modeling functions
   and \emph{not} if transformations were specified inside the model formula.
 }
 \examples{
@@ -382,20 +382,20 @@ Note that if any variables were transformed (e.g. rescaled) in the data
                            times = 0, extrapolate = TRUE)
   plot(ps4)
 }
- 
+
 }
 \references{
-Rizopoulos, D. (2011). Dynamic predictions and prospective accuracy in 
+Rizopoulos, D. (2011). Dynamic predictions and prospective accuracy in
   joint models for longitudinal and time-to-event data. \emph{Biometrics}
   \strong{67}, 819.
 }
 \seealso{
-\code{\link{plot.survfit.stanjm}} for plotting the estimated survival  
+\code{\link{plot.survfit.stanjm}} for plotting the estimated survival
   probabilities \cr
-  \code{\link{ps_check}} for for graphical checks of the estimated 
+  \code{\link{ps_check}} for for graphical checks of the estimated
   survival function \cr
   \code{\link{posterior_traj}} for estimating the
   marginal or subject-specific longitudinal trajectories \cr
-  \code{\link{plot_stack_jm}} for combining plots of the estimated 
+  \code{\link{plot_stack_jm}} for combining plots of the estimated
   subject-specific longitudinal trajectory and survival function
 }

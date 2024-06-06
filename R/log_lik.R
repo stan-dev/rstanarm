@@ -43,7 +43,7 @@
 #'
 #'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' if (.Platform$OS.type != "windows") {
 #' \donttest{
 #'  roaches$roach100 <- roaches$roach1 / 100
 #'  fit <- stan_glm(
@@ -1415,4 +1415,3 @@ split_and_reduce <- function(x, n_segments = 1, bycol = TRUE, FUN = '+') {
   splitted_x <- split2(x, n_segments = n_segments, bycol = bycol)
   Reduce(FUN, splitted_x)
 }
-

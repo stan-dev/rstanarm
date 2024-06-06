@@ -92,7 +92,7 @@
 #' @template reference-morey
 #'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' if (.Platform$OS.type != "windows") {
 #' if (!exists("example_model")) example(example_model)
 #' posterior_interval(example_model)
 #' posterior_interval(example_model, regex_pars = "herd")
@@ -108,7 +108,7 @@ posterior_interval.stanreg <-
     if (!identical(type, "central"))
       stop("Currently the only option for 'type' is 'central'.",
            call. = FALSE)
-    
+
     mat <- as.matrix.stanreg(object, pars = pars, regex_pars = regex_pars)
     rstantools::posterior_interval(mat, prob = prob)
   }

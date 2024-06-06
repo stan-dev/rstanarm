@@ -68,9 +68,9 @@ stan_glmer.nb(
 }
 \arguments{
 \item{formula, data}{Same as for \code{\link[lme4]{glmer}}. \emph{We
-strongly advise against omitting the \code{data} argument}. Unless 
-\code{data} is specified (and is a data frame) many post-estimation 
-functions (including \code{update}, \code{loo}, \code{kfold}) are not 
+strongly advise against omitting the \code{data} argument}. Unless
+\code{data} is specified (and is a data frame) many post-estimation
+functions (including \code{update}, \code{loo}, \code{kfold}) are not
 guaranteed to work properly.}
 
 \item{family}{Same as for \code{\link[lme4]{glmer}} except it is also
@@ -79,13 +79,13 @@ with \code{stan_glmer}.}
 
 \item{subset, weights, offset}{Same as \code{\link[stats]{glm}}.}
 
-\item{na.action, contrasts}{Same as \code{\link[stats]{glm}}, but rarely 
+\item{na.action, contrasts}{Same as \code{\link[stats]{glm}}, but rarely
 specified.}
 
-\item{...}{For \code{stan_glmer}, further arguments passed to 
-\code{\link[rstan:stanmodel-method-sampling]{sampling}} (e.g. \code{iter}, \code{chains}, 
-\code{cores}, etc.) or to \code{\link[rstan:stanmodel-method-vb]{vb}} (if \code{algorithm} is 
-\code{"meanfield"} or \code{"fullrank"}). For \code{stan_lmer} and 
+\item{...}{For \code{stan_glmer}, further arguments passed to
+\code{\link[rstan:stanmodel-method-sampling]{sampling}} (e.g. \code{iter}, \code{chains},
+\code{cores}, etc.) or to \code{\link[rstan:stanmodel-method-vb]{vb}} (if \code{algorithm} is
+\code{"meanfield"} or \code{"fullrank"}). For \code{stan_lmer} and
 \code{stan_glmer.nb}, \code{...} should also contain all relevant arguments
 to pass to \code{stan_glmer} (except \code{family}).}
 
@@ -212,14 +212,14 @@ destroy the sparsity) and likewise it is not possible to specify both
 there are in the design matrix, setting \code{sparse = TRUE} may make
 the code run faster and can consume much less RAM.}
 
-\item{link}{For \code{stan_glmer.nb} only, the link function to use. See 
+\item{link}{For \code{stan_glmer.nb} only, the link function to use. See
 \code{\link{neg_binomial_2}}.}
 }
 \value{
 A \link[=stanreg-objects]{stanreg} object is returned 
 for \code{stan_glmer, stan_lmer, stan_glmer.nb}.
 
-A list with classes \code{stanreg}, \code{glm}, \code{lm}, 
+A list with classes \code{stanreg}, \code{glm}, \code{lm},
   and \code{lmerMod}. The conventions for the parameter names are the
   same as in the lme4 package with the addition that the standard
   deviation of the errors is called \code{sigma} and the variance-covariance
@@ -229,30 +229,30 @@ A list with classes \code{stanreg}, \code{glm}, \code{lm},
 }
 \description{
 \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
-Bayesian inference for GLMs with group-specific coefficients that have 
+Bayesian inference for GLMs with group-specific coefficients that have
 unknown covariance matrices with flexible priors.
 }
 \details{
-The \code{stan_glmer} function is similar in syntax to 
-  \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum 
-  likelihood estimation of generalized linear models, Bayesian estimation is 
-  performed via MCMC. The Bayesian model adds priors on the 
+The \code{stan_glmer} function is similar in syntax to
+  \code{\link[lme4]{glmer}} but rather than performing (restricted) maximum
+  likelihood estimation of generalized linear models, Bayesian estimation is
+  performed via MCMC. The Bayesian model adds priors on the
   regression coefficients (in the same way as \code{\link{stan_glm}}) and
   priors on the terms of a decomposition of the covariance matrices of the
   group-specific parameters. See \code{\link{priors}} for more information
   about the priors.
-  
-  The \code{stan_lmer} function is equivalent to \code{stan_glmer} with 
-  \code{family = gaussian(link = "identity")}. 
-  
-  The \code{stan_glmer.nb} function, which takes the extra argument 
-  \code{link}, is a wrapper for \code{stan_glmer} with \code{family = 
+
+  The \code{stan_lmer} function is equivalent to \code{stan_glmer} with
+  \code{family = gaussian(link = "identity")}.
+
+  The \code{stan_glmer.nb} function, which takes the extra argument
+  \code{link}, is a wrapper for \code{stan_glmer} with \code{family =
   \link{neg_binomial_2}(link)}.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 # see help(example_model) for details on the model below
-if (!exists("example_model")) example(example_model) 
+if (!exists("example_model")) example(example_model)
 print(example_model, digits = 1)
 }
 }
@@ -270,6 +270,6 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 \code{\link{stanreg-methods}} and 
 \code{\link[lme4]{glmer}}.
 
-The vignette for \code{stan_glmer} and the \emph{Hierarchical 
+The vignette for \code{stan_glmer} and the \emph{Hierarchical
   Partial Pooling} vignette. \url{https://mc-stan.org/rstanarm/articles/}
 }

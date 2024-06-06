@@ -30,12 +30,12 @@ Compute a Bayesian version of R-squared or LOO-adjusted R-squared for
 regression models.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 fit <- stan_glm(
-  mpg ~ wt + cyl, 
-  data = mtcars, 
-  QR = TRUE, 
-  chains = 2, 
+  mpg ~ wt + cyl,
+  data = mtcars,
+  QR = TRUE,
+  chains = 2,
   refresh = 0
 )
 rsq <- bayes_R2(fit)

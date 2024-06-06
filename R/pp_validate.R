@@ -85,7 +85,7 @@
 #' plot.
 #'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' if (.Platform$OS.type != "windows") {
 #' \dontrun{
 #' if (!exists("example_model")) example(example_model)
 #' try(pp_validate(example_model)) # fails with default seed / priors

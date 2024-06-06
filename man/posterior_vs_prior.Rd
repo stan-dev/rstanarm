@@ -22,39 +22,39 @@ posterior_vs_prior(object, ...)
 \item{object}{A fitted model object returned by one of the 
 \pkg{rstanarm} modeling functions. See \code{\link{stanreg-objects}}.}
 
-\item{...}{The S3 generic uses \code{...} to pass arguments to any defined 
+\item{...}{The S3 generic uses \code{...} to pass arguments to any defined
 methods. For the method for stanreg objects, \code{...} is for arguments
 (other than \code{color}) passed to \code{geom_pointrange} in the \pkg{ggplot2}
 package to control the appearance of the plotted intervals.}
 
 \item{pars}{An optional character vector specifying a subset of parameters to
-display. Parameters can be specified by name or several shortcuts can be 
-used. Using \code{pars="beta"} will restrict the displayed parameters to 
-only the regression coefficients (without the intercept). \code{"alpha"} 
-can also be used as a shortcut for \code{"(Intercept)"}. If the model has 
-varying intercepts and/or slopes they can be selected using \code{pars = 
-"varying"}.
+  display. Parameters can be specified by name or several shortcuts can be
+  used. Using \code{pars="beta"} will restrict the displayed parameters to
+  only the regression coefficients (without the intercept). \code{"alpha"}
+  can also be used as a shortcut for \code{"(Intercept)"}. If the model has
+  varying intercepts and/or slopes they can be selected using \code{pars =
+  "varying"}.
 
-In addition, for \code{stanmvreg} objects there are some additional shortcuts 
-available. Using \code{pars = "long"} will display the 
-parameter estimates for the longitudinal submodels only (excluding group-specific
-pparameters, but including auxiliary parameters).
-Using \code{pars = "event"} will display the 
-parameter estimates for the event submodel only, including any association
-parameters. 
-Using \code{pars = "assoc"} will display only the 
-association parameters. 
-Using \code{pars = "fixef"} will display all fixed effects, but not
-the random effects or the auxiliary parameters. 
- \code{pars} and \code{regex_pars} are set to \code{NULL} then all 
-fixed effect regression coefficients are selected, as well as any 
-auxiliary parameters and the log posterior.   
+  In addition, for \code{stanmvreg} objects there are some additional shortcuts
+  available. Using \code{pars = "long"} will display the
+  parameter estimates for the longitudinal submodels only (excluding group-specific
+  pparameters, but including auxiliary parameters).
+  Using \code{pars = "event"} will display the
+  parameter estimates for the event submodel only, including any association
+  parameters.
+  Using \code{pars = "assoc"} will display only the
+  association parameters.
+  Using \code{pars = "fixef"} will display all fixed effects, but not
+  the random effects or the auxiliary parameters.
+   \code{pars} and \code{regex_pars} are set to \code{NULL} then all
+  fixed effect regression coefficients are selected, as well as any
+  auxiliary parameters and the log posterior.
 
-If \code{pars} is \code{NULL} all parameters are selected for a \code{stanreg}
-object, while for a \code{stanmvreg} object all 
-fixed effect regression coefficients are selected as well as any 
-auxiliary parameters and the log posterior. See 
-\strong{Examples}.}
+  If \code{pars} is \code{NULL} all parameters are selected for a \code{stanreg}
+  object, while for a \code{stanmvreg} object all
+  fixed effect regression coefficients are selected as well as any
+  auxiliary parameters and the log posterior. See
+  \strong{Examples}.}
 
 \item{regex_pars}{An optional character vector of \link[=grep]{regular 
 expressions} to use for parameter selection. \code{regex_pars} can be used
@@ -62,18 +62,18 @@ in place of \code{pars} or in addition to \code{pars}. Currently, all
 functions that accept a \code{regex_pars} argument ignore it for models fit
 using optimization.}
 
-\item{prob}{A number \eqn{p \in (0,1)}{p (0 < p < 1)} indicating the desired 
-posterior probability mass to include in the (central posterior) interval 
+\item{prob}{A number \eqn{p \in (0,1)}{p (0 < p < 1)} indicating the desired
+posterior probability mass to include in the (central posterior) interval
 estimates displayed in the plot. The default is \eqn{0.9}.}
 
-\item{color_by}{How should the estimates be colored? Use \code{"parameter"} 
-to color by parameter name, \code{"vs"} to color the prior one color and 
-the posterior another, and \code{"none"} to use no color. Except when 
-\code{color_by="none"}, a variable is mapped to the color 
+\item{color_by}{How should the estimates be colored? Use \code{"parameter"}
+to color by parameter name, \code{"vs"} to color the prior one color and
+the posterior another, and \code{"none"} to use no color. Except when
+\code{color_by="none"}, a variable is mapped to the color
 \code{\link[ggplot2]{aes}}thetic and it is therefore also possible to
 change the default colors by adding one of the various discrete color
-scales available in \code{ggplot2} 
-(\code{\link[ggplot2:scale_manual]{scale_color_manual}}, 
+scales available in \code{ggplot2}
+(\code{\link[ggplot2:scale_manual]{scale_color_manual}},
 \code{scale_colour_brewer}, etc.). See Examples.}
 
 \item{group_by_parameter}{Should estimates be grouped together by parameter
@@ -81,23 +81,23 @@ scales available in \code{ggplot2}
 
 \item{facet_args}{A named list of arguments passed to
 \code{\link[ggplot2]{facet_wrap}} (other than the \code{facets} argument),
-e.g., \code{nrow} or \code{ncol} to change the layout, \code{scales} to 
+e.g., \code{nrow} or \code{ncol} to change the layout, \code{scales} to
 allow axis scales to vary across facets, etc. See Examples.}
 }
 \value{
-A ggplot object that can be further customized using the 
+A ggplot object that can be further customized using the
   \pkg{ggplot2} package.
 }
 \description{
-Plot medians and central intervals comparing parameter draws from the prior 
-and posterior distributions. If the plotted priors look different than the 
-priors you think you specified it is likely either because of internal 
+Plot medians and central intervals comparing parameter draws from the prior
+and posterior distributions. If the plotted priors look different than the
+priors you think you specified it is likely either because of internal
 rescaling or the use of the \code{QR} argument (see the documentation for the
-\code{\link[=prior_summary.stanreg]{prior_summary}} method for details on 
+\code{\link[=prior_summary.stanreg]{prior_summary}} method for details on
 these special cases).
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 \dontrun{
 if (!exists("example_model")) example(example_model)
 # display non-varying (i.e. not group-level) coefficients
@@ -115,29 +115,29 @@ posterior_vs_prior(example_model, regex_pars = "period",
 # assign to object and customize with functions from ggplot2
 (gg <- posterior_vs_prior(example_model, pars = c("beta", "varying"), prob = 0.8))
 
-gg + 
- ggplot2::geom_hline(yintercept = 0, size = 0.3, linetype = 3) + 
- ggplot2::coord_flip() + 
+gg +
+ ggplot2::geom_hline(yintercept = 0, size = 0.3, linetype = 3) +
+ ggplot2::coord_flip() +
  ggplot2::ggtitle("Comparing the prior and posterior")
- 
+
 # compare very wide and very narrow priors using roaches example
 # (see help(roaches, "rstanarm") for info on the dataset)
 roaches$roach100 <- roaches$roach1 / 100
 wide_prior <- normal(0, 10)
 narrow_prior <- normal(0, 0.1)
-fit_pois_wide_prior <- stan_glm(y ~ treatment + roach100 + senior, 
-                                offset = log(exposure2), 
-                                family = "poisson", data = roaches, 
+fit_pois_wide_prior <- stan_glm(y ~ treatment + roach100 + senior,
+                                offset = log(exposure2),
+                                family = "poisson", data = roaches,
                                 prior = wide_prior)
-posterior_vs_prior(fit_pois_wide_prior, pars = "beta", prob = 0.5, 
-                   group_by_parameter = TRUE, color_by = "vs", 
+posterior_vs_prior(fit_pois_wide_prior, pars = "beta", prob = 0.5,
+                   group_by_parameter = TRUE, color_by = "vs",
                    facet_args = list(scales = "free"))
-                   
+
 fit_pois_narrow_prior <- update(fit_pois_wide_prior, prior = narrow_prior)
-posterior_vs_prior(fit_pois_narrow_prior, pars = "beta", prob = 0.5, 
-                   group_by_parameter = TRUE, color_by = "vs", 
+posterior_vs_prior(fit_pois_narrow_prior, pars = "beta", prob = 0.5,
+                   group_by_parameter = TRUE, color_by = "vs",
                    facet_args = list(scales = "free"))
-                   
+
 
 # look at cutpoints for ordinal model
 fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",

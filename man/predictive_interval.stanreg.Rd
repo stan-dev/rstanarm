@@ -24,10 +24,10 @@
 \method{predictive_interval}{ppd}(object, prob = 0.9, ...)
 }
 \arguments{
-\item{object}{Either a fitted model object returned by one of the 
-\pkg{rstanarm} modeling functions (a \link[=stanreg-objects]{stanreg 
-object}) or, for the matrix method, a matrix of draws from the 
-posterior predictive distribution returned by 
+\item{object}{Either a fitted model object returned by one of the
+\pkg{rstanarm} modeling functions (a \link[=stanreg-objects]{stanreg
+object}) or, for the matrix method, a matrix of draws from the
+posterior predictive distribution returned by
 \code{\link{posterior_predict}}.}
 
 \item{prob}{A number \eqn{p \in (0,1)}{p (0 < p < 1)} indicating the desired
@@ -35,13 +35,13 @@ probability mass to include in the intervals. The default is to report
 \eqn{90}\% intervals (\code{prob=0.9}) rather than the traditionally used
 \eqn{95}\% (see Details).}
 
-\item{newdata, draws, fun, offset, re.form, seed}{Passed to 
+\item{newdata, draws, fun, offset, re.form, seed}{Passed to
 \code{\link[=posterior_predict]{posterior_predict}}.}
 
 \item{...}{Currently ignored.}
 }
 \value{
-A matrix with two columns and as many rows as are in \code{newdata}. 
+A matrix with two columns and as many rows as are in \code{newdata}.
   If \code{newdata} is not provided then the matrix will have as many rows as
   the data used to fit the model. For a given value of \code{prob}, \eqn{p},
   the columns correspond to the lower and upper \eqn{100p}\% central interval
@@ -60,10 +60,10 @@ internally, whereas the method for matrices accepts the matrix returned by
 \code{posterior_predict}.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 300)
 predictive_interval(fit)
-predictive_interval(fit, newdata = data.frame(wt = range(mtcars$wt)), 
+predictive_interval(fit, newdata = data.frame(wt = range(mtcars$wt)),
                     prob = 0.5)
 
 # stanreg vs matrix methods
@@ -75,6 +75,6 @@ all.equal(
 }
 }
 \seealso{
-\code{\link{predictive_error}}, \code{\link{posterior_predict}}, 
+\code{\link{predictive_error}}, \code{\link{posterior_predict}},
   \code{\link{posterior_interval}}
 }

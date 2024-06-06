@@ -59,12 +59,12 @@ post-estimation functions (including \code{update}, \code{loo},
 \item{na.action}{Same as \code{\link[betareg]{betareg}}, but
 rarely specified.}
 
-\item{link}{Character specification of the link function used in the model 
+\item{link}{Character specification of the link function used in the model
 for mu (specified through \code{x}). Currently, "logit", "probit",
 "cloglog", "cauchit", "log", and "loglog" are supported.}
 
-\item{link.phi}{If applicable, character specification of the link function 
-used in the model for \code{phi} (specified through \code{z}). Currently, 
+\item{link.phi}{If applicable, character specification of the link function
+used in the model for \code{phi} (specified through \code{z}). Currently,
 "identity", "log" (default), and "sqrt" are supported. Since the "sqrt"
 link function is known to be unstable, it is advisable to specify a
 different link function (or to model \code{phi} as a scalar parameter
@@ -152,15 +152,15 @@ particular model.}
   intercept always correspond to a parameterization without centered
   predictors (i.e., same as in \code{glm}).}
 
-\item{prior_z}{Prior distribution for the coefficients in the model for 
+\item{prior_z}{Prior distribution for the coefficients in the model for
 \code{phi} (if applicable). Same options as for \code{prior}.}
 
-\item{prior_intercept_z}{Prior distribution for the intercept in the model 
+\item{prior_intercept_z}{Prior distribution for the intercept in the model
 for \code{phi} (if applicable). Same options as for \code{prior_intercept}.}
 
-\item{prior_phi}{The prior distribution for \code{phi} if it is \emph{not} 
-modeled as a function of predictors. If \code{z} variables are specified 
-then \code{prior_phi} is ignored and \code{prior_intercept_z} and 
+\item{prior_phi}{The prior distribution for \code{phi} if it is \emph{not}
+modeled as a function of predictors. If \code{z} variables are specified
+then \code{prior_phi} is ignored and \code{prior_intercept_z} and
 \code{prior_z} are used to specify the priors on the intercept and
 coefficients in the model for \code{phi}. When applicable, \code{prior_phi}
 can be a call to \code{exponential} to use an exponential distribution, or
@@ -206,21 +206,21 @@ A \link[=stanfit-class]{stanfit} object (or a slightly modified
 }
 \description{
 \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
-Beta regression modeling with optional prior distributions for the 
+Beta regression modeling with optional prior distributions for the
 coefficients, intercept, and auxiliary parameter \code{phi} (if applicable).
 }
 \details{
-The \code{stan_betareg} function is similar in syntax to 
-  \code{\link[betareg]{betareg}} but rather than performing maximum 
-  likelihood estimation, full Bayesian estimation is performed (if 
-  \code{algorithm} is \code{"sampling"}) via MCMC. The Bayesian model adds 
+The \code{stan_betareg} function is similar in syntax to
+  \code{\link[betareg]{betareg}} but rather than performing maximum
+  likelihood estimation, full Bayesian estimation is performed (if
+  \code{algorithm} is \code{"sampling"}) via MCMC. The Bayesian model adds
   priors (independent by default) on the coefficients of the beta regression
   model. The \code{stan_betareg} function calls the workhorse
   \code{stan_betareg.fit} function, but it is also possible to call the
   latter directly.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 ### Simulated data
 N <- 200
 x <- rnorm(N, 2, 1)
@@ -232,16 +232,16 @@ hist(y, col = "dark grey", border = FALSE, xlim = c(0,1))
 fake_dat <- data.frame(y, x, z)
 
 fit <- stan_betareg(
-  y ~ x | z, data = fake_dat, 
-  link = "logit", 
-  link.phi = "log", 
+  y ~ x | z, data = fake_dat,
+  link = "logit",
+  link.phi = "log",
   algorithm = "optimizing" # just for speed of example
- ) 
+ )
 print(fit, digits = 2)
 }
 }
 \references{
-Ferrari, SLP and Cribari-Neto, F (2004). Beta regression for 
+Ferrari, SLP and Cribari-Neto, F (2004). Beta regression for
   modeling rates and proportions. \emph{Journal of Applied Statistics}.
   31(7), 799--815.
 }

@@ -83,7 +83,7 @@
 #' }
 #'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' if (.Platform$OS.type != "windows") {
 #' fit <- stan_glmer(
 #'   mpg ~ wt + am + (1|cyl),
 #'   data = mtcars,

@@ -2,17 +2,17 @@
 # Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
 #  Copyright (C) 1995-2015 The R Core Team
 #  Copyright (C) 1998 B. D. Ripley
-# 
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 3
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -23,7 +23,7 @@
 #'   \code{FALSE}) indicating whether \code{\link[stats]{proj}} should be called
 #'   on the fit.
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' if (.Platform$OS.type != "windows") {
 #' \donttest{
 #' op <- options(contrasts = c("contr.helmert", "contr.poly"))
 #' fit_aov <- stan_aov(yield ~ block + N*P*K, data = npk,
@@ -34,13 +34,13 @@
 #' }
 stan_aov <- function(formula, data, projections = FALSE,
                      contrasts = NULL, ...,
-                     prior = R2(stop("'location' must be specified")), 
-                     prior_PD = FALSE, 
-                     algorithm = c("sampling", "meanfield", "fullrank"), 
+                     prior = R2(stop("'location' must be specified")),
+                     prior_PD = FALSE,
+                     algorithm = c("sampling", "meanfield", "fullrank"),
                      adapt_delta = NULL) {
 
     # parse like aov() does
-    Terms <- if (missing(data)) 
+    Terms <- if (missing(data))
       terms(formula, "Error") else terms(formula, "Error", data = data)
     indError <- attr(Terms, "specials")$Error
     ## NB: this is only used for n > 1, so singular form makes no sense
@@ -54,7 +54,7 @@ stan_aov <- function(formula, data, projections = FALSE,
     ## need rstanarm:: for non-standard evaluation
     lmcall[[1L]] <- quote(stan_lm)
     lmcall$singular.ok <- TRUE
-    if (projections) 
+    if (projections)
       qr <- lmcall$qr <- TRUE
     lmcall$projections <- NULL
     if (is.null(indError)) {
@@ -74,13 +74,13 @@ stan_aov <- function(formula, data, projections = FALSE,
         effects <- aperm(effects, c(2,3,1))
         fit$effects <- effects
         class(fit) <- c("stanreg", "aov", "lm")
-        if (projections) 
+        if (projections)
           fit$projections <- proj(fit)
         fit$call <- Call
         fit$stan_function <- "stan_aov"
         return(fit)
     } else { # nocov start
-      
+
         stop("Error terms not supported yet")
         if(pmatch("weights", names(match.call()), 0L))
             stop("weights are not supported in a multistratum aov() fit")

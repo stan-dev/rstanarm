@@ -63,8 +63,8 @@ when \code{plotfun = "basehaz"} or \code{plotfun = "tve"}}
 \code{\link[ggplot2]{geom_ribbon}} and used to control features
 of the plotted interval limits. They should be supplied as a named list.}
 
-\item{n}{Integer specifying the number of points to interpolate along 
-when plotting the baseline hazard or time-varying hazard ratio. Each of 
+\item{n}{Integer specifying the number of points to interpolate along
+when plotting the baseline hazard or time-varying hazard ratio. Each of
 the points are joined using a line.}
 }
 \value{
@@ -73,15 +73,15 @@ Either a ggplot object that can be further customized using the
   (e.g. a gtable object created by \code{\link[gridExtra]{arrangeGrob}}).
 }
 \description{
-The \code{plot} method for \link{stanreg-objects} provides a convenient 
-interface to the \link[bayesplot:MCMC-overview]{MCMC} module in the 
-\pkg{\link{bayesplot}} package for plotting MCMC draws and diagnostics. It is also 
+The \code{plot} method for \link{stanreg-objects} provides a convenient
+interface to the \link[bayesplot:MCMC-overview]{MCMC} module in the
+\pkg{\link{bayesplot}} package for plotting MCMC draws and diagnostics. It is also
 straightforward to use the functions from the \pkg{bayesplot} package directly rather than
 via the \code{plot} method. Examples of both methods of plotting are given
 below.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 \donttest{
 # Use rstanarm example model
 if (!exists("example_model")) example(example_model)

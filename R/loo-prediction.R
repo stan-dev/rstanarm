@@ -32,7 +32,7 @@
 #'   details on the \code{pareto_k} diagnostic.
 #'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' if (.Platform$OS.type != "windows") {
 #' \dontrun{
 #' if (!exists("example_model")) example(example_model)
 #'
@@ -167,4 +167,3 @@ psis.stanreg <- function(log_ratios, ...) {
   r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id_for_loo(object))
   loo::psis(-ll, r_eff = r_eff, ...)
 }
-

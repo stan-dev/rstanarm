@@ -33,25 +33,25 @@ A matrix, data.frame, or array, the dimensions of which depend on
 }
 \description{
 For models fit using MCMC (\code{algorithm="sampling"}), the posterior sample
----the post-warmup draws from the posterior distribution--- can be extracted 
-from a fitted model object as a matrix, data frame, or array. The 
-\code{as.matrix} and \code{as.data.frame} methods merge all chains together, 
-whereas the \code{as.array} method keeps the chains separate. For models fit 
-using optimization (\code{"optimizing"}) or variational inference 
-(\code{"meanfield"} or \code{"fullrank"}), there is no posterior sample but 
+---the post-warmup draws from the posterior distribution--- can be extracted
+from a fitted model object as a matrix, data frame, or array. The
+\code{as.matrix} and \code{as.data.frame} methods merge all chains together,
+whereas the \code{as.array} method keeps the chains separate. For models fit
+using optimization (\code{"optimizing"}) or variational inference
+(\code{"meanfield"} or \code{"fullrank"}), there is no posterior sample but
 rather a matrix (or data frame) of 1000 draws from either the asymptotic
 multivariate Gaussian sampling distribution of the parameters or the
 variational approximation to the posterior distribution.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 \donttest{
 if (!exists("example_model")) example(example_model)
 # Extract posterior sample after MCMC
 draws <- as.matrix(example_model)
 print(dim(draws))
 
-# For example, we can see that the median of the draws for the intercept 
+# For example, we can see that the median of the draws for the intercept
 # is the same as the point estimate rstanarm uses
 print(median(draws[, "(Intercept)"]))
 print(example_model$coefficients[["(Intercept)"]])
@@ -60,7 +60,7 @@ print(example_model$coefficients[["(Intercept)"]])
 draws_array <- as.array(example_model)
 print(dim(draws_array)) # iterations x chains x parameters
 
-# Extract draws from asymptotic Gaussian sampling distribution 
+# Extract draws from asymptotic Gaussian sampling distribution
 # after optimization
 fit <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing")
 draws <- as.data.frame(fit)

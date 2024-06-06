@@ -25,7 +25,7 @@
 #'
 #' @aliases posterior_linpred posterior_epred
 #' @export
-#' 
+#'
 #' @templateVar stanregArg object
 #' @template args-stanreg-object
 #' @param transform Should the linear predictor be transformed using the
@@ -34,17 +34,17 @@
 #'   provides the equivalent of \code{posterior_linpred(..., transform=TRUE)}.
 #'   See \strong{Examples}.
 #' @param newdata,draws,re.form,offset Same as for \code{\link{posterior_predict}}.
-#' @param XZ If \code{TRUE} then instead of computing the linear predictor the 
+#' @param XZ If \code{TRUE} then instead of computing the linear predictor the
 #'   design matrix \code{X} (or \code{cbind(X,Z)} for models with group-specific
-#'   terms) constructed from \code{newdata} is returned. The default is 
+#'   terms) constructed from \code{newdata} is returned. The default is
 #'   \code{FALSE}.
-#' @param ... Currently ignored.   
-#'   
+#' @param ... Currently ignored.
+#'
 #' @return The default is to return a \code{draws} by \code{nrow(newdata)}
 #'   matrix of simulations from the posterior distribution of the (possibly
 #'   transformed) linear predictor. The exception is if the argument \code{XZ}
 #'   is set to \code{TRUE} (see the \code{XZ} argument description above).
-#'   
+#'
 #' @details The \code{posterior_linpred} function returns the posterior
 #'   distribution of the linear predictor, while the \code{posterior_epred}
 #'   function returns the posterior distribution of the conditional expectation.
@@ -52,32 +52,32 @@
 #'   function, these two concepts are the same. The \code{posterior_epred}
 #'   function is a less noisy way to obtain expectations over the output of
 #'   \code{\link{posterior_predict}}.
-#'   
-#' @note For models estimated with \code{\link{stan_clogit}}, the number of 
+#'
+#' @note For models estimated with \code{\link{stan_clogit}}, the number of
 #'   successes per stratum is ostensibly fixed by the research design. Thus,
 #'   when calling \code{posterior_linpred} with new data and \code{transform =
 #'   TRUE}, the \code{data.frame} passed to the \code{newdata} argument must
 #'   contain an outcome variable and a stratifying factor, both with the same
 #'   name as in the original \code{data.frame}. Then, the probabilities will
 #'   condition on this outcome in the new data.
-#'   
-#' @seealso \code{\link{posterior_predict}} to draw from the posterior 
+#'
+#' @seealso \code{\link{posterior_predict}} to draw from the posterior
 #'   predictive distribution of the outcome, which is typically preferable.
 #'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' if (.Platform$OS.type != "windows") {
 #' if (!exists("example_model")) example(example_model)
 #' print(family(example_model))
-#' 
+#'
 #' # linear predictor on log-odds scale
 #' linpred <- posterior_linpred(example_model)
 #' colMeans(linpred)
-#' 
+#'
 #' # probabilities
 #' # same as posterior_linpred(example_model, transform = TRUE)
-#' probs <- posterior_epred(example_model) 
+#' probs <- posterior_epred(example_model)
 #' colMeans(probs)
-#' 
+#'
 #' # not conditioning on any group-level parameters
 #' probs2 <- posterior_epred(example_model, re.form = NA)
 #' apply(probs2, 2, median)
@@ -96,7 +96,7 @@ posterior_linpred.stanreg <-
       STOP_if_stanmvreg("'posterior_linpred'")
     if (is.stansurv(object))
       STOP_if_stansurv("'poterior_linpred'")
-    
+
     newdata <- validate_newdata(object, newdata = newdata, m = NULL)
     dat <- pp_data(object,
                    newdata = newdata,
@@ -108,7 +108,7 @@ posterior_linpred.stanreg <-
         XZ <- cbind(XZ, t(dat[["Zt"]]))
       return(XZ)
     }
-    
+
     eta <- pp_eta(object, data = dat, draws = draws)[["eta"]]
     if (is.null(newdata)) {
       colnames(eta) <- rownames(model.frame(object))
@@ -122,15 +122,15 @@ posterior_linpred.stanreg <-
         "which provides equivalent functionality."
       )
     }
-    
+
     if (!transform || is.nlmer(object)) {
       return(eta)
     }
-    
+
     if (is_clogit(object)) {
       return(clogit_linpred_transform(object, newdata = newdata, eta = eta))
     }
-    
+
     g <- linkinv(object)
     return(g(eta))
   }

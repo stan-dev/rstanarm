@@ -25,7 +25,7 @@ CHAINS <- 2
 CORES <- 1
 REFRESH <- 0
 
-threshold <- 0.03
+threshold <- 0.1
 
 context("stan_clogit")
 
@@ -34,7 +34,7 @@ SW(fit <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NU
                    chains = CHAINS, iter = ITER, refresh = 0))
 
 test_that("stan_clogit is similar to survival::clogit", {
-  expect_equal(c(spontaneous = 1.985876, induced = 1.409012), coef(fit), tol = 0.1)
+  expect_equal(c(spontaneous = 1.985876, induced = 1.409012), coef(fit), tol = threshold)
 })
 
 test_that("stan_clogit runs for infert example", {

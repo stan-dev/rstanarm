@@ -47,8 +47,8 @@ Source: Carpenter (2009)
 }
 \item{\code{bcancer}}{
 The German Breast Cancer Study Group dataset, containing time to death or
-recurrence for 686 patients with primary node positive breast cancer 
-recruited between 1984-1989. 
+recurrence for 686 patients with primary node positive breast cancer
+recruited between 1984-1989.
 
 Source: Royston and Parmar (2002)
 
@@ -63,11 +63,11 @@ by Sauerbrei and Royston (1999) (\code{Good}, \code{Medium}, \code{Poor})
 }
 \item{\code{frail}}{
 A simulated dataset of event times (i.e. survival data) for 200 patients
-clustered within 20 hospital sites (10 patients per hospital site). 
-The event times are simulated from a parametric proportional hazards model 
-under the following assumptions: (i) a constant (i.e. exponential) baseline 
-hazard rate of 0.1; (ii) a fixed treatment effect with log hazard ratio of 
-0.3; and (iii) a site-specific random intercept (specified on the log 
+clustered within 20 hospital sites (10 patients per hospital site).
+The event times are simulated from a parametric proportional hazards model
+under the following assumptions: (i) a constant (i.e. exponential) baseline
+hazard rate of 0.1; (ii) a fixed treatment effect with log hazard ratio of
+0.3; and (iii) a site-specific random intercept (specified on the log
 hazard scale) drawn from a \eqn{N(0,1)} distribution.
 
 200 obs. of 6 variables
@@ -75,14 +75,14 @@ hazard scale) drawn from a \eqn{N(0,1)} distribution.
 \item \code{id} ID unique to each patient
 \item \code{site} ID unique to each hospital site (i.e. cluster)
 \item \code{trt} Treatment indicator (0 = untreated, 1 = treated)
-\item \code{b} Cluster-specific random intercept used to simulate the 
+\item \code{b} Cluster-specific random intercept used to simulate the
 event times
 \item \code{eventtime} Event or censoring time
 \item \code{status} Event indicator (0 = right censored, 1 = event)
 }
 }
 \item{\code{kidiq}}{
-Data from a survey of adult American women and their children 
+Data from a survey of adult American women and their children
 (a subsample from the National Longitudinal Survey of Youth).
 
 Source: Gelman and Hill (2007)
@@ -97,11 +97,11 @@ Source: Gelman and Hill (2007)
 }
 \item{\code{mice}}{
 Lung tumor development in 144 RFM mice allocated to either a conventional
-environment or germ-free environment. Mice were sacrificed and examined 
-for presence of a lung tumor. The outcome variables in the dataset 
-(\code{l} and \code{u}) denote a left-censored or right-censored time 
-interval within which the development of the first lung tumor must have 
-occurred. 
+environment or germ-free environment. Mice were sacrificed and examined
+for presence of a lung tumor. The outcome variables in the dataset
+(\code{l} and \code{u}) denote a left-censored or right-censored time
+interval within which the development of the first lung tumor must have
+occurred.
 
 Source: Hoel and Walburg (1972)
 
@@ -126,8 +126,8 @@ Source: Spiegelhalter et al. (1996).
 }
 }
 \item{\code{pbcLong,pbcSurv}}{
-Longitudinal biomarker and time-to-event survival data for 40 patients 
-with primary biliary cirrhosis who participated in a randomised 
+Longitudinal biomarker and time-to-event survival data for 40 patients
+with primary biliary cirrhosis who participated in a randomised
 placebo controlled trial of D-penicillamine conducted at the Mayo
 Clinic between 1974 and 1984.
 
@@ -139,12 +139,12 @@ Source: Therneau and Grambsch (2000)
 \item \code{albumin} Serum albumin (g/dl)
 \item \code{logBili} Logarithm of serum bilirubin
 \item \code{death} Indicator of death at endpoint
-\item \code{futimeYears} Time (in years) between baseline and  
+\item \code{futimeYears} Time (in years) between baseline and
     the earliest of death, transplantion or censoring
 \item \code{id} Numeric ID unique to each individual
 \item \code{platelet} Platelet count
 \item \code{sex} Gender (m = male, f = female)
-\item \code{status} Status at endpoint (0 = censored, 1 = transplant, 
+\item \code{status} Status at endpoint (0 = censored, 1 = transplant,
     2 = dead)
 \item \code{trt} Binary treatment code (0 = placebo, 1 = D-penicillamine)
 \item \code{year} Time (in years) of the longitudinal measurements,
@@ -153,7 +153,7 @@ Source: Therneau and Grambsch (2000)
 }
 
 \item{\code{radon}}{
-Data on radon levels in houses in the state of Minnesota. 
+Data on radon levels in houses in the state of Minnesota.
 
 Source: Gelman and Hill (2007)
 
@@ -184,7 +184,7 @@ Source: Gelman and Hill (2007)
 \item{\code{tumors}}{
 Tarone (1982) provides a data set of tumor incidence in historical
 control groups of rats; specifically endometrial stromal polyps in
-female lab rats of type F344.  
+female lab rats of type F344.
 
 Source: Gelman and Hill (2007)
 
@@ -221,16 +221,16 @@ in community organizations
 Small datasets for use in \pkg{rstanarm} examples and vignettes.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
-# Using 'kidiq' dataset 
-fit <- stan_lm(kid_score ~ mom_hs * mom_iq, data = kidiq, 
+if (.Platform$OS.type != "windows") {
+# Using 'kidiq' dataset
+fit <- stan_lm(kid_score ~ mom_hs * mom_iq, data = kidiq,
                prior = R2(location = 0.30, what = "mean"),
                # the next line is only to make the example go fast enough
                chains = 1, iter = 500, seed = 12345)
 pp_check(fit, nreps = 20)
 \donttest{
 bayesplot::color_scheme_set("brightblue")
-pp_check(fit, plotfun = "stat_grouped", stat = "median", 
+pp_check(fit, plotfun = "stat_grouped", stat = "median",
          group = factor(kidiq$mom_hs, labels = c("No HS", "HS")))
 }
 }
@@ -247,25 +247,25 @@ Gelman, A. and Hill, J. (2007). \emph{Data Analysis Using
   Regression and Multilevel/Hierarchical Models.} Cambridge University Press,
   Cambridge, UK. \url{https://stat.columbia.edu/~gelman/arm/}
 
-Hoel, D. and Walburg, H. (1972) Statistical analysis of survival experiments. 
+Hoel, D. and Walburg, H. (1972) Statistical analysis of survival experiments.
 \emph{The Annals of Statistics} \strong{18}:1259--1294.
 
-Royston, P. and Parmar, M. (2002) Flexible parametric proportional-hazards 
-and proportional-odds models for censored survival data, with application 
-to prognostic modelling and estimation of treatment effects. 
+Royston, P. and Parmar, M. (2002) Flexible parametric proportional-hazards
+and proportional-odds models for censored survival data, with application
+to prognostic modelling and estimation of treatment effects.
 \emph{Statistics in Medicine} \strong{21}(1):2175--2197.
 
-Sauerbrei, W. and Royston, P. (1999) Building multivariable prognostic and 
-diagnostic models: transformation of the predictors using fractional 
+Sauerbrei, W. and Royston, P. (1999) Building multivariable prognostic and
+diagnostic models: transformation of the predictors using fractional
 polynomials. \emph{Journal of the Royal Statistical Society, Series A}
 \strong{162}:71--94.
 
-Spiegelhalter, D., Thomas, A., Best, N., and Gilks, W. (1996) BUGS 0.5 
+Spiegelhalter, D., Thomas, A., Best, N., and Gilks, W. (1996) BUGS 0.5
 Examples. MRC Biostatistics Unit, Institute of Public health, Cambridge, UK.
 
 Tarone, R. E. (1982) The use of historical control information in testing for
 a trend in proportions. \emph{Biometrics} \strong{38}(1):215--220.
 
-Therneau, T. and Grambsch, P. (2000) \emph{Modeling Survival Data: Extending 
+Therneau, T. and Grambsch, P. (2000) \emph{Modeling Survival Data: Extending
 the Cox Model}. Springer-Verlag, New York, US.
 }

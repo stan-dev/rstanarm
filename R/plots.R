@@ -18,9 +18,9 @@
 #
 #' Plot method for stanreg objects
 #'
-#' The \code{plot} method for \link{stanreg-objects} provides a convenient 
-#' interface to the \link[bayesplot:MCMC-overview]{MCMC} module in the 
-#' \pkg{\link{bayesplot}} package for plotting MCMC draws and diagnostics. It is also 
+#' The \code{plot} method for \link{stanreg-objects} provides a convenient
+#' interface to the \link[bayesplot:MCMC-overview]{MCMC} module in the
+#' \pkg{\link{bayesplot}} package for plotting MCMC draws and diagnostics. It is also
 #' straightforward to use the functions from the \pkg{bayesplot} package directly rather than
 #' via the \code{plot} method. Examples of both methods of plotting are given
 #' below.
@@ -68,7 +68,7 @@
 #' @template reference-bayesvis
 #'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' if (.Platform$OS.type != "windows") {
 #' \donttest{
 #' # Use rstanarm example model
 #' if (!exists("example_model")) example(example_model)
@@ -92,7 +92,7 @@
 #' # bayesplot::mcmc_areas directly
 #' x <- as.array(fit, regex_pars = "period")
 #' bayesplot::mcmc_areas(x, prob = 0.5, prob_outer = 0.9)
-#' 
+#'
 #' # Ridgelines version of the areas plot
 #' bayesplot::mcmc_areas_ridges(x, regex_pars = "period", prob = 0.9)
 #'
@@ -198,8 +198,8 @@ plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
 #'   include in the plot. Can be \code{"ci"} for the Bayesian posterior
 #'   uncertainty interval, or \code{"none"}. This argument is only relevant
 #'   when \code{plotfun = "basehaz"} or \code{plotfun = "tve"}
-#' @param n Integer specifying the number of points to interpolate along 
-#'   when plotting the baseline hazard or time-varying hazard ratio. Each of 
+#' @param n Integer specifying the number of points to interpolate along
+#'   when plotting the baseline hazard or time-varying hazard ratio. Each of
 #'   the points are joined using a line.
 #'
 plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
@@ -210,7 +210,7 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
   validate_stansurv_object(x)
 
   limits <- match.arg(limits)
-  
+
   if (plotfun %in% c("basehaz", "tve")) {
 
     stanpars <- extract_pars(x)
@@ -234,7 +234,7 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       basehaz <- do.call(evaluate_basehaz, args)
       basehaz <- median_and_bounds(basehaz, prob, na.rm = TRUE)
       plotdat <- data.frame(times, basehaz)
-      
+
       uses_step_stair <- (get_basehaz_name(x) %in% c("piecewise"))
 
       ylab <- "Baseline hazard rate"
@@ -269,22 +269,22 @@ plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
       tt_form   <- x$formula$tt_forms  [[tt_varid]]
       tt_data   <- data.frame(times__ = times)
       tt_x      <- model.matrix(tt_form, tt_data)
-      
+
       coef      <- linear_predictor(betas, tt_x)
-      
+
       is_aft    <- get_basehaz_name(x$basehaz) %in% c("exp-aft", "weibull-aft")
-      
-      plotdat   <- median_and_bounds(exp(coef), prob, na.rm = TRUE)  
+
+      plotdat   <- median_and_bounds(exp(coef), prob, na.rm = TRUE)
       plotdat   <- data.frame(times, plotdat)
 
       uses_step_stair <- (tt_degree == 0)
-      
+
       xlab <- "Time"
-      ylab <- ifelse(is_aft, 
-                     paste0("Survival time ratio\n(", pars, ")"), 
+      ylab <- ifelse(is_aft,
+                     paste0("Survival time ratio\n(", pars, ")"),
                      paste0("Hazard ratio\n(", pars, ")"))
     }
-    
+
     geom_defs <- list(color = "black") # default plot args
     geom_args <- set_geom_args(geom_defs, ...)
     geom_maps <- list(aes_string(x = "times", y = "med"))
@@ -451,7 +451,7 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 # pairs method ------------------------------------------------------------
 
 #' Pairs method for stanreg objects
-#' 
+#'
 #' Interface to \pkg{bayesplot}'s
 #' \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}} function for use with
 #' \pkg{rstanarm} models. Be careful not to specify too many parameters to
@@ -466,9 +466,9 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
 #' @template args-regex-pars
-#' @param pars An optional character vector of parameter names. All parameters 
-#'   are included by default, but for models with more than just a few 
-#'   parameters it may be far too many to visualize on a small computer screen 
+#' @param pars An optional character vector of parameter names. All parameters
+#'   are included by default, but for models with more than just a few
+#'   parameters it may be far too many to visualize on a small computer screen
 #'   and also may require substantial computing time.
 #' @param condition Same as the \code{condition} argument to
 #'   \code{\link[bayesplot]{mcmc_pairs}} except the \emph{default is different}
@@ -488,22 +488,22 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #'   The \code{np}, \code{lp}, and \code{max_treedepth} arguments to
 #'   \code{mcmc_pairs} are handled automatically by \pkg{rstanarm} and do not
 #'   need to be specified by the user in \code{...}. The arguments that can be
-#'   behavior see the documentation of the \code{condition} argument at 
+#'   behavior see the documentation of the \code{condition} argument at
 #'   \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}.
-#' @param ... Optional arguments passed to 
-#'   \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}. 
-#'   The \code{np}, \code{lp}, and \code{max_treedepth} arguments to 
-#'   \code{mcmc_pairs} are handled automatically by \pkg{rstanarm} and do not 
-#'   need to be specified by the user in \code{...}. The arguments that can be 
+#' @param ... Optional arguments passed to
+#'   \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}.
+#'   The \code{np}, \code{lp}, and \code{max_treedepth} arguments to
+#'   \code{mcmc_pairs} are handled automatically by \pkg{rstanarm} and do not
+#'   need to be specified by the user in \code{...}. The arguments that can be
 #'   specified in \code{...} include \code{transformations}, \code{diag_fun},
 #'   \code{off_diag_fun}, \code{diag_args}, \code{off_diag_args},
 #'   and \code{np_style}. These arguments are
 #'   documented thoroughly on the help page for
 #'   \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}.
-#' 
-#'   
+#'
+#'
 #' @examples
-#' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+#' if (.Platform$OS.type != "windows") {
 #' \donttest{
 #' if (!exists("example_model")) example(example_model)
 #'
@@ -512,7 +512,7 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' # see 'condition' argument above for details on the plots below and
 #' # above the diagonal. default is to split by accept_stat__.
 #' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
-#' 
+#'
 #' # for demonstration purposes, intentionally fit a model that
 #' # will (almost certainly) have some divergences
 #' fit <- stan_glm(
@@ -528,12 +528,12 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #'
 #' # requires hexbin package
 #' # pairs(
-#' # fit, 
-#' #   pars = c("wt", "sigma", "log-posterior"), 
+#' # fit,
+#' #   pars = c("wt", "sigma", "log-posterior"),
 #' #   transformations = list(sigma = "log"), # show log(sigma) instead of sigma
 #' #  off_diag_fun = "hex" # use hexagonal heatmaps instead of scatterplots
 #' # )
-#' 
+#'
 #' bayesplot::color_scheme_set("brightblue")
 #' pairs(
 #'   fit,

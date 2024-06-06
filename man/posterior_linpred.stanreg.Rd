@@ -40,9 +40,9 @@ See \strong{Examples}.}
 
 \item{newdata, draws, re.form, offset}{Same as for \code{\link{posterior_predict}}.}
 
-\item{XZ}{If \code{TRUE} then instead of computing the linear predictor the 
+\item{XZ}{If \code{TRUE} then instead of computing the linear predictor the
 design matrix \code{X} (or \code{cbind(X,Z)} for models with group-specific
-terms) constructed from \code{newdata} is returned. The default is 
+terms) constructed from \code{newdata} is returned. The default is
 \code{FALSE}.}
 
 \item{...}{Currently ignored.}
@@ -70,7 +70,7 @@ The \code{posterior_linpred} function returns the posterior
   \code{\link{posterior_predict}}.
 }
 \note{
-For models estimated with \code{\link{stan_clogit}}, the number of 
+For models estimated with \code{\link{stan_clogit}}, the number of
   successes per stratum is ostensibly fixed by the research design. Thus,
   when calling \code{posterior_linpred} with new data and \code{transform =
   TRUE}, the \code{data.frame} passed to the \code{newdata} argument must
@@ -79,7 +79,7 @@ For models estimated with \code{\link{stan_clogit}}, the number of
   condition on this outcome in the new data.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 if (!exists("example_model")) example(example_model)
 print(family(example_model))
 
@@ -89,7 +89,7 @@ colMeans(linpred)
 
 # probabilities
 # same as posterior_linpred(example_model, transform = TRUE)
-probs <- posterior_epred(example_model) 
+probs <- posterior_epred(example_model)
 colMeans(probs)
 
 # not conditioning on any group-level parameters
@@ -98,6 +98,6 @@ apply(probs2, 2, median)
 }
 }
 \seealso{
-\code{\link{posterior_predict}} to draw from the posterior 
+\code{\link{posterior_predict}} to draw from the posterior
   predictive distribution of the outcome, which is typically preferable.
 }

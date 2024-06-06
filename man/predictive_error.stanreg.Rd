@@ -97,7 +97,7 @@ The \strong{Note} section in \code{\link{posterior_predict}} about
   computing the error.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 if (!exists("example_model")) example(example_model)
 err1 <- predictive_error(example_model, draws = 50)
 hist(err1)

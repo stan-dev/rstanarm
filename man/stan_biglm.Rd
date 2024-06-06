@@ -106,17 +106,17 @@ the \link{adapt_delta} help page for details.}
 
 \item{b}{A numeric vector of OLS coefficients, excluding the intercept}
 
-\item{R}{A square upper-triangular matrix from the QR decomposition of the 
+\item{R}{A square upper-triangular matrix from the QR decomposition of the
 design matrix, excluding the intercept}
 
 \item{SSR}{A numeric scalar indicating the sum-of-squared residuals for OLS}
 
 \item{N}{A integer scalar indicating the number of included observations}
 
-\item{has_intercept}{A logical scalar indicating whether to add an intercept 
+\item{has_intercept}{A logical scalar indicating whether to add an intercept
 to the model when estimating it.}
 
-\item{importance_resampling}{Logical scalar indicating whether to use 
+\item{importance_resampling}{Logical scalar indicating whether to use
 importance resampling when approximating the posterior distribution with
 a multivariate normal around the posterior mode, which only applies
 when \code{algorithm} is \code{"optimizing"} but defaults to \code{TRUE}
@@ -157,7 +157,7 @@ The \code{stan_biglm} function is intended to be used in the same
   outcome, such observations do not contribute to these statistics.
 }
 \examples{
-if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+if (.Platform$OS.type != "windows") {
 # create inputs
 ols <- lm(mpg ~ wt + qsec + am, data = mtcars, # all row are complete so ...
           na.action = na.exclude)              # not necessary in this case

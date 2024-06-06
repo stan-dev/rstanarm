@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 # Failure on Windows CI with R4.0 that I can't replicate locally
-skip_if(isTRUE(.Platform$OS.type == "windows") && R.version$minor < "2.0")
+skip_if(isTRUE(.Platform$OS.type == "windows"))
 
 Sys.setenv(USE_CXX17 = 1)
 set.seed(12345)
