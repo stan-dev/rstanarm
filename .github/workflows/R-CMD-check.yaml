@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - survival-rstantools
+      - oldrel-ci
   pull_request:
     branches:
       - master
@@ -53,8 +53,16 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2-branch
         with:
           extra-packages: any::rcmdcheck any::betareg any::HSAUR3 any::biglm any::gamm4 any::V8
+
+      - name: Reinstall Matrix and lme4 from source on Win OldRel (ABI change)
+        if: matrix.config.r == 'oldrel' && matrix.config.os == 'windows-latest'
+        run: |
+          install.packages("https://cran.r-project.org/src/contrib/Matrix_1.7-0.tar.gz", type = "source")
+          install.packages("https://cran.r-project.org/src/contrib/lme4_1.1-35.3.tar.gz", type = "source")
+
       - name: Add flags to Makevars
         run: |
           mkdir -p ~/.R
           echo "CXXFLAGS= -w -ftemplate-backtrace-limit=0" >> ~/.R/Makevars
+
       - uses: r-lib/actions/check-r-package@v2-branch
