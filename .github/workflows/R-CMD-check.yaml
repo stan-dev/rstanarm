@@ -59,6 +59,7 @@ jobs:
         run: |
           install.packages("https://cran.r-project.org/src/contrib/Matrix_1.7-0.tar.gz", type = "source")
           install.packages("https://cran.r-project.org/src/contrib/lme4_1.1-35.3.tar.gz", type = "source")
+        shell: Rscript {0}
 
       - name: Add flags to Makevars
         run: |
