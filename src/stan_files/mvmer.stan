@@ -40,7 +40,7 @@ transformed data {
 parameters {
   // declares: yGamma{1,2,3}, z_yBeta{1,2,3}, z_b, z_T, rho,
   //   zeta, tau, bSd{1,2}, z_bMat{1,2}, bCholesky{1,2},
-  //   yAux{1,2,3}_unscaled, yGlobal{1,2,3}, yLocal{1,2,3}, 
+  //   yAux{1,2,3}_unscaled, yGlobal{1,2,3}, yLocal{1,2,3},
   //   yOol{1,2,3}, yMix{1,2,3}
   #include /parameters/parameters_mvmer.stan
 }

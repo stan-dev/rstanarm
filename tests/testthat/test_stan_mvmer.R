@@ -18,17 +18,19 @@
 
 suppressPackageStartupMessages(library(rstanarm))
 library(lme4)
-ITER <- 1000
-CHAINS <- 1
-SEED <- 12345
+
+ITER    <- 1000
+CHAINS  <- 1
+SEED    <- 12345
 REFRESH <- 0L
+
 set.seed(SEED)
 
 TOLSCALES <- list(
-  lmer_fixef = 0.25,  # how many SEs can stan_jm fixefs be from lmer fixefs
-  lmer_ranef = 0.05, # how many SDs can stan_jm ranefs be from lmer ranefs
-  glmer_fixef = 0.3, # how many SEs can stan_jm fixefs be from glmer fixefs
-  glmer_ranef = 0.1 # how many SDs can stan_jm ranefs be from glmer ranefs
+  lmer_fixef  = 0.25, # how many SEs can stan_jm fixefs be from lmer fixefs
+  lmer_ranef  = 0.05, # how many SDs can stan_jm ranefs be from lmer ranefs
+  glmer_fixef = 0.3,  # how many SEs can stan_jm fixefs be from glmer fixefs
+  glmer_ranef = 0.1   # how many SDs can stan_jm ranefs be from glmer ranefs
 )
 
 context("stan_mvmer")
@@ -163,9 +165,9 @@ if (interactive()) {
   compare_glmer <- function(fmLong, fam = gaussian, ...) {
     SW(y1 <- stan_glmer(fmLong, pbcLong, fam, iter = 1000, chains = CHAINS, seed = SEED, refresh = 0))
     SW(y2 <- stan_mvmer(fmLong, pbcLong, fam, iter = 1000, chains = CHAINS, seed = SEED, ..., refresh = 0))
-    tols <- get_tols(y1, tolscales = TOLSCALES)
-    pars <- recover_pars(y1)
-    pars2 <- recover_pars(y2)
+    tols <- get_tols_jm(y1, tolscales = TOLSCALES)
+    pars <- recover_pars_jm(y1)
+    pars2 <- recover_pars_jm(y2)
     for (i in names(tols$fixef))
       expect_equal(pars$fixef[[i]], pars2$fixef[[i]], tol = tols$fixef[[i]])     
     for (i in names(tols$ranef))
@@ -176,21 +178,26 @@ if (interactive()) {
     expect_equal(colMeans(log_lik(y1, newdata = nd)), 
                  colMeans(log_lik(y2, newdata = nd)), tol = 0.15)
   }
-  test_that("coefs same for stan_jm and stan_lmer/coxph", {
-    # fails in many cases
-    # compare_glmer(logBili ~ year + (1 | id), gaussian)
-    })
+
+  # fails in many cases
+  # test_that("coefs same for stan_mvmer and stan_glmer", {
+  #   compare_glmer(logBili ~ year + (1 | id), gaussian)})
+  
   # fails in some cases
-  # test_that("coefs same for stan_jm and stan_glmer, bernoulli", {
+  # test_that("coefs same for stan_mvmer and stan_glmer, bernoulli", {
   #   compare_glmer(ybern ~ year + xbern + (1 | id), binomial)})
-  test_that("coefs same for stan_jm and stan_glmer, poisson", {
+  
+  test_that("coefs same for stan_mvmer and stan_glmer, poisson", {
     compare_glmer(ypois ~ year + xpois + (1 | id), poisson, init = 0)})
-  test_that("coefs same for stan_jm and stan_glmer, negative binomial", {
+  
+  test_that("coefs same for stan_mvmer and stan_glmer, negative binomial", {
     compare_glmer(ynbin ~ year + xpois + (1 | id), neg_binomial_2)})
-  test_that("coefs same for stan_jm and stan_glmer, Gamma", {
+  
+  test_that("coefs same for stan_mvmer and stan_glmer, Gamma", {
     compare_glmer(ygamm ~ year + xgamm + (1 | id), Gamma(log))})
-#  test_that("coefs same for stan_jm and stan_glmer, inverse gaussian", {
-#    compare_glmer(ygamm ~ year + xgamm + (1 | id), inverse.gaussian)})  
+  
+  # test_that("coefs same for stan_mvmer and stan_glmer, inverse gaussian", {
+  #   compare_glmer(ygamm ~ year + xgamm + (1 | id), inverse.gaussian)})  
 }
 
 #----  Check methods and post-estimation functions
@@ -205,16 +212,15 @@ o<-SW(f3 <- update(m2, formula. = list(logBili ~ year + (year | id) + (1 | pract
 o<-SW(f4 <- update(f3, formula. = list(logBili ~ year + (year | id) + (1 | practice),
                                        albumin ~ year + (year | id) + (1 | practice))))
 o<-SW(f5 <- update(f3, formula. = list(logBili ~ year + (year | id) + (1 | practice),
-                                       ybern ~ year + (year | id) + (1 | practice)),
-                   family = list(gaussian, binomial)))
+                                       ybern   ~ year + (year | id) + (1 | practice)),
+                                       family = list(gaussian, binomial)))
 
 for (j in 1:5) {
   mod <- get(paste0("f", j))
   cat("Checking model:", paste0("f", j), "\n")
 
   expect_error(posterior_traj(mod), "stanjm")
-  expect_error(posterior_survfit(mod), "stanjm")
-     
+
   test_that("posterior_predict works with estimation data", {
     pp <- posterior_predict(mod, m = 1)
     expect_ppd(pp)

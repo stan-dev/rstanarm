@@ -68,14 +68,27 @@
 #' @seealso \code{\link{summary.stanreg}}, \code{\link{stanreg-methods}}
 #' 
 print.stanreg <- function(x, digits = 1, detail = TRUE, ...) {
+  
   if (detail) {
     cat(x$stan_function)
-    cat("\n family:      ", family_plus_link(x))
-    cat("\n formula:     ", formula_string(formula(x)))
-    cat("\n observations:", nobs(x))
-    if (isTRUE(x$stan_function %in% 
-               c("stan_glm", "stan_glm.nb", "stan_lm", "stan_aov"))) {
-      cat("\n predictors:  ", length(coef(x)))
+    if (is.surv(x)) {
+      cat("\n baseline hazard:", basehaz_string(x$basehaz)) 
+      cat("\n formula:        ", formula_string(formula(x)))
+      cat("\n observations:   ", x$nobs) 
+      cat("\n events:         ", x$nevents, percent_string(x$nevents, x$nobs))
+      if (x$nlcens > 0) 
+        cat("\n left censored:  ", x$nlcens, percent_string(x$nlcens, x$nobs))
+      if (x$nrcens > 0) 
+        cat("\n right censored: ", x$nrcens, percent_string(x$nrcens, x$nobs))
+      if (x$nicens > 0) 
+        cat("\n interval cens.: ", x$nicens, percent_string(x$nicens, x$nobs))
+      cat("\n delayed entry:  ", yes_no_string(x$ndelayed))
+    } else {
+      cat("\n family:      ", family_plus_link(x))
+      cat("\n formula:     ", formula_string(formula(x)))
+      cat("\n observations:", nobs(x))
+      if (isTRUE(x$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm", "stan_aov")))
+        cat("\n predictors:  ", length(coef(x)))
     }
     if (!is.null(x$call$subset)) {
       cat("\n subset:      ", deparse(x$call$subset))
@@ -84,9 +97,10 @@ print.stanreg <- function(x, digits = 1, detail = TRUE, ...) {
     cat("\n------\n")
   }
 
-  mer <- is.mer(x)
+  surv <- is.surv(x)
+  mer  <- is.mer(x) || (surv && x$has_bars)
   gamm <- isTRUE(x$stan_function == "stan_gamm4")
-  ord <- is_polr(x) && !("(Intercept)" %in% rownames(x$stan_summary))
+  ord  <- is_polr(x) && !("(Intercept)" %in% rownames(x$stan_summary))
 
   aux_nms <- .aux_name(x)
   
@@ -121,6 +135,15 @@ print.stanreg <- function(x, digits = 1, detail = TRUE, ...) {
     
     if (mer) {
       estimates <- estimates[!grepl("^Sigma\\[", rownames(estimates)),, drop=FALSE]
+    }
+    if (surv) {
+      nms_int  <- get_int_name_basehaz(get_basehaz(x))
+      nms_aux  <- get_aux_name_basehaz(get_basehaz(x))
+      nms_beta <- setdiff(rownames(estimates), c(nms_int, nms_aux))
+      estimates <- cbind(estimates, 
+                         "exp(Median)" = c(rep(NA, length(nms_int)),
+                                           exp(estimates[nms_beta, "Median"]), 
+                                           rep(NA, length(nms_aux))))
     }
     .printfr(estimates, digits, ...)
     
@@ -172,32 +195,36 @@ print.stanreg <- function(x, digits = 1, detail = TRUE, ...) {
 #' @rdname print.stanreg
 #' @export
 #' @method print stanmvreg
-print.stanmvreg <- function(x, digits = 3, ...) {
-  M <- x$n_markers
+print.stanmvreg <- function(x, digits = 3, detail = TRUE, ...) {
+  
   mvmer <- is.mvmer(x)
-  surv <- is.surv(x)
-  jm <- is.jm(x)
+  surv  <- is.surv(x)
+  jm    <- is.jm(x)
+  M     <- x$n_markers
   stubs <- paste0("(", get_stub(x), 1:M, "):")
-  cat(x$stan_function)
-  if (mvmer) {
-    for (m in 1:M) {
-      cat("\n formula", stubs[m], formula_string(formula(x, m = m)))
-      cat("\n family ", stubs[m], family_plus_link(x, m = m))
-    }    
+  
+  if (detail) {
+    cat(x$stan_function)
+    if (mvmer) {
+      for (m in 1:M) {
+        cat("\n formula", stubs[m], formula_string(formula(x, m = m)))
+        cat("\n family ", stubs[m], family_plus_link(x, m = m))
+      }    
+    }
+    if (surv) {
+      cat("\n formula (Event):", formula_string(formula(x, m = "Event")))
+      cat("\n baseline hazard:", x$basehaz$type_name) 
+    }
+    if (jm) {
+      sel <- grep("^which", rownames(x$assoc), invert = TRUE, value = TRUE)
+      assoc <- lapply(1:M, function(m) {
+        vals <- sel[which(x$assoc[sel,m] == TRUE)]     
+        paste0(vals, " (Long", m, ")")
+      })
+      cat("\n assoc:          ", paste(unlist(assoc), collapse = ", "))
+    }
+    cat("\n------\n")
   }
-  if (surv) {
-    cat("\n formula (Event):", formula_string(formula(x, m = "Event")))
-    cat("\n baseline hazard:", x$basehaz$type_name) 
-  }
-  if (jm) {
-    sel <- grep("^which", rownames(x$assoc), invert = TRUE, value = TRUE)
-    assoc <- lapply(1:M, function(m) {
-      vals <- sel[which(x$assoc[sel,m] == TRUE)]     
-      paste0(vals, " (Long", m, ")")
-    })
-    cat("\n assoc:          ", paste(unlist(assoc), collapse = ", "))
-  }
-  cat("\n------\n")
 
   mat <- as.matrix(x$stanfit)
   nms <- collect_nms(rownames(x$stan_summary), M, 
@@ -258,17 +285,13 @@ print.stanmvreg <- function(x, digits = 3, ...) {
     print(VarCorr(x), digits = digits + 1, ...)
     cat("Num. levels:", paste(names(ngrps(x)), unname(ngrps(x)), 
                               collapse = ", "), "\n")  
-    
-    # Sample average of the PPD
-    ppd_mat <- mat[, nms$ppd, drop = FALSE]
-    ppd_estimates <- .median_and_madsd(ppd_mat)
-    cat("\nSample avg. posterior predictive distribution \nof",
-        if (is.jm(x)) "longitudinal outcomes:\n" else "y:\n")
-    .printfr(ppd_estimates, digits, ...)
   }
   
-  cat("\n------\n")
-  cat("For info on the priors used see help('prior_summary.stanreg').")
+  if (detail) {
+    cat("\n------\n")
+    cat("* For help interpreting the printed output see ?print.stanreg\n")
+    cat("* For info on the priors used see ?prior_summary.stanreg\n")
+  }
   
   invisible(x)
 }
@@ -370,7 +393,8 @@ summary.stanreg <- function(object,
                             probs = c(0.1, 0.5, 0.9),
                             ...,
                             digits = 1) {
-  mer <- is.mer(object)
+  surv <- is.surv(object)
+  mer  <- is.mer(object)
   pars <- collect_pars(object, pars, regex_pars)
   
   if (!used.optimizing(object)) {
@@ -420,22 +444,30 @@ summary.stanreg <- function(object,
     out <- object$stan_summary[mark, , drop=FALSE]
   }
   
+  is_glm <- 
+    isTRUE(object$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm"))
+  
   structure(
     out,
-    call = object$call,
-    algorithm = object$algorithm,
+    call          = object$call,
+    algorithm     = object$algorithm,
     stan_function = object$stan_function,
-    family = family_plus_link(object),
-    formula = formula(object),
+    family        = family_plus_link(object),
+    formula       = formula(object),
+    basehaz       = if (surv) basehaz_string(get_basehaz(object)) else NULL,
     posterior_sample_size = posterior_sample_size(object),
-    nobs = nobs(object),
-    npreds = if (isTRUE(object$stan_function %in% c("stan_glm", "stan_glm.nb", "stan_lm")))
-      length(coef(object)) else NULL,
-    ngrps = if (mer) ngrps(object) else NULL,
-    print.digits = digits,
-    priors = object$prior.info,
+    nobs          = nobs(object),
+    npreds        = if (is_glm) length(coef(object)) else NULL,
+    ngrps         = if (mer)  ngrps(object)   else NULL,
+    nevents       = if (surv) object$nevents  else NULL,
+    nlcens        = if (surv) object$nlcens   else NULL,
+    nrcens        = if (surv) object$nrcens   else NULL,
+    nicens        = if (surv) object$nicens   else NULL,
+    ndelayed      = if (surv) object$ndelayed else NULL,
+    print.digits  = digits,
+    priors        = object$prior.info,
     no_ppd_diagnostic = no_mean_PPD(object),
-    class = "summary.stanreg"
+    class         = "summary.stanreg"
   )
 }
 
@@ -444,11 +476,29 @@ summary.stanreg <- function(object,
 #' @method print summary.stanreg
 #'
 #' @param x An object of class \code{"summary.stanreg"}.
-print.summary.stanreg <-
-  function(x, digits = max(1, attr(x, "print.digits")),
-           ...) {
-    atts <- attributes(x)
-    cat("\nModel Info:")
+print.summary.stanreg <- function(x, digits = max(1, attr(x, "print.digits")), 
+                                  ...) {
+  atts <- attributes(x)
+  cat("\nModel Info:\n")
+  
+  if (is.surv(atts)) { # survival models
+    cat("\n function:       ", atts$stan_function)
+    cat("\n baseline hazard:", atts$basehaz)
+    cat("\n formula:        ", formula_string(atts$formula))
+    cat("\n algorithm:      ", atts$algorithm)
+    if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
+      cat("\n sample:         ", atts$posterior_sample_size, "(posterior sample size)")
+    cat("\n priors:         ", "see help('prior_summary')")
+    cat("\n observations:   ", atts$nobs)
+    cat("\n events:         ", atts$nevents, percent_string(atts$nevents, atts$nobs))
+    if (atts$nlcens > 0)
+      cat("\n left censored:  ", atts$nlcens, percent_string(atts$nlcens, atts$nobs))
+    if (atts$nrcens > 0)
+      cat("\n right censored: ", atts$nrcens, percent_string(atts$nrcens, atts$nobs))
+    if (atts$nicens > 0)
+      cat("\n interval cens.: ", atts$nicens, percent_string(atts$nicens, atts$nobs))
+    cat("\n delayed entry:  ", yes_no_string(atts$ndelayed))
+  } else { # anything except survival models
     cat("\n function:    ", atts$stan_function)
     cat("\n family:      ", atts$family)
     cat("\n formula:     ", formula_string(atts$formula))
@@ -458,7 +508,6 @@ print.summary.stanreg <-
           "(posterior sample size)")
     }
     cat("\n priors:      ", "see help('prior_summary')")
-    
     cat("\n observations:", atts$nobs)
     if (!is.null(atts$npreds)) {
       cat("\n predictors:  ", atts$npreds)
@@ -471,64 +520,65 @@ print.summary.stanreg <-
                                      unname(atts$ngrps), ")", 
                                      collapse = ", "))
     }
-    
-    cat("\n\nEstimates:\n")
-    if (used.optimizing(atts) || used.variational(atts)) {
-        hat <- "khat"
-        str_diag <- "Monte Carlo diagnostics"
-        str1 <- "and khat is the Pareto k diagnostic for importance sampling"
-        str2 <- " (perfomance is usually good when khat < 0.7).\n"
-    } else {
-        hat <- "Rhat"
-        str_diag <- "MCMC diagnostics"
-        str1 <- "and Rhat is the potential scale reduction factor on split chains"
-        str2 <- " (at convergence Rhat=1).\n"
-    }
-    sel <- which(colnames(x) %in% c("mcse", "n_eff", hat))
-    has_mc_diagnostic <- length(sel) > 0
-    if (has_mc_diagnostic) {
-      xtemp <- x[, -sel, drop = FALSE]
-      colnames(xtemp) <- paste(" ", colnames(xtemp))
-    } else {
-      xtemp <- x
-    }
-    
-    ppd_nms <- grep("^mean_PPD", rownames(x), value = TRUE)
-    has_ppd_diagnostic <- !atts$no_ppd_diagnostic && length(ppd_nms) > 0
-    
-    if (has_ppd_diagnostic) {
-      ppd_estimates <- xtemp[rownames(xtemp) %in% ppd_nms, , drop=FALSE]
-    } else {
-      ppd_estimates <- NULL
-    }
-    xtemp <- xtemp[!rownames(xtemp) %in% c(ppd_nms, "log-posterior"), , drop=FALSE]
-    
-    # print table of parameter stats
-    .printfr(xtemp, digits)
-    
-    if (has_ppd_diagnostic) {
-      cat("\nFit Diagnostics:\n")
-      .printfr(ppd_estimates, digits)
-      cat("\nThe mean_ppd is the sample average posterior predictive ", 
-          "distribution of the outcome variable ", 
-          "(for details see help('summary.stanreg')).\n",
-          sep = '')
-    }
-    
-    if (has_mc_diagnostic) {
-      cat("\n", str_diag, "\n", sep = '')
-      mcse_hat <- format(round(x[, c("mcse", hat), drop = FALSE], digits), 
-                          nsmall = digits)
-      n_eff <- format(x[, "n_eff", drop = FALSE], drop0trailing = TRUE)
-      print(cbind(mcse_hat, n_eff), quote = FALSE)
-      cat("\nFor each parameter, mcse is Monte Carlo standard error, ", 
-          "n_eff is a crude measure of effective sample size, ", 
-          str1, 
-          str2, sep = '')
-    }
-    
-    invisible(x)
   }
+    
+  cat("\n\nEstimates:\n")
+  if (used.optimizing(atts) || used.variational(atts)) {
+      hat <- "khat"
+      str_diag <- "Monte Carlo diagnostics"
+      str1 <- "and khat is the Pareto k diagnostic for importance sampling"
+      str2 <- " (perfomance is usually good when khat < 0.7).\n"
+  } else {
+      hat <- "Rhat"
+      str_diag <- "MCMC diagnostics"
+      str1 <- "and Rhat is the potential scale reduction factor on split chains"
+      str2 <- " (at convergence Rhat=1).\n"
+  }
+  sel <- which(colnames(x) %in% c("mcse", "n_eff", hat))
+  has_mc_diagnostic <- length(sel) > 0
+  if (has_mc_diagnostic) {
+    xtemp <- x[, -sel, drop = FALSE]
+    colnames(xtemp) <- paste(" ", colnames(xtemp))
+  } else {
+    xtemp <- x
+  }
+  
+  ppd_nms <- grep("^mean_PPD", rownames(x), value = TRUE)
+  has_ppd_diagnostic <- !atts$no_ppd_diagnostic && length(ppd_nms) > 0
+  
+  if (has_ppd_diagnostic) {
+    ppd_estimates <- xtemp[rownames(xtemp) %in% ppd_nms, , drop=FALSE]
+  } else {
+    ppd_estimates <- NULL
+  }
+  xtemp <- xtemp[!rownames(xtemp) %in% c(ppd_nms, "log-posterior"), , drop=FALSE]
+  
+  # print table of parameter stats
+  .printfr(xtemp, digits)
+  
+  if (has_ppd_diagnostic) {
+    cat("\nFit Diagnostics:\n")
+    .printfr(ppd_estimates, digits)
+    cat("\nThe mean_ppd is the sample average posterior predictive ", 
+        "distribution of the outcome variable ", 
+        "(for details see help('summary.stanreg')).\n",
+        sep = '')
+  }
+  
+  if (has_mc_diagnostic) {
+    cat("\n", str_diag, "\n", sep = '')
+    mcse_hat <- format(round(x[, c("mcse", hat), drop = FALSE], digits), 
+                        nsmall = digits)
+    n_eff <- format(x[, "n_eff", drop = FALSE], drop0trailing = TRUE)
+    print(cbind(mcse_hat, n_eff), quote = FALSE)
+    cat("\nFor each parameter, mcse is Monte Carlo standard error, ", 
+        "n_eff is a crude measure of effective sample size, ", 
+        str1, 
+        str2, sep = '')
+  }
+  
+  invisible(x)
+}
 
 #' @rdname summary.stanreg
 #' @method as.data.frame summary.stanreg
@@ -540,13 +590,18 @@ as.data.frame.summary.stanreg <- function(x, ...) {
 #' @rdname summary.stanreg
 #' @export
 #' @method summary stanmvreg
-summary.stanmvreg <- function(object, pars = NULL, regex_pars = NULL, 
-                           probs = NULL, ..., digits = 3) {
-  pars <- collect_pars(object, pars, regex_pars)
-  M <- object$n_markers
+summary.stanmvreg <- function(object, 
+                              pars = NULL, 
+                              regex_pars = NULL, 
+                              probs = c(0.1, 0.5, 0.9), 
+                              ..., 
+                              digits = 3) {
+  
+  pars  <- collect_pars(object, pars, regex_pars)
+  M     <- object$n_markers
   mvmer <- is.mvmer(object)
-  surv <- is.surv(object)
-  jm <- is.jm(object)  
+  surv  <- is.surv(object)
+  jm    <- is.jm(object)  
   
   if (mvmer) {
     # Outcome variable for each longitudinal submodel
@@ -567,24 +622,27 @@ summary.stanmvreg <- function(object, pars = NULL, regex_pars = NULL,
   }
   
   # Construct summary table  
-  args <- list(object = object$stanfit)
-  if (!is.null(probs)) 
-    args$probs <- probs
+  args <- list(object = object$stanfit, probs = probs)
   out <- do.call("summary", args)$summary
   nms <- collect_nms(rownames(object$stan_summary), M, 
                      stub = get_stub(object), value = TRUE)
   if (!is.null(pars)) {
     pars2 <- NA     
     if ("alpha" %in% pars) pars2 <- c(pars2, nms$alpha)
-    if ("beta" %in% pars) pars2 <- c(pars2, nms$beta)
-    if ("long" %in% pars) pars2 <- c(pars2, unlist(nms$y), unlist(nms$y_extra))
+    if ("beta"  %in% pars) pars2 <- c(pars2, nms$beta)
+    if ("long"  %in% pars) pars2 <- c(pars2, unlist(nms$y), unlist(nms$y_extra))
     if ("event" %in% pars) pars2 <- c(pars2, nms$e, nms$a, nms$e_extra)
     if ("assoc" %in% pars) pars2 <- c(pars2, nms$a)      
     if ("fixef" %in% pars) pars2 <- c(pars2, unlist(nms$y), nms$e, nms$a)
-    if ("b" %in% pars) pars2 <- c(pars2, nms$b)
-    pars2 <- c(pars2, setdiff(pars, 
-                              c("alpha", "beta", "varying", "b",
-                                "long", "event", "assoc", "fixef")))
+    if ("b"     %in% pars) pars2 <- c(pars2, nms$b)
+    pars2 <- c(pars2, setdiff(pars, c("alpha", 
+                                      "beta", 
+                                      "varying",
+                                      "b",
+                                      "long", 
+                                      "event", 
+                                      "assoc", 
+                                      "fixef")))
     pars <- pars2[!is.na(pars2)]
   } else {
     pars <- rownames(object$stan_summary)
@@ -601,35 +659,52 @@ summary.stanmvreg <- function(object, pars = NULL, regex_pars = NULL,
     colnames(out)[stats %in% "se_mean"] <- "mcse"
   
   # Reorder rows of output table
-  nms_tmp <- rownames(out)  
-  nms_tmp_y <- lapply(1:M, function(m) 
+  nms_tmp       <- rownames(out)  
+  nms_tmp_y     <- uapply(1:M, function(m) 
     grep(paste0("^", get_stub(object), m, "\\|"), nms_tmp, value = TRUE))
-  nms_tmp_e <- grep("^Event\\|", nms_tmp, value = TRUE)
-  nms_tmp_a <- grep("^Assoc\\|", nms_tmp, value = TRUE)
-  nms_tmp_b <- b_names(nms_tmp, value = TRUE)
+  nms_tmp_e     <- grep("^Event\\|", nms_tmp, value = TRUE)
+  nms_tmp_a     <- grep("^Assoc\\|", nms_tmp, value = TRUE)
+  nms_tmp_b     <- b_names(nms_tmp, value = TRUE)
   nms_tmp_Sigma <- grep("^Sigma", nms_tmp, value = TRUE)
-  nms_tmp_lp <- grep("^log-posterior$", nms_tmp, value = TRUE)
-  out <- out[c(unlist(nms_tmp_y), nms_tmp_e, nms_tmp_a, nms_tmp_b, 
-               nms_tmp_Sigma, nms_tmp_lp), , drop = FALSE]
+  nms_tmp_lp    <- grep("^log-posterior$", nms_tmp, value = TRUE)
+  
+  out <- out[c(nms_tmp_y, 
+               nms_tmp_e, 
+               nms_tmp_a, 
+               nms_tmp_b, 
+               nms_tmp_Sigma, 
+               nms_tmp_lp), , drop = FALSE]
   
   # Output object
   if (mvmer)
-    out <- structure(
-      out, y_vars = y_vars, family = fam, n_markers = object$n_markers, 
-      n_yobs = object$n_yobs, n_grps = object$n_grps)
+    out <- structure(out, 
+                     y_vars    = y_vars, 
+                     family    = fam, 
+                     n_markers = object$n_markers, 
+                     n_yobs    = object$n_yobs, 
+                     n_grps    = object$n_grps)
+  
   if (surv)
-    out <- structure(
-      out, n_subjects = object$n_subjects, n_events = object$n_events,
-      basehaz = object$basehaz) 
+    out <- structure(out, 
+                     n_subjects = object$n_subjects, 
+                     n_events   = object$n_events,
+                     basehaz    = object$basehaz) 
+  
   if (jm)
-    out <- structure(
-      out, id_var = object$id_var, time_var = object$time_var, assoc = assoc)
+    out <- structure(out, 
+                     id_var   = object$id_var, 
+                     time_var = object$time_var, 
+                     assoc    = assoc)
+  
   structure(
-    out, formula = object$formula, algorithm = object$algorithm,
+    out, 
+    formula       = object$formula, 
+    algorithm     = object$algorithm,
     stan_function = object$stan_function,
     posterior_sample_size = posterior_sample_size(object),
-    runtime = object$runtime, print.digits = digits,
-    class = c("summary.stanmvreg", "summary.stanreg"))
+    runtime       = object$runtime, 
+    print.digits  = digits,
+    class         = c("summary.stanmvreg", "summary.stanreg"))
 }
 
 #' @rdname summary.stanreg
@@ -642,42 +717,42 @@ print.summary.stanmvreg <- function(x, digits = max(1, attr(x, "print.digits")),
   jm <- atts$stan_function == "stan_jm"
   tab <- if (jm) "   " else ""
   cat("\nModel Info:\n")
-  cat("\n function:   ", tab, atts$stan_function)
+  cat("\n function:    ", tab, atts$stan_function)
   if (mvmer) {
     M <- atts$n_markers
-    stubs <- paste0("(", if (jm) "Long" else "y", 1:M, "):") 
+    stubs <- paste0("(", if (jm) "Long" else "y", 1:M, "): ") 
     for (m in 1:M) {
       cat("\n formula", stubs[m], formula_string(atts$formula[[m]]))
       cat("\n family ", stubs[m], atts$family[[m]])
     }    
   }
   if (jm) {
-    cat("\n formula (Event):", formula_string(atts$formula[["Event"]]))
-    cat("\n baseline hazard:", atts$basehaz$type_name)
+    cat("\n formula (Event): ", formula_string(atts$formula[["Event"]]))
+    cat("\n baseline hazard: ", atts$basehaz$type_name)
     assoc_fmt <- unlist(lapply(1:M, function(m)
       paste0(atts$assoc[[m]], " (Long", m, ")")))
-    cat("\n assoc:          ", paste(assoc_fmt, collapse = ", "))
+    cat("\n assoc:           ", paste(assoc_fmt, collapse = ", "))
   }
-  cat("\n algorithm:  ", tab, atts$algorithm)
-  cat("\n priors:     ", tab, "see help('prior_summary')")
+  cat("\n algorithm:   ", tab, atts$algorithm)
   if (!is.null(atts$posterior_sample_size) && atts$algorithm == "sampling")
-    cat("\n sample:     ", tab, atts$posterior_sample_size, "(posterior sample size)")
+    cat("\n sample:      ", tab, atts$posterior_sample_size, "(posterior sample size)")
+  cat("\n priors:      ", tab, "see help('prior_summary')")
   if (mvmer) {
     obs_vals <- paste0(atts$n_yobs, " (", if (jm) "Long" else "y", 1:M, ")")
-    cat("\n num obs:    ", tab, paste(obs_vals, collapse = ", "))
+    cat("\n observations:", tab, paste(obs_vals, collapse = ", "))
   }
   if (jm) {
-    cat("\n num subjects:   ", atts$n_subjects)
-    cat(paste0("\n num events:      ", atts$n_events, " (", 
+    cat("\n subjects:        ", atts$n_subjects)
+    cat(paste0("\n events:           ", atts$n_events, " (", 
                round(100 * atts$n_events/atts$n_subjects, 1), "%)"))
   }  
   if (!is.null(atts$n_grps))
-    cat("\n groups:     ", tab, 
+    cat("\n groups:      ", tab, 
         paste0(names(atts$n_grps), " (", unname(atts$n_grps), ")", collapse = ", "))  
   if (atts$algorithm == "sampling") {
     maxtime <- max(atts$runtime[, "total"])
     if (maxtime == 0) maxtime <- "<0.1"
-    cat("\n runtime:    ", tab, maxtime, "mins")
+    cat("\n runtime:     ", tab, maxtime, "mins")
   } 
     
   cat("\n\nEstimates:\n")
@@ -747,6 +822,9 @@ allow_special_parnames <- function(object, pars) {
 # @param x stanreg object
 # @param ... Optionally include m to specify which submodel for stanmvreg models
 family_plus_link <- function(x, ...) {
+  if (is.stansurv(x)) {
+    return(NULL)
+  }
   fam <- family(x, ...)
   if (is.character(fam)) {
     stopifnot(identical(fam, x$method))
@@ -775,7 +853,7 @@ formula_string <- function(formula, break_and_indent = TRUE) {
 # get name of aux parameter based on family
 .aux_name <- function(object) {
   aux <- character()
-  if (!is_polr(object)) {
+  if (!is_polr(object) && !is.stansurv(object)) {
     aux <- .rename_aux(family(object))
     if (is.na(aux)) {
       aux <- character()
@@ -783,7 +861,6 @@ formula_string <- function(formula, break_and_indent = TRUE) {
   }
   return(aux)
 }
-
 
 # print anova table for stan_aov models
 # @param x stanreg object created by stan_aov()
@@ -806,4 +883,30 @@ print_anova_table <- function(x, digits, ...) {
   anova_table <- .median_and_madsd(effects)
   cat("\nANOVA-like table:\n")
   .printfr(anova_table, digits, ...)
+}
+
+# @param basehaz A list with info about the baseline hazard
+basehaz_string <- function(basehaz, break_and_indent = TRUE) {
+  nm <- get_basehaz_name(basehaz)
+  switch(nm,
+         "exp"         = "exponential",
+         "exp-aft"     = "exponential, aft parameterisation",
+         "weibull"     = "weibull",
+         "weibull-aft" = "weibull, aft parameterisation",
+         "gompertz"    = "gompertz",
+         "ms"          = "M-splines on hazard scale",
+         "bs"          = "B-splines on log hazard scale",
+         "piecewise"   = "piecewise constant on log hazard scale",
+         NULL)
+}
+
+# @param x A logical (or a scalar to be evaluated as a logical).
+yes_no_string <- function(x) {
+  if (x) "yes" else "no"
+}
+
+# @param numer,denom The numerator and denominator with which to evaluate a %.
+percent_string <- function(numer, denom) {
+  val <- round(100 * numer / denom, 1)
+  paste0("(", val, "%)")
 }

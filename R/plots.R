@@ -1,5 +1,6 @@
 # Part of the rstanarm package for estimating model parameters
 # Copyright (C) 2015, 2016, 2017 Trustees of Columbia University
+# Copyright (C) 2018 Sam Brilleman
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -30,16 +31,20 @@
 #' @template args-stanreg-object
 #' @template args-pars
 #' @template args-regex-pars
-#' @param plotfun A character string naming the \pkg{bayesplot} 
-#'   \link[bayesplot:MCMC-overview]{MCMC} function to use. The default is to call
-#'   \code{\link[bayesplot:MCMC-intervals]{mcmc_intervals}}. \code{plotfun} can be specified
+#' @param plotfun A character string naming the \pkg{bayesplot}
+#'   \link[bayesplot]{MCMC} function to use. The default is to call
+#'   \code{\link[bayesplot]{mcmc_intervals}}. \code{plotfun} can be specified
 #'   either as the full name of a \pkg{bayesplot} plotting function (e.g.
 #'   \code{"mcmc_hist"}) or can be abbreviated to the part of the name following
 #'   the \code{"mcmc_"} prefix (e.g. \code{"hist"}). To get the names of all
-#'   available MCMC functions see \code{\link[bayesplot:available_ppc]{available_mcmc}}.
+#'   available MCMC functions see \code{\link[bayesplot]{available_mcmc}}.
+#'   For the \code{stansurv} method, one can also specify
+#'   \code{plotfun = "basehaz"} for a plot of the estimated baseline hazard
+#'   function, or \code{plot = "tve"} for a plot of the time-varying
+#'   hazard ratio (if time-varying effects were specified in the model).
 #'
 #' @param ... Additional arguments to pass to \code{plotfun} for customizing the
-#'   plot. These are described on the help pages for the individual plotting 
+#'   plot. These are described on the help pages for the individual plotting
 #'   functions. For example, the arguments accepted for the default
 #'   \code{plotfun="intervals"} can be found at
 #'   \code{\link[bayesplot:MCMC-intervals]{mcmc_intervals}}.
@@ -49,19 +54,19 @@
 #'   (e.g. a gtable object created by \code{\link[gridExtra]{arrangeGrob}}).
 #'
 #' @seealso
-#' \itemize{ 
+#' \itemize{
 #'   \item The vignettes in the \pkg{bayesplot} package for many examples.
 #'   \item \code{\link[bayesplot]{MCMC-overview}} (\pkg{bayesplot}) for links to
 #'   the documentation for all the available plotting functions.
 #'   \item \code{\link[bayesplot:bayesplot-colors]{color_scheme_set}} (\pkg{bayesplot}) to change
 #'   the color scheme used for plotting.
 #'   \item \code{\link{pp_check}} for graphical posterior predictive checks.
-#'   \item \code{\link{plot_nonlinear}} for models with nonlinear smooth 
+#'   \item \code{\link{plot_nonlinear}} for models with nonlinear smooth
 #'   functions fit using \code{\link{stan_gamm4}}.
-#' }  
+#' }
 #'
 #' @template reference-bayesvis
-#' 
+#'
 #' @examples
 #' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
@@ -82,7 +87,7 @@
 #' bayesplot::color_scheme_set("brightblue")
 #' plot(fit, "areas", regex_pars = "period",
 #'      prob = 0.5, prob_outer = 0.9)
-#' 
+#'
 #' # Make the same plot by extracting posterior draws and calling
 #' # bayesplot::mcmc_areas directly
 #' x <- as.array(fit, regex_pars = "period")
@@ -114,27 +119,27 @@
 #' ### Rhat, effective sample size, autocorrelation ###
 #' ####################################################
 #' bayesplot::color_scheme_set("red")
-#' 
+#'
 #' # rhat
 #' plot(fit, "rhat")
 #' plot(fit, "rhat_hist")
-#' 
+#'
 #' # ratio of effective sample size to total posterior sample size
 #' plot(fit, "neff")
 #' plot(fit, "neff_hist")
-#' 
+#'
 #' # autocorrelation by chain
 #' plot(fit, "acf", pars = "(Intercept)", regex_pars = "period")
 #' plot(fit, "acf_bar", pars = "(Intercept)", regex_pars = "period")
-#' 
-#' 
+#'
+#'
 #' ##################
 #' ### Traceplots ###
 #' ##################
 #' # NOTE: rstanarm doesn't store the warmup draws (to save space because they
 #' # are not so essential for diagnosing the particular models implemented in
 #' # rstanarm) so the iterations in the traceplot are post-warmup iterations
-#' 
+#'
 #' bayesplot::color_scheme_set("pink")
 #' (trace <- plot(fit, "trace", pars = "(Intercept)"))
 #'
@@ -142,7 +147,7 @@
 #' trace + ggplot2::scale_color_discrete()
 #' trace + ggplot2::scale_color_manual(values = c("maroon", "skyblue2"))
 #'
-#' # changing facet layout 
+#' # changing facet layout
 #' plot(fit, "trace", pars = c("(Intercept)", "period2"),
 #'      facet_args = list(nrow = 2))
 #' # same plot by calling bayesplot::mcmc_trace directly
@@ -168,15 +173,147 @@
 #'
 plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
                          regex_pars = NULL, ...) {
-  
+
   if (plotfun %in% c("pairs", "mcmc_pairs"))
     return(pairs.stanreg(x, pars = pars, regex_pars = regex_pars, ...))
-  
+
   fun <- set_plotting_fun(plotfun)
   args <- set_plotting_args(x, pars, regex_pars, ..., plotfun = plotfun)
   do.call(fun, args)
 }
 
+
+# plot method for stansurv ----------------------------------------------
+
+#' @rdname plot.stanreg
+#' @method plot stansurv
+#' @export
+#' @templateVar cigeomArg ci_geom_args
+#' @template args-ci-geom-args
+#' @param prob A scalar between 0 and 1 specifying the width to use for the
+#'   plotted posterior uncertainty interval when \code{limit = "ci"}. For
+#'   example \code{prob = 0.95} (the default) means that the 2.5th and 97.5th
+#'   percentiles will be provided.
+#' @param limits A quoted character string specifying the type of limits to
+#'   include in the plot. Can be \code{"ci"} for the Bayesian posterior
+#'   uncertainty interval, or \code{"none"}. This argument is only relevant
+#'   when \code{plotfun = "basehaz"} or \code{plotfun = "tve"}
+#' @param n Integer specifying the number of points to interpolate along 
+#'   when plotting the baseline hazard or time-varying hazard ratio. Each of 
+#'   the points are joined using a line.
+#'
+plot.stansurv <- function(x, plotfun = "basehaz", pars = NULL,
+                          regex_pars = NULL, ..., prob = 0.95,
+                          limits = c("ci", "none"),
+                          ci_geom_args = NULL, n = 1000) {
+
+  validate_stansurv_object(x)
+
+  limits <- match.arg(limits)
+  
+  if (plotfun %in% c("basehaz", "tve")) {
+
+    stanpars <- extract_pars(x)
+    has_intercept <- check_for_intercept(x$basehaz)
+
+    t_min <- min(x$entrytime)
+    t_max <- max(x$eventtime)
+    times <- seq(t_min, t_max, by = (t_max - t_min) / n)
+
+    if (plotfun == "basehaz") {
+
+      if (!is.null(pars))
+        warning2("'pars' is ignored when plotting the baseline hazard.")
+      if (!is.null(regex_pars))
+        warning2("'regex_pars' is ignored when plotting the baseline hazard.")
+
+      args <- nlist(times     = times,
+                    basehaz   = get_basehaz(x),
+                    aux       = stanpars$aux,
+                    intercept = stanpars$alpha)
+      basehaz <- do.call(evaluate_basehaz, args)
+      basehaz <- median_and_bounds(basehaz, prob, na.rm = TRUE)
+      plotdat <- data.frame(times, basehaz)
+      
+      uses_step_stair <- (get_basehaz_name(x) %in% c("piecewise"))
+
+      ylab <- "Baseline hazard rate"
+      xlab <- "Time"
+
+    } else if (plotfun == "tve") {
+
+      if (!x$has_tve)
+        stop2("Model does not have time-varying effects.")
+
+      smooth_map   <- get_smooth_name(x$s_cpts, type = "smooth_map")
+      smooth_vars  <- get_smooth_name(x$s_cpts, type = "smooth_vars")
+      smooth_coefs <- get_smooth_name(x$s_cpts, type = "smooth_coefs")
+
+      if (is.null(pars))
+        pars <- smooth_vars
+      if (length(pars) > 1L)
+        stop2("Only one variable can be specified in 'pars' .")
+      if (!pars %in% smooth_vars)
+        stop2("Cannot find variable '", pars, "' amongst the tve terms.")
+
+      sel1 <- which(smooth_vars == pars)
+      sel2 <- smooth_coefs[smooth_map == sel1]
+
+      betas_tf <- stanpars$beta    [, pars, drop = FALSE]
+      betas_td <- stanpars$beta_tve[, sel2, drop = FALSE]
+      betas    <- cbind(betas_tf, betas_td)
+
+      tt_varid  <- unique(x$formula$tt_map[smooth_map == sel1])
+      tt_type   <- x$formula$tt_types  [[tt_varid]]
+      tt_degree <- x$formula$tt_degrees[[tt_varid]]
+      tt_form   <- x$formula$tt_forms  [[tt_varid]]
+      tt_data   <- data.frame(times__ = times)
+      tt_x      <- model.matrix(tt_form, tt_data)
+      
+      coef      <- linear_predictor(betas, tt_x)
+      
+      is_aft    <- get_basehaz_name(x$basehaz) %in% c("exp-aft", "weibull-aft")
+      
+      plotdat   <- median_and_bounds(exp(coef), prob, na.rm = TRUE)  
+      plotdat   <- data.frame(times, plotdat)
+
+      uses_step_stair <- (tt_degree == 0)
+      
+      xlab <- "Time"
+      ylab <- ifelse(is_aft, 
+                     paste0("Survival time ratio\n(", pars, ")"), 
+                     paste0("Hazard ratio\n(", pars, ")"))
+    }
+    
+    geom_defs <- list(color = "black") # default plot args
+    geom_args <- set_geom_args(geom_defs, ...)
+    geom_maps <- list(aes_string(x = "times", y = "med"))
+    geom_ylab <- ggplot2::ylab(ylab)
+    geom_xlab <- ggplot2::xlab(xlab)
+    geom_base <- ggplot(plotdat) + geom_ylab + geom_xlab + ggplot2::theme_bw()
+    geom_fun  <- if (uses_step_stair) ggplot2::geom_step else ggplot2::geom_line
+    geom_plot <- geom_base + do.call(geom_fun, c(geom_maps, geom_args))
+
+    if (limits == "ci") {
+      lim_defs <- list(alpha = 0.3) # default plot args for ci
+      lim_args <- c(defaults = list(lim_defs), ci_geom_args)
+      lim_args <- do.call("set_geom_args", lim_args)
+      lim_maps <- list(mapping = aes_string(x = "times", ymin = "lb", ymax = "ub"))
+      lim_tmp  <- geom_base +
+        geom_fun(aes_string(x = "times", y = "lb")) +
+        geom_fun(aes_string(x = "times", y = "ub"))
+      lim_build<- ggplot2::ggplot_build(lim_tmp)
+      lim_data <- list(data = data.frame(times = lim_build$data[[1]]$x,
+                                         lb    = lim_build$data[[1]]$y,
+                                         ub    = lim_build$data[[2]]$y))
+      lim_plot <- do.call(ggplot2::geom_ribbon, c(lim_data, lim_maps, lim_args))
+    } else {
+      lim_plot <- NULL
+    }
+    return(geom_plot + lim_plot)
+  }
+  NextMethod("plot")
+}
 
 
 # internal for plot.stanreg ----------------------------------------------
@@ -198,7 +335,7 @@ set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...,
   .plotfun_is_type <- function(patt) {
     grepl(pattern = paste0("_", patt), x = plotfun, fixed = TRUE)
   }
-  
+
   if (.plotfun_is_type("nuts")) {
     nuts_stuff <- list(x = bayesplot::nuts_params(x), ...)
     if (!.plotfun_is_type("energy"))
@@ -217,13 +354,13 @@ set_plotting_args <- function(x, pars = NULL, regex_pars = NULL, ...,
     pars <- collect_pars(x, pars, regex_pars)
     pars <- allow_special_parnames(x, pars)
   }
-  
+
   if (!used.sampling(x)) {
     if (!length(pars))
       pars <- NULL
     return(list(x = as.matrix(x, pars = pars), ...))
   }
-  
+
   list(x = as.array(x, pars = pars, regex_pars = regex_pars), ...)
 }
 
@@ -253,10 +390,10 @@ mcmc_function_name <- function(fun) {
 
   if (!identical(substr(fun, 1, 5), "mcmc_"))
     fun <- paste0("mcmc_", fun)
-  
+
   if (!fun %in% bayesplot::available_mcmc())
     stop(
-      fun, " is not a valid MCMC function name.",  
+      fun, " is not a valid MCMC function name.",
       " Use bayesplot::available_mcmc() for a list of available MCMC functions."
     )
 
@@ -289,11 +426,11 @@ set_plotting_fun <- function(plotfun = NULL) {
     stop("'plotfun' should be a string.", call. = FALSE)
 
   plotfun <- mcmc_function_name(plotfun)
-  fun <- try(get(plotfun, pos = asNamespace("bayesplot"), mode = "function"), 
+  fun <- try(get(plotfun, pos = asNamespace("bayesplot"), mode = "function"),
              silent = TRUE)
   if (!inherits(fun, "try-error"))
     return(fun)
-  
+
   stop(
     "Plotting function ",  plotfun, " not found. ",
     "A valid plotting function is any function from the ",
@@ -305,14 +442,14 @@ set_plotting_fun <- function(plotfun = NULL) {
 # check if plotfun is ok to use with vb or optimization
 validate_plotfun_for_opt_or_vb <- function(plotfun) {
   plotfun <- mcmc_function_name(plotfun)
-  if (needs_chains(plotfun) || 
+  if (needs_chains(plotfun) ||
       grepl("_rhat|_neff|_nuts_", plotfun))
     STOP_sampling_only(plotfun)
 }
 
 
-
 # pairs method ------------------------------------------------------------
+
 #' Pairs method for stanreg objects
 #' 
 #' Interface to \pkg{bayesplot}'s
@@ -325,7 +462,7 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' @importFrom bayesplot pairs_style_np pairs_condition
 #' @export pairs_style_np pairs_condition
 #' @aliases pairs_style_np pairs_condition
-#' 
+#'
 #' @templateVar stanregArg x
 #' @template args-stanreg-object
 #' @template args-regex-pars
@@ -333,18 +470,24 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #'   are included by default, but for models with more than just a few 
 #'   parameters it may be far too many to visualize on a small computer screen 
 #'   and also may require substantial computing time.
-#' @param condition Same as the \code{condition} argument to 
-#'   \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}} except the \emph{default is different}
+#' @param condition Same as the \code{condition} argument to
+#'   \code{\link[bayesplot]{mcmc_pairs}} except the \emph{default is different}
 #'   for \pkg{rstanarm} models. By default, the \code{mcmc_pairs} function in
 #'   the \pkg{bayesplot} package plots some of the Markov chains (half, in the
 #'   case of an even number of chains) in the panels above the diagonal and the
-#'   other half in the panels below the diagonal. However since we know that 
-#'   \pkg{rstanarm} models were fit using Stan (which \pkg{bayesplot} doesn't 
-#'   assume) we can make the default more useful by splitting the draws 
-#'   according to the \code{accept_stat__} diagnostic. The plots below the 
-#'   diagonal will contain realizations that are below the median 
-#'   \code{accept_stat__} and the plots above the diagonal will contain 
+#'   other half in the panels below the diagonal. However since we know that
+#'   \pkg{rstanarm} models were fit using Stan (which \pkg{bayesplot} doesn't
+#'   assume) we can make the default more useful by splitting the draws
+#'   according to the \code{accept_stat__} diagnostic. The plots below the
+#'   diagonal will contain realizations that are below the median
+#'   \code{accept_stat__} and the plots above the diagonal will contain
 #'   realizations that are above the median \code{accept_stat__}. To change this
+#'   behavior see the documentation of the \code{condition} argument at
+#'   \code{\link[bayesplot]{mcmc_pairs}}.
+#' @param ... Optional arguments passed to \code{\link[bayesplot]{mcmc_pairs}}.
+#'   The \code{np}, \code{lp}, and \code{max_treedepth} arguments to
+#'   \code{mcmc_pairs} are handled automatically by \pkg{rstanarm} and do not
+#'   need to be specified by the user in \code{...}. The arguments that can be
 #'   behavior see the documentation of the \code{condition} argument at 
 #'   \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}.
 #' @param ... Optional arguments passed to 
@@ -363,10 +506,10 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
 #' \donttest{
 #' if (!exists("example_model")) example(example_model)
-#' 
+#'
 #' bayesplot::color_scheme_set("purple")
-#' 
-#' # see 'condition' argument above for details on the plots below and 
+#'
+#' # see 'condition' argument above for details on the plots below and
 #' # above the diagonal. default is to split by accept_stat__.
 #' pairs(example_model, pars = c("(Intercept)", "log-posterior"))
 #' 
@@ -380,7 +523,7 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #'   adapt_delta = 0.9,
 #'   refresh = 0
 #' )
-#' 
+#'
 #' pairs(fit, pars = c("wt", "sigma", "log-posterior"))
 #'
 #' # requires hexbin package
@@ -393,20 +536,20 @@ validate_plotfun_for_opt_or_vb <- function(plotfun) {
 #' 
 #' bayesplot::color_scheme_set("brightblue")
 #' pairs(
-#'   fit, 
-#'   pars = c("(Intercept)", "wt", "sigma", "log-posterior"), 
-#'   transformations = list(sigma = "log"), 
+#'   fit,
+#'   pars = c("(Intercept)", "wt", "sigma", "log-posterior"),
+#'   transformations = list(sigma = "log"),
 #'   off_diag_args = list(size = 3/4, alpha = 1/3), # size and transparency of scatterplot points
 #'   np_style = pairs_style_np(div_color = "black", div_shape = 2) # color and shape of the divergences
 #' )
-#' 
-#' # Using the condition argument to show divergences above the diagonal 
+#'
+#' # Using the condition argument to show divergences above the diagonal
 #' pairs(
-#'   fit, 
-#'   pars = c("(Intercept)", "wt", "log-posterior"), 
+#'   fit,
+#'   pars = c("(Intercept)", "wt", "log-posterior"),
 #'   condition = pairs_condition(nuts = "divergent__")
 #' )
-#' 
+#'
 #' }
 #' }
 pairs.stanreg <-
@@ -415,21 +558,21 @@ pairs.stanreg <-
            regex_pars = NULL,
            condition = pairs_condition(nuts = "accept_stat__"),
            ...) {
-    
+
     if (!used.sampling(x))
       STOP_sampling_only("pairs")
-    
+
     dots <- list(...)
     ignored_args <- c("np", "lp", "max_treedepth")
     specified <- ignored_args %in% names(dots)
     if (any(specified)) {
       warning(
         "The following arguments were ignored because they are ",
-        "specified automatically by rstanarm: ", 
+        "specified automatically by rstanarm: ",
         paste(sQuote(ignored_args[specified]), collapse = ", ")
       )
     }
-    
+
     posterior <- as.array.stanreg(x, pars = pars, regex_pars = regex_pars)
     if (is.null(pars) && is.null(regex_pars)) {
       # include log-posterior by default
@@ -444,16 +587,16 @@ pairs.stanreg <-
       posterior <- tmp
     }
     posterior <- round(posterior, digits = 12)
-    
+
     bayesplot::mcmc_pairs(
-      x = posterior, 
-      np = bayesplot::nuts_params(x),  
-      lp = bayesplot::log_posterior(x),  
+      x = posterior,
+      np = bayesplot::nuts_params(x),
+      lp = bayesplot::log_posterior(x),
       max_treedepth = .max_treedepth(x),
       condition = condition,
       ...
     )
-    
+
   }
 
 

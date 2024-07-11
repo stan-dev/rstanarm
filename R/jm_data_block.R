@@ -171,7 +171,7 @@ reformulate_rhs <- function(x, subbars = FALSE) {
 handle_cov_prior <- function(prior, cnms, ok_dists = nlist("decov", "lkj")) {
   if (!is.list(prior)) 
     stop(sQuote(deparse(substitute(prior))), " should be a named list")
-  t <- length(unique(cnms)) # num grouping factors
+  t <- length(cnms)         # num grouping factors
   p <- sapply(cnms, length) # num terms for each grouping factor
   prior_dist_name <- prior$dist
   if (!prior_dist_name %in% unlist(ok_dists)) {
@@ -468,7 +468,13 @@ summarize_jm_prior <-
             adjusted_priorEvent_aux_scale else NULL,
           df = if (!is.na(prior_dist_name) && 
                    prior_dist_name %in% "student_t")
-            prior_df else NULL, 
+            prior_df else NULL,
+          concentration = if (!is.na(prior_dist_name) && 
+                              prior_dist_name %in% "dirichlet")
+            prior_concentration else NULL,
+          rate = if (!is.na(prior_dist_name) && 
+                     prior_dist_name %in% "exponential")
+            1 / prior_scale else NULL,
           aux_name = e_aux_name
         ))      
     }
@@ -524,9 +530,14 @@ summarize_jm_prior <-
 # @param basehaz A list with information about the baseline hazard
 .rename_e_aux <- function(basehaz) {
   nm <- basehaz$type_name
-  if (nm == "weibull") "weibull-shape" else
-    if (nm == "bs") "spline-coefficients" else
-      if (nm == "piecewise") "piecewise-coefficients" else NA
+  switch(nm,
+         "weibull"     = "weibull-shape",
+         "weibull-aft" = "weibull-shape",
+         "gompertz"    = "gompertz-scale",
+         "bs"          = "B-spline-coefficients",
+         "ms"          = "M-spline-coefficients",
+         "piecewise"   = "piecewise-coefficients",
+         NA)
 }
 
 # Check if priors were autoscaled
@@ -1034,7 +1045,7 @@ validate_observation_times <-function(data, eventtimes, id_var, time_var) {
 #   model_frame: The model frame for the fitted Cox model, but with the
 #     subject ID variable also included.
 #   tvc: Logical, if TRUE then a counting type Surv() object was used
-#     in the fitted Cox model (ie. time varying covariates). 
+#     in the fitted Cox model (ie. time-varying covariates). 
 handle_e_mod <- function(formula, data, qnodes, id_var, y_id_list) {
   if (!requireNamespace("survival"))
     stop("the 'survival' package must be installed to use this function")
@@ -1257,6 +1268,20 @@ make_basehaz_X <- function(times, basehaz) {
     stop2("Bug found: type of baseline hazard unknown.") 
   }
   X
+}
+
+# Create a dummy indicator matrix for time intervals defined by 'knots'
+#
+# @param x A numeric vector with the original data.
+# @param knots The cutpoints defining the desired categories of 'x'.
+# @return A dummy matrix.
+dummy_matrix <- function(x, knots) {
+  n_intervals <- length(knots) - 1
+  interval <- cut(x, knots, include.lowest = TRUE, labels = FALSE)
+  out <- matrix(NA, length(interval), n_intervals)
+  for (i in 1:n_intervals) 
+    out[, i] <- ifelse(interval == i, 1, 0)
+  as.matrix(out)
 }
 
 # Function to return standardised GK quadrature points and weights
