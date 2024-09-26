@@ -105,11 +105,10 @@ model {
     if (K > 1) 
       target += beta_lpdf(R2 | half_K, eta);
     else {
-      // TODO(Andrew) remove once vectorised abs available in rstan
+      
       array[J] real R2_abs;
-      for (j in 1:J) {
-        R2_abs[j] = abs(R2[j]);
-      }
+      R2_abs = abs(R2);
+      
       target += beta_lpdf(square(R2) | half_K, eta) + sum(log(R2_abs));
     }
   }
