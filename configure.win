@@ -1,0 +1,2 @@
+#! /bin/sh
+"${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" -e "rstantools::rstan_config()"
