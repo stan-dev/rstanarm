@@ -7,7 +7,7 @@
 \usage{
 \method{print}{stanreg}(x, digits = 1, detail = TRUE, ...)
 
-\method{print}{stanmvreg}(x, digits = 3, ...)
+\method{print}{stanmvreg}(x, digits = 3, detail = TRUE, ...)
 }
 \arguments{
 \item{x}{A fitted model object returned by one of the 

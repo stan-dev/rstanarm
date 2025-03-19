@@ -29,20 +29,20 @@ in place of \code{pars} or in addition to \code{pars}. Currently, all
 functions that accept a \code{regex_pars} argument ignore it for models fit
 using optimization.}
 
-\item{condition}{Same as the \code{condition} argument to 
-\code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}} except the \emph{default is different}
+\item{condition}{Same as the \code{condition} argument to
+\code{\link[bayesplot]{mcmc_pairs}} except the \emph{default is different}
 for \pkg{rstanarm} models. By default, the \code{mcmc_pairs} function in
 the \pkg{bayesplot} package plots some of the Markov chains (half, in the
 case of an even number of chains) in the panels above the diagonal and the
-other half in the panels below the diagonal. However since we know that 
-\pkg{rstanarm} models were fit using Stan (which \pkg{bayesplot} doesn't 
-assume) we can make the default more useful by splitting the draws 
-according to the \code{accept_stat__} diagnostic. The plots below the 
-diagonal will contain realizations that are below the median 
-\code{accept_stat__} and the plots above the diagonal will contain 
+other half in the panels below the diagonal. However since we know that
+\pkg{rstanarm} models were fit using Stan (which \pkg{bayesplot} doesn't
+assume) we can make the default more useful by splitting the draws
+according to the \code{accept_stat__} diagnostic. The plots below the
+diagonal will contain realizations that are below the median
+\code{accept_stat__} and the plots above the diagonal will contain
 realizations that are above the median \code{accept_stat__}. To change this
-behavior see the documentation of the \code{condition} argument at 
-\code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}.}
+behavior see the documentation of the \code{condition} argument at
+\code{\link[bayesplot]{mcmc_pairs}}.}
 
 \item{...}{Optional arguments passed to 
 \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}. 
@@ -68,7 +68,7 @@ if (!exists("example_model")) example(example_model)
 
 bayesplot::color_scheme_set("purple")
 
-# see 'condition' argument above for details on the plots below and 
+# see 'condition' argument above for details on the plots below and
 # above the diagonal. default is to split by accept_stat__.
 pairs(example_model, pars = c("(Intercept)", "log-posterior"))
 
@@ -95,17 +95,17 @@ pairs(fit, pars = c("wt", "sigma", "log-posterior"))
 
 bayesplot::color_scheme_set("brightblue")
 pairs(
-  fit, 
-  pars = c("(Intercept)", "wt", "sigma", "log-posterior"), 
-  transformations = list(sigma = "log"), 
+  fit,
+  pars = c("(Intercept)", "wt", "sigma", "log-posterior"),
+  transformations = list(sigma = "log"),
   off_diag_args = list(size = 3/4, alpha = 1/3), # size and transparency of scatterplot points
   np_style = pairs_style_np(div_color = "black", div_shape = 2) # color and shape of the divergences
 )
 
-# Using the condition argument to show divergences above the diagonal 
+# Using the condition argument to show divergences above the diagonal
 pairs(
-  fit, 
-  pars = c("(Intercept)", "wt", "log-posterior"), 
+  fit,
+  pars = c("(Intercept)", "wt", "log-posterior"),
   condition = pairs_condition(nuts = "divergent__")
 )
 

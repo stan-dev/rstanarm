@@ -82,9 +82,16 @@ overview:
   appropriate estimates of uncertainty for models that consist of a mix of
   common and group-specific parameters.
  }
+ \item{\code{\link{stan_mvmer}}}{
+   A multivariate form of \code{\link{stan_glmer}}, whereby the user can
+   specify one or more submodels each consisting of a GLM with group-specific
+   terms. If more than one submodel is specified (i.e. there is more than one
+   outcome variable) then a dependence is induced by assuming that the
+   group-specific terms for each grouping factor are correlated across submodels.
+ }
  \item{\code{\link{stan_nlmer}}}{
-  Similar to \code{\link[lme4]{nlmer}} in the \pkg{lme4} package for 
-  nonlinear "mixed-effects" models, but the group-specific coefficients 
+  Similar to \code{\link[lme4]{nlmer}} in the \pkg{lme4} package for
+  nonlinear "mixed-effects" models, but the group-specific coefficients
   have flexible priors on their unknown covariance matrices.
  }
  \item{\code{\link{stan_gamm4}}}{
@@ -117,19 +124,22 @@ overview:
    to \code{\link[survival]{clogit}} that allow \code{stan_clogit} to accept
    group-specific terms as in \code{\link{stan_glmer}}.
  }
- \item{\code{\link{stan_mvmer}}}{
-   A multivariate form of \code{\link{stan_glmer}}, whereby the user can
-   specify one or more submodels each consisting of a GLM with group-specific 
-   terms. If more than one submodel is specified (i.e. there is more than one
-   outcome variable) then a dependence is induced by assuming that the
-   group-specific terms for each grouping factor are correlated across submodels. 
+ \item{\code{\link{stan_surv}}}{
+   Fits models to survival (i.e. time-to-event) data using either a hazard 
+   scale or accelerated failure time (AFT) formulation. The user can choose 
+   between either a flexible spline-based approximation for the baseline 
+   hazard or a standard parametric distributional assumption for the baseline 
+   hazard. Covariate effects can then be accommodated under proportional or 
+   non-proportional hazards assumptions (for models on the hazard scale) or 
+   using time-fixed or time-varying acceleration factors (for models on the 
+   AFT scale).
  }
  \item{\code{\link{stan_jm}}}{
-   Estimates shared parameter joint models for longitudinal and time-to-event 
-   (i.e. survival) data. The joint model can be univariate (i.e. one longitudinal 
-   outcome) or multivariate (i.e. more than one longitudinal outcome). A variety 
-   of parameterisations are available for linking the longitudinal and event 
-   processes (i.e. a variety of association structures).      
+   Fits shared parameter joint models for longitudinal and survival (i.e.
+   time-to-event) data. The joint model can be univariate (i.e. one longitudinal
+   outcome) or multivariate (i.e. more than one longitudinal outcome). A variety
+   of parameterisations are available for linking the longitudinal and event
+   processes (i.e. a variety of association structures).
  }
 }
 }
@@ -251,6 +261,7 @@ Other contributors:
   \item Sam Brilleman [contributor]
   \item Jacqueline Buros Novik (R/stan_jm.R) [contributor]
   \item AstraZeneca (R/stan_jm.R) [contributor]
+  \item Eren Elci (R/stan_surv.R) [contributor]
   \item Trustees of Columbia University [copyright holder]
   \item Simon Wood (R/stan_gamm4.R) [copyright holder]
   \item R Core Deveopment Team (R/stan_aov.R) [copyright holder]

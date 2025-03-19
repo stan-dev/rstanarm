@@ -39,7 +39,8 @@ conditioning on the outcome) and then plotting the parameters.
   correspond to the intercept with the predictors as specified by the user 
   (unmodified by \pkg{rstanarm}), but when \emph{specifying} the prior the 
   intercept can be thought of as the expected outcome when the predictors are
-  set to their means. The only exception to this is for models fit with the 
+  set to their means. The only exceptions to this are for models fit using 
+  the \code{stan_surv} modelling function, or models fit with the 
   \code{sparse} argument set to \code{TRUE} (which is only possible with a
   subset of the modeling functions and never the default).
 }

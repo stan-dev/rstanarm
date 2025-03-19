@@ -2,21 +2,38 @@
 % Please edit documentation in R/plots.R
 \name{plot.stanreg}
 \alias{plot.stanreg}
+\alias{plot.stansurv}
 \title{Plot method for stanreg objects}
 \usage{
 \method{plot}{stanreg}(x, plotfun = "intervals", pars = NULL, regex_pars = NULL, ...)
+
+\method{plot}{stansurv}(
+  x,
+  plotfun = "basehaz",
+  pars = NULL,
+  regex_pars = NULL,
+  ...,
+  prob = 0.95,
+  limits = c("ci", "none"),
+  ci_geom_args = NULL,
+  n = 1000
+)
 }
 \arguments{
 \item{x}{A fitted model object returned by one of the 
 \pkg{rstanarm} modeling functions. See \code{\link{stanreg-objects}}.}
 
-\item{plotfun}{A character string naming the \pkg{bayesplot} 
-\link[bayesplot:MCMC-overview]{MCMC} function to use. The default is to call
-\code{\link[bayesplot:MCMC-intervals]{mcmc_intervals}}. \code{plotfun} can be specified
+\item{plotfun}{A character string naming the \pkg{bayesplot}
+\link[bayesplot]{MCMC} function to use. The default is to call
+\code{\link[bayesplot]{mcmc_intervals}}. \code{plotfun} can be specified
 either as the full name of a \pkg{bayesplot} plotting function (e.g.
 \code{"mcmc_hist"}) or can be abbreviated to the part of the name following
 the \code{"mcmc_"} prefix (e.g. \code{"hist"}). To get the names of all
-available MCMC functions see \code{\link[bayesplot:available_ppc]{available_mcmc}}.}
+available MCMC functions see \code{\link[bayesplot]{available_mcmc}}.
+For the \code{stansurv} method, one can also specify
+\code{plotfun = "basehaz"} for a plot of the estimated baseline hazard
+function, or \code{plot = "tve"} for a plot of the time-varying
+hazard ratio (if time-varying effects were specified in the model).}
 
 \item{pars}{An optional character vector of parameter names.}
 
@@ -27,10 +44,28 @@ functions that accept a \code{regex_pars} argument ignore it for models fit
 using optimization.}
 
 \item{...}{Additional arguments to pass to \code{plotfun} for customizing the
-plot. These are described on the help pages for the individual plotting 
+plot. These are described on the help pages for the individual plotting
 functions. For example, the arguments accepted for the default
 \code{plotfun="intervals"} can be found at
 \code{\link[bayesplot:MCMC-intervals]{mcmc_intervals}}.}
+
+\item{prob}{A scalar between 0 and 1 specifying the width to use for the
+plotted posterior uncertainty interval when \code{limit = "ci"}. For
+example \code{prob = 0.95} (the default) means that the 2.5th and 97.5th
+percentiles will be provided.}
+
+\item{limits}{A quoted character string specifying the type of limits to
+include in the plot. Can be \code{"ci"} for the Bayesian posterior
+uncertainty interval, or \code{"none"}. This argument is only relevant
+when \code{plotfun = "basehaz"} or \code{plotfun = "tve"}}
+
+\item{ci_geom_args}{Optional arguments passed to 
+\code{\link[ggplot2]{geom_ribbon}} and used to control features
+of the plotted interval limits. They should be supplied as a named list.}
+
+\item{n}{Integer specifying the number of points to interpolate along 
+when plotting the baseline hazard or time-varying hazard ratio. Each of 
+the points are joined using a line.}
 }
 \value{
 Either a ggplot object that can be further customized using the
@@ -125,7 +160,7 @@ bayesplot::color_scheme_set("pink")
 trace + ggplot2::scale_color_discrete()
 trace + ggplot2::scale_color_manual(values = c("maroon", "skyblue2"))
 
-# changing facet layout 
+# changing facet layout
 plot(fit, "trace", pars = c("(Intercept)", "period2"),
      facet_args = list(nrow = 2))
 # same plot by calling bayesplot::mcmc_trace directly
@@ -156,14 +191,14 @@ Gabry, J. , Simpson, D. , Vehtari, A. , Betancourt, M. and
   \href{https://github.com/jgabry/bayes-vis-paper}{code on GitHub})
 }
 \seealso{
-\itemize{ 
+\itemize{
   \item The vignettes in the \pkg{bayesplot} package for many examples.
   \item \code{\link[bayesplot]{MCMC-overview}} (\pkg{bayesplot}) for links to
   the documentation for all the available plotting functions.
   \item \code{\link[bayesplot:bayesplot-colors]{color_scheme_set}} (\pkg{bayesplot}) to change
   the color scheme used for plotting.
   \item \code{\link{pp_check}} for graphical posterior predictive checks.
-  \item \code{\link{plot_nonlinear}} for models with nonlinear smooth 
+  \item \code{\link{plot_nonlinear}} for models with nonlinear smooth
   functions fit using \code{\link{stan_gamm4}}.
 }
 }

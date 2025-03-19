@@ -10,7 +10,9 @@
 \item{x}{A stanreg object.}
 
 \item{...}{Can contain \code{fixed.only} and \code{random.only} arguments 
-that both default to \code{FALSE}.}
+that both default to \code{FALSE}. Also, for stan_surv models, can contain
+\code{remove.tve} which defaults to FALSE, but if TRUE then any 
+'tve(varname)' terms in the model formula are returned as 'varname'.}
 }
 \description{
 formula method for stanreg objects

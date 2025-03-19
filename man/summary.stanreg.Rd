@@ -21,7 +21,14 @@
 
 \method{as.data.frame}{summary.stanreg}(x, ...)
 
-\method{summary}{stanmvreg}(object, pars = NULL, regex_pars = NULL, probs = NULL, ..., digits = 3)
+\method{summary}{stanmvreg}(
+  object,
+  pars = NULL,
+  regex_pars = NULL,
+  probs = c(0.1, 0.5, 0.9),
+  ...,
+  digits = 3
+)
 
 \method{print}{summary.stanmvreg}(x, digits = max(1, attr(x, "print.digits")), ...)
 }
