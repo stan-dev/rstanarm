@@ -73,22 +73,37 @@ log_lik.stanreg <- function(object, newdata = NULL, offset = NULL, ...) {
   newdata <- validate_newdata(object, newdata, m = NULL)
   calling_fun <- as.character(sys.call(-1))[1]
   dots <- list(...)
+  
   if (is.stanmvreg(object)) {
-    m <- dots[["m"]]
-    if (is.null(m)) 
-      STOP_arg_required_for_stanmvreg(m)
-    if (!is.null(offset))
-      stop2("'offset' cannot be specified for stanmvreg objects.")
+    m <- dots[["m"]]; if (is.null(m)) STOP_arg_required_for_stanmvreg(m)
   } else {
     m <- NULL
   }
-  
+ 
   newdata <- validate_newdata(object, newdata = newdata, m = m)
-  args <- ll_args.stanreg(object, newdata = newdata, offset = offset, 
-                          reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
-                          ...)
+  if (is.stansurv(object)) {
+    args <- ll_args.stansurv(object, newdata = newdata, ...)
+  } else {
+    args <- ll_args.stanreg(object, newdata = newdata, offset = offset, 
+                            reloo_or_kfold = calling_fun %in% c("kfold", "reloo"), 
+                            ...)
+  }
+
   fun <- ll_fun(object, m = m)
-  if (is_clogit(object)) {
+  if (is.stansurv(object)) {
+    out <-
+      vapply(
+        seq_len(args$N),
+        FUN.VALUE = numeric(length = args$S),
+        FUN = function(i) {
+          as.vector(fun(
+            draws = args$draws,
+            data_i = args$data[args$data$cids == 
+                                 unique(args$data$cids)[i], , drop = FALSE]
+          ))
+        }
+      )
+  } else if (is_clogit(object)) {
     out <-
       vapply(
         seq_len(args$N),
@@ -173,7 +188,9 @@ log_lik.stanjm <- function(object, newdataLong = NULL, newdataEvent = NULL, ...)
 ll_fun <- function(x, m = NULL) {
   validate_stanreg_object(x)
   f <- family(x, m = m)
-  if (!is(f, "family") || is_scobit(x))
+  if (is.stansurv(x)) {
+    return(.ll_surv_i)
+  } else if (!is(f, "family") || is_scobit(x))
     return(.ll_polr_i)
   else if (is_clogit(x)) 
     return(.ll_clogit_i)
@@ -201,6 +218,8 @@ ll_fun <- function(x, m = NULL) {
 # @return a named list with elements data, draws, S (posterior sample size) and
 #   N = number of observations
 ll_args <- function(object, ...) UseMethod("ll_args")
+
+#--- ll_args for stanreg models
 ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL, 
                             reloo_or_kfold = FALSE, ...) {
   validate_stanreg_object(object)
@@ -372,6 +391,90 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   return(out)
 }
 
+#--- ll_args for stansurv models
+ll_args.stansurv <- function(object, newdata = NULL, ...) {
+  
+  validate_stansurv_object(object)
+
+  if (is.null(newdata)) {
+    newdata <- get_model_data(object)
+  }
+  newdata <- as.data.frame(newdata)
+  
+  # response, ie. a Surv object
+  form <- as.formula(formula(object))
+  y    <- eval(form[[2L]], newdata)
+  
+  # outcome, ie. time variables and status indicator
+  t_beg   <- make_t(y, type = "beg") # entry time
+  t_end   <- make_t(y, type = "end") # exit  time
+  t_upp   <- make_t(y, type = "upp") # upper time for interval censoring
+  status  <- make_d(y)
+  if (any(status < 0 | status > 3)) 
+    stop2("Invalid status indicator in Surv object.")
+  
+  # delayed entry indicator for each row of data
+  delayed <- as.logical(!t_beg == 0)
+  
+  # we reconstruct the design matrices even if no newdata, since it is
+  # too much of a pain to store everything in the fitted model object
+  # (e.g. w/ delayed entry, interval censoring, quadrature points, etc)
+  pp <- pp_data(object, newdata, times = t_end)
+  
+  # returned object depends on quadrature
+  if (object$has_quadrature) {
+    pp_qpts_beg <- pp_data(object, newdata, times = t_beg, at_quadpoints = TRUE)
+    pp_qpts_end <- pp_data(object, newdata, times = t_end, at_quadpoints = TRUE)
+    pp_qpts_upp <- pp_data(object, newdata, times = t_upp, at_quadpoints = TRUE)
+    cpts <- c(pp$pts, pp_qpts_beg$pts, pp_qpts_end$pts, pp_qpts_upp$pts)
+    cwts <- c(pp$wts, pp_qpts_beg$wts, pp_qpts_end$wts, pp_qpts_upp$wts)
+    cids <- c(pp$ids, pp_qpts_beg$ids, pp_qpts_end$ids, pp_qpts_upp$ids)
+    x <- rbind(pp$x, pp_qpts_beg$x, pp_qpts_end$x, pp_qpts_upp$x)
+    s <- rbind(pp$s, pp_qpts_beg$s, pp_qpts_end$s, pp_qpts_upp$s)
+    x <- append_prefix_to_colnames(x, "x__")
+    s <- append_prefix_to_colnames(s, "s__")
+    status  <- c(status,  rep(NA, length(cids) - length(status)))
+    delayed <- c(delayed, rep(NA, length(cids) - length(delayed)))
+    data <- data.frame(cpts, cwts, cids, status, delayed)
+    data <- cbind(data, x, s)
+  } else {
+    x <- append_prefix_to_colnames(pp$x, "x__")
+    cids <- seq_along(t_end)
+    data <- data.frame(cids, t_beg, t_end, t_upp, status, delayed)
+    data <- cbind(data, x)
+  }
+  
+  # also evaluate random effects structure if relevant
+  if (object$has_bars) {
+    z <- t(pp$z$Zt)
+    if (object$has_quadrature) {
+      z <- rbind(z,
+                 t(pp_qpts_beg$z$Zt),
+                 t(pp_qpts_end$z$Zt),
+                 t(pp_qpts_upp$z$Zt))
+    }
+    z <- append_prefix_to_colnames(as.matrix(z), "z__")
+    data <- cbind(data, z)
+  }
+
+  # parameter draws
+  draws                <- list()
+  pars                 <- extract_pars(object)
+  draws$basehaz        <- get_basehaz (object)
+  draws$aux            <- pars$aux
+  draws$alpha          <- pars$alpha
+  draws$beta           <- pars$beta
+  draws$beta_tve       <- pars$beta_tve
+  draws$b              <- if (object$has_bars) pp_b_ord(pars$b, pp$z$Z_names) else NULL
+  draws$has_quadrature <- pp$has_quadrature
+  draws$has_tve        <- pp$has_tve
+  draws$has_bars       <- pp$has_bars
+  draws$qnodes         <- pp$qnodes
+  
+  out <- nlist(data, draws, S = NROW(draws$beta), N = n_distinct(cids))
+  return(out)
+}
+
 
 # check intercept for polr models -----------------------------------------
 # Check if a model fit with stan_polr has an intercept (i.e. if it's actually a 
@@ -421,6 +524,23 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 .phi_beta <- function(data, draws) {
   eta <- as.vector(linear_predictor(draws$phi, .zdata_beta(data), data$offset))
   draws$f_phi$linkinv(eta)
+}
+
+# for stan_surv only
+.xdata_surv <- function(data) { 
+  nms <- colnames(data)
+  sel <- grep("^x__", nms)
+  data[, sel]
+}
+.sdata_surv <- function(data) { 
+  nms <- colnames(data)
+  sel <- grep("^s__", nms)
+  data[, sel]
+}
+.zdata_surv <- function(data) { 
+  nms <- colnames(data)
+  sel <- grep("^z__", nms)
+  data[, sel]
 }
 
 # log-likelihood functions ------------------------------------------------
@@ -498,6 +618,139 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
   val <- dnorm(data_i$y, mean = draws$mu[, i_], sd = draws$sigma, log = TRUE)
   .weighted(val, data_i$weights)
 }
+
+.ll_surv_i <- function(data_i, draws) {
+  
+  # fixed effects (time-fixed) part of linear predictor
+  eta  <- linear_predictor(draws$beta, .xdata_surv(data_i))
+  
+  # fixed effects (time-varying) part of linear predictor
+  if (draws$has_tve) {
+    eta <- eta + linear_predictor(draws$beta_tve, .sdata_surv(data_i))
+  }
+  
+  # random effects part of linear predictor
+  if (draws$has_bars) {
+    eta <- eta + linear_predictor(draws$b, .zdata_surv(data_i))
+  }   
+  
+  # convert linear predictor to log acceleration factor for AFT
+  eta <- switch(get_basehaz_name(draws$basehaz),
+                "exp-aft"     = sweep(eta, 1L, -1, `*`),
+                "weibull-aft" = sweep(eta, 1L, -as.vector(draws$aux), `*`),
+                eta) 
+  
+  if (draws$has_quadrature) {
+    
+    qnodes  <- draws$qnodes
+    status  <- data_i[1L, "status"]
+    delayed <- data_i[1L, "delayed"]
+    
+    # row indexing of quadrature points in data_i
+    idx_epts     <- 1
+    idx_qpts_beg <- 1 + (qnodes * 0) + (1:qnodes)
+    idx_qpts_end <- 1 + (qnodes * 1) + (1:qnodes)
+    idx_qpts_upp <- 1 + (qnodes * 2) + (1:qnodes)
+    
+    # arguments to be used later in evaluating log baseline hazard
+    args <- list(times     = data_i$cpts,
+                 basehaz   = draws$basehaz,
+                 aux       = draws$aux,
+                 intercept = draws$alpha)
+
+    # evaluate log hazard
+    lhaz <- eta + do.call(evaluate_log_basehaz, args)
+    
+    # evaluate log likelihood
+    if (status == 1) {
+      # uncensored
+      lhaz_epts     <- lhaz[, idx_epts,     drop = FALSE]
+      lhaz_qpts_end <- lhaz[, idx_qpts_end, drop = FALSE]
+      lsurv <- -quadrature_sum(exp(lhaz_qpts_end),
+                               qnodes = qnodes,
+                               qwts   = data_i$cwts[idx_qpts_end])
+      ll <- lhaz_epts + lsurv
+    } else if (status == 0) { 
+      # right censored
+      lhaz_qpts_end <- lhaz[, idx_qpts_end, drop = FALSE]
+      lsurv <- -quadrature_sum(exp(lhaz_qpts_end),
+                               qnodes = qnodes,
+                               qwts   = data_i$cwts[idx_qpts_end])
+      ll <- lsurv
+    } else if (status == 2) { 
+      # left censored
+      lhaz_qpts_end <- lhaz[, idx_qpts_end, drop = FALSE]
+      lsurv <- -quadrature_sum(exp(lhaz_qpts_end),
+                               qnodes = qnodes,
+                               qwts   = data_i$cwts[idx_qpts_end])
+      ll <- log(1 - exp(lsurv)) # = log CDF
+    } else if (status == 3) { 
+      # interval censored
+      lhaz_qpts_end <- lhaz[, idx_qpts_end, drop = FALSE]
+      lsurv_lower <- -quadrature_sum(exp(lhaz_qpts_end),
+                                     qnodes = qnodes,
+                                     qwts   = data_i$cwts[idx_qpts_end])
+      lhaz_qpts_upp <- lhaz[, idx_qpts_upp, drop = FALSE]
+      lsurv_upper <- -quadrature_sum(exp(lhaz_qpts_upp),
+                                     qnodes = qnodes,
+                                     qwts   = data_i$cwts[idx_qpts_upp])
+      ll <- log(exp(lsurv_lower) - exp(lsurv_upper))
+    }
+    if (delayed) { 
+      # delayed entry
+      lhaz_qpts_beg <- lhaz[, idx_qpts_beg, drop = FALSE]
+      lsurv_beg <- -quadrature_sum(exp(lhaz_qpts_beg),
+                                   qnodes = qnodes,
+                                   qwts   = data_i$cwts[idx_qpts_beg])
+      ll <- ll - lsurv_beg
+    }    
+    
+  } else { # no quadrature
+    
+    status  <- data_i$status
+    delayed <- data_i$delayed
+
+    # arguments to be used later in evaluating log baseline hazard
+    args <- list(basehaz   = draws$basehaz,
+                 aux       = draws$aux,
+                 intercept = draws$alpha)
+    
+    # evaluate log likelihood
+    if (status == 1) { 
+      # uncensored
+      args$times <- data_i$t_end
+      lhaz  <- do.call(evaluate_log_basehaz,  args) + eta
+      lsurv <- do.call(evaluate_log_basesurv, args) * exp(eta)
+      ll <- lhaz + lsurv
+    } else if (status == 0) { 
+      # right censored
+      args$times <- data_i$t_end
+      lsurv <- do.call(evaluate_log_basesurv, args) * exp(eta)
+      ll <- lsurv
+    } else if (status == 2) { 
+      # left censored
+      args$times <- data_i$t_end
+      lsurv <- do.call(evaluate_log_basesurv, args) * exp(eta)
+      ll <- log(1 - exp(lsurv)) # = log CDF
+    } else if (status == 3) { 
+      # interval censored
+      args$times  <- data_i$t_end
+      lsurv_lower <- do.call(evaluate_log_basesurv, args) * exp(eta)
+      args$times  <- data_i$t_upp
+      lsurv_upper <- do.call(evaluate_log_basesurv, args) * exp(eta)
+      ll <- log(exp(lsurv_lower) - exp(lsurv_upper))
+    }
+    if (delayed) { 
+      # delayed entry
+      args$times <- data_i$t_beg
+      lsurv_beg <- do.call(evaluate_log_basesurv, args) * exp(eta)
+      ll <- ll - lsurv_beg
+    }
+    
+  }
+  return(ll)
+}
+
 
 # log-likelihood functions for stanjm objects only ----------------------
 
@@ -780,9 +1033,9 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
   }
   
   # Log baseline hazard at etimes (if not NULL) and qtimes
-  log_basehaz <- evaluate_log_basehaz(times = times, 
-                                      basehaz = basehaz, 
-                                      coefs = pars$bhcoef)
+  log_basehaz <- evaluate_log_basehaz2(times = times, 
+                                       basehaz = basehaz, 
+                                       coefs = pars$bhcoef)
   
   # Log hazard at etimes (if not NULL) and qtimes
   log_haz <- log_basehaz + e_eta  
@@ -832,7 +1085,7 @@ ll_args.stanjm <- function(object, data, pars, m = 1,
 # @param basehaz A list with info about the baseline hazard.
 # @param coefs A vector or matrix of parameter estimates (MCMC draws).
 # @return A vector or matrix, depending on the input type of coefs.
-evaluate_log_basehaz <- function(times, basehaz, coefs) {
+evaluate_log_basehaz2 <- function(times, basehaz, coefs) {
   type <- basehaz$type_name
   if (type == "weibull") { 
     X  <- log(times) # log times
@@ -889,3 +1142,187 @@ evaluate_log_survival.matrix <- function(log_haz, qnodes, qwts) {
   # return: -cum_haz == log survival probability
   -cum_haz
 } 
+
+#-------------
+
+# Evaluate the log baseline hazard at the specified times given the 
+# vector or matrix of MCMC draws for the baseline hazard parameters
+#
+# @param times A vector of times.
+# @param basehaz A list with info about the baseline hazard.
+# @param aux,intercept A vector or matrix of parameter estimates (MCMC draws).
+# @param x Predictor matrix.
+# @param s Predictor matrix for time-varying effects.
+# @return A vector or matrix, depending on the input type of aux.
+evaluate_log_basehaz <- function(times, basehaz, aux, intercept = NULL) {
+  switch(get_basehaz_name(basehaz),
+         "exp"         = log_basehaz_exponential   (times, log_scale = intercept),
+         "exp-aft"     = log_basehaz_exponentialAFT(times, log_scale = intercept),
+         "weibull"     = log_basehaz_weibull   (times, shape = aux, log_scale = intercept),
+         "weibull-aft" = log_basehaz_weibullAFT(times, shape = aux, log_scale = intercept),
+         "gompertz"    = log_basehaz_gompertz(times, scale = aux, log_shape = intercept),
+         "ms"          = log_basehaz_ms(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
+         "bs"          = log_basehaz_bs(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
+         "piecewise"   = log_basehaz_pw(times, coefs = aux, knots = basehaz$knots),
+         stop2("Bug found: unknown type of baseline hazard."))
+}
+
+log_basehaz_exponential <- function(x, log_scale) {
+  linear_predictor(log_scale, rep(1, length(x)))
+}
+log_basehaz_exponentialAFT <- function(x, log_scale) {
+  linear_predictor(-log_scale, rep(1, length(x)))
+}
+log_basehaz_weibull  <- function(x, shape, log_scale) {
+  as.vector(log_scale + log(shape)) + linear_predictor(shape - 1, log(x))
+}
+log_basehaz_weibullAFT  <- function(x, shape, log_scale) {
+  as.vector(-log_scale * shape + log(shape)) + linear_predictor(shape - 1, log(x))
+}
+log_basehaz_gompertz <- function(x, scale, log_shape) {
+  as.vector(log_shape) + linear_predictor(scale, x)
+}
+log_basehaz_ms <- function(x, coefs, basis, intercept) {
+  as.vector(intercept) + log(linear_predictor(coefs, basis_matrix(x, basis = basis)))
+}
+log_basehaz_bs <- function(x, coefs, basis, intercept) {
+  as.vector(intercept) + linear_predictor(coefs, basis_matrix(x, basis = basis))
+}
+log_basehaz_pw <- function(x, coefs, knots) {
+  linear_predictor(coefs, dummy_matrix(x, knots = knots))
+}
+
+evaluate_log_haz <- function(times, basehaz, betas, betas_tve, b = NULL, aux, 
+                             intercept = NULL, x, s = NULL, z = NULL) {
+  eta <- linear_predictor(betas, x)
+  if ((!is.null(s)) && ncol(s))
+    eta <- eta + linear_predictor(betas_tve, s)
+  if (!is.null(z$Zt) && ncol(z$Zt)) {
+    b <- pp_b_ord(b, z$Z_names)
+    z <- as.matrix(t(z$Zt))
+    eta <- eta + linear_predictor(b, z)
+  }
+  eta <- switch(get_basehaz_name(basehaz),
+                "exp-aft"     = sweep(eta, 1L, -1, `*`),
+                "weibull-aft" = sweep(eta, 1L, -as.vector(aux), `*`),
+                eta)  
+  args <- nlist(times, basehaz, aux, intercept)
+  do.call(evaluate_log_basehaz, args) + eta
+}
+
+evaluate_basehaz <- function(times, basehaz, aux, intercept = NULL) {
+  exp(evaluate_log_basehaz(times = times, basehaz = basehaz, 
+                           aux = aux, intercept = intercept))
+}
+
+#-------------
+
+# Evaluate the log baseline survival at the specified times given the 
+# vector or matrix of MCMC draws for the baseline hazard parameters
+#
+# @param times A vector of times.
+# @param basehaz A list with info about the baseline hazard.
+# @param aux,intercept A vector or matrix of parameter estimates (MCMC draws).
+# @return A vector or matrix, depending on the input type of aux.
+evaluate_log_basesurv <- function(times, basehaz, aux, intercept = NULL) {
+  switch(get_basehaz_name(basehaz),
+         "exp"         = log_basesurv_exponential   (times, log_scale = intercept),
+         "exp-aft"     = log_basesurv_exponentialAFT(times, log_scale = intercept),
+         "weibull"     = log_basesurv_weibull   (times, shape = aux, log_scale = intercept),
+         "weibull-aft" = log_basesurv_weibullAFT(times, shape = aux, log_scale = intercept),
+         "gompertz"    = log_basesurv_gompertz(times, scale = aux, log_shape = intercept),
+         "ms"          = log_basesurv_ms(times, coefs = aux, basis = basehaz$basis, intercept = intercept),
+         stop2("Bug found: unknown type of baseline hazard."))
+}
+
+log_basesurv_exponential <- function(x, log_scale) {
+  -linear_predictor(exp(log_scale), x)
+}
+log_basesurv_exponentialAFT <- function(x, log_scale) {
+  -linear_predictor(exp(-log_scale), x)
+}
+log_basesurv_weibull <- function(x, shape, log_scale) {
+  -exp(as.vector(log_scale) + linear_predictor(shape, log(x)))
+}
+log_basesurv_weibullAFT <- function(x, shape, log_scale) {
+  -exp(as.vector(-shape * log_scale) + linear_predictor(shape, log(x)))
+}
+log_basesurv_gompertz <- function(x, scale, log_shape) {
+  -(as.vector(exp(log_shape) / scale)) * (exp(linear_predictor(scale, x)) - 1)
+}
+log_basesurv_ms <- function(x, coefs, basis, intercept) {
+  - exp(as.vector(intercept)) *
+      linear_predictor(coefs, basis_matrix(x, basis = basis, integrate = TRUE))
+}
+
+evaluate_log_surv <- function(times, basehaz, betas, b = NULL, aux, 
+                              intercept = NULL, x, z = NULL, ...) {
+  eta  <- linear_predictor(betas, x)
+  if (!is.null(z$Zt) && ncol(z$Zt)) {
+    b <- pp_b_ord(b, z$Z_names)
+    z <- as.matrix(t(z$Zt))
+    eta <- eta + linear_predictor(b, z)
+  }
+  eta  <- switch(get_basehaz_name(basehaz),
+                 "exp-aft"     = sweep(eta, 1L, -1, `*`),
+                 "weibull-aft" = sweep(eta, 1L, -as.vector(aux), `*`),
+                 eta)
+  args <- nlist(times, basehaz, aux, intercept)
+  do.call(evaluate_log_basesurv, args) * exp(eta)
+}
+
+#---------------
+
+quadrature_sum <- function(x, qnodes, qwts) { 
+  UseMethod("quadrature_sum") 
+}
+
+quadrature_sum.default <- function(x, qnodes, qwts) {
+  weighted_x <- qwts * x                                 # apply quadrature weights
+  splitted_x <- split_vector(x, n_segments = qnodes)     # split at each quad node
+  Reduce('+', splitted_x)                                # sum over the quad nodes
+}
+
+quadrature_sum.matrix <- function(x, qnodes, qwts) {
+  weighted_x <- sweep_multiply(x, qwts, margin = 2L)     # apply quadrature weights
+  splitted_x <- array2list(weighted_x, nsplits = qnodes) # split at each quad node
+  Reduce('+', splitted_x)                                # sum over the quad nodes     
+}
+
+# Split a vector or matrix into a specified number of segments and return
+# each segment as an element of a list. The matrix method allows splitting
+# across the column (bycol = TRUE) or row margin (bycol = FALSE).
+#
+# @param x A vector or matrix.
+# @param n_segments Integer specifying the number of segments.
+# @param bycol Logical, should a matrix be split along the column or row margin?
+# @return A list with n_segments elements.
+split2 <- function(x, n_segments = 1, ...) { 
+  UseMethod("split2") 
+}
+
+split2.vector <- function(x, n_segments = 1, ...) {
+  len <- length(x)
+  segment_length <- len %/% n_segments 
+  if (!len == (segment_length * n_segments))
+    stop("Dividing x by n_segments does not result in an integer.")
+  split(x, rep(1:n_segments, each = segment_length))
+}
+
+split2.matrix <- function(x, n_segments = 1, bycol = TRUE) {
+  len <- if (bycol) ncol(x) else nrow(x)
+  segment_length <- len %/% n_segments 
+  if (!len == (segment_length * n_segments))
+    stop("Dividing x by n_segments does not result in an integer.")
+  lapply(1:n_segments, function(k) {
+    if (bycol) x[, (k-1) * segment_length + 1:segment_length, drop = FALSE] else
+      x[(k-1) * segment_length + 1:segment_length, , drop = FALSE]})
+}
+
+# Split a vector or matrix into a specified number of segments
+# (see rstanarm:::split2) and then reduce it using 'FUN'
+split_and_reduce <- function(x, n_segments = 1, bycol = TRUE, FUN = '+') {
+  splitted_x <- split2(x, n_segments = n_segments, bycol = bycol)
+  Reduce(FUN, splitted_x)
+}
+

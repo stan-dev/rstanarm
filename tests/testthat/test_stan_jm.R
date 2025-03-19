@@ -19,18 +19,20 @@
 suppressPackageStartupMessages(library(rstanarm))
 library(lme4)
 library(survival)
-ITER <- 1000
-CHAINS <- 1
-SEED <- 12345
+
+ITER    <- 1000
+CHAINS  <- 1
+SEED    <- 12345
 REFRESH <- 0L
+
 set.seed(SEED)
 
 TOLSCALES <- list(
-  lmer_fixef = 0.25, # how many SEs can stan_jm fixefs be from lmer fixefs
-  lmer_ranef = 0.05, # how many SDs can stan_jm ranefs be from lmer ranefs
-  glmer_fixef = 0.5, # how many SEs can stan_jm fixefs be from glmer fixefs
-  glmer_ranef = 0.1, # how many SDs can stan_jm ranefs be from glmer ranefs
-  event = 0.3        # how many SEs can stan_jm fixefs be from coxph fixefs
+  lmer_fixef  = 0.25, # how many SEs can stan_jm fixefs be from lmer fixefs
+  lmer_ranef  = 0.05, # how many SDs can stan_jm ranefs be from lmer ranefs
+  glmer_fixef = 0.5,  # how many SEs can stan_jm fixefs be from glmer fixefs
+  glmer_ranef = 0.1,  # how many SDs can stan_jm ranefs be from glmer ranefs
+  event       = 0.3   # how many SEs can stan_jm fixefs be from coxph fixefs
 )
 
 context("stan_jm")
@@ -348,11 +350,11 @@ compare_glmer <- function(fmLong, fam = gaussian, ...) {
   fmSurv <- Surv(futimeYears, death) ~ sex + trt
   y1 <- stan_glmer(fmLong, pbcLong, fam, iter = 1000, chains = CHAINS, seed = SEED)
   s1 <- coxph(fmSurv, data = pbcSurv)
-  j1 <- stan_jm(fmLong, pbcLong, fmSurv, pbcSurv, time_var = "year", family = fam,
-                assoc = NULL, iter = 1000, chains = CHAINS, seed = SEED, ...)
-  tols <- get_tols(y1, s1, tolscales = TOLSCALES)
-  pars <- recover_pars(y1, s1)
-  parsjm <- recover_pars(j1)
+  j1 <- stan_jm(fmLong, pbcLong, fmSurv, pbcSurv, time_var = "year", family = fam, 
+                assoc = NULL, iter = 1000, chains = CHAINS, seed = SEED, ...) 
+  tols <- get_tols_jm(y1, s1, tolscales = TOLSCALES)
+  pars <- recover_pars_jm(y1, s1)
+  parsjm <- recover_pars_jm(j1)
   for (i in names(tols$fixef))
     expect_equal(pars$fixef[[i]], parsjm$fixef[[i]], tol = tols$fixef[[i]], info = fam)
   for (i in names(tols$ranef))
@@ -547,17 +549,17 @@ for (j in c(1:30)) {
 
     test_that("posterior_survfit works with estimation data", {
       SW(ps <- posterior_survfit(mod))
-      expect_survfit(ps)
+      expect_survfit_jm(ps)
     })
 
     test_that("posterior_survfit works with new data (one individual)", {
       SW(ps <- posterior_survfit(mod, newdataLong = ndL1, newdataEvent = ndE1))
-      expect_survfit(ps)
-    })
-
+      expect_survfit_jm(ps)
+    })  
+    
     test_that("posterior_survfit works with new data (multiple individuals)", {
       SW(ps <- posterior_survfit(mod, newdataLong = ndL2, newdataEvent = ndE2))
-      expect_survfit(ps)
+      expect_survfit_jm(ps)
     })
   }
 }

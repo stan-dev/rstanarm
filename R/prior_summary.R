@@ -25,7 +25,8 @@
 #'   correspond to the intercept with the predictors as specified by the user 
 #'   (unmodified by \pkg{rstanarm}), but when \emph{specifying} the prior the 
 #'   intercept can be thought of as the expected outcome when the predictors are
-#'   set to their means. The only exception to this is for models fit with the 
+#'   set to their means. The only exceptions to this are for models fit using 
+#'   the \code{stan_surv} modelling function, or models fit with the 
 #'   \code{sparse} argument set to \code{TRUE} (which is only possible with a
 #'   subset of the modeling functions and never the default).
 #'   
@@ -270,6 +271,42 @@ print.prior_summary.stanreg <- function(x, digits, ...) {
       )
   }  
   
+  # unique to stan_surv
+  if (stan_function == "stan_surv") {
+    if (!is.null(x[["priorEvent_intercept"]]))
+      .print_scalar_prior(
+        x[["priorEvent_intercept"]], 
+        txt = paste0("Intercept"), # predictors not currently centered
+        formatters
+      )
+    has_intercept <- !is.null(x[["priorEvent_intercept"]])
+    if (!is.null(x[["priorEvent"]]))
+      .print_vector_prior(
+        x[["priorEvent"]], 
+        txt = paste0(if (has_intercept) "\n", "Coefficients"), 
+        formatters = formatters
+      )
+    if (!is.null(x[["priorEvent_aux"]])) {
+      aux_name <- x[["priorEvent_aux"]][["aux_name"]]
+      aux_dist <- x[["priorEvent_aux"]][["dist"]]
+      if (aux_name %in% c("weibull-shape", "gompertz-scale")) {
+        if (aux_dist %in% c("normal", "student_t", "cauchy"))
+          x[["priorEvent_aux"]][["dist"]] <- paste0("half-", aux_dist)
+        .print_scalar_prior(
+          x[["priorEvent_aux"]], 
+          txt = paste0("\nAuxiliary (", aux_name, ")"), 
+          formatters
+        )
+      } else { # ms, bs, piecewise
+        .print_vector_prior(
+          x[["priorEvent_aux"]], 
+          txt = paste0("\nAuxiliary (", aux_name, ")"), 
+          formatters
+        )
+      }
+    }
+  }
+  
   # unique to stan_(g)lmer, stan_gamm4, stan_mvmer, or stan_jm
   if (!is.null(x[["prior_covariance"]]))
     .print_covariance_prior(x[["prior_covariance"]], txt = "\nCovariance", formatters)
@@ -369,7 +406,6 @@ used.sparse <- function(x) {
     cat("\n  Adjusted prior:")
     .cat_scalar_prior(p, adjusted = TRUE, prepend_chars =  "\n    ~")
   }
-  
 }
 
 .print_covariance_prior <- function(p, txt = "Covariance", formatters = list()) {
@@ -425,8 +461,11 @@ used.sparse <- function(x) {
       p$df2 <- .format_pars(p$scale, .f1)
     } else if (p$dist %in% c("hs")) {
       p$df <- .format_pars(p$df, .f1)
-    } else if (p$dist %in% c("product_normal"))
+    } else if (p$dist %in% c("product_normal")){
       p$df <- .format_pars(p$df, .f1)
+    } else if (p$dist %in% c("dirichlet")) {
+      p$concentration <- .format_pars(p$concentration, .f1) 
+    }
   }
   
   .cat_vector_prior <- function(p, adjusted = FALSE, prepend_chars = "\n ~") {
@@ -452,6 +491,8 @@ used.sparse <- function(x) {
           paste0("hs(df = ", .f1(p$df), ")")
         } else if (p$dist %in% c("R2")) {
           paste0("R2(location = ", .f1(p$location), ", what = '", p$what, "')")
+        } else if (p$dist %in% c("dirichlet")) {
+          paste0("dirichlet(concentration = ", .f1(p$concentration), ")")
         })
   }
   
