@@ -97,7 +97,7 @@ pp_data <-
   offset <- model.offset(model.frame(object, m = m))
   if (!is.null(newdata) && (!is.null(offset) || !is.null(object$call$offset))) {
     if (is.jm(object)) {
-      form <- lme4::subbars(object$formula[[m]])
+      form <- reformulas::subbars(object$formula[[m]])
       form[2] <- NULL # get rid of response to avoid error that it isn't found in newdata
       mf <- stats::model.frame(form, data = newdata)
       offset <- model.offset(mf)
@@ -157,7 +157,7 @@ pp_data <-
   form <- if (is.null(m)) attr(object$glmod$fr, "formula") else 
     formula(object, m = m)
   L <- length(form)
-  form[[L]] <- lme4::nobars(form[[L]])
+  form[[L]] <- reformulas::nobars(form[[L]])
   RHS <- formula(substitute(~R, list(R = form[[L]])))
   Terms <- terms(object, m = m)
   mf <- model.frame(object, m = m)
@@ -225,7 +225,7 @@ pp_data <-
   if (length(fit.na.action <- attr(mfnew,"na.action")) > 0) {
     newdata <- newdata[-fit.na.action,]
   }
-  ReTrms <- lme4::mkReTrms(lme4::findbars(re.form[[2]]), rfd)
+  ReTrms <- reformulas::mkReTrms(reformulas::findbars(re.form[[2]]), rfd)
   if (!allow.new.levels && any(vapply(ReTrms$flist, anyNA, NA)))
     stop("NAs are not allowed in prediction data",
          " for grouping variables unless 'allow.new.levels' is TRUE.")

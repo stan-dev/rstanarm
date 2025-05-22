@@ -190,17 +190,17 @@ make_assoc_parts_for_stan <- function(newdata, y_mod, include_Zt = TRUE) {
   # construct model frame using predvars
   formula <- use_predvars(y_mod, keep_response = FALSE)
   data <- as.data.frame(newdata)
-  model_frame <- stats::model.frame(lme4::subbars(formula), data)
+  model_frame <- stats::model.frame(reformulas::subbars(formula), data)
   
   # fe design matrices
-  x_form <- lme4::nobars(formula)
+  x_form <- reformulas::nobars(formula)
   x <- model.matrix(x_form, model_frame)
   xtemp <- drop_intercept(x)
   x_bar <- y_mod$x$x_bar
   xtemp <- sweep(xtemp, 2, x_bar, FUN = "-")
   
   # re design matrices
-  bars <- lme4::findbars(formula)
+  bars <- reformulas::findbars(formula)
   if (length(bars) > 2L)
     stop2("A maximum of 2 grouping factors are allowed.")
   z_parts <- lapply(bars, split_at_bars)
@@ -214,7 +214,7 @@ make_assoc_parts_for_stan <- function(newdata, y_mod, include_Zt = TRUE) {
   
   # optionally add the sparse Zt matrix
   if (include_Zt) 
-    ret$Zt <- lme4::mkReTrms(bars, model_frame)$Zt
+    ret$Zt <- reformulas::mkReTrms(bars, model_frame)$Zt
   
   # add offset values
   if ('offset' %in% colnames(newdata))

@@ -459,7 +459,7 @@ terms.stanreg <- function(x, ..., fixed.only = TRUE, random.only = FALSE) {
     attr(Terms, "predvars") <- attr(terms(fr), "predvars.fixed")
   } 
   if (random.only) {
-    Terms <- terms.formula(lme4::subbars(formula.stanreg(x, random.only = TRUE)))
+    Terms <- terms.formula(reformulas::subbars(formula.stanreg(x, random.only = TRUE)))
     attr(Terms, "predvars") <- attr(terms(fr), "predvars.random")
   }
   
@@ -513,7 +513,7 @@ coef_mer <- function(object, ...) {
 
 justRE <- function(f, response = FALSE) {
   response <- if (response && length(f) == 3) f[[2]] else NULL
-  reformulate(paste0("(", vapply(lme4::findbars(f), 
+  reformulate(paste0("(", vapply(reformulas::findbars(f), 
                                  function(x) paste(deparse(x, 500L), 
                                                    collapse = " "), 
                                  ""), ")"), 
@@ -533,7 +533,7 @@ formula_mer <- function (x, fixed.only = FALSE, random.only = FALSE, ...) {
   }
   if (fixed.only) {
     form <- attr(fr, "formula")
-    form[[length(form)]] <- lme4::nobars(form[[length(form)]])
+    form[[length(form)]] <- reformulas::nobars(form[[length(form)]])
   }
   if (random.only)
     form <- justRE(form, response = TRUE)
