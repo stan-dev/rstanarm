@@ -192,7 +192,7 @@ formula.stanmvreg <- function (x, fixed.only = FALSE, random.only = FALSE, m = N
     stop2("Could not find formula in stanmvreg object.")
   if (fixed.only) {
     for (i in 1:M)
-      form[[i]][[length(form[[i]])]] <- lme4::nobars(form[[i]][[length(form[[i]])]])
+      form[[i]][[length(form[[i]])]] <- reformulas::nobars(form[[i]][[length(form[[i]])]])
   }
   if (random.only) {
     for (i in 1:M)
@@ -229,7 +229,7 @@ terms.stanmvreg <- function(x, fixed.only = TRUE, random.only = FALSE, m = NULL,
     } else if (random.only) {
       Terms <- lapply(seq(M), function(i) {
         re_form <- formula.stanmvreg(x, random.only = TRUE, m = i) 
-        tt <- terms.formula(lme4::subbars(re_form))
+        tt <- terms.formula(reformulas::subbars(re_form))
         attr(tt, "predvars") <- attr(mvmer_terms[[i]], "predvars.random")
         tt
       })      
