@@ -59,7 +59,13 @@
 #' @param k_threshold Threshold for flagging estimates of the Pareto shape
 #'   parameters \eqn{k} estimated by \code{loo}. See the \emph{How to proceed
 #'   when \code{loo} gives warnings} section, below, for details.
-#'
+#' @param r_eff \code{TRUE} or \code{FALSE} indicating whether to compute the
+#'   \code{r_eff} argument to pass to the \pkg{loo} package. If \code{TRUE},
+#'   \pkg{rstanarm} will call \code{\link[loo]{relative_eff}} to compute the
+#'   \code{r_eff} argument to pass to the \pkg{loo} package. If \code{FALSE}
+#'   (the default), we avoid computing \code{r_eff}, which can be very slow. The
+#'   reported ESS and MCSE estimates may be over-optimistic if the posterior
+#'   draws are far from independent.
 #' @return The structure of the objects returned by \code{loo} and \code{waic}
 #'   methods are documented in detail in the \strong{Value} section in
 #'   \code{\link[loo]{loo}} and \code{\link[loo]{waic}} (from the \pkg{loo}
@@ -184,9 +190,15 @@ loo.stanreg <-
            ...,
            cores = getOption("mc.cores", 1),
            save_psis = FALSE,
-           k_threshold = NULL) {
-    if (model_has_weights(x))
+           k_threshold = NULL, 
+           r_eff = FALSE) {
+    if (model_has_weights(x)) {
       recommend_exact_loo(reason = "model has weights")
+    }
+    
+    if (!r_eff) {
+      r_eff <- NULL
+    }
 
     user_threshold <- !is.null(k_threshold)
     if (user_threshold) {
@@ -196,9 +208,9 @@ loo.stanreg <-
     }
 
     
-    if (used.sampling(x)) # chain_id to pass to loo::relative_eff
+    if (used.sampling(x)) {# chain_id to pass to loo::relative_eff
       chain_id <- chain_id_for_loo(x)
-    else { # ir_idx to pass to ...
+    } else { # ir_idx to pass to ...
       if (exists("ir_idx",x)) {
         ir_idx <- x$ir_idx
       } else if ("diagnostics" %in% names(x$stanfit@sim) &
@@ -212,7 +224,9 @@ loo.stanreg <-
 
     if (is.stanjm(x)) {
       ll <- log_lik(x)
-      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      if (!is.null(r_eff)) {
+        r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      }
       loo_x <-
         suppressWarnings(loo.matrix(
           ll,
@@ -223,7 +237,9 @@ loo.stanreg <-
     } else if (is.stanmvreg(x)) {
       M <- get_M(x)
       ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
-      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      if (!is.null(r_eff)) {
+        r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      }
       loo_x <-
         suppressWarnings(loo.matrix(
           ll,
@@ -242,7 +258,9 @@ loo.stanreg <-
         )
         ll <- ll[,!cons, drop = FALSE]
       }
-      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      if (!is.null(r_eff)) {
+        r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      }
       loo_x <-
         suppressWarnings(loo.matrix(
           ll,
@@ -256,7 +274,7 @@ loo.stanreg <-
       likfun <- function(data_i, draws) {
         exp(llfun(data_i, draws))
       }
-      if (used.sampling(x)) {
+      if (used.sampling(x) && !is.null(r_eff)) {
         r_eff <- loo::relative_eff(
           # using function method
           x = likfun,
@@ -266,12 +284,14 @@ loo.stanreg <-
           cores = cores,
           ...
         )
-      } else {
+      } else if (!used.sampling(x)) {
         w_ir <- as.numeric(table(ir_idx))/length(ir_idx)
         ir_uidx <- which(!duplicated(ir_idx))
         draws <- args$draws
         data <- args$data
-        r_eff <- pmin(sapply(1:dim(data)[1], function(i) {lik_i <- likfun(data[i,], draws)[ir_uidx]; var(lik_i)/(sum(w_ir^2*(lik_i-mean(lik_i))^2))}),length(ir_uidx))/length(ir_idx)
+        if (!is.null(r_eff)) {
+          r_eff <- pmin(sapply(1:dim(data)[1], function(i) {lik_i <- likfun(data[i,], draws)[ir_uidx]; var(lik_i)/(sum(w_ir^2*(lik_i-mean(lik_i))^2))}),length(ir_uidx))/length(ir_idx)
+        }
       }
       loo_x <- suppressWarnings(
         loo.function(
