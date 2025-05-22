@@ -284,14 +284,12 @@ loo.stanreg <-
           cores = cores,
           ...
         )
-      } else if (!used.sampling(x)) {
+      } else if (!used.sampling(x) && !is.null(r_eff)) {
         w_ir <- as.numeric(table(ir_idx))/length(ir_idx)
         ir_uidx <- which(!duplicated(ir_idx))
         draws <- args$draws
         data <- args$data
-        if (!is.null(r_eff)) {
-          r_eff <- pmin(sapply(1:dim(data)[1], function(i) {lik_i <- likfun(data[i,], draws)[ir_uidx]; var(lik_i)/(sum(w_ir^2*(lik_i-mean(lik_i))^2))}),length(ir_uidx))/length(ir_idx)
-        }
+        r_eff <- pmin(sapply(1:dim(data)[1], function(i) {lik_i <- likfun(data[i,], draws)[ir_uidx]; var(lik_i)/(sum(w_ir^2*(lik_i-mean(lik_i))^2))}),length(ir_uidx))/length(ir_idx)
       }
       loo_x <- suppressWarnings(
         loo.function(
