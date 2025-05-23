@@ -63,9 +63,11 @@
 #'   \code{r_eff} argument to pass to the \pkg{loo} package. If \code{TRUE},
 #'   \pkg{rstanarm} will call \code{\link[loo]{relative_eff}} to compute the
 #'   \code{r_eff} argument to pass to the \pkg{loo} package. If \code{FALSE}
-#'   (the default), we avoid computing \code{r_eff}, which can be very slow. The
-#'   reported ESS and MCSE estimates may be over-optimistic if the posterior
-#'   draws are far from independent.
+#'   (the default), we avoid computing \code{r_eff}, which can be very slow.
+#'   \code{r_eff} measures the amount of autocorrelation in MCMC draws, and is
+#'   used to compute more accurate ESS and MCSE estimates for pointwise and
+#'   total ELPDs. When \code{r_eff=FALSE}, the reported ESS and MCSE estimates
+#'   may be over-optimistic if the posterior draws are far from independent.
 #' @return The structure of the objects returned by \code{loo} and \code{waic}
 #'   methods are documented in detail in the \strong{Value} section in
 #'   \code{\link[loo]{loo}} and \code{\link[loo]{waic}} (from the \pkg{loo}
@@ -82,10 +84,10 @@
 #'   distributional assumption and integrate over uncertainty in the parameters.
 #'   This only assumes that any one observation can be omitted without having a
 #'   major effect on the posterior distribution, which can be judged using the
-#'   diagnostic plot provided by the \code{\link[loo:pareto-k-diagnostic]{plot.loo}} method and the
-#'   warnings provided by the \code{\link[loo]{print.loo}} method (see the
-#'   \emph{How to Use the rstanarm Package} vignette for an example of this
-#'   process).
+#'   diagnostic plot provided by the
+#'   \code{\link[loo:pareto-k-diagnostic]{plot.loo}} method and the warnings
+#'   provided by the \code{\link[loo]{print.loo}} method (see the \emph{How to
+#'   Use the rstanarm Package} vignette for an example of this process).
 #'
 #'   \subsection{How to proceed when \code{loo} gives warnings (k_threshold)}{
 #'   The \code{k_threshold} argument to the \code{loo} method for \pkg{rstanarm}
@@ -117,7 +119,7 @@
 #'
 #' @seealso
 #' \itemize{
-#'   \item The new \href{https://mc-stan.org/loo/articles/}{\pkg{loo} package vignettes}
+#'   \item The \href{https://mc-stan.org/loo/articles/}{\pkg{loo} package vignettes}
 #'   and various \href{https://mc-stan.org/rstanarm/articles/}{\pkg{rstanarm} vignettes}
 #'   for more examples using \code{loo} and related functions with \pkg{rstanarm} models.
 #'   \item \code{\link[loo]{pareto-k-diagnostic}} in the \pkg{loo} package for
