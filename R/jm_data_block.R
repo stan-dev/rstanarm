@@ -148,13 +148,13 @@ reformulate_lhs <- function(x) {
 # Reformulate an expression as the RHS of a model formula
 # 
 # @param x The expression to reformulate
-# @param subbars A logical specifying whether to call lme4::subbars
+# @param subbars A logical specifying whether to call reformulas::subbars
 #   on the result
 # @return A model formula
 reformulate_rhs <- function(x, subbars = FALSE) {
   fm <- formula(substitute(~ RHS, list(RHS = x)))
   if (subbars) {
-    lme4::subbars(fm)
+    reformulas::subbars(fm)
   } else {
     fm
   }
@@ -579,7 +579,7 @@ rename_t_and_cauchy <- function(prior_stuff, has) {
 #   has_aux: logical specifying whether the glmer submodel 
 #     requires an auxiliary parameter.
 handle_y_mod <- function(formula, data, family) {
-  mf <- stats::model.frame(lme4::subbars(formula), data)
+  mf <- stats::model.frame(reformulas::subbars(formula), data)
   if (!length(formula) == 3L)
     stop2("An outcome variable must be specified.")
   
@@ -647,7 +647,7 @@ make_y_for_stan <- function(formula, model_frame, family) {
 #   N,K: number of rows (observations) and columns (predictors) in the
 #     fixed effects model matrix
 make_x_for_stan <- function(formula, model_frame) {
-  x_form <- lme4::nobars(formula)
+  x_form <- reformulas::nobars(formula)
   x <- model.matrix(x_form, model_frame)
   has_intercept <- check_for_intercept(x, logical = TRUE)
   xtemp <- drop_intercept(x)
@@ -680,7 +680,7 @@ make_x_for_stan <- function(formula, model_frame) {
 #     grouping factor
 #   ngrps: a vector with the number of groups for each grouping factor 
 make_z_for_stan <- function(formula, model_frame) {
-  bars <- lme4::findbars(formula)
+  bars <- reformulas::findbars(formula)
   if (length(bars) > 2L)
     stop2("A maximum of 2 grouping factors are allowed.")
   z_parts <- lapply(bars, split_at_bars)
@@ -816,7 +816,7 @@ append_mvmer_famlink <- function(family, is_bernoulli = FALSE) {
 #   - the formula part (ie. the formula on the LHS of "|"), and 
 #   - the name of the grouping factor (ie. the variable on the RHS of "|")
 #
-# @param x Random effects part of a model formula, as returned by lme4::findbars
+# @param x Random effects part of a model formula, as returned by reformulas::findbars
 # @return A named list with the following elements:
 #   re_form: a formula specifying the random effects structure
 #   group_var: the name of the grouping factor
@@ -919,13 +919,13 @@ check_id_list <- function(id_var, y_flist) {
 #
 # @param terms The existing model frame terms object
 # @param formula The formula that was used to build the model frame
-#   (but prior to having called lme4::subbars on it!)
+#   (but prior to having called reformulas::subbars on it!)
 # @param data The data frame that was used to build the model frame
 # @return A terms object with predvars.fixed and predvars.random as
 #   additional attributes
 append_predvars_attribute <- function(terms, formula, data) {
-  fe_form <- lme4::nobars(formula)
-  re_form <- lme4::subbars(justRE(formula, response = TRUE))
+  fe_form <- reformulas::nobars(formula)
+  re_form <- reformulas::subbars(justRE(formula, response = TRUE))
   fe_frame <- stats::model.frame(fe_form, data)
   re_frame <- stats::model.frame(re_form, data)
   fe_terms <- attr(fe_frame, "terms")
@@ -1587,7 +1587,7 @@ parse_assoc_data <- function(x, user_x) {
     if (identical(length(fm), 3L))
       stop(paste0("Formula specified for '", x, "' association structure should not ",
                   "include a response."), call. = FALSE)
-    if (length(lme4::findbars(fm)))
+    if (length(reformulas::findbars(fm)))
       stop(paste0("Formula specified for '", x, "' association structure should only ",
                   "include fixed effects."), call. = FALSE)
     if (fm[[2L]] == 1)

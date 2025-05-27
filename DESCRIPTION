@@ -48,7 +48,8 @@ Imports:
     stats,
     survival (>= 2.40.1),
     RcppParallel (>= 5.0.1),
-    utils
+    utils,
+    reformulas
 Suggests:
     biglm,
     betareg,
