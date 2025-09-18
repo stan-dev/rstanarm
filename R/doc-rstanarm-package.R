@@ -18,7 +18,7 @@
 #' Applied Regression Modeling via RStan
 #'
 #' @name _PACKAGE
-#' @aliases rstanarm
+#' @aliases rstanarm-package rstanarm
 #' @useDynLib rstanarm, .registration = TRUE
 #'
 #' @import methods
