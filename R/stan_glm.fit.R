@@ -903,6 +903,7 @@ pad_reTrms <- function(Ztlist, cnms, flist) {
 # @param columns Do the columns (TRUE) or rows (FALSE) correspond to the 
 #   variables?
 unpad_reTrms <- function(x, ...) UseMethod("unpad_reTrms")
+#' @noRd
 unpad_reTrms.default <- function(x, ...) {
   if (is.matrix(x) || is.array(x))
     return(unpad_reTrms.array(x, ...))
@@ -910,6 +911,7 @@ unpad_reTrms.default <- function(x, ...) {
   x[keep]
 }
 
+#' @noRd
 unpad_reTrms.array <- function(x, columns = TRUE, ...) {
   ndim <- length(dim(x))
   if (ndim > 3)

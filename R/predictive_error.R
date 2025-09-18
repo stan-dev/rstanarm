@@ -141,6 +141,7 @@ predictive_error.ppd <- function(object, y, ...) {
 #   is available. The argument \code{u} specifies the time at which the 
 #   prediction error should be calculated (i.e. the time horizon).
 #   
+#' @noRd
 predictive_error.stanmvreg <-
   function(object,
            newdataLong = NULL,

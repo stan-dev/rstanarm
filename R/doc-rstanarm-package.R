@@ -17,8 +17,7 @@
 
 #' Applied Regression Modeling via RStan
 #'
-#' @docType package
-#' @name rstanarm-package
+#' @name _PACKAGE
 #' @aliases rstanarm
 #' @useDynLib rstanarm, .registration = TRUE
 #'

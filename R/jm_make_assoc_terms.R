@@ -388,9 +388,11 @@ get_element <- function(parts, m = 1, which = "eta", ...) {
 # @param grp_assoc Character string, the function to use to collapse
 #   across the lower level units clustered within individuals.
 # @return A vector or matrix, depending on the method called.
+#' @noRd
 collapse_within_groups <- function(eta, grp_idx, grp_assoc = "sum") {
   UseMethod("collapse_within_groups")
 }
+#' @noRd
 collapse_within_groups.default <- function(eta, grp_idx, grp_assoc) {
   N <- nrow(grp_idx)
   val <- rep(NA, N)
@@ -400,6 +402,7 @@ collapse_within_groups.default <- function(eta, grp_idx, grp_assoc) {
   }
   val
 }
+#' @noRd
 collapse_within_groups.matrix <- function(eta, grp_idx, grp_assoc) {
   N <- nrow(grp_idx)
   val <- matrix(NA, nrow = nrow(eta), ncol = N)
