@@ -202,7 +202,7 @@ ll_fun <- function(x, m = NULL) {
 #   N = number of observations
 #' @noRd
 ll_args <- function(object, ...) UseMethod("ll_args")
-#' @noRd
+#' @exportS3Method NULL
 ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL, 
                             reloo_or_kfold = FALSE, ...) {
   validate_stanreg_object(object)
@@ -513,7 +513,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 # @param pars Output from extract_pars
 # @param m Integer specifying which submodel
 # @param reloo_or_kfold logical. TRUE if ll_args is for reloo or kfold
-#' @noRd
+#' @exportS3Method NULL
 ll_args.stanjm <- function(object, data, pars, m = 1, 
                            reloo_or_kfold = FALSE, ...) {
   validate_stanjm_object(object)
@@ -871,7 +871,7 @@ evaluate_log_survival <- function(log_haz, qnodes, qwts) {
   UseMethod("evaluate_log_survival")
 }
 
-#' @noRd
+#' @exportS3Method NULL
 evaluate_log_survival.default <- function(log_haz, qnodes, qwts) {
   # convert log hazard to hazard
   haz <- exp(log_haz)
@@ -884,7 +884,7 @@ evaluate_log_survival.default <- function(log_haz, qnodes, qwts) {
   -cum_haz
 }
 
-#' @noRd
+#' @exportS3Method NULL
 evaluate_log_survival.matrix <- function(log_haz, qnodes, qwts) {
   # convert log hazard to hazard
   haz <- exp(log_haz)

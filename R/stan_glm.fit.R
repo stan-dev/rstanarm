@@ -902,8 +902,10 @@ pad_reTrms <- function(Ztlist, cnms, flist) {
 #   stats)
 # @param columns Do the columns (TRUE) or rows (FALSE) correspond to the 
 #   variables?
-unpad_reTrms <- function(x, ...) UseMethod("unpad_reTrms")
+
 #' @noRd
+unpad_reTrms <- function(x, ...) UseMethod("unpad_reTrms")
+#' @exportS3Method NULL
 unpad_reTrms.default <- function(x, ...) {
   if (is.matrix(x) || is.array(x))
     return(unpad_reTrms.array(x, ...))
@@ -911,7 +913,7 @@ unpad_reTrms.default <- function(x, ...) {
   x[keep]
 }
 
-#' @noRd
+#' @exportS3Method NULL
 unpad_reTrms.array <- function(x, columns = TRUE, ...) {
   ndim <- length(dim(x))
   if (ndim > 3)
@@ -945,7 +947,7 @@ make_b_nms <- function(group, m = NULL, stub = "Long") {
                                    levels(group$flist[[nm]])))))
     }
   }
-  return(b_nms)  
+  return(b_nms)
 }
 
 

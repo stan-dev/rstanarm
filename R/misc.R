@@ -549,7 +549,7 @@ set_prior_scale <- function(scale, default, link) {
 linear_predictor <- function(beta, x, offset = NULL) {
   UseMethod("linear_predictor")
 }
-#' @noRd
+#' @exportS3Method NULL
 linear_predictor.default <- function(beta, x, offset = NULL) {
   eta <- as.vector(if (NCOL(x) == 1L) x * beta else x %*% beta)
   if (length(offset))
@@ -557,7 +557,7 @@ linear_predictor.default <- function(beta, x, offset = NULL) {
   
   return(eta)
 }
-#' @noRd
+#' @exportS3Method NULL
 linear_predictor.matrix <- function(beta, x, offset = NULL) {
   if (NCOL(beta) == 1L) 
     beta <- as.matrix(beta)
@@ -633,24 +633,24 @@ get_z.stanmvreg <- function(object, m = NULL, ...) {
 # @param x A stanreg object, family object, or string. 
 # @param ... Other arguments passed to methods. For a \code{stanmvreg} object
 #   this can be an integer \code{m} specifying the submodel.
-# @return The inverse link function associated with x.
+# @return The inverse link function associated with x
 #' @noRd
 linkinv <- function(x, ...) UseMethod("linkinv")
-#' @noRd
+#' @exportS3Method NULL
 linkinv.stanreg <- function(x, ...) {
   if (is(x, "polr")) polr_linkinv(x) else family(x)$linkinv
 }
-#' @noRd
+#' @exportS3Method NULL
 linkinv.stanmvreg <- function(x, m = NULL, ...) {
   ret <- lapply(family(x), `[[`, "linkinv")
   stub <- get_stub(x)
   if (!is.null(m)) ret[[m]] else list_nms(ret, stub = stub)
 }
-#' @noRd
+#' @exportS3Method NULL
 linkinv.family <- function(x, ...) {
   x$linkinv
 }
-#' @noRd
+#' @exportS3Method NULL
 linkinv.character <- function(x, ...) {
   stopifnot(length(x) == 1)
   polr_linkinv(x)

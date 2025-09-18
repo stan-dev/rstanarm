@@ -392,7 +392,7 @@ get_element <- function(parts, m = 1, which = "eta", ...) {
 collapse_within_groups <- function(eta, grp_idx, grp_assoc = "sum") {
   UseMethod("collapse_within_groups")
 }
-#' @noRd
+#' @exportS3Method NULL
 collapse_within_groups.default <- function(eta, grp_idx, grp_assoc) {
   N <- nrow(grp_idx)
   val <- rep(NA, N)
@@ -402,7 +402,7 @@ collapse_within_groups.default <- function(eta, grp_idx, grp_assoc) {
   }
   val
 }
-#' @noRd
+#' @exportS3Method NULL
 collapse_within_groups.matrix <- function(eta, grp_idx, grp_assoc) {
   N <- nrow(grp_idx)
   val <- matrix(NA, nrow = nrow(eta), ncol = N)

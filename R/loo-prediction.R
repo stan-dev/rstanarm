@@ -155,7 +155,7 @@ loo_predictive_interval.stanreg <-
 
 # internal ----------------------------------------------------------------
 
-#' @noRd
+#' @exportS3Method NULL
 psis.stanreg <- function(log_ratios, ...) {
   object <- log_ratios
   message("Running PSIS to compute weights...")
