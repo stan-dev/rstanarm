@@ -19,7 +19,7 @@
 #'
 #' @description For models fit using MCMC, compute approximate leave-one-out
 #'   cross-validation (LOO, LOOIC) or, less preferably, the Widely Applicable
-#'   Information Criterion (WAIC) using the \pkg{\link[=loo-package]{loo}}
+#'   Information Criterion (WAIC) using the \pkg{\link[loo:loo-package]{loo}}
 #'   package. (For \eqn{K}-fold cross-validation see \code{\link{kfold.stanreg}}.)
 #'   Functions for  model comparison, and model weighting/averaging are also
 #'   provided. 
@@ -59,14 +59,22 @@
 #' @param k_threshold Threshold for flagging estimates of the Pareto shape
 #'   parameters \eqn{k} estimated by \code{loo}. See the \emph{How to proceed
 #'   when \code{loo} gives warnings} section, below, for details.
-#'
+#' @param r_eff \code{TRUE} or \code{FALSE} indicating whether to compute the
+#'   \code{r_eff} argument to pass to the \pkg{loo} package. If \code{TRUE},
+#'   \pkg{rstanarm} will call \code{\link[loo]{relative_eff}} to compute the
+#'   \code{r_eff} argument to pass to the \pkg{loo} package. If \code{FALSE}
+#'   (the default), we avoid computing \code{r_eff}, which can be very slow.
+#'   \code{r_eff} measures the amount of autocorrelation in MCMC draws, and is
+#'   used to compute more accurate ESS and MCSE estimates for pointwise and
+#'   total ELPDs. When \code{r_eff=FALSE}, the reported ESS and MCSE estimates
+#'   may be over-optimistic if the posterior draws are far from independent.
 #' @return The structure of the objects returned by \code{loo} and \code{waic}
 #'   methods are documented in detail in the \strong{Value} section in
 #'   \code{\link[loo]{loo}} and \code{\link[loo]{waic}} (from the \pkg{loo}
 #'   package).
 #'
 #' @section Approximate LOO CV: The \code{loo} method for stanreg objects
-#'   provides an interface to the \pkg{\link[=loo-package]{loo}} package for
+#'   provides an interface to the \pkg{\link[loo:loo-package]{loo}} package for
 #'   approximate leave-one-out cross-validation (LOO). The LOO Information
 #'   Criterion (LOOIC) has the same purpose as the Akaike Information Criterion
 #'   (AIC) that is used by frequentists. Both are intended to estimate the
@@ -76,10 +84,10 @@
 #'   distributional assumption and integrate over uncertainty in the parameters.
 #'   This only assumes that any one observation can be omitted without having a
 #'   major effect on the posterior distribution, which can be judged using the
-#'   diagnostic plot provided by the \code{\link[loo:pareto-k-diagnostic]{plot.loo}} method and the
-#'   warnings provided by the \code{\link[loo]{print.loo}} method (see the
-#'   \emph{How to Use the rstanarm Package} vignette for an example of this
-#'   process).
+#'   diagnostic plot provided by the
+#'   \code{\link[loo:pareto-k-diagnostic]{plot.loo}} method and the warnings
+#'   provided by the \code{\link[loo]{print.loo}} method (see the \emph{How to
+#'   Use the rstanarm Package} vignette for an example of this process).
 #'
 #'   \subsection{How to proceed when \code{loo} gives warnings (k_threshold)}{
 #'   The \code{k_threshold} argument to the \code{loo} method for \pkg{rstanarm}
@@ -88,7 +96,7 @@
 #'   observations. Warnings about Pareto \eqn{k} estimates indicate observations
 #'   for which the approximation to LOO is problematic (this is described in
 #'   detail in Vehtari, Gelman, and Gabry (2017) and the
-#'   \pkg{\link[=loo-package]{loo}} package documentation). The
+#'   \pkg{\link[loo:loo-package]{loo}} package documentation). The
 #'   \code{k_threshold} argument can be used to set the \eqn{k} value above
 #'   which an observation is flagged. If \code{k_threshold} is not \code{NULL}
 #'   and there are \eqn{J} observations with \eqn{k} estimates above
@@ -111,7 +119,7 @@
 #'
 #' @seealso
 #' \itemize{
-#'   \item The new \href{https://mc-stan.org/loo/articles/}{\pkg{loo} package vignettes}
+#'   \item The \href{https://mc-stan.org/loo/articles/}{\pkg{loo} package vignettes}
 #'   and various \href{https://mc-stan.org/rstanarm/articles/}{\pkg{rstanarm} vignettes}
 #'   for more examples using \code{loo} and related functions with \pkg{rstanarm} models.
 #'   \item \code{\link[loo]{pareto-k-diagnostic}} in the \pkg{loo} package for
@@ -184,9 +192,15 @@ loo.stanreg <-
            ...,
            cores = getOption("mc.cores", 1),
            save_psis = FALSE,
-           k_threshold = NULL) {
-    if (model_has_weights(x))
+           k_threshold = NULL, 
+           r_eff = FALSE) {
+    if (model_has_weights(x)) {
       recommend_exact_loo(reason = "model has weights")
+    }
+    
+    if (!r_eff) {
+      r_eff <- NULL
+    }
 
     user_threshold <- !is.null(k_threshold)
     if (user_threshold) {
@@ -196,9 +210,9 @@ loo.stanreg <-
     }
 
     
-    if (used.sampling(x)) # chain_id to pass to loo::relative_eff
+    if (used.sampling(x)) {# chain_id to pass to loo::relative_eff
       chain_id <- chain_id_for_loo(x)
-    else { # ir_idx to pass to ...
+    } else { # ir_idx to pass to ...
       if (exists("ir_idx",x)) {
         ir_idx <- x$ir_idx
       } else if ("diagnostics" %in% names(x$stanfit@sim) &
@@ -212,7 +226,9 @@ loo.stanreg <-
 
     if (is.stanjm(x)) {
       ll <- log_lik(x)
-      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      if (!is.null(r_eff)) {
+        r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      }
       loo_x <-
         suppressWarnings(loo.matrix(
           ll,
@@ -223,7 +239,9 @@ loo.stanreg <-
     } else if (is.stanmvreg(x)) {
       M <- get_M(x)
       ll <- do.call("cbind", lapply(1:M, function(m) log_lik(x, m = m)))
-      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      if (!is.null(r_eff)) {
+        r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      }
       loo_x <-
         suppressWarnings(loo.matrix(
           ll,
@@ -242,7 +260,9 @@ loo.stanreg <-
         )
         ll <- ll[,!cons, drop = FALSE]
       }
-      r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      if (!is.null(r_eff)) {
+        r_eff <- loo::relative_eff(exp(ll), chain_id = chain_id, cores = cores)
+      }
       loo_x <-
         suppressWarnings(loo.matrix(
           ll,
@@ -256,7 +276,7 @@ loo.stanreg <-
       likfun <- function(data_i, draws) {
         exp(llfun(data_i, draws))
       }
-      if (used.sampling(x)) {
+      if (used.sampling(x) && !is.null(r_eff)) {
         r_eff <- loo::relative_eff(
           # using function method
           x = likfun,
@@ -266,7 +286,7 @@ loo.stanreg <-
           cores = cores,
           ...
         )
-      } else {
+      } else if (!used.sampling(x) && !is.null(r_eff)) {
         w_ir <- as.numeric(table(ir_idx))/length(ir_idx)
         ir_uidx <- which(!duplicated(ir_idx))
         draws <- args$draws

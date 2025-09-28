@@ -90,7 +90,7 @@
 #' # not a random variable b/c probabilities add to 1 within strata
 #' all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr)) 
 #' }
-#' @importFrom lme4 findbars
+#' @importFrom reformulas findbars
 stan_clogit <- function(formula, data, subset, na.action = NULL, contrasts = NULL,
                         ..., 
                         strata, prior = normal(autoscale=TRUE), 

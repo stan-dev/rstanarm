@@ -18,7 +18,7 @@
 #' Graphical posterior predictive checks
 #'
 #' Interface to the \link[bayesplot:PPC-overview]{PPC} (posterior predictive checking) module
-#' in the \pkg{\link{bayesplot}} package, providing various plots comparing the
+#' in the \pkg{\link[bayesplot:bayesplot-package]{bayesplot}} package, providing various plots comparing the
 #' observed outcome variable \eqn{y} to simulated datasets \eqn{y^{rep}}{yrep}
 #' from the posterior predictive distribution. The \code{pp_check} method for
 #' \link{stanreg-objects} prepares the arguments required for the specified
@@ -51,7 +51,7 @@
 #'   overlay many \code{yrep} datasets (e.g., \code{ppc_dens_overlay}) a larger
 #'   number is used by default, and for other functions (e.g. \code{ppc_stat})
 #'   the default is to set \code{nreps} equal to the posterior sample size.
-#' @param ... Additonal arguments passed to the \pkg{\link{bayesplot}} function
+#' @param ... Additonal arguments passed to the \pkg{\link[bayesplot:bayesplot-package]{bayesplot}} function
 #'   called. For many plotting functions \code{...} is optional, however for
 #'   functions that require a \code{group} or \code{x} argument, these arguments
 #'   should be specified in \code{...}. If specifying \code{group} and/or

@@ -277,9 +277,11 @@ stanreg_list_families <- function(mods) {
 # when a stanreg_list is created those attributes should be changed to match 
 # the names of the models used for the stanreg_list in case user has specified 
 # the model_names argument
+#' @noRd
 rename_loos <- function(x,...) UseMethod("rename_loos")
 
 # Change model_name attributes of a loo/waic/kfold object stored in a stanreg object,
+#' @exportS3Method NULL
 rename_loos.stanreg <- function(x, new_model_name,...) {
   for (criterion in c("loo", "waic", "kfold")) {
      if (!is.null(x[[criterion]])) {
@@ -291,6 +293,7 @@ rename_loos.stanreg <- function(x, new_model_name,...) {
 
 # Change model_name attributes of loo/waic/kfold objects to correspond to 
 # model names used for stanreg_list
+#' @exportS3Method NULL
 rename_loos.stanreg_list <- function(x, ...) {
   for (j in seq_along(x)) {
     x[[j]] <- rename_loos.stanreg(x[[j]], new_model_name = names(x)[j])
