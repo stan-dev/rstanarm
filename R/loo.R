@@ -19,7 +19,7 @@
 #'
 #' @description For models fit using MCMC, compute approximate leave-one-out
 #'   cross-validation (LOO, LOOIC) or, less preferably, the Widely Applicable
-#'   Information Criterion (WAIC) using the \pkg{\link[=loo-package]{loo}}
+#'   Information Criterion (WAIC) using the \pkg{\link[loo:loo-package]{loo}}
 #'   package. (For \eqn{K}-fold cross-validation see \code{\link{kfold.stanreg}}.)
 #'   Functions for  model comparison, and model weighting/averaging are also
 #'   provided. 
@@ -74,7 +74,7 @@
 #'   package).
 #'
 #' @section Approximate LOO CV: The \code{loo} method for stanreg objects
-#'   provides an interface to the \pkg{\link[=loo-package]{loo}} package for
+#'   provides an interface to the \pkg{\link[loo:loo-package]{loo}} package for
 #'   approximate leave-one-out cross-validation (LOO). The LOO Information
 #'   Criterion (LOOIC) has the same purpose as the Akaike Information Criterion
 #'   (AIC) that is used by frequentists. Both are intended to estimate the
@@ -96,7 +96,7 @@
 #'   observations. Warnings about Pareto \eqn{k} estimates indicate observations
 #'   for which the approximation to LOO is problematic (this is described in
 #'   detail in Vehtari, Gelman, and Gabry (2017) and the
-#'   \pkg{\link[=loo-package]{loo}} package documentation). The
+#'   \pkg{\link[loo:loo-package]{loo}} package documentation). The
 #'   \code{k_threshold} argument can be used to set the \eqn{k} value above
 #'   which an observation is flagged. If \code{k_threshold} is not \code{NULL}
 #'   and there are \eqn{J} observations with \eqn{k} estimates above

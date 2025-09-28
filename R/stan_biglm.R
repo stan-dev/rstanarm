@@ -52,7 +52,7 @@
 #'   outcome, such observations do not contribute to these statistics.
 #'   
 #' @return The output of both \code{stan_biglm} and \code{stan_biglm.fit} is an
-#'   object of \code{\link[rstan]{stanfit-class}} rather than
+#'   object of \code{\link[rstan:stanfit-class]{stanfit-class}} rather than
 #'   \code{\link{stanreg-objects}}, which is more limited and less convenient
 #'   but necessitated by the fact that \code{stan_biglm} does not bring the full
 #'   design matrix into memory. Without the full design matrix,some of the

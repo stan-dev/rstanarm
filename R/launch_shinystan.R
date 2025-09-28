@@ -43,7 +43,7 @@
 #'   used with ShinyStan. The only exception is that ShinyStan does not 
 #'   currently support \pkg{rstanarm} models fit using 
 #'   \code{algorithm='optimizing'}. See the 
-#'   \pkg{\link[=shinystan-package]{shinystan}} package documentation for more 
+#'   \pkg{\link[shinystan:shinystan-package]{shinystan}} package documentation for more 
 #'   information.
 #'   
 #' @section Faster launch times:
