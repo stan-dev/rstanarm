@@ -596,6 +596,10 @@ get_x.default <- function(object, ...) {
   object[["x"]] %ORifNULL% model.matrix(object)
 }
 #' @export
+get_x.betareg <- function(object, ...) {
+  model.matrix(object$terms[["mean"]], model.frame(object), contrasts = object$contrasts[["contrasts"]])
+}
+#' @export
 get_x.gamm4 <- function(object, ...) {
   as.matrix(object[["x"]])
 }

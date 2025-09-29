@@ -223,8 +223,8 @@ When we comparing the models using the __loo__ package we also see a clear
 preference for the negative binomial model
 
 ```{r, count-roaches-loo}
-loo1 <- loo(stan_glm1, cores = 2)
-loo2 <- loo(stan_glm2, cores = 2)
+loo1 <- loo(stan_glm1, cores = 1)
+loo2 <- loo(stan_glm2, cores = 1)
 loo_compare(loo1, loo2)
 ```
 
