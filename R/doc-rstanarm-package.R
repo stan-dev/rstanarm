@@ -17,9 +17,6 @@
 
 #' Applied Regression Modeling via RStan
 #'
-#' @docType package
-#' @name rstanarm-package
-#' @aliases rstanarm
 #' @useDynLib rstanarm, .registration = TRUE
 #'
 #' @import methods
@@ -104,4 +101,4 @@
 #' @template reference-bayesvis
 #' @template reference-muth
 #'
-NULL
+"_PACKAGE"

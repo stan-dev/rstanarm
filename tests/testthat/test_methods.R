@@ -594,7 +594,8 @@ test_that("print and summary methods ok for mcmc and vb", {
   expect_output(print(s), "stan_glmer")
   expect_output(
     print(s), 
-    paste(rstanarm:::posterior_sample_size(example_model)), "(posterior sample size)"
+    paste(rstanarm:::posterior_sample_size(example_model), "(posterior sample size)"),
+    fixed = TRUE
   )
   expect_identical(attr(s, "algorithm"), "sampling")
   expect_identical(colnames(s), colnames(d))

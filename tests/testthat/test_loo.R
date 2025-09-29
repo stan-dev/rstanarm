@@ -60,7 +60,7 @@ expect_equivalent_loo <- function(fit) {
 
 test_that("loo & waic do something for non mcmc models", {
   SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
-                      seed = 1234L, prior_intercept = NULL, refresh = 0,
+                      seed = 123L, prior_intercept = NULL, refresh = 0,
                       prior = NULL, prior_aux = NULL))
   SW(fitvb1 <- update(fito, algorithm = "meanfield", iter = ITER))
   SW(fitvb2 <- update(fito, algorithm = "fullrank", iter = ITER))

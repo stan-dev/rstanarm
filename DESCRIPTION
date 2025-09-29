@@ -48,7 +48,8 @@ Imports:
     stats,
     survival (>= 2.40.1),
     RcppParallel (>= 5.0.1),
-    utils
+    utils,
+    reformulas
 Suggests:
     biglm,
     betareg,
@@ -75,4 +76,4 @@ UseLTO: true
 NeedsCompilation: yes
 URL: https://mc-stan.org/rstanarm/, https://discourse.mc-stan.org
 BugReports: https://github.com/stan-dev/rstanarm/issues
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2

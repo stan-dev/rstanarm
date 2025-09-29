@@ -200,7 +200,9 @@ ll_fun <- function(x, m = NULL) {
 #   just a single MCMC draw).
 # @return a named list with elements data, draws, S (posterior sample size) and
 #   N = number of observations
+#' @noRd
 ll_args <- function(object, ...) UseMethod("ll_args")
+#' @exportS3Method NULL
 ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL, 
                             reloo_or_kfold = FALSE, ...) {
   validate_stanreg_object(object)
@@ -511,6 +513,7 @@ ll_args.stanreg <- function(object, newdata = NULL, offset = NULL, m = NULL,
 # @param pars Output from extract_pars
 # @param m Integer specifying which submodel
 # @param reloo_or_kfold logical. TRUE if ll_args is for reloo or kfold
+#' @exportS3Method NULL
 ll_args.stanjm <- function(object, data, pars, m = 1, 
                            reloo_or_kfold = FALSE, ...) {
   validate_stanjm_object(object)
@@ -863,10 +866,12 @@ evaluate_log_basehaz <- function(times, basehaz, coefs) {
 #   at which the log hazard was evaluated for each individual.
 # @param qwts A vector of unstandardised GK quadrature weights.
 # @return A vector or matrix of log survival probabilities.
+#' @noRd
 evaluate_log_survival <- function(log_haz, qnodes, qwts) {
   UseMethod("evaluate_log_survival")
 }
 
+#' @exportS3Method NULL
 evaluate_log_survival.default <- function(log_haz, qnodes, qwts) {
   # convert log hazard to hazard
   haz <- exp(log_haz)
@@ -879,6 +884,7 @@ evaluate_log_survival.default <- function(log_haz, qnodes, qwts) {
   -cum_haz
 }
 
+#' @exportS3Method NULL
 evaluate_log_survival.matrix <- function(log_haz, qnodes, qwts) {
   # convert log hazard to hazard
   haz <- exp(log_haz)
