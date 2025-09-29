@@ -105,11 +105,7 @@ model {
     if (K > 1)
       target += beta_lpdf(R2 | half_K, eta);
     else {
-      // TODO(Andrew) remove once vectorised abs available in rstan
-      array[J] real R2_abs;
-      for (j in 1:J) {
-        R2_abs[j] = abs(R2[j]);
-      }
+      array[J] real R2_abs = abs(R2);
       target += beta_lpdf(square(R2) | half_K, eta) + sum(log(R2_abs));
     }
   }
@@ -119,11 +115,9 @@ generated quantities {
   array[J] real mean_PPD;
   array[J] vector[K] beta;
   for (j in 1 : J) {
-    real shift;
-    shift = dot_product(xbarR_inv[j], theta[j]);
+    real shift = dot_product(xbarR_inv[j], theta[j]);
     mean_PPD[j] = normal_rng(has_intercept == 1 ? alpha[j] + shift : shift,
                              sigma[j] * sqrt_inv_N[j]);
     beta[j] = R_inv[j] * theta[j];
   }
 }
-
