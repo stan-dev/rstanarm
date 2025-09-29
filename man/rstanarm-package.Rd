@@ -2,8 +2,8 @@
 % Please edit documentation in R/doc-rstanarm-package.R
 \docType{package}
 \name{rstanarm-package}
-\alias{rstanarm-package}
 \alias{rstanarm}
+\alias{rstanarm-package}
 \title{Applied Regression Modeling via RStan}
 \description{
 \if{html}{

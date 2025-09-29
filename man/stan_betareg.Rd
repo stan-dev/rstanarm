@@ -201,7 +201,7 @@ Defaults to an intercept only.}
 A \link[=stanreg-objects]{stanreg} object is returned 
 for \code{stan_betareg}.
 
-A \link[=stanfit-class]{stanfit} object (or a slightly modified 
+A \link[rstan:stanfit-class]{stanfit} object (or a slightly modified 
   stanfit object) is returned if \code{stan_betareg.fit} is called directly.
 }
 \description{

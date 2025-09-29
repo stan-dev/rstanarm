@@ -312,7 +312,7 @@ is_binomial_ppc <- function(object, ...) {
     if (!is.null(xvar)) {
       dots[["x"]] <- .ppc_xvar(object, xvar, m = m)
     } else {
-      if (funname %in% c("ppc_intervals", "ppc_ribbon")) {
+      if (funname %in% c("ppc_intervals", "ppc_ribbon", "ppc_error_binned")) {
         message("'x' not specified in '...'. Using x=1:length(y).")
         dots[["x"]] <- seq_along(y)
       } else {

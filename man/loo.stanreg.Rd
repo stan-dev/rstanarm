@@ -18,7 +18,8 @@
   ...,
   cores = getOption("mc.cores", 1),
   save_psis = FALSE,
-  k_threshold = NULL
+  k_threshold = NULL,
+  r_eff = FALSE
 )
 
 \method{waic}{stanreg}(x, ...)
@@ -55,6 +56,16 @@ compare_models(..., loos = list(), detail = FALSE)
 parameters \eqn{k} estimated by \code{loo}. See the \emph{How to proceed
 when \code{loo} gives warnings} section, below, for details.}
 
+\item{r_eff}{\code{TRUE} or \code{FALSE} indicating whether to compute the
+\code{r_eff} argument to pass to the \pkg{loo} package. If \code{TRUE},
+\pkg{rstanarm} will call \code{\link[loo]{relative_eff}} to compute the
+\code{r_eff} argument to pass to the \pkg{loo} package. If \code{FALSE}
+(the default), we avoid computing \code{r_eff}, which can be very slow.
+\code{r_eff} measures the amount of autocorrelation in MCMC draws, and is
+used to compute more accurate ESS and MCSE estimates for pointwise and
+total ELPDs. When \code{r_eff=FALSE}, the reported ESS and MCSE estimates
+may be over-optimistic if the posterior draws are far from independent.}
+
 \item{criterion}{For \code{loo_compare.stanreg} and
 \code{loo_compare.stanreg_list}, should the comparison be based on LOO-CV
 (\code{criterion="loo"}), K-fold-CV (\code{criterion="kfold"}), or WAIC
@@ -80,7 +91,7 @@ The structure of the objects returned by \code{loo} and \code{waic}
 \description{
 For models fit using MCMC, compute approximate leave-one-out
   cross-validation (LOO, LOOIC) or, less preferably, the Widely Applicable
-  Information Criterion (WAIC) using the \pkg{\link[=loo-package]{loo}}
+  Information Criterion (WAIC) using the \pkg{\link[loo:loo-package]{loo}}
   package. (For \eqn{K}-fold cross-validation see \code{\link{kfold.stanreg}}.)
   Functions for  model comparison, and model weighting/averaging are also
   provided. 
@@ -94,7 +105,7 @@ For models fit using MCMC, compute approximate leave-one-out
 }
 \section{Approximate LOO CV}{
  The \code{loo} method for stanreg objects
-  provides an interface to the \pkg{\link[=loo-package]{loo}} package for
+  provides an interface to the \pkg{\link[loo:loo-package]{loo}} package for
   approximate leave-one-out cross-validation (LOO). The LOO Information
   Criterion (LOOIC) has the same purpose as the Akaike Information Criterion
   (AIC) that is used by frequentists. Both are intended to estimate the
@@ -104,10 +115,10 @@ For models fit using MCMC, compute approximate leave-one-out
   distributional assumption and integrate over uncertainty in the parameters.
   This only assumes that any one observation can be omitted without having a
   major effect on the posterior distribution, which can be judged using the
-  diagnostic plot provided by the \code{\link[loo:pareto-k-diagnostic]{plot.loo}} method and the
-  warnings provided by the \code{\link[loo]{print.loo}} method (see the
-  \emph{How to Use the rstanarm Package} vignette for an example of this
-  process).
+  diagnostic plot provided by the
+  \code{\link[loo:pareto-k-diagnostic]{plot.loo}} method and the warnings
+  provided by the \code{\link[loo]{print.loo}} method (see the \emph{How to
+  Use the rstanarm Package} vignette for an example of this process).
 
   \subsection{How to proceed when \code{loo} gives warnings (k_threshold)}{
   The \code{k_threshold} argument to the \code{loo} method for \pkg{rstanarm}
@@ -116,7 +127,7 @@ For models fit using MCMC, compute approximate leave-one-out
   observations. Warnings about Pareto \eqn{k} estimates indicate observations
   for which the approximation to LOO is problematic (this is described in
   detail in Vehtari, Gelman, and Gabry (2017) and the
-  \pkg{\link[=loo-package]{loo}} package documentation). The
+  \pkg{\link[loo:loo-package]{loo}} package documentation). The
   \code{k_threshold} argument can be used to set the \eqn{k} value above
   which an observation is flagged. If \code{k_threshold} is not \code{NULL}
   and there are \eqn{J} observations with \eqn{k} estimates above
@@ -248,7 +259,7 @@ Gabry, J. , Simpson, D. , Vehtari, A. , Betancourt, M. and
 }
 \seealso{
 \itemize{
-  \item The new \href{https://mc-stan.org/loo/articles/}{\pkg{loo} package vignettes}
+  \item The \href{https://mc-stan.org/loo/articles/}{\pkg{loo} package vignettes}
   and various \href{https://mc-stan.org/rstanarm/articles/}{\pkg{rstanarm} vignettes}
   for more examples using \code{loo} and related functions with \pkg{rstanarm} models.
   \item \code{\link[loo]{pareto-k-diagnostic}} in the \pkg{loo} package for

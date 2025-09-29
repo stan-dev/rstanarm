@@ -85,7 +85,7 @@ of Carpenter (2009).
 As a running example, we will use the data from Table 1 of (Efron and
 Morris 1975), which is included in **rstanarm** under the name `bball1970`
 (it was downloaded 24 Dec 2015 from
-[here](https://www.swarthmore.edu/NatSci/peverso1/Sports%20Data/JamesSteinData/Efron-Morris%20Baseball/EfronMorrisBB.txt)).
+[here](https://www1.swarthmore.edu/NatSci/peverso1/Sports%20Data/JamesSteinData/Efron-Morris%20Baseball/EfronMorrisBB.txt)).
 It is drawn from the 1970 Major League Baseball season (from both leagues).
 
 ```{r, load-data}
@@ -1110,7 +1110,7 @@ t(apply(rank, 1, quantile, prob = c(0.1, 0.5, 0.9)))
 It is again abundantly clear from the posterior intervals that our
 uncertainty is very great after only 45 at bats.
 
-In the original Volume I BUGS [example](https://www.mrc-bsu.cam.ac.uk/software/bugs/the-bugs-project-the-bugs-book/bugs-book-examples/the-bugs-book-examples-chapter-2-2-7-1/)
+In the original Volume I BUGS [example](https://chjackson.github.io/openbugsdoc/Examples/Surgical.html)
 of surgical mortality, the posterior distribution over ranks was plotted for each
 hospital.  It is now straightforward to reproduce that figure here for
 the baseball data.
@@ -1436,7 +1436,7 @@ variable itself?  Why might this be important in inference?
 * Gelman, A., Hill, J., and Yajima, M. (2012) Why we (usually) don't
   have to worry about multiple comparisons. *Journal of Research on
   Educational Effectiveness* **5**, 189--211. [
-  [pdf](http://www.stat.columbia.edu/~gelman/research/published/multiple2f.pdf)
+  [preprint](https://arxiv.org/abs/0907.2478)
   ]
 
 * Gneiting, T., Balabdaoui, F., and Raftery, A. E. (2007)
@@ -1468,7 +1468,7 @@ variable itself?  Why might this be important in inference?
 
 * Stan Development Team (2015) *Stan Modeling Language User's Guide
   and Reference Manual*.  [ [web page]
-  ](https://mc-stan.org/documentation/)
+  ](https://mc-stan.org/docs/)
 
 * Tarone, R. E. (1982) The use of historical control information in
   testing for a trend in proportions. *Biometrics* **38**(1):215--220.
@@ -1491,7 +1491,7 @@ female lab rats of type F344.  The data set is taken from the book
 site for (Gelman et al. 2013):
 
 * To load: `data(tumors, package = "rstanarm")`
-* Data source: [http://www.stat.columbia.edu/~gelman/book/data/rats.asc](http://www.stat.columbia.edu/~gelman/book/data/rats.asc)
+* Data source: [https://www.stat.columbia.edu/~gelman/book/data/rats.asc](https://www.stat.columbia.edu/~gelman/book/data/rats.asc)
 
 
 #### Surgical mortality (N = 12)

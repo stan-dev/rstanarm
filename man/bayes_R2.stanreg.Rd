@@ -53,9 +53,9 @@ median(bayes_R2(example_model, re.form = NA)) # exclude group-level
 }
 }
 \references{
-Andrew Gelman, Ben Goodrich, Jonah Gabry, and Aki Vehtari (2018). R-squared
+Andrew Gelman, Ben Goodrich, Jonah Gabry, and Aki Vehtari (2019). R-squared
 for Bayesian regression models. \emph{The American Statistician}, to appear.
 \doi{10.1080/00031305.2018.1549100}
-(\href{http://www.stat.columbia.edu/~gelman/research/published/bayes_R2_v3.pdf}{Preprint},
+(\href{https://www.tandfonline.com/doi/abs/10.1080/00031305.2018.1549100}{Article},
 \href{https://avehtari.github.io/bayes_R2/bayes_R2.html}{Notebook})
 }

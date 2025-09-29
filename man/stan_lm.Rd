@@ -147,7 +147,7 @@ predictors (i.e., same as in \code{glm}).}
 A \link[=stanreg-objects]{stanreg} object is returned 
 for \code{stan_lm, stan_aov}.
 
-A \link[=stanfit-class]{stanfit} object (or a slightly modified 
+A \link[rstan:stanfit-class]{stanfit} object (or a slightly modified 
   stanfit object) is returned if \code{stan_lm.fit or stan_lm.wfit} is called directly.
 }
 \description{

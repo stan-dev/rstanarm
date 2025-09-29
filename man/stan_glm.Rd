@@ -286,7 +286,7 @@ when \code{importance_resampling=TRUE}.}
 A \link[=stanreg-objects]{stanreg} object is returned 
 for \code{stan_glm, stan_glm.nb}.
 
-A \link[=stanfit-class]{stanfit} object (or a slightly modified 
+A \link[rstan:stanfit-class]{stanfit} object (or a slightly modified 
   stanfit object) is returned if \code{stan_glm.fit} is called directly.
 }
 \description{

@@ -91,8 +91,8 @@
 #'   question about \pkg{rstanarm} on the Stan-users forum.
 #' }
 #'
-#' @templateVar armRef \url{https://stat.columbia.edu/~gelman/arm/}
-#' @templateVar bdaRef \url{https://stat.columbia.edu/~gelman/book/}
+#' @templateVar armRef \url{https://sites.stat.columbia.edu/gelman/arm/}
+#' @templateVar bdaRef \url{https://sites.stat.columbia.edu/gelman/book/}
 #' @template reference-lme4
 #' @template reference-bda
 #' @template reference-gelman-hill

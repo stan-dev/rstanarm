@@ -40,7 +40,7 @@ Either a ggplot object that can be further customized using the
 \description{
 The \code{plot} method for \link{stanreg-objects} provides a convenient 
 interface to the \link[bayesplot:MCMC-overview]{MCMC} module in the 
-\pkg{\link{bayesplot}} package for plotting MCMC draws and diagnostics. It is also 
+\pkg{\link[bayesplot:bayesplot-package]{bayesplot}} package for plotting MCMC draws and diagnostics. It is also 
 straightforward to use the functions from the \pkg{bayesplot} package directly rather than
 via the \code{plot} method. Examples of both methods of plotting are given
 below.

@@ -77,7 +77,7 @@ This is posterior distribution that `stan_glm` will draw from when using MCMC.
 # Poisson and Negative Binomial Regression Example
 
 This example comes from Chapter 8.3 of 
-[Gelman and Hill (2007)](http://www.stat.columbia.edu/~gelman/arm/). 
+[Gelman and Hill (2007)](https://sites.stat.columbia.edu/gelman/arm/). 
 
 We want to make inferences about the efficacy of a certain pest 
 management system at reducing the number of roaches in urban apartments. Here is

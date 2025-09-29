@@ -91,7 +91,7 @@ linear models with independent priors on the regression coefficients.
 
 To illustrate the usage of `stan_glm` and some of the post-processing functions
 in the __rstanarm__ package we'll use a simple example from Chapter 3 of [Gelman
-and Hill (2007)](http://www.stat.columbia.edu/~gelman/arm/):
+and Hill (2007)](https://sites.stat.columbia.edu/gelman/arm/):
 
 > We shall fit a series of regressions predicting cognitive test scores of
 three- and four-year-old children given characteristics of their mothers, using

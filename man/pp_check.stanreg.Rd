@@ -31,7 +31,7 @@ the default is to set \code{nreps} equal to the posterior sample size.}
 \item{seed}{An optional \code{\link[=set.seed]{seed}} to pass to
 \code{\link{posterior_predict}}.}
 
-\item{...}{Additonal arguments passed to the \pkg{\link{bayesplot}} function
+\item{...}{Additonal arguments passed to the \pkg{\link[bayesplot:bayesplot-package]{bayesplot}} function
 called. For many plotting functions \code{...} is optional, however for
 functions that require a \code{group} or \code{x} argument, these arguments
 should be specified in \code{...}. If specifying \code{group} and/or
@@ -45,7 +45,7 @@ actual values of the variables. See the \strong{Examples} section, below.}
 }
 \description{
 Interface to the \link[bayesplot:PPC-overview]{PPC} (posterior predictive checking) module
-in the \pkg{\link{bayesplot}} package, providing various plots comparing the
+in the \pkg{\link[bayesplot:bayesplot-package]{bayesplot}} package, providing various plots comparing the
 observed outcome variable \eqn{y} to simulated datasets \eqn{y^{rep}}{yrep}
 from the posterior predictive distribution. The \code{pp_check} method for
 \link{stanreg-objects} prepares the arguments required for the specified

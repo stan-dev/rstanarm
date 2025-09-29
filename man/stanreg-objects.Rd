@@ -74,7 +74,7 @@ The \code{\link{stan_biglm}} function is an exception. It returns a
   A list with information about the prior distributions used.
   }
   \item{\code{stanfit,stan_summary}}{
-  The object of \code{\link[rstan]{stanfit-class}} returned by RStan and a
+  The object of \code{\link[rstan:stanfit-class]{stanfit-class}} returned by RStan and a
   matrix of various summary statistics from the stanfit object.
   }
   \item{\code{rstan_version}}{

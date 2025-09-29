@@ -177,7 +177,7 @@
 #' generalizations. \emph{Journal of the American Statistical Association}
 #' \strong{70}(350), 311--319.
 #' 
-#' @templateVar armRef \url{https://stat.columbia.edu/~gelman/arm/}
+#' @templateVar armRef \url{https://sites.stat.columbia.edu/gelman/arm/}
 #' @template reference-gelman-hill
 #' 
 #' @references

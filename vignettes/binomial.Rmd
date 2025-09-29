@@ -102,7 +102,7 @@ When the logit link function is used the model is often referred to as a
 logistic regression model (the inverse logit function is the CDF of the standard
 logistic distribution). As an example, here we will show how to carry out a 
 few parts of the analysis from Chapter 5.4 of 
-[Gelman and Hill (2007)](http://www.stat.columbia.edu/~gelman/arm/) 
+[Gelman and Hill (2007)](https://sites.stat.columbia.edu/gelman/arm/) 
 using `stan_glm`.
 
 Gelman and Hill describe a survey of 3200 residents in a 
