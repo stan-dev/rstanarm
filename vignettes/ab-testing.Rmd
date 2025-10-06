@@ -636,8 +636,6 @@ Stan Development Team (2019). RStan: the R interface to Stan. R package version
 Student's t-test. Wikipedia. Available from
 https://en.wikipedia.org/wiki/Student's_t-test.
 
-Welch's t-test. Wikipedia. Available from
-https://en.wikipedia.org/wiki/Welch%27s_t-test.
 
 ## Appendix A: Refresher on p-values
 
