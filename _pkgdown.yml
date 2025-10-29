@@ -1,0 +1,103 @@
+url: https://mc-stan.org/rstanarm
+
+destination: "."
+
+template:
+  package: pkgdownconfig
+
+navbar:
+  title: "rstanarm"
+
+  structure:
+    left: [home, vignettes, functions, news, pkgs, stan]
+    right: [search, bluesky, forum, github, lightswitch]
+
+  components:
+    pkgs:
+      text: Other Packages
+      menu:
+        - text: bayesplot
+          href: https://mc-stan.org/bayesplot
+        - text: cmdstanr
+          href: https://mc-stan.org/cmdstanr
+        - text: loo
+          href: https://mc-stan.org/loo
+        - text: posterior
+          href: https://mc-stan.org/posterior
+        - text: projpred
+          href: https://mc-stan.org/projpred
+        - text: rstan
+          href: https://mc-stan.org/rstan
+        - text: rstantools
+          href: https://mc-stan.org/rstantools
+        - text: shinystan
+          href: https://mc-stan.org/shinystan
+
+articles:
+  - title: "Getting Started"
+    desc: >
+      These vignettes provide a preliminary introduction to rstanarm and 
+      discuss the prior distributions available.
+    contents:
+    - rstanarm
+    - priors
+  - title: "Modeling functions"
+    desc: >
+      These vignettes provide instructions on how to use the modeling 
+      functions in rstanarm.
+    contents:
+    - binomial
+    - count
+    - continuous
+    - aov
+    - lm
+    - betareg
+    - polr
+    - glmer
+    - jm
+  - title: "Additional tutorials on specific modeling techniques and applications"
+    desc: >
+      These vignettes provide additional tutorials on using rstanarm 
+      for specific purposes once you are comfortable using the package
+      in general.
+    contents:
+    - mrp
+    - pooling
+    - ab-testing
+
+reference:
+  - title: "About rstanarm"
+    desc: >
+      These pages provides a summary of the functionality available in rstanarm.
+    contents:
+      - rstanarm-package
+      - available-models
+      - available-algorithms
+  - title: "Fitting models"
+    desc: >
+      Functions for model fitting.
+    contents:
+      - starts_with("stan_")
+      - priors
+  - title: "Methods"
+    desc: >
+      Functions to work with fitted model objects.
+    contents:
+      - stanreg-objects
+      - ends_with("stanreg")
+      - starts_with("posterior_")
+      - ps_check
+      - ends_with("stanmvreg")
+      - ends_with("stanjm")
+  - title: "Additional documentation"
+    desc: >
+      Misc. other help pages.
+    contents:
+      - rstanarm-datasets
+      - example_model
+      - example_jm
+      - stanreg_list
+      - adapt_delta
+      - QR-argument
+      - neg_binomial_2
+      - rstanarm-deprecated
