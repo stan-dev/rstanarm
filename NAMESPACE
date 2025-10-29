@@ -190,7 +190,6 @@ export(student_t)
 export(waic)
 if(getRversion()>='3.3.0') importFrom(stats, sigma) else
   importFrom(lme4,sigma)
-
 import(Rcpp)
 import(bayesplot)
 import(methods)

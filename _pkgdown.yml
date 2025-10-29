@@ -101,3 +101,4 @@ reference:
       - QR-argument
       - neg_binomial_2
       - rstanarm-deprecated
+      - logit
