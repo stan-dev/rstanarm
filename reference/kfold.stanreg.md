@@ -1,0 +1,189 @@
+# K-fold cross-validation
+
+The `kfold` method performs exact \\K\\-fold cross-validation. First the
+data are randomly partitioned into \\K\\ subsets of equal size (or as
+close to equal as possible), or the user can specify the `folds`
+argument to determine the partitioning. Then the model is refit \\K\\
+times, each time leaving out one of the \\K\\ subsets. If \\K\\ is equal
+to the total number of observations in the data then \\K\\-fold
+cross-validation is equivalent to exact leave-one-out cross-validation
+(to which [`loo`](https://mc-stan.org/rstanarm/reference/loo.stanreg.md)
+is an efficient approximation).
+
+## Usage
+
+``` r
+# S3 method for class 'stanreg'
+kfold(
+  x,
+  K = 10,
+  ...,
+  folds = NULL,
+  save_fits = FALSE,
+  cores = getOption("mc.cores", 1)
+)
+```
+
+## Arguments
+
+- x:
+
+  A fitted model object returned by one of the rstanarm modeling
+  functions. See
+  [stanreg-objects](https://mc-stan.org/rstanarm/reference/stanreg-objects.md).
+
+- K:
+
+  For `kfold`, the number of subsets (folds) into which the data will be
+  partitioned for performing \\K\\-fold cross-validation. The model is
+  refit `K` times, each time leaving out one of the `K` folds. If the
+  `folds` argument is specified then `K` will automatically be set to
+  `length(unique(folds))`, otherwise the specified value of `K` is
+  passed to
+  `loo::`[`kfold_split_random`](https://mc-stan.org/loo/reference/kfold-helpers.html)
+  to randomly partition the data into `K` subsets of equal (or as close
+  to equal as possible) size.
+
+- ...:
+
+  Currently ignored.
+
+- folds:
+
+  For `kfold`, an optional integer vector with one element per
+  observation in the data used to fit the model. Each element of the
+  vector is an integer in `1:K` indicating to which of the `K` folds the
+  corresponding observation belongs. There are some convenience
+  functions available in the loo package that create integer vectors to
+  use for this purpose (see the **Examples** section below and also the
+  [kfold-helpers](https://mc-stan.org/loo/reference/kfold-helpers.html)
+  page).
+
+- save_fits:
+
+  For `kfold`, if `TRUE`, a component `'fits'` is added to the returned
+  object to store the cross-validated
+  [stanreg](https://mc-stan.org/rstanarm/reference/stanreg-objects.md)
+  objects and the indices of the omitted observations for each fold.
+  Defaults to `FALSE`.
+
+- cores:
+
+  The number of cores to use for parallelization. Instead fitting
+  separate Markov chains for the same model on different cores, by
+  default `kfold` will distribute the `K` models to be fit across the
+  cores (using
+  [`parLapply`](https://rdrr.io/r/parallel/clusterApply.html) on Windows
+  and [`mclapply`](https://rdrr.io/r/parallel/mclapply.html) otherwise).
+  The Markov chains for each model will be run sequentially. This will
+  often be the most efficient option, especially if many cores are
+  available, but in some cases it may be preferable to fit the `K`
+  models sequentially and instead use the cores for the Markov chains.
+  This can be accomplished by setting `options(mc.cores)` to be the
+  desired number of cores to use for the Markov chains *and* also
+  manually specifying `cores=1` when calling the `kfold` function. See
+  the end of the **Examples** section for a demonstration.
+
+## Value
+
+An object with classes 'kfold' and 'loo' that has a similar structure as
+the objects returned by the
+[`loo`](https://mc-stan.org/rstanarm/reference/loo.stanreg.md) and
+[`waic`](https://mc-stan.org/rstanarm/reference/loo.stanreg.md) methods
+and is compatible with the
+[`loo_compare`](https://mc-stan.org/rstanarm/reference/loo.stanreg.md)
+function for comparing models.
+
+## References
+
+Vehtari, A., Gelman, A., and Gabry, J. (2017). Practical Bayesian model
+evaluation using leave-one-out cross-validation and WAIC. *Statistics
+and Computing*. 27(5), 1413–1432. doi:10.1007/s11222-016-9696-4. arXiv
+preprint: <https://arxiv.org/abs/1507.04544>
+
+Yao, Y., Vehtari, A., Simpson, D., and Gelman, A. (2018) Using stacking
+to average Bayesian predictive distributions. *Bayesian Analysis*,
+advance publication,
+[doi:10.1214/17-BA1091](https://doi.org/10.1214/17-BA1091) .
+
+## Examples
+
+``` r
+if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386") {
+# \donttest{
+fit1 <- stan_glm(mpg ~ wt, data = mtcars, refresh = 0)
+fit2 <- stan_glm(mpg ~ wt + cyl, data = mtcars, refresh = 0)
+fit3 <- stan_glm(mpg ~ disp * as.factor(cyl), data = mtcars, refresh = 0)
+
+# 10-fold cross-validation
+# (if possible also specify the 'cores' argument to use multiple cores)
+(kfold1 <- kfold(fit1, K = 10))
+kfold2 <- kfold(fit2, K = 10)
+kfold3 <- kfold(fit3, K = 10) 
+loo_compare(kfold1, kfold2, kfold3)
+
+# stratifying by a grouping variable
+# (note: might get some divergences warnings with this model but 
+# this is just intended as a quick example of how to code this)
+fit4 <- stan_lmer(mpg ~ disp + (1|cyl), data = mtcars, refresh = 0)
+table(mtcars$cyl)
+folds_cyl <- loo::kfold_split_stratified(K = 3, x = mtcars$cyl)
+table(cyl = mtcars$cyl, fold = folds_cyl)
+kfold4 <- kfold(fit4, folds = folds_cyl, cores = 2)
+print(kfold4)
+# }
+}
+#> Fitting model 1 out of 10
+#> Fitting model 2 out of 10
+#> Fitting model 3 out of 10
+#> Fitting model 4 out of 10
+#> Fitting model 5 out of 10
+#> Fitting model 6 out of 10
+#> Fitting model 7 out of 10
+#> Fitting model 8 out of 10
+#> Fitting model 9 out of 10
+#> Fitting model 10 out of 10
+#> Fitting model 1 out of 10
+#> Fitting model 2 out of 10
+#> Fitting model 3 out of 10
+#> Fitting model 4 out of 10
+#> Fitting model 5 out of 10
+#> Fitting model 6 out of 10
+#> Fitting model 7 out of 10
+#> Fitting model 8 out of 10
+#> Fitting model 9 out of 10
+#> Fitting model 10 out of 10
+#> Fitting model 1 out of 10
+#> Fitting model 2 out of 10
+#> Fitting model 3 out of 10
+#> Fitting model 4 out of 10
+#> Fitting model 5 out of 10
+#> Fitting model 6 out of 10
+#> Fitting model 7 out of 10
+#> Fitting model 8 out of 10
+#> Fitting model 9 out of 10
+#> Fitting model 10 out of 10
+#> Fitting K = 3 models distributed over 2 cores
+#> 
+#> Based on 3-fold cross-validation.
+#> 
+#>            Estimate  SE
+#> elpd_kfold    -86.4 4.2
+#> p_kfold         7.2 1.7
+#> kfoldic       172.8 8.5
+# Example code demonstrating the different ways to specify the number 
+# of cores and how the cores are used
+# 
+# options(mc.cores = NULL)
+# 
+# # spread the K models over N_CORES cores (method 1)
+# kfold(fit, K, cores = N_CORES)
+# 
+# # spread the K models over N_CORES cores (method 2)
+# options(mc.cores = N_CORES)
+# kfold(fit, K)
+#  
+# # fit K models sequentially using N_CORES cores for the Markov chains each time
+# options(mc.cores = N_CORES)
+# kfold(fit, K, cores = 1)
+```

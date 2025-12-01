@@ -1,240 +1,91 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://mc-stan.org/rstanarm/index.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/QR-argument.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/adapt_delta.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/as.matrix.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/available-algorithms.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/available-models.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/bayes_R2.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/example_jm.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/example_model.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/family.stanmvreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/family.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/formula.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/get_y.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/kfold.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/launch_shinystan.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/log_lik.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/logit.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/loo.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/loo_predict.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/model.frame.stanmvreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/model.frame.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/model.matrix.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/neg_binomial_2.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/pairs.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/plot.predict.stanjm.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/plot.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/plot.survfit.stanjm.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/posterior_interval.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/posterior_linpred.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/posterior_predict.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/posterior_survfit.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/posterior_traj.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/posterior_vs_prior.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/pp_check.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/pp_validate.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/predict.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/predictive_error.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/predictive_interval.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/print.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/print.survfit.stanjm.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/prior_summary.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/priors.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/ps_check.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/reexports.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/rstanarm-datasets.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/rstanarm-deprecated.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/rstanarm-package.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/se.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stan_betareg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stan_biglm.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stan_clogit.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stan_gamm4.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stan_glm.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stan_glmer.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stan_jm.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stan_lm.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stan_mvmer.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stan_nlmer.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stan_polr.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stanmvreg-methods.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stanreg-methods.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stanreg-objects.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/stanreg_list.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/summary.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/terms.stanmvreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/reference/terms.stanreg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/articles/aov.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/articles/betareg.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/articles/binomial.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/articles/continuous.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/articles/count.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/articles/glmer.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/articles/jm.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/articles/lm.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/articles/mrp.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/articles/polr.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/articles/pooling.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/articles/priors.html</loc>
-  </url>
-  <url>
-    <loc>https://mc-stan.org/rstanarm/articles/rstanarm.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://mc-stan.org/rstanarm/404.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/ISSUE_TEMPLATE.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/LICENSE-text.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/ab-testing.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/aov.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/betareg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/binomial.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/continuous.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/count.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/glmer.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/index.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/jm.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/lm.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/mrp.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/polr.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/pooling.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/priors.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/articles/rstanarm.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/authors.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/index.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/news/index.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/QR-argument.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/adapt_delta.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/as.matrix.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/available-algorithms.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/available-models.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/bayes_R2.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/example_jm.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/example_model.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/family.stanmvreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/family.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/formula.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/get_y.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/index.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/kfold.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/launch_shinystan.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/log_lik.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/logit.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/loo.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/loo_predict.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/model.frame.stanmvreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/model.frame.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/model.matrix.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/neg_binomial_2.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/pairs.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/plot.predict.stanjm.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/plot.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/plot.survfit.stanjm.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/posterior_interval.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/posterior_linpred.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/posterior_predict.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/posterior_survfit.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/posterior_traj.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/posterior_vs_prior.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/pp_check.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/pp_validate.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/predict.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/predictive_error.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/predictive_interval.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/print.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/print.survfit.stanjm.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/prior_summary.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/priors.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/ps_check.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/reexports.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/rstanarm-datasets.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/rstanarm-deprecated.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/rstanarm-package.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/se.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stan_betareg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stan_biglm.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stan_clogit.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stan_gamm4.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stan_glm.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stan_glmer.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stan_jm.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stan_lm.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stan_mvmer.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stan_nlmer.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stan_polr.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stanmvreg-methods.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stanreg-draws-formats.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stanreg-methods.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stanreg-objects.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/stanreg_list.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/summary.stanreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/terms.stanmvreg.html</loc></url>
+<url><loc>https://mc-stan.org/rstanarm/reference/terms.stanreg.html</loc></url>
 </urlset>
+
