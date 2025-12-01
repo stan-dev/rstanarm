@@ -4,7 +4,7 @@ Title: Bayesian Applied Regression Modeling via Stan
 Version: 2.32.2
 Date: 2025-09-29
 Encoding: UTF-8
-Authors@R: c(person("Jonah", "Gabry", email = "jsg2201@columbia.edu", role = "aut"),
+Authors@R: c(person("Jonah", "Gabry", email = "jgabry@gmail.com", role = "aut"),
              person("Imad", "Ali", role = "ctb"),
              person("Sam", "Brilleman", role = "ctb"),
              person(given = "Jacqueline Buros", family = "Novik",
