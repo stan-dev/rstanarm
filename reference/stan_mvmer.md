@@ -236,8 +236,8 @@ f2 <- stan_mvmer(
 #> 
 #> SAMPLING FOR MODEL 'mvmer' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 9.8e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.98 seconds.
+#> Chain 1: Gradient evaluation took 9.4e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.94 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -254,9 +254,9 @@ f2 <- stan_mvmer(
 #> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 3.672 seconds (Warm-up)
-#> Chain 1:                2.049 seconds (Sampling)
-#> Chain 1:                5.721 seconds (Total)
+#> Chain 1:  Elapsed Time: 3.733 seconds (Warm-up)
+#> Chain 1:                2.1 seconds (Sampling)
+#> Chain 1:                5.833 seconds (Total)
 #> Chain 1: 
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
@@ -267,8 +267,8 @@ f2 <- stan_mvmer(
 #> 
 #> SAMPLING FOR MODEL 'mvmer' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.000102 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.02 seconds.
+#> Chain 1: Gradient evaluation took 0.000104 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.04 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -285,9 +285,9 @@ f2 <- stan_mvmer(
 #> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 3.977 seconds (Warm-up)
-#> Chain 1:                2.119 seconds (Sampling)
-#> Chain 1:                6.096 seconds (Total)
+#> Chain 1:  Elapsed Time: 4.113 seconds (Warm-up)
+#> Chain 1:                2.241 seconds (Sampling)
+#> Chain 1:                6.354 seconds (Total)
 #> Chain 1: 
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
