@@ -18,7 +18,7 @@
 
 #' Bayesian ordinal regression models via Stan
 #'
-#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{logo.svg}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 #' Bayesian inference for ordinal (or binary) regression models under a
 #' proportional odds assumption.
 #'
@@ -56,13 +56,13 @@
 #'   the exponent applied to the probability of success when there are only
 #'   two outcome categories. If \code{NULL}, which is the default, then the
 #'   exponent is taken to be fixed at \eqn{1}.
-#' @param do_residuals A logical scalar indicating whether or not to 
+#' @param do_residuals A logical scalar indicating whether or not to
 #'   automatically calculate fit residuals after sampling completes. Defaults to
 #'   \code{TRUE} if and only if \code{algorithm="sampling"}. Setting
 #'   \code{do_residuals=FALSE} is only useful in the somewhat rare case that
 #'   \code{stan_polr} appears to finish sampling but hangs instead of returning
 #'   the fitted model object.
-#'   
+#'
 #' @details The \code{stan_polr} function is similar in syntax to
 #'   \code{\link[MASS]{polr}} but rather than performing maximum likelihood
 #'   estimation of a proportional odds model, Bayesian estimation is performed
@@ -128,24 +128,31 @@
 #' }
 #'
 #' @importFrom utils packageVersion
-stan_polr <- function(formula, data, weights, ..., subset,
-                      na.action = getOption("na.action", "na.omit"),
-                      contrasts = NULL, model = TRUE,
-                      method = c("logistic", "probit", "loglog", "cloglog",
-                                 "cauchit"),
-                      prior = R2(stop("'location' must be specified")),
-                      prior_counts = dirichlet(1), shape = NULL, rate = NULL,
-                      prior_PD = FALSE,
-                      algorithm = c("sampling", "meanfield", "fullrank"),
-                      adapt_delta = NULL,
-                      do_residuals = NULL) {
-
+stan_polr <- function(
+  formula,
+  data,
+  weights,
+  ...,
+  subset,
+  na.action = getOption("na.action", "na.omit"),
+  contrasts = NULL,
+  model = TRUE,
+  method = c("logistic", "probit", "loglog", "cloglog", "cauchit"),
+  prior = R2(stop("'location' must be specified")),
+  prior_counts = dirichlet(1),
+  shape = NULL,
+  rate = NULL,
+  prior_PD = FALSE,
+  algorithm = c("sampling", "meanfield", "fullrank"),
+  adapt_delta = NULL,
+  do_residuals = NULL
+) {
   data <- validate_data(data, if_missing = environment(formula))
   is_char <- which(sapply(data, is.character))
   for (j in is_char) {
     data[[j]] <- as.factor(data[[j]])
   }
-  
+
   algorithm <- match.arg(algorithm)
   if (is.null(do_residuals)) {
     do_residuals <- algorithm == "sampling"
@@ -160,8 +167,8 @@ stan_polr <- function(formula, data, weights, ..., subset,
     m$data <- data
   }
   m$method <- m$model <- m$... <- m$prior <- m$prior_counts <-
-    m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <- 
-    m$do_residuals <- NULL
+    m$prior_PD <- m$algorithm <- m$adapt_delta <- m$shape <- m$rate <-
+      m$do_residuals <- NULL
   m[[1L]] <- quote(stats::model.frame)
   m$drop.unused.levels <- FALSE
   m <- eval.parent(m)
@@ -175,21 +182,27 @@ stan_polr <- function(formula, data, weights, ..., subset,
   if (xint > 0L) {
     x <- x[, -xint, drop = FALSE]
     pc <- pc - 1L
-  } else stop("an intercept is needed and assumed")
+  } else {
+    stop("an intercept is needed and assumed")
+  }
   K <- ncol(x)
   wt <- model.weights(m)
-  if (!length(wt))
+  if (!length(wt)) {
     wt <- rep(1, n)
+  }
   offset <- model.offset(m)
-  if (length(offset) <= 1L)
+  if (length(offset) <= 1L) {
     offset <- rep(0, n)
+  }
   y <- model.response(m)
-  if (!is.factor(y))
+  if (!is.factor(y)) {
     stop("Response variable must be a factor.", call. = FALSE)
+  }
   lev <- levels(y)
   llev <- length(lev)
-  if (llev < 2L)
+  if (llev < 2L) {
     stop("Response variable must have 2 or more levels.", call. = FALSE)
+  }
   # y <- unclass(y)
   q <- llev - 1L
 
@@ -210,28 +223,48 @@ stan_polr <- function(formula, data, weights, ..., subset,
       do_residuals = do_residuals,
       ...
     )
-  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) return(stanfit)
+  if (algorithm != "optimizing" && !is(stanfit, "stanfit")) {
+    return(stanfit)
+  }
   inverse_link <- linkinv(method)
 
-  if (llev == 2L) { # actually a Bernoulli model
-    family <- switch(method,
-                     logistic = binomial(link = "logit"),
-                     loglog = binomial(loglog),
-                     binomial(link = method))
-    fit <- nlist(stanfit, family, formula, offset, weights = wt,
-                 x = cbind("(Intercept)" = 1, x), y = as.integer(y == lev[2]),
-                 data, call, terms = Terms, model = m,
-                 algorithm, na.action = attr(m, "na.action"),
-                 contrasts = attr(x, "contrasts"), 
-                 stan_function = "stan_polr")
+  if (llev == 2L) {
+    # actually a Bernoulli model
+    family <- switch(
+      method,
+      logistic = binomial(link = "logit"),
+      loglog = binomial(loglog),
+      binomial(link = method)
+    )
+    fit <- nlist(
+      stanfit,
+      family,
+      formula,
+      offset,
+      weights = wt,
+      x = cbind("(Intercept)" = 1, x),
+      y = as.integer(y == lev[2]),
+      data,
+      call,
+      terms = Terms,
+      model = m,
+      algorithm,
+      na.action = attr(m, "na.action"),
+      contrasts = attr(x, "contrasts"),
+      stan_function = "stan_polr"
+    )
     out <- stanreg(fit)
-    if (!model)
+    if (!model) {
       out$model <- NULL
-    if (algorithm == "sampling")
+    }
+    if (algorithm == "sampling") {
       check_rhats(out$stan_summary[, "Rhat"])
-    
-    if (is.null(shape) && is.null(rate)) # not a scobit model
+    }
+
+    if (is.null(shape) && is.null(rate)) {
+      # not a scobit model
       return(out)
+    }
 
     out$method <- method
     return(structure(out, class = c("stanreg", "polr")))
@@ -243,7 +276,7 @@ stan_polr <- function(formula, data, weights, ..., subset,
   covmat <- cov(stanmat)
   coefs <- apply(stanmat[, 1:K, drop = FALSE], 2L, median)
   ses <- apply(stanmat[, 1:K, drop = FALSE], 2L, mad)
-  zeta <- apply(stanmat[, (K+1):K2, drop = FALSE], 2L, median)
+  zeta <- apply(stanmat[, (K + 1):K2, drop = FALSE], 2L, median)
   eta <- linear_predictor(coefs, x, offset)
   mu <- inverse_link(eta)
 
@@ -257,34 +290,54 @@ stan_polr <- function(formula, data, weights, ..., subset,
     names(residuals) <- rownames(x)
   }
   stan_summary <- make_stan_summary(stanfit)
-  if (algorithm == "sampling")
+  if (algorithm == "sampling") {
     check_rhats(stan_summary[, "Rhat"])
+  }
 
-  out <- nlist(coefficients = coefs, ses, zeta, residuals,
-               fitted.values = mu, linear.predictors = eta, covmat,
-               y, x, model = if (model) m, data,
-               offset, weights = wt, prior.weights = wt,
-               family = method, method, contrasts, na.action,
-               call, formula, terms = Terms,
-               prior.info = attr(stanfit, "prior.info"),
-               algorithm, stan_summary, stanfit, 
-               rstan_version = packageVersion("rstan"), 
-               stan_function = "stan_polr")
+  out <- nlist(
+    coefficients = coefs,
+    ses,
+    zeta,
+    residuals,
+    fitted.values = mu,
+    linear.predictors = eta,
+    covmat,
+    y,
+    x,
+    model = if (model) m,
+    data,
+    offset,
+    weights = wt,
+    prior.weights = wt,
+    family = method,
+    method,
+    contrasts,
+    na.action,
+    call,
+    formula,
+    terms = Terms,
+    prior.info = attr(stanfit, "prior.info"),
+    algorithm,
+    stan_summary,
+    stanfit,
+    rstan_version = packageVersion("rstan"),
+    stan_function = "stan_polr"
+  )
   structure(out, class = c("stanreg", "polr"))
 }
-
 
 
 # internal ----------------------------------------------------------------
 
 # CDF, inverse-CDF and PDF for Gumbel distribution
-pgumbel <- function (q, loc = 0, scale = 1, lower.tail = TRUE) {
-  q <- (q - loc)/scale
+pgumbel <- function(q, loc = 0, scale = 1, lower.tail = TRUE) {
+  q <- (q - loc) / scale
   p <- exp(-exp(-q))
-  if (!lower.tail)
+  if (!lower.tail) {
     1 - p
-  else
+  } else {
     p
+  }
 }
 qgumbel <- function(p, loc = 0, scale = 1) {
   loc - scale * log(-log(p))
@@ -292,12 +345,18 @@ qgumbel <- function(p, loc = 0, scale = 1) {
 dgumbel <- function(x, loc = 0, scale = 1, log = FALSE) {
   z <- (x - loc) / scale
   log_f <- -(z + exp(-z))
-  if (!log)
+  if (!log) {
     exp(log_f)
-  else
+  } else {
     log_f
+  }
 }
 
-loglog <- list(linkfun = qgumbel, linkinv = pgumbel, mu.eta = dgumbel,
-               valideta = function(eta) TRUE, name = "loglog")
+loglog <- list(
+  linkfun = qgumbel,
+  linkinv = pgumbel,
+  mu.eta = dgumbel,
+  valideta = function(eta) TRUE,
+  name = "loglog"
+)
 class(loglog) <- "link-glm"
