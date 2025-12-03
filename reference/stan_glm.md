@@ -315,9 +315,8 @@ stan_glm.fit(
 - group:
 
   A list, possibly of length zero (the default), but otherwise having
-  the structure of that produced by
-  [`mkReTrms`](https://rdrr.io/pkg/lme4/man/mkReTrms.html) to indicate
-  the group-specific part of the model. In addition, this list must have
+  the structure of that produced by `mkReTrms` to indicate the
+  group-specific part of the model. In addition, this list must have
   elements for the `regularization`, `concentration` `shape`, and
   `scale` components of a
   [`decov`](https://mc-stan.org/rstanarm/reference/priors.md) prior for

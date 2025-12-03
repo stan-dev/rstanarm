@@ -222,8 +222,8 @@ cbind(lm = b, stan_lm = rstan::get_posterior_mean(post)[13:15,]) # shrunk
 #> 
 #> SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 1.7e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
+#> Chain 1: Gradient evaluation took 1.6e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -240,9 +240,9 @@ cbind(lm = b, stan_lm = rstan::get_posterior_mean(post)[13:15,]) # shrunk
 #> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.521 seconds (Warm-up)
-#> Chain 1:                0.264 seconds (Sampling)
-#> Chain 1:                0.785 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.52 seconds (Warm-up)
+#> Chain 1:                0.268 seconds (Sampling)
+#> Chain 1:                0.788 seconds (Total)
 #> Chain 1: 
 #> Warning: There were 1 divergent transitions after warmup. See
 #> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup

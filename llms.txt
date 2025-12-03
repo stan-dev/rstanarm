@@ -1,4 +1,4 @@
-# rstanarm ![](reference/figures/logo.svg)
+# rstanarm
 
 ### Bayesian applied regression modeling (arm) via Stan
 

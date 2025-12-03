@@ -204,8 +204,8 @@ all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr))
 #> 
 #> SAMPLING FOR MODEL 'bernoulli' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 4.6e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.46 seconds.
+#> Chain 1: Gradient evaluation took 4.8e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.48 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -222,9 +222,9 @@ all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr))
 #> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.219 seconds (Warm-up)
-#> Chain 1:                0.076 seconds (Sampling)
-#> Chain 1:                0.295 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.218 seconds (Warm-up)
+#> Chain 1:                0.075 seconds (Sampling)
+#> Chain 1:                0.293 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'bernoulli' NOW (CHAIN 2).
@@ -247,9 +247,9 @@ all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr))
 #> Chain 2: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 2: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 0.222 seconds (Warm-up)
-#> Chain 2:                0.083 seconds (Sampling)
-#> Chain 2:                0.305 seconds (Total)
+#> Chain 2:  Elapsed Time: 0.22 seconds (Warm-up)
+#> Chain 2:                0.082 seconds (Sampling)
+#> Chain 2:                0.302 seconds (Total)
 #> Chain 2: 
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See

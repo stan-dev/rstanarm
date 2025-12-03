@@ -809,8 +809,8 @@ mod1 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id),
 
     SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
     Chain 1: 
-    Chain 1: Gradient evaluation took 0.000224 seconds
-    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.24 seconds.
+    Chain 1: Gradient evaluation took 0.000222 seconds
+    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.22 seconds.
     Chain 1: Adjust your expectations accordingly!
     Chain 1: 
     Chain 1: 
@@ -818,9 +818,9 @@ mod1 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id),
     Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
     Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
     Chain 1: 
-    Chain 1:  Elapsed Time: 19.275 seconds (Warm-up)
-    Chain 1:                19.921 seconds (Sampling)
-    Chain 1:                39.196 seconds (Total)
+    Chain 1:  Elapsed Time: 19.218 seconds (Warm-up)
+    Chain 1:                19.832 seconds (Sampling)
+    Chain 1:                39.05 seconds (Total)
     Chain 1: 
 
 The argument `refresh = 2000` was specified so that Stan didn’t provide
@@ -1085,8 +1085,8 @@ mod3 <- stan_jm(
 
     SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
     Chain 1: 
-    Chain 1: Gradient evaluation took 0.000307 seconds
-    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.07 seconds.
+    Chain 1: Gradient evaluation took 0.00032 seconds
+    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.2 seconds.
     Chain 1: Adjust your expectations accordingly!
     Chain 1: 
     Chain 1: 
@@ -1094,9 +1094,9 @@ mod3 <- stan_jm(
     Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
     Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
     Chain 1: 
-    Chain 1:  Elapsed Time: 34.809 seconds (Warm-up)
-    Chain 1:                35.726 seconds (Sampling)
-    Chain 1:                70.535 seconds (Total)
+    Chain 1:  Elapsed Time: 35.291 seconds (Warm-up)
+    Chain 1:                36.241 seconds (Sampling)
+    Chain 1:                71.532 seconds (Total)
     Chain 1: 
 
 We can now examine the output from the fitted model, for example  
