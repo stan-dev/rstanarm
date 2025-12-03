@@ -240,9 +240,9 @@ pp_check(fit, plotfun = "stat_grouped", stat = "median",
 #> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.761 seconds (Warm-up)
-#> Chain 1:                0.251 seconds (Sampling)
-#> Chain 1:                1.012 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.774 seconds (Warm-up)
+#> Chain 1:                0.256 seconds (Sampling)
+#> Chain 1:                1.03 seconds (Total)
 #> Chain 1: 
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See

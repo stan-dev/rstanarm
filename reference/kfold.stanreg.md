@@ -168,9 +168,9 @@ print(kfold4)
 #> Based on 3-fold cross-validation.
 #> 
 #>            Estimate  SE
-#> elpd_kfold    -86.4 4.2
-#> p_kfold         7.2 1.7
-#> kfoldic       172.8 8.5
+#> elpd_kfold    -86.3 4.3
+#> p_kfold         7.1 1.7
+#> kfoldic       172.6 8.5
 # Example code demonstrating the different ways to specify the number 
 # of cores and how the cores are used
 # 

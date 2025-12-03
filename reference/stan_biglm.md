@@ -240,9 +240,9 @@ cbind(lm = b, stan_lm = rstan::get_posterior_mean(post)[13:15,]) # shrunk
 #> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.512 seconds (Warm-up)
-#> Chain 1:                0.259 seconds (Sampling)
-#> Chain 1:                0.771 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.521 seconds (Warm-up)
+#> Chain 1:                0.264 seconds (Sampling)
+#> Chain 1:                0.785 seconds (Total)
 #> Chain 1: 
 #> Warning: There were 1 divergent transitions after warmup. See
 #> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
