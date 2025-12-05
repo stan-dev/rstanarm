@@ -189,7 +189,7 @@ generalizations. \emph{Journal of the American Statistical Association}
 
 Gelman, A. and Hill, J. (2007). \emph{Data Analysis Using
   Regression and Multilevel/Hierarchical Models.} Cambridge University Press,
-  Cambridge, UK. \url{https://stat.columbia.edu/~gelman/arm/}
+  Cambridge, UK. \url{https://sites.stat.columbia.edu/gelman/arm/}
 
 Spiegelhalter, D., Thomas, A., Best, N., & Gilks, W. (1996) BUGS 0.5 
 Examples. MRC Biostatistics Unit, Institute of Public health, Cambridge, UK.

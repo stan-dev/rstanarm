@@ -17,7 +17,7 @@
 
 #' Bayesian regularized linear but big models via Stan
 #' 
-#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{logo.svg}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 #' This is the same model as with \code{\link{stan_lm}} but it utilizes the
 #' output from \code{\link[biglm]{biglm}} in the \pkg{biglm} package in order to
 #' proceed when the data is too large to fit in memory.
@@ -92,4 +92,3 @@ stan_biglm <- function(biglm, xbar, ybar, s_y, ...,
                  prior_PD = prior_PD, algorithm = match.arg(algorithm), 
                  adapt_delta = adapt_delta)
 }
-

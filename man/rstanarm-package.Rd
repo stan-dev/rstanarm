@@ -197,11 +197,11 @@ mixed-Effects models using lme4. \emph{Journal of Statistical Software}.
 
 Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari,
   A., and Rubin, D. B. (2013). \emph{Bayesian Data Analysis.} Chapman & Hall/CRC
-  Press, London, third edition. \url{https://stat.columbia.edu/~gelman/book/}
+  Press, London, third edition. \url{https://sites.stat.columbia.edu/gelman/book/}
 
 Gelman, A. and Hill, J. (2007). \emph{Data Analysis Using
   Regression and Multilevel/Hierarchical Models.} Cambridge University Press,
-  Cambridge, UK. \url{https://stat.columbia.edu/~gelman/arm/}
+  Cambridge, UK. \url{https://sites.stat.columbia.edu/gelman/arm/}
 
 Stan Development Team. \emph{Stan Modeling Language Users Guide and
 Reference Manual.} \url{https://mc-stan.org/users/documentation/}.
@@ -242,7 +242,7 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 
 Authors:
 \itemize{
-  \item Jonah Gabry \email{jsg2201@columbia.edu}
+  \item Jonah Gabry \email{jgabry@gmail.com}
 }
 
 Other contributors:

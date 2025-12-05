@@ -17,7 +17,7 @@
 
 #' Bayesian beta regression models via Stan
 #'
-#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{logo.svg}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 #' Beta regression modeling with optional prior distributions for the 
 #' coefficients, intercept, and auxiliary parameter \code{phi} (if applicable).
 #'

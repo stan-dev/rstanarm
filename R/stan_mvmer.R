@@ -19,7 +19,7 @@
 #' Bayesian multivariate generalized linear models with correlated 
 #' group-specific terms via Stan
 #' 
-#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{logo.svg}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 #' Bayesian inference for multivariate GLMs with group-specific coefficients 
 #' that are assumed to be correlated across the GLM submodels.
 #' 
@@ -209,4 +209,3 @@ stan_mvmer <- function(formula, data, family = gaussian, weights,
   out <- stanmvreg(fit)
   return(out)
 }
-

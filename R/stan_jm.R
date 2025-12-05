@@ -18,7 +18,7 @@
 
 #' Bayesian joint longitudinal and time-to-event models via Stan
 #' 
-#' \if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
+#' \if{html}{\figure{logo.svg}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 #' Fits a shared parameter joint model for longitudinal and time-to-event 
 #' (e.g. survival) data under a Bayesian framework using Stan.
 #' 
@@ -650,4 +650,3 @@ stan_jm <- function(formulaLong, dataLong, formulaEvent, dataEvent, time_var,
   out <- stanmvreg(fit)
   return(out)
 }
-
