@@ -342,8 +342,8 @@ plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 8e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.8 seconds.
+#> Chain 1: Gradient evaluation took 7.8e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.78 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -360,9 +360,9 @@ plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 2.483 seconds (Warm-up)
-#> Chain 1:                1.246 seconds (Sampling)
-#> Chain 1:                3.729 seconds (Total)
+#> Chain 1:  Elapsed Time: 2.876 seconds (Warm-up)
+#> Chain 1:                1.491 seconds (Sampling)
+#> Chain 1:                4.367 seconds (Total)
 #> Chain 1: 
 #> Warning: There were 6 divergent transitions after warmup. See
 #> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup

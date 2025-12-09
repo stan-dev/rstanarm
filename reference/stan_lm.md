@@ -246,8 +246,8 @@ print(fit_aov)
 #> 
 #> SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 1.8e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.18 seconds.
+#> Chain 1: Gradient evaluation took 1.6e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -265,14 +265,14 @@ print(fit_aov)
 #> Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 1: 
 #> Chain 1:  Elapsed Time: 0.093 seconds (Warm-up)
-#> Chain 1:                0.102 seconds (Sampling)
-#> Chain 1:                0.195 seconds (Total)
+#> Chain 1:                0.074 seconds (Sampling)
+#> Chain 1:                0.167 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'lm' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 3.6e-05 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.36 seconds.
+#> Chain 2: Gradient evaluation took 7e-06 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -289,9 +289,9 @@ print(fit_aov)
 #> Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 0.144 seconds (Warm-up)
-#> Chain 2:                0.07 seconds (Sampling)
-#> Chain 2:                0.214 seconds (Total)
+#> Chain 2:  Elapsed Time: 0.106 seconds (Warm-up)
+#> Chain 2:                0.071 seconds (Sampling)
+#> Chain 2:                0.177 seconds (Total)
 #> Chain 2: 
 #> 
 #> SAMPLING FOR MODEL 'lm' NOW (CHAIN 3).
@@ -314,15 +314,15 @@ print(fit_aov)
 #> Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 3: 
-#> Chain 3:  Elapsed Time: 0.098 seconds (Warm-up)
-#> Chain 3:                0.099 seconds (Sampling)
-#> Chain 3:                0.197 seconds (Total)
+#> Chain 3:  Elapsed Time: 0.099 seconds (Warm-up)
+#> Chain 3:                0.101 seconds (Sampling)
+#> Chain 3:                0.2 seconds (Total)
 #> Chain 3: 
 #> 
 #> SAMPLING FOR MODEL 'lm' NOW (CHAIN 4).
 #> Chain 4: 
-#> Chain 4: Gradient evaluation took 9e-06 seconds
-#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.09 seconds.
+#> Chain 4: Gradient evaluation took 7e-06 seconds
+#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
 #> Chain 4: Adjust your expectations accordingly!
 #> Chain 4: 
 #> Chain 4: 
@@ -339,9 +339,9 @@ print(fit_aov)
 #> Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 4: 
-#> Chain 4:  Elapsed Time: 0.105 seconds (Warm-up)
-#> Chain 4:                0.101 seconds (Sampling)
-#> Chain 4:                0.206 seconds (Total)
+#> Chain 4:  Elapsed Time: 0.106 seconds (Warm-up)
+#> Chain 4:                0.102 seconds (Sampling)
+#> Chain 4:                0.208 seconds (Total)
 #> Chain 4: 
 #> stan_aov
 #>  family:       gaussian [identity]
