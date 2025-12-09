@@ -250,7 +250,9 @@ clouds_cf$seeding[] <- "yes"
 y1_rep <- posterior_predict(post, newdata = clouds_cf)
 clouds_cf$seeding[] <- "no"
 y0_rep <- posterior_predict(post, newdata = clouds_cf)
-qplot(x = c(y1_rep - y0_rep), geom = "histogram", xlab = "Estimated ATE")
+ggplot(data.frame(x = c(y1_rep - y0_rep))) + 
+  geom_histogram(aes(x)) + 
+  labs(x = "Estimated ATE", y = NULL)
 ```
 
 As can be seen, the treatment effect is not estimated precisely and is as
@@ -283,17 +285,18 @@ __loo__ package.
 
 ```{r lm-clouds-loo, warning=TRUE}
 (loo_post <- loo(post))
-loo_compare(loo_post, loo(simple))
+(loo_simple <- loo(simple))
+loo_compare(loo_post, loo_simple)
 ```
 
 The results indicate that the first approach is expected to produce better
 out-of-sample predictions but the Warning messages are at least as important. 
-Many of the estimated shape parameters for the Generalized Pareto distribution 
-are above $0.5$ in the model with Cauchy priors, which indicates that these 
+Some of the estimated shape parameters for the Generalized Pareto distribution 
+are above $0.7$ in the model with Cauchy priors, which indicates that these 
 estimates are only going to converge slowly to the true out-of-sample deviance 
 measures. Thus, with only $24$ observations, they should not be considered 
 reliable. The more complicated prior derived above is stronger --- as 
-evidenced by the fact that the effective number of parameters is about half
+evidenced by the fact that the effective number of parameters `p_loo` is about half
 of that in the simpler approach and $12$ for the maximum likelihood estimator 
 --- and only has a few of the $24$ Pareto shape estimates in the "danger zone". 
 We might want to reexamine these observations
