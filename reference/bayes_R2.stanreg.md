@@ -86,11 +86,11 @@ median(bayes_R2(example_model, re.form = NA)) # exclude group-level
 #> 
 #> Error terms:
 #>  Groups Name        Std.Dev.
-#>  herd   (Intercept) 0.79    
+#>  herd   (Intercept) 0.76    
 #> Num. levels: herd 15 
 #> 
 #> ------
 #> * For help interpreting the printed output see ?print.stanreg
 #> * For info on the priors used see ?prior_summary.stanreg
-#> [1] 0.6229643
+#> [1] 0.6206511
 ```

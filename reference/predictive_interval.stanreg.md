@@ -94,8 +94,8 @@ all.equal(
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 2e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#> Chain 1: Gradient evaluation took 2.2e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -119,8 +119,8 @@ all.equal(
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 1.2e-05 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
+#> Chain 2: Gradient evaluation took 8e-06 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.08 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -144,8 +144,8 @@ all.equal(
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #> Chain 3: 
-#> Chain 3: Gradient evaluation took 1.1e-05 seconds
-#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.11 seconds.
+#> Chain 3: Gradient evaluation took 8e-06 seconds
+#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.08 seconds.
 #> Chain 3: Adjust your expectations accordingly!
 #> Chain 3: 
 #> Chain 3: 
@@ -169,8 +169,8 @@ all.equal(
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #> Chain 4: 
-#> Chain 4: Gradient evaluation took 1e-05 seconds
-#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.1 seconds.
+#> Chain 4: Gradient evaluation took 8e-06 seconds
+#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.08 seconds.
 #> Chain 4: Adjust your expectations accordingly!
 #> Chain 4: 
 #> Chain 4: 
@@ -187,9 +187,9 @@ all.equal(
 #> Chain 4: Iteration: 270 / 300 [ 90%]  (Sampling)
 #> Chain 4: Iteration: 300 / 300 [100%]  (Sampling)
 #> Chain 4: 
-#> Chain 4:  Elapsed Time: 0.007 seconds (Warm-up)
+#> Chain 4:  Elapsed Time: 0.006 seconds (Warm-up)
 #> Chain 4:                0.004 seconds (Sampling)
-#> Chain 4:                0.011 seconds (Total)
+#> Chain 4:                0.01 seconds (Total)
 #> Chain 4: 
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See

@@ -134,5 +134,5 @@ posterior_interval(example_model, regex_pars = "herd")
 posterior_interval(example_model, pars = "period2", prob = 0.5)
 }
 #>               25%        75%
-#> period2 -1.185064 -0.7729716
+#> period2 -1.190268 -0.7887574
 ```

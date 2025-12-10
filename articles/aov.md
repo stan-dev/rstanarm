@@ -137,22 +137,22 @@ post1
      predictors:   4
     ------
                          Median MAD_SD
-    (Intercept)           98.7    4.4 
-    sourceCereal         -12.6    6.2 
-    typeLow              -18.8    6.3 
-    sourceCereal:typeLow  17.1    8.7 
+    (Intercept)           98.7    4.6 
+    sourceCereal         -12.8    6.2 
+    typeLow              -18.6    6.4 
+    sourceCereal:typeLow  16.8    8.8 
 
     Auxiliary parameter(s):
                   Median MAD_SD
     R2             0.2    0.1  
     log-fit_ratio  0.0    0.1  
-    sigma         14.7    1.7  
+    sigma         14.7    1.6  
 
     ANOVA-like table:
                         Median MAD_SD
-    Mean Sq source      550.4  416.3 
-    Mean Sq type        977.1  588.6 
-    Mean Sq source:type 728.3  693.4 
+    Mean Sq source      546.9  421.7 
+    Mean Sq type        961.6  583.8 
+    Mean Sq source:type 707.1  701.6 
 
     ------
     * For help interpreting the printed output see ?print.stanreg

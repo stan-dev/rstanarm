@@ -115,15 +115,15 @@ print(nrow(draws)) # 1000 draws are taken
 #> 
 #> Error terms:
 #>  Groups Name        Std.Dev.
-#>  herd   (Intercept) 0.79    
+#>  herd   (Intercept) 0.76    
 #> Num. levels: herd 15 
 #> 
 #> ------
 #> * For help interpreting the printed output see ?print.stanreg
 #> * For info on the priors used see ?prior_summary.stanreg
 #> [1] 1000   21
-#> [1] -1.496011
-#> [1] -1.496011
+#> [1] -1.515377
+#> [1] -1.515377
 #> [1] 500   2  21
 #> [1] "(Intercept)" "wt"          "sigma"      
 #> [1] 1000

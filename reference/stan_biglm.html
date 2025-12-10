@@ -64,7 +64,7 @@ proceed when the data is too large to fit in memory."><meta property="og:image" 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Bayesian regularized linear but big models via Stan</h1>
-      <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/New-pkgdown-theme/R/stan_biglm.R" class="external-link"><code>R/stan_biglm.R</code></a>, <a href="https://github.com/stan-dev/rstanarm/blob/New-pkgdown-theme/R/stan_biglm.fit.R" class="external-link"><code>R/stan_biglm.fit.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/R/stan_biglm.R" class="external-link"><code>R/stan_biglm.R</code></a>, <a href="https://github.com/stan-dev/rstanarm/blob/master/R/stan_biglm.fit.R" class="external-link"><code>R/stan_biglm.fit.R</code></a></small>
       <div class="d-none name"><code>stan_biglm.Rd</code></div>
     </div>
 
@@ -284,8 +284,8 @@ apples when <code>algorithm</code> is <code>"optimizing"</code> but defaults to
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Gradient evaluation took 1.5e-05 seconds</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.15 seconds.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Gradient evaluation took 1.6e-05 seconds</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Adjust your expectations accordingly!</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
@@ -302,10 +302,14 @@ apples when <code>algorithm</code> is <code>"optimizing"</code> but defaults to
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:  Elapsed Time: 0.402 seconds (Warm-up)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:                0.213 seconds (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:                0.615 seconds (Total)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:  Elapsed Time: 0.519 seconds (Warm-up)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:                0.263 seconds (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:                0.782 seconds (Total)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 1 divergent transitions after warmup. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
@@ -313,9 +317,9 @@ apples when <code>algorithm</code> is <code>"optimizing"</code> but defaults to
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             lm   stan_lm</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> wt   -3.916504 -3.704770</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> qsec  1.225886  1.188352</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> am    2.935837  2.944928</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> wt   -3.916504 -3.694667</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> qsec  1.225886  1.190556</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> am    2.935837  2.984365</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

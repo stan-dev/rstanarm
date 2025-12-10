@@ -1,5 +1,66 @@
 # Changelog
 
+## rstanarm v2.32.2
+
+CRAN release: 2025-09-30
+
+- Update recommendations for responding to convergence warnings by
+  [@jgabry](https://github.com/jgabry) in
+  <https://github.com/stan-dev/rstanarm/pull/617>
+- Replace Stan R Packages repo with R-Universe by
+  [@andrjohns](https://github.com/andrjohns) in
+  <https://github.com/stan-dev/rstanarm/pull/624>
+- Fix mistaken ‘)’ alignment in output test by
+  [@MichaelChirico](https://github.com/MichaelChirico) in
+  <https://github.com/stan-dev/rstanarm/pull/636>
+- Default to not computing r_eff for loo by
+  [@jgabry](https://github.com/jgabry) in
+  <https://github.com/stan-dev/rstanarm/pull/638>
+- migrate formula machinery from lme4 to reformulas by
+  [@bbolker](https://github.com/bbolker) in
+  <https://github.com/stan-dev/rstanarm/pull/639>
+- Fix documentations to address CRAN NOTEs by
+  [@yoshidk6](https://github.com/yoshidk6) in
+  <https://github.com/stan-dev/rstanarm/pull/641>
+- Use vectorized abs() by [@HPCurtis](https://github.com/HPCurtis) in
+  <https://github.com/stan-dev/rstanarm/pull/632>
+- Use rstantools - Fix Build/Export Errors by
+  [@andrjohns](https://github.com/andrjohns) in
+  <https://github.com/stan-dev/rstanarm/pull/625>
+
+## rstanarm v2.32.1
+
+CRAN release: 2024-01-18
+
+- Avoid error for 1-D unit_vector by
+  [@jgabry](https://github.com/jgabry) in
+  <https://github.com/stan-dev/rstanarm/pull/606>
+- Update .set_nreps by [@avehtari](https://github.com/avehtari) in
+  <https://github.com/stan-dev/rstanarm/pull/612>
+- Use LTO during compilation
+
+## rstanarm 2.26.1
+
+CRAN release: 2023-09-13
+
+This release updates rstanarm to use the latest syntax supported by
+rstan.
+
+- wells dataset wrong variable name by
+  [@storopoli](https://github.com/storopoli) in
+  <https://github.com/stan-dev/rstanarm/pull/552>
+- add logo to be displayed in r-universe by
+  [@avehtari](https://github.com/avehtari) in
+  <https://github.com/stan-dev/rstanarm/pull/569>
+- Fix CRAN NOTEs and failures by
+  [@andrjohns](https://github.com/andrjohns) in
+  <https://github.com/stan-dev/rstanarm/pull/587>
+- Implement posterior::as_draws() for rstanarm objects by
+  [@jgabry](https://github.com/jgabry) in
+  <https://github.com/stan-dev/rstanarm/pull/596>
+- Array syntax by [@bgoodri](https://github.com/bgoodri) in
+  <https://github.com/stan-dev/rstanarm/pull/597>
+
 ## rstanarm 2.21.3
 
 CRAN release: 2022-04-08

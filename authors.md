@@ -48,7 +48,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/stan-dev/rstanarm/blob/New-pkgdown-theme/inst/CITATION)
+[`inst/CITATION`](https://github.com/stan-dev/rstanarm/blob/master/inst/CITATION)
 
 Goodrich B, Gabry J, Ali I & Brilleman S. (2025). rstanarm: Bayesian
 applied regression modeling via Stan. R package version 2.32.2

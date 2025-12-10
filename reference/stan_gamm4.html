@@ -60,7 +60,7 @@ Bayesian inference for GAMMs with flexible priors."><meta property="og:image" co
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Bayesian generalized linear additive models with optional group-specific terms via Stan</h1>
-      <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/New-pkgdown-theme/R/stan_gamm4.R" class="external-link"><code>R/stan_gamm4.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/R/stan_gamm4.R" class="external-link"><code>R/stan_gamm4.R</code></a></small>
       <div class="d-none name"><code>stan_gamm4.Rd</code></div>
     </div>
 
@@ -377,8 +377,8 @@ Software</em>. <strong>14</strong>(14), 1–22.
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Gradient evaluation took 8.7e-05 seconds</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.87 seconds.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Gradient evaluation took 7.9e-05 seconds</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.79 seconds.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Adjust your expectations accordingly!</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
@@ -395,11 +395,15 @@ Software</em>. <strong>14</strong>(14), 1–22.
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:  Elapsed Time: 2.436 seconds (Warm-up)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:                2.548 seconds (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:                4.984 seconds (Total)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:  Elapsed Time: 2.46 seconds (Warm-up)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:                1.239 seconds (Sampling)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:                3.699 seconds (Total)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.09, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 6 divergent transitions after warmup. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.05, indicating chains have not mixed.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
@@ -414,26 +418,26 @@ Software</em>. <strong>14</strong>(14), 1–22.
 <span class="r-out co"><span class="r-pr">#&gt;</span>  observations: 400</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             Median MAD_SD</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)   5.2    0.3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> x1            5.5    0.4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).1      -0.3    2.4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).2      -0.2    2.2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)   5.2    0.2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1            5.6    0.4 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).1      -0.2    1.6 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).2      -0.1    2.1 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).3       0.1    2.0 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).4       0.2    1.8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).5      -0.3    1.8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).6      -2.8    1.2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).7       0.1    0.7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).8      -1.8    1.7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).9       0.1    1.0 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).1     -27.1   12.6 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).2      17.4    7.5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).3      21.3    9.8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).4      16.4    5.3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).5     -29.3    5.0 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).6      13.6    2.5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).7      13.1    2.4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).8     -12.2    4.7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).9      12.6   13.9 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).4       0.2    1.6 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).5      -0.1    1.7 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).6      -2.6    1.4 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).7       0.2    0.8 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).8      -1.8    1.6 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x0).9       0.0    0.8 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).1     -31.8   13.3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).2     -21.1    9.9 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).3      23.3    8.1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).4      18.1    5.2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).5     -29.0    4.3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).6      13.1    2.1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).7      12.4    2.1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).8     -11.0    4.9 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> s(x2).9       6.1    9.0 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Auxiliary parameter(s):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       Median MAD_SD</span>
@@ -441,15 +445,15 @@ Software</em>. <strong>14</strong>(14), 1–22.
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Smoothing terms:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                   Median MAD_SD</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> smooth_sd[s(x0)1]  2.1    0.7  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> smooth_sd[s(x0)2]  1.3    1.2  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> smooth_sd[s(x2)1] 15.9    3.0  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> smooth_sd[s(x2)2]  6.3    5.3  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> smooth_sd[s(x0)1]  2.1    0.8  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> smooth_sd[s(x0)2]  1.2    1.2  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> smooth_sd[s(x2)1] 16.7    3.1  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> smooth_sd[s(x2)2]  5.2    4.9  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Error terms:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Groups   Name        Std.Dev.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  fac      (Intercept) 0.77    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Residual             2.14    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  fac      (Intercept) 0.75    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Residual             2.15    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Num. levels: fac 20 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ------</span>

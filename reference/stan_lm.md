@@ -246,8 +246,8 @@ print(fit_aov)
 #> 
 #> SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 1.6e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
+#> Chain 1: Gradient evaluation took 1.7e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -264,15 +264,15 @@ print(fit_aov)
 #> Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.081 seconds (Warm-up)
-#> Chain 1:                0.066 seconds (Sampling)
-#> Chain 1:                0.147 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.102 seconds (Warm-up)
+#> Chain 1:                0.08 seconds (Sampling)
+#> Chain 1:                0.182 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'lm' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 8e-06 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.08 seconds.
+#> Chain 2: Gradient evaluation took 7e-06 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -289,15 +289,15 @@ print(fit_aov)
 #> Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 0.094 seconds (Warm-up)
-#> Chain 2:                0.063 seconds (Sampling)
-#> Chain 2:                0.157 seconds (Total)
+#> Chain 2:  Elapsed Time: 0.115 seconds (Warm-up)
+#> Chain 2:                0.077 seconds (Sampling)
+#> Chain 2:                0.192 seconds (Total)
 #> Chain 2: 
 #> 
 #> SAMPLING FOR MODEL 'lm' NOW (CHAIN 3).
 #> Chain 3: 
-#> Chain 3: Gradient evaluation took 8e-06 seconds
-#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.08 seconds.
+#> Chain 3: Gradient evaluation took 7e-06 seconds
+#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
 #> Chain 3: Adjust your expectations accordingly!
 #> Chain 3: 
 #> Chain 3: 
@@ -314,15 +314,15 @@ print(fit_aov)
 #> Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 3: 
-#> Chain 3:  Elapsed Time: 0.087 seconds (Warm-up)
-#> Chain 3:                0.088 seconds (Sampling)
-#> Chain 3:                0.175 seconds (Total)
+#> Chain 3:  Elapsed Time: 0.107 seconds (Warm-up)
+#> Chain 3:                0.108 seconds (Sampling)
+#> Chain 3:                0.215 seconds (Total)
 #> Chain 3: 
 #> 
 #> SAMPLING FOR MODEL 'lm' NOW (CHAIN 4).
 #> Chain 4: 
-#> Chain 4: Gradient evaluation took 8e-06 seconds
-#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.08 seconds.
+#> Chain 4: Gradient evaluation took 7e-06 seconds
+#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.07 seconds.
 #> Chain 4: Adjust your expectations accordingly!
 #> Chain 4: 
 #> Chain 4: 
@@ -339,9 +339,9 @@ print(fit_aov)
 #> Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 4: 
-#> Chain 4:  Elapsed Time: 0.093 seconds (Warm-up)
-#> Chain 4:                0.09 seconds (Sampling)
-#> Chain 4:                0.183 seconds (Total)
+#> Chain 4:  Elapsed Time: 0.115 seconds (Warm-up)
+#> Chain 4:                0.11 seconds (Sampling)
+#> Chain 4:                0.225 seconds (Total)
 #> Chain 4: 
 #> stan_aov
 #>  family:       gaussian [identity]
@@ -389,11 +389,15 @@ if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 plot(fit, "hist", pars = c("wt", "am", "qsec", "sigma"), 
      transformations = list(sigma = "log"))
 }
+#> Warning: The largest R-hat is 1.09, indicating chains have not mixed.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#r-hat
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#bulk-ess
 #> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#tail-ess
+#> Warning: Markov chains did not converge! Do not analyze results!
 #> `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
 ```
