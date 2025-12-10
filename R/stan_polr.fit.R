@@ -191,4 +191,3 @@ summarize_polr_prior <- function(prior, prior_counts, shape=NULL, rate=NULL) {
   
   return(prior_list)
 }
-

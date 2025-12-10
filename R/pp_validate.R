@@ -92,7 +92,7 @@
 #' }
 #' }
 #' @importFrom ggplot2 rel geom_point geom_segment scale_x_continuous element_line
-#'
+#' @keywords internal
 pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   # based on Samantha Cook's BayesValidate::validate
   quant <- function(draws) {

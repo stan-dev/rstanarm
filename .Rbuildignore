@@ -22,3 +22,4 @@ dev-notes/*
 revdep/*
 
 ^\.github$
+^_pkgdown\.yml$
