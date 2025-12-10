@@ -809,8 +809,8 @@ mod1 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id),
 
     SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
     Chain 1: 
-    Chain 1: Gradient evaluation took 0.000206 seconds
-    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.06 seconds.
+    Chain 1: Gradient evaluation took 0.000196 seconds
+    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.96 seconds.
     Chain 1: Adjust your expectations accordingly!
     Chain 1: 
     Chain 1: 
@@ -818,9 +818,9 @@ mod1 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id),
     Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
     Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
     Chain 1: 
-    Chain 1:  Elapsed Time: 19.12 seconds (Warm-up)
-    Chain 1:                19.934 seconds (Sampling)
-    Chain 1:                39.054 seconds (Total)
+    Chain 1:  Elapsed Time: 14.4 seconds (Warm-up)
+    Chain 1:                14.92 seconds (Sampling)
+    Chain 1:                29.32 seconds (Total)
     Chain 1: 
 
 The argument `refresh = 2000` was specified so that Stan didn’t provide
@@ -915,7 +915,7 @@ summary(mod1, probs = c(.025,.975))
      num subjects:    40
      num events:      29 (72.5%)
      groups:          id (40)
-     runtime:         0.6 mins
+     runtime:         0.4 mins
 
     Estimates:
                                                     mean     sd       2.5%  
@@ -1085,8 +1085,8 @@ mod3 <- stan_jm(
 
     SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
     Chain 1: 
-    Chain 1: Gradient evaluation took 0.000306 seconds
-    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.06 seconds.
+    Chain 1: Gradient evaluation took 0.000294 seconds
+    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.94 seconds.
     Chain 1: Adjust your expectations accordingly!
     Chain 1: 
     Chain 1: 
@@ -1094,9 +1094,9 @@ mod3 <- stan_jm(
     Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
     Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
     Chain 1: 
-    Chain 1:  Elapsed Time: 34.535 seconds (Warm-up)
-    Chain 1:                35.691 seconds (Sampling)
-    Chain 1:                70.226 seconds (Total)
+    Chain 1:  Elapsed Time: 28.621 seconds (Warm-up)
+    Chain 1:                27.752 seconds (Sampling)
+    Chain 1:                56.373 seconds (Total)
     Chain 1: 
 
 We can now examine the output from the fitted model, for example  
@@ -1117,47 +1117,47 @@ print(mod3)
 
     Longitudinal submodel 1: logBili
                 Median MAD_SD
-    (Intercept)  0.263  0.508
-    sexf         0.475  0.487
-    trt         -0.063  0.374
-    year         0.222  0.043
-    sigma        0.354  0.017
+    (Intercept)  0.166  0.576
+    sexf         0.585  0.561
+    trt         -0.050  0.370
+    year         0.218  0.043
+    sigma        0.355  0.017
 
     Longitudinal submodel 2: albumin
                 Median MAD_SD
-    (Intercept)  3.471  0.224
-    sexf         0.066  0.240
-    trt          0.000  0.168
-    year        -0.156  0.023
-    sigma        0.291  0.013
+    (Intercept)  3.497  0.267
+    sexf         0.027  0.237
+    trt         -0.008  0.183
+    year        -0.154  0.023
+    sigma        0.291  0.014
 
     Event submodel:
                     Median  MAD_SD  exp(Median)
-    (Intercept)       6.854   2.660 947.312    
-    sexf             -0.101   0.652   0.904    
-    trt              -0.501   0.500   0.606    
-    Long1|etavalue    0.805   0.312   2.236    
-    Long2|etavalue   -3.075   0.834   0.046    
-    b-splines-coef1  -0.973   1.138      NA    
-    b-splines-coef2   0.546   0.849      NA    
-    b-splines-coef3  -2.571   1.352      NA    
-    b-splines-coef4  -0.645   1.807      NA    
-    b-splines-coef5  -1.276   1.887      NA    
-    b-splines-coef6  -2.704   1.864      NA    
+    (Intercept)       6.838   2.753 932.668    
+    sexf             -0.043   0.691   0.958    
+    trt              -0.494   0.450   0.610    
+    Long1|etavalue    0.801   0.299   2.228    
+    Long2|etavalue   -3.081   0.881   0.046    
+    b-splines-coef1  -1.064   1.126      NA    
+    b-splines-coef2   0.502   0.896      NA    
+    b-splines-coef3  -2.688   1.388      NA    
+    b-splines-coef4  -0.481   1.808      NA    
+    b-splines-coef5  -1.288   1.808      NA    
+    b-splines-coef6  -2.691   1.942      NA    
 
     Group-level error terms:
      Groups Name              Std.Dev. Corr             
-     id     Long1|(Intercept) 1.24123                   
-            Long1|year        0.18822   0.49            
-            Long2|(Intercept) 0.51395  -0.65 -0.49      
-            Long2|year        0.09606  -0.57 -0.81  0.45
+     id     Long1|(Intercept) 1.25984                   
+            Long1|year        0.18631   0.48            
+            Long2|(Intercept) 0.52341  -0.65 -0.49      
+            Long2|year        0.09583  -0.56 -0.80  0.44
     Num. levels: id 40 
 
     Sample avg. posterior predictive distribution 
     of longitudinal outcomes:
                    Median MAD_SD
-    Long1|mean_PPD 0.588  0.030 
-    Long2|mean_PPD 3.343  0.025 
+    Long1|mean_PPD 0.588  0.029 
+    Long2|mean_PPD 3.343  0.024 
 
     ------
     For info on the priors used see help('prior_summary.stanreg').
@@ -1186,17 +1186,17 @@ summary(mod3, pars = "assoc")
      num subjects:    40
      num events:      29 (72.5%)
      groups:          id (40)
-     runtime:         1.2 mins
+     runtime:         1 mins
 
     Estimates:
                            mean   sd     2.5%   25%    50%    75%    97.5%
-    Assoc|Long1|etavalue  0.806  0.301  0.236  0.593  0.805  1.014  1.397 
-    Assoc|Long2|etavalue -3.142  0.872 -4.946 -3.657 -3.075 -2.532 -1.603 
+    Assoc|Long1|etavalue  0.806  0.301  0.221  0.602  0.801  1.010  1.416 
+    Assoc|Long2|etavalue -3.157  0.939 -5.258 -3.737 -3.081 -2.515 -1.546 
 
     Diagnostics:
                          mcse  Rhat  n_eff
-    Assoc|Long1|etavalue 0.009 0.999 1189 
-    Assoc|Long2|etavalue 0.032 1.000  763 
+    Assoc|Long1|etavalue 0.008 1.001 1514 
+    Assoc|Long2|etavalue 0.033 1.001  815 
 
     For each parameter, mcse is Monte Carlo standard error, n_eff is a crude measure of effective sample size, and Rhat is the potential scale reduction factor on split chains (at convergence Rhat=1).
 
@@ -1495,16 +1495,16 @@ c(ranef(mod3)[["Long1"]][["id"]][8,],
 ```
 
     $`(Intercept)`
-    [1] -1.636025
+    [1] -1.688937
 
     $year
-    [1] 0.1106856
+    [1] 0.1197032
 
     $`(Intercept)`
-    [1] 0.4636367
+    [1] 0.4621096
 
     $year
-    [1] -0.04915748
+    [1] -0.05095125
 
 and here is the mean of the draws for the individual-specific parameters
 for individual `8` under the dynamic predictions approach:
@@ -1514,9 +1514,9 @@ colMeans(attr(p6, "b_new"))
 ```
 
     b[Long1|(Intercept) id:new_patient]        b[Long1|year id:new_patient] 
-                            -1.65217893                          0.10504485 
+                            -1.69392611                          0.11030577 
     b[Long2|(Intercept) id:new_patient]        b[Long2|year id:new_patient] 
-                             0.45330164                         -0.03059108 
+                             0.46042200                         -0.04324049 
 
 #### Predicted population-level longitudinal trajectory
 
@@ -1596,7 +1596,7 @@ fixef(mod3)$Long1
 ```
 
     (Intercept)        sexf         trt        year 
-     0.26316891  0.47545756 -0.06287211  0.22199841 
+     0.16627636  0.58536144 -0.04983978  0.21776053 
 
 and here are the standard deviations for the individual-level random
 effects:
@@ -1606,10 +1606,10 @@ VarCorr(mod3)
 ```
 
      Groups Name              Std.Dev. Corr                
-     id     Long1|(Intercept) 1.241233                     
-            Long1|year        0.188221  0.490              
-            Long2|(Intercept) 0.513955 -0.652 -0.494       
-            Long2|year        0.096057 -0.567 -0.810  0.454
+     id     Long1|(Intercept) 1.259840                     
+            Long1|year        0.186312  0.479              
+            Long2|(Intercept) 0.523409 -0.655 -0.489       
+            Long2|year        0.095831 -0.559 -0.805  0.444
 
 This shows us that the point estimates for the population-level effects
 of `sex` and `trt` are 0.57 and -0.10, respectively, whereas the
@@ -1645,11 +1645,11 @@ head(p1) # data frame with standardised survival probabilities
 
         year survpred  ci_lb  ci_ub
     1 0.0000   1.0000 1.0000 1.0000
-    2 1.0154   0.8243 0.7659 0.8943
-    3 2.0307   0.7309 0.6606 0.7805
-    4 3.0461   0.6789 0.6133 0.7221
-    5 4.0614   0.6351 0.5746 0.6877
-    6 5.0768   0.5934 0.5386 0.6456
+    2 1.0154   0.8324 0.7721 0.8923
+    3 2.0307   0.7355 0.6726 0.7901
+    4 3.0461   0.6855 0.6248 0.7450
+    5 4.0614   0.6418 0.5838 0.7104
+    6 5.0768   0.5973 0.5446 0.6535
 
 ``` r
 plot(p1) # plot the standardised survival curve

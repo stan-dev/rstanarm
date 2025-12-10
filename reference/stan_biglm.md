@@ -240,14 +240,10 @@ cbind(lm = b, stan_lm = rstan::get_posterior_mean(post)[13:15,]) # shrunk
 #> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.51 seconds (Warm-up)
-#> Chain 1:                0.261 seconds (Sampling)
-#> Chain 1:                0.771 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.402 seconds (Warm-up)
+#> Chain 1:                0.213 seconds (Sampling)
+#> Chain 1:                0.615 seconds (Total)
 #> Chain 1: 
-#> Warning: There were 1 divergent transitions after warmup. See
-#> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
-#> to find out why this is a problem and how to eliminate them.
-#> Warning: Examine the pairs() plot to diagnose sampling problems
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#bulk-ess
@@ -255,7 +251,7 @@ cbind(lm = b, stan_lm = rstan::get_posterior_mean(post)[13:15,]) # shrunk
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#tail-ess
 #>             lm   stan_lm
-#> wt   -3.916504 -3.694667
-#> qsec  1.225886  1.190556
-#> am    2.935837  2.984365
+#> wt   -3.916504 -3.704770
+#> qsec  1.225886  1.188352
+#> am    2.935837  2.944928
 ```

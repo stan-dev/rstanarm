@@ -711,8 +711,8 @@ mv3 <- stan_jm(
 #> 
 #> SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.000161 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.61 seconds.
+#> Chain 1: Gradient evaluation took 0.000197 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.97 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -729,9 +729,9 @@ mv3 <- stan_jm(
 #> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 3.344 seconds (Warm-up)
-#> Chain 1:                2.299 seconds (Sampling)
-#> Chain 1:                5.643 seconds (Total)
+#> Chain 1:  Elapsed Time: 2.475 seconds (Warm-up)
+#> Chain 1:                1.689 seconds (Sampling)
+#> Chain 1:                4.164 seconds (Total)
 #> Chain 1: 
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
@@ -783,8 +783,8 @@ mv3 <- stan_jm(
 #> 
 #> SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.00028 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.8 seconds.
+#> Chain 1: Gradient evaluation took 0.000318 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.18 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -801,9 +801,9 @@ mv3 <- stan_jm(
 #> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 20.66 seconds (Warm-up)
-#> Chain 1:                14.886 seconds (Sampling)
-#> Chain 1:                35.546 seconds (Total)
+#> Chain 1:  Elapsed Time: 15.999 seconds (Warm-up)
+#> Chain 1:                11.427 seconds (Sampling)
+#> Chain 1:                27.426 seconds (Total)
 #> Chain 1: 
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
@@ -857,8 +857,8 @@ mv3 <- stan_jm(
 #> 
 #> SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.000146 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.46 seconds.
+#> Chain 1: Gradient evaluation took 0.00016 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.6 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -875,9 +875,9 @@ mv3 <- stan_jm(
 #> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 2.763 seconds (Warm-up)
-#> Chain 1:                2.188 seconds (Sampling)
-#> Chain 1:                4.951 seconds (Total)
+#> Chain 1:  Elapsed Time: 2.054 seconds (Warm-up)
+#> Chain 1:                1.651 seconds (Sampling)
+#> Chain 1:                3.705 seconds (Total)
 #> Chain 1: 
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
@@ -929,8 +929,8 @@ mv3 <- stan_jm(
 #> 
 #> SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.000185 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.85 seconds.
+#> Chain 1: Gradient evaluation took 0.000174 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.74 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -947,9 +947,9 @@ mv3 <- stan_jm(
 #> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 4.207 seconds (Warm-up)
-#> Chain 1:                2.956 seconds (Sampling)
-#> Chain 1:                7.163 seconds (Total)
+#> Chain 1:  Elapsed Time: 3.098 seconds (Warm-up)
+#> Chain 1:                2.201 seconds (Sampling)
+#> Chain 1:                5.299 seconds (Total)
 #> Chain 1: 
 #> Warning: The largest R-hat is 1.06, indicating chains have not mixed.
 #> Running the chains for more iterations may help. See
@@ -1008,8 +1008,8 @@ mv3 <- stan_jm(
 #> Chain 1:   Log probability evaluates to log(0), i.e. negative infinity.
 #> Chain 1:   Stan can't start sampling from this initial value.
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.001499 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 14.99 seconds.
+#> Chain 1: Gradient evaluation took 0.001553 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 15.53 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -1034,9 +1034,9 @@ mv3 <- stan_jm(
 #> Chain 1: Iteration: 90 / 100 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 100 / 100 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 22.934 seconds (Warm-up)
-#> Chain 1:                0.625 seconds (Sampling)
-#> Chain 1:                23.559 seconds (Total)
+#> Chain 1:  Elapsed Time: 18.655 seconds (Warm-up)
+#> Chain 1:                0.509 seconds (Sampling)
+#> Chain 1:                19.164 seconds (Total)
 #> Chain 1: 
 #> Warning: There were 50 divergent transitions after warmup. See
 #> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
@@ -1110,8 +1110,8 @@ mv3 <- stan_jm(
 #> 
 #> SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.000349 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.49 seconds.
+#> Chain 1: Gradient evaluation took 0.000333 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.33 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -1136,9 +1136,9 @@ mv3 <- stan_jm(
 #> Chain 1: Iteration: 90 / 100 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 100 / 100 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 3.458 seconds (Warm-up)
-#> Chain 1:                8.084 seconds (Sampling)
-#> Chain 1:                11.542 seconds (Total)
+#> Chain 1:  Elapsed Time: 2.73 seconds (Warm-up)
+#> Chain 1:                6.373 seconds (Sampling)
+#> Chain 1:                9.103 seconds (Total)
 #> Chain 1: 
 #> Warning: The largest R-hat is 1.14, indicating chains have not mixed.
 #> Running the chains for more iterations may help. See
@@ -1155,8 +1155,8 @@ mv3 <- stan_jm(
 #> 
 #> SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.000265 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.65 seconds.
+#> Chain 1: Gradient evaluation took 0.000257 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.57 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -1173,9 +1173,9 @@ mv3 <- stan_jm(
 #> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 16.732 seconds (Warm-up)
-#> Chain 1:                7.53 seconds (Sampling)
-#> Chain 1:                24.262 seconds (Total)
+#> Chain 1:  Elapsed Time: 12.701 seconds (Warm-up)
+#> Chain 1:                5.811 seconds (Sampling)
+#> Chain 1:                18.512 seconds (Total)
 #> Chain 1: 
 #> Warning: The largest R-hat is 1.06, indicating chains have not mixed.
 #> Running the chains for more iterations may help. See

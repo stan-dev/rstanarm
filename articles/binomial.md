@@ -420,7 +420,7 @@ post
     ------
                 Median MAD_SD
     spontaneous 2.0    0.3   
-    induced     1.4    0.3   
+    induced     1.4    0.4   
 
     Error terms:
      Groups Name        Std.Dev.

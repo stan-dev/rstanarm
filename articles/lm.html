@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<!-- mathjax math --><script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.js" integrity="sha256-qoRlVrS5NAnXSSSiMfFXwK8C9obG11Iybe4h2+bQYR4=" crossorigin="anonymous">
+<!-- mathjax math --><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.js" integrity="sha256-qoRlVrS5NAnXSSSiMfFXwK8C9obG11Iybe4h2+bQYR4=" crossorigin="anonymous">
   </script><script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
@@ -95,7 +95,7 @@
                         <h4 data-toc-skip class="author">Jonah Gabry and
 Ben Goodrich</h4>
             
-            <h4 data-toc-skip class="date">2025-12-09</h4>
+            <h4 data-toc-skip class="date">2025-12-10</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/New-pkgdown-theme/vignettes/lm.Rmd" class="external-link"><code>vignettes/lm.Rmd</code></a></small>
       <div class="d-none name"><code>lm.Rmd</code></div>
@@ -422,7 +422,9 @@ or visualize the average treatment effect (ATE) using
 <span><span class="va">y1_rep</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span><span class="op">(</span><span class="va">post</span>, newdata <span class="op">=</span> <span class="va">clouds_cf</span><span class="op">)</span></span>
 <span><span class="va">clouds_cf</span><span class="op">$</span><span class="va">seeding</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"no"</span></span>
 <span><span class="va">y0_rep</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span><span class="op">(</span><span class="va">post</span>, newdata <span class="op">=</span> <span class="va">clouds_cf</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/qplot.html" class="external-link">qplot</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">y1_rep</span> <span class="op">-</span> <span class="va">y0_rep</span><span class="op">)</span>, geom <span class="op">=</span> <span class="st">"histogram"</span>, xlab <span class="op">=</span> <span class="st">"Estimated ATE"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">y1_rep</span> <span class="op">-</span> <span class="va">y0_rep</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> </span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html" class="external-link">geom_histogram</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> </span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Estimated ATE"</span>, y <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
 <p><img src="lm_files/figure-html/lm-clouds-ate-plot-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
 <p>As can be seen, the treatment effect is not estimated precisely and
 is as almost as likely to be negative as it is to be positive.</p>
@@ -468,25 +470,45 @@ MCSE and ESS estimates assume independent draws (r_eff=1).
 All Pareto k estimates are good (k &lt; 0.7).
 See help('pareto-k-diagnostic') for details.</code></pre>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/loo.stanreg.html">loo_compare</a></span><span class="op">(</span><span class="va">loo_post</span>, <span class="fu"><a href="../reference/loo.stanreg.html">loo</a></span><span class="op">(</span><span class="va">simple</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="op">(</span><span class="va">loo_simple</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/loo.stanreg.html">loo</a></span><span class="op">(</span><span class="va">simple</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code>Warning: Found 3 observation(s) with a pareto_k &gt; 0.7. We recommend calling 'loo' again with argument 'k_threshold = 0.7' in order to calculate the ELPD without the assumption that these observations are negligible. This will refit the model 3 times to compute the ELPDs for the problematic observations directly.</code></pre>
+<pre><code>
+Computed from 4000 by 24 log-likelihood matrix.
+
+         Estimate   SE
+elpd_loo    -61.2  5.2
+p_loo         9.6  3.0
+looic       122.4 10.5
+------
+MCSE of elpd_loo is NA.
+MCSE and ESS estimates assume independent draws (r_eff=1).
+
+Pareto k diagnostic values:
+                         Count Pct.    Min. ESS
+(-Inf, 0.7]   (good)     21    87.5%   266     
+   (0.7, 1]   (bad)       3    12.5%   &lt;NA&gt;    
+   (1, Inf)   (very bad)  0     0.0%   &lt;NA&gt;    
+See help('pareto-k-diagnostic') for details.</code></pre>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/loo.stanreg.html">loo_compare</a></span><span class="op">(</span><span class="va">loo_post</span>, <span class="va">loo_simple</span><span class="op">)</span></span></code></pre></div>
 <pre><code>       elpd_diff se_diff
 post    0.0       0.0   
 simple -0.9       3.0   </code></pre>
 <p>The results indicate that the first approach is expected to produce
 better out-of-sample predictions but the Warning messages are at least
-as important. Many of the estimated shape parameters for the Generalized
-Pareto distribution are above <span class="math inline">\(0.5\)</span>
+as important. Some of the estimated shape parameters for the Generalized
+Pareto distribution are above <span class="math inline">\(0.7\)</span>
 in the model with Cauchy priors, which indicates that these estimates
 are only going to converge slowly to the true out-of-sample deviance
 measures. Thus, with only <span class="math inline">\(24\)</span>
 observations, they should not be considered reliable. The more
 complicated prior derived above is stronger — as evidenced by the fact
-that the effective number of parameters is about half of that in the
-simpler approach and <span class="math inline">\(12\)</span> for the
-maximum likelihood estimator — and only has a few of the <span class="math inline">\(24\)</span> Pareto shape estimates in the “danger
-zone”. We might want to reexamine these observations</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+that the effective number of parameters <code>p_loo</code> is about half
+of that in the simpler approach and <span class="math inline">\(12\)</span> for the maximum likelihood estimator —
+and only has a few of the <span class="math inline">\(24\)</span> Pareto
+shape estimates in the “danger zone”. We might want to reexamine these
+observations</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">loo_post</span>, label_points <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="lm_files/figure-html/lm-clouds-plot-loo-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
 <p>because the posterior is sensitive to them but, overall, the results

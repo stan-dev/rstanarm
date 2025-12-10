@@ -204,8 +204,8 @@ all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr))
 #> 
 #> SAMPLING FOR MODEL 'bernoulli' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 4.5e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.45 seconds.
+#> Chain 1: Gradient evaluation took 5.1e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.51 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -222,15 +222,15 @@ all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr))
 #> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.224 seconds (Warm-up)
-#> Chain 1:                0.079 seconds (Sampling)
-#> Chain 1:                0.303 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.2 seconds (Warm-up)
+#> Chain 1:                0.07 seconds (Sampling)
+#> Chain 1:                0.27 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'bernoulli' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 3.3e-05 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.33 seconds.
+#> Chain 2: Gradient evaluation took 3.4e-05 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.34 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -247,12 +247,9 @@ all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr))
 #> Chain 2: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 2: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 0.222 seconds (Warm-up)
-#> Chain 2:                0.081 seconds (Sampling)
-#> Chain 2:                0.303 seconds (Total)
+#> Chain 2:  Elapsed Time: 0.204 seconds (Warm-up)
+#> Chain 2:                0.074 seconds (Sampling)
+#> Chain 2:                0.278 seconds (Total)
 #> Chain 2: 
-#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
-#> Running the chains for more iterations may help. See
-#> https://mc-stan.org/misc/warnings.html#bulk-ess
 #> [1] TRUE
 ```

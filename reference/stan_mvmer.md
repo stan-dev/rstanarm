@@ -236,37 +236,6 @@ f2 <- stan_mvmer(
 #> 
 #> SAMPLING FOR MODEL 'mvmer' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 9.5e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.95 seconds.
-#> Chain 1: Adjust your expectations accordingly!
-#> Chain 1: 
-#> Chain 1: 
-#> Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
-#> Chain 1: Iteration: 100 / 1000 [ 10%]  (Warmup)
-#> Chain 1: Iteration: 200 / 1000 [ 20%]  (Warmup)
-#> Chain 1: Iteration: 300 / 1000 [ 30%]  (Warmup)
-#> Chain 1: Iteration: 400 / 1000 [ 40%]  (Warmup)
-#> Chain 1: Iteration: 500 / 1000 [ 50%]  (Warmup)
-#> Chain 1: Iteration: 501 / 1000 [ 50%]  (Sampling)
-#> Chain 1: Iteration: 600 / 1000 [ 60%]  (Sampling)
-#> Chain 1: Iteration: 700 / 1000 [ 70%]  (Sampling)
-#> Chain 1: Iteration: 800 / 1000 [ 80%]  (Sampling)
-#> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
-#> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
-#> Chain 1: 
-#> Chain 1:  Elapsed Time: 3.67 seconds (Warm-up)
-#> Chain 1:                2.033 seconds (Sampling)
-#> Chain 1:                5.703 seconds (Total)
-#> Chain 1: 
-#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
-#> Running the chains for more iterations may help. See
-#> https://mc-stan.org/misc/warnings.html#bulk-ess
-#> Fitting a multivariate glmer model.
-#> 
-#> Please note the warmup may be much slower than later iterations!
-#> 
-#> SAMPLING FOR MODEL 'mvmer' NOW (CHAIN 1).
-#> Chain 1: 
 #> Chain 1: Gradient evaluation took 9.8e-05 seconds
 #> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.98 seconds.
 #> Chain 1: Adjust your expectations accordingly!
@@ -285,9 +254,40 @@ f2 <- stan_mvmer(
 #> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 4.029 seconds (Warm-up)
-#> Chain 1:                2.111 seconds (Sampling)
-#> Chain 1:                6.14 seconds (Total)
+#> Chain 1:  Elapsed Time: 2.818 seconds (Warm-up)
+#> Chain 1:                1.566 seconds (Sampling)
+#> Chain 1:                4.384 seconds (Total)
+#> Chain 1: 
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Fitting a multivariate glmer model.
+#> 
+#> Please note the warmup may be much slower than later iterations!
+#> 
+#> SAMPLING FOR MODEL 'mvmer' NOW (CHAIN 1).
+#> Chain 1: 
+#> Chain 1: Gradient evaluation took 0.0001 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1 seconds.
+#> Chain 1: Adjust your expectations accordingly!
+#> Chain 1: 
+#> Chain 1: 
+#> Chain 1: Iteration:   1 / 1000 [  0%]  (Warmup)
+#> Chain 1: Iteration: 100 / 1000 [ 10%]  (Warmup)
+#> Chain 1: Iteration: 200 / 1000 [ 20%]  (Warmup)
+#> Chain 1: Iteration: 300 / 1000 [ 30%]  (Warmup)
+#> Chain 1: Iteration: 400 / 1000 [ 40%]  (Warmup)
+#> Chain 1: Iteration: 500 / 1000 [ 50%]  (Warmup)
+#> Chain 1: Iteration: 501 / 1000 [ 50%]  (Sampling)
+#> Chain 1: Iteration: 600 / 1000 [ 60%]  (Sampling)
+#> Chain 1: Iteration: 700 / 1000 [ 70%]  (Sampling)
+#> Chain 1: Iteration: 800 / 1000 [ 80%]  (Sampling)
+#> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
+#> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
+#> Chain 1: 
+#> Chain 1:  Elapsed Time: 3.254 seconds (Warm-up)
+#> Chain 1:                1.739 seconds (Sampling)
+#> Chain 1:                4.993 seconds (Total)
 #> Chain 1: 
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See

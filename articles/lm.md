@@ -315,7 +315,9 @@ clouds_cf$seeding[] <- "yes"
 y1_rep <- posterior_predict(post, newdata = clouds_cf)
 clouds_cf$seeding[] <- "no"
 y0_rep <- posterior_predict(post, newdata = clouds_cf)
-qplot(x = c(y1_rep - y0_rep), geom = "histogram", xlab = "Estimated ATE")
+ggplot(data.frame(x = c(y1_rep - y0_rep))) + 
+  geom_histogram(aes(x)) + 
+  labs(x = "Estimated ATE", y = NULL)
 ```
 
 ![](lm_files/figure-html/lm-clouds-ate-plot-1.png)
@@ -368,10 +370,31 @@ function in the **loo** package.
     See help('pareto-k-diagnostic') for details.
 
 ``` r
-loo_compare(loo_post, loo(simple))
+(loo_simple <- loo(simple))
 ```
 
     Warning: Found 3 observation(s) with a pareto_k > 0.7. We recommend calling 'loo' again with argument 'k_threshold = 0.7' in order to calculate the ELPD without the assumption that these observations are negligible. This will refit the model 3 times to compute the ELPDs for the problematic observations directly.
+
+    Computed from 4000 by 24 log-likelihood matrix.
+
+             Estimate   SE
+    elpd_loo    -61.2  5.2
+    p_loo         9.6  3.0
+    looic       122.4 10.5
+    ------
+    MCSE of elpd_loo is NA.
+    MCSE and ESS estimates assume independent draws (r_eff=1).
+
+    Pareto k diagnostic values:
+                             Count Pct.    Min. ESS
+    (-Inf, 0.7]   (good)     21    87.5%   266     
+       (0.7, 1]   (bad)       3    12.5%   <NA>    
+       (1, Inf)   (very bad)  0     0.0%   <NA>    
+    See help('pareto-k-diagnostic') for details.
+
+``` r
+loo_compare(loo_post, loo_simple)
+```
 
            elpd_diff se_diff
     post    0.0       0.0   
@@ -379,15 +402,15 @@ loo_compare(loo_post, loo(simple))
 
 The results indicate that the first approach is expected to produce
 better out-of-sample predictions but the Warning messages are at least
-as important. Many of the estimated shape parameters for the Generalized
-Pareto distribution are above \\0.5\\ in the model with Cauchy priors,
+as important. Some of the estimated shape parameters for the Generalized
+Pareto distribution are above \\0.7\\ in the model with Cauchy priors,
 which indicates that these estimates are only going to converge slowly
 to the true out-of-sample deviance measures. Thus, with only \\24\\
 observations, they should not be considered reliable. The more
 complicated prior derived above is stronger — as evidenced by the fact
-that the effective number of parameters is about half of that in the
-simpler approach and \\12\\ for the maximum likelihood estimator — and
-only has a few of the \\24\\ Pareto shape estimates in the “danger
+that the effective number of parameters `p_loo` is about half of that in
+the simpler approach and \\12\\ for the maximum likelihood estimator —
+and only has a few of the \\24\\ Pareto shape estimates in the “danger
 zone”. We might want to reexamine these observations
 
 ``` r

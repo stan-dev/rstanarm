@@ -115,15 +115,15 @@ print(nrow(draws)) # 1000 draws are taken
 #> 
 #> Error terms:
 #>  Groups Name        Std.Dev.
-#>  herd   (Intercept) 0.76    
+#>  herd   (Intercept) 0.79    
 #> Num. levels: herd 15 
 #> 
 #> ------
 #> * For help interpreting the printed output see ?print.stanreg
 #> * For info on the priors used see ?prior_summary.stanreg
 #> [1] 1000   21
-#> [1] -1.515377
-#> [1] -1.515377
+#> [1] -1.496011
+#> [1] -1.496011
 #> [1] 500   2  21
 #> [1] "(Intercept)" "wt"          "sigma"      
 #> [1] 1000
@@ -135,8 +135,8 @@ print(nrow(draws)) # 1000 draws are taken
 #> Chain 1: 
 #> Chain 1: 
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 2e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
+#> Chain 1: Gradient evaluation took 1.9e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.19 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
