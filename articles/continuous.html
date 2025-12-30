@@ -95,7 +95,7 @@
                         <h4 data-toc-skip class="author">Jonah Gabry and
 Ben Goodrich</h4>
             
-            <h4 data-toc-skip class="date">2025-12-10</h4>
+            <h4 data-toc-skip class="date">2025-12-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/continuous.Rmd" class="external-link"><code>vignettes/continuous.Rmd</code></a></small>
       <div class="d-none name"><code>continuous.Rmd</code></div>
@@ -285,7 +285,7 @@ the estimated regression lines on the data.</p>
 <span>  </span>
 <span><span class="va">base</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_abline</a></span><span class="op">(</span>intercept <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">post1</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, slope <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">post1</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, </span>
 <span>                   color <span class="op">=</span> <span class="st">"skyblue4"</span>, size <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-<p><img src="continuous_files/figure-html/continuous-kidiq-plot1a-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="continuous_files/figure-html/continuous-kidiq-plot1a-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>There several ways we could add the uncertainty in our estimates to
 the plot. One way is to also plot the estimated regression line at each
 draw from the posterior distribution. To do this we can extract the
@@ -300,7 +300,7 @@ posterior draws from the fitted model object using the
 <span>              color <span class="op">=</span> <span class="st">"skyblue"</span>, size <span class="op">=</span> <span class="fl">0.2</span>, alpha <span class="op">=</span> <span class="fl">0.25</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_abline</a></span><span class="op">(</span>intercept <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">post1</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, slope <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">post1</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, </span>
 <span>              color <span class="op">=</span> <span class="st">"skyblue4"</span>, size <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-<p><img src="continuous_files/figure-html/continuous-kidiq-plot1b-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="continuous_files/figure-html/continuous-kidiq-plot1b-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>For the second model we can make the same plot but the x-axis will
 show the continuous predictor <code>mom_iq</code>:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
@@ -312,7 +312,7 @@ show the continuous predictor <code>mom_iq</code>:</p>
 <span>              color <span class="op">=</span> <span class="st">"skyblue"</span>, size <span class="op">=</span> <span class="fl">0.2</span>, alpha <span class="op">=</span> <span class="fl">0.25</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_abline</a></span><span class="op">(</span>intercept <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">post2</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, slope <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">post2</span><span class="op">)</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, </span>
 <span>              color <span class="op">=</span> <span class="st">"skyblue4"</span>, size <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-<p><img src="continuous_files/figure-html/continuous-kidiq-plot2-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="continuous_files/figure-html/continuous-kidiq-plot2-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>For the third and fourth models, each of which uses both predictors,
 we can plot the continuous <code>mom_iq</code> on the x-axis and use
 color to indicate which points correspond to the different
@@ -332,7 +332,7 @@ regression lines, one for each subpopulation:</p>
 <span><span class="va">base2</span> <span class="op">+</span> </span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_function.html" class="external-link">stat_function</a></span><span class="op">(</span>fun <span class="op">=</span> <span class="va">reg0</span>, args <span class="op">=</span> <span class="va">args</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="st">"No HS"</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_function.html" class="external-link">stat_function</a></span><span class="op">(</span>fun <span class="op">=</span> <span class="va">reg1</span>, args <span class="op">=</span> <span class="va">args</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="st">"HS"</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></code></pre></div>
-<p><img src="continuous_files/figure-html/continuous-kidiq-plot3-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="continuous_files/figure-html/continuous-kidiq-plot3-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">reg0</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">ests</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>, <span class="va">x</span>, <span class="fl">0</span> <span class="op">*</span> <span class="va">x</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">ests</span> </span>
 <span><span class="va">reg1</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">ests</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="va">x</span>, <span class="fl">1</span> <span class="op">*</span> <span class="va">x</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">ests</span></span>
@@ -340,7 +340,7 @@ regression lines, one for each subpopulation:</p>
 <span><span class="va">base2</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_function.html" class="external-link">stat_function</a></span><span class="op">(</span>fun <span class="op">=</span> <span class="va">reg0</span>, args <span class="op">=</span> <span class="va">args</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="st">"No HS"</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_function.html" class="external-link">stat_function</a></span><span class="op">(</span>fun <span class="op">=</span> <span class="va">reg1</span>, args <span class="op">=</span> <span class="va">args</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="st">"HS"</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></code></pre></div>
-<p><img src="continuous_files/figure-html/continuous-kidiq-plot4-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="continuous_files/figure-html/continuous-kidiq-plot4-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <div class="section level3">
 <h3 id="model-comparison">Model comparison<a class="anchor" aria-label="anchor" href="#model-comparison"></a>
 </h3>
@@ -416,7 +416,7 @@ on all of the <code>pp_check</code> options.</p>
 <span class="math inline">\(y\)</span> and histograms of five <span class="math inline">\(y^{\rm rep}\)</span> datasets:</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/pp_check.stanreg.html">pp_check</a></span><span class="op">(</span><span class="va">post4</span>, plotfun <span class="op">=</span> <span class="st">"hist"</span>, nreps <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
-<p><img src="continuous_files/figure-html/continuous-kidiq-pp_check1-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="continuous_files/figure-html/continuous-kidiq-pp_check1-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>The idea is that if the model is a good fit to the data we should be
 able to generate data <span class="math inline">\(y^{\rm rep}\)</span>
 from the posterior predictive distribution that looks a lot like the
@@ -442,12 +442,12 @@ distribution of the means of the <span class="math inline">\(S\)</span>
 <span class="math inline">\(y^{\rm rep}\)</span> datasets:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/pp_check.stanreg.html">pp_check</a></span><span class="op">(</span><span class="va">post4</span>, plotfun <span class="op">=</span> <span class="st">"stat"</span>, stat <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="continuous_files/figure-html/continuous-kidiq-pp_check2-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="continuous_files/figure-html/continuous-kidiq-pp_check2-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>Using <code>plotfun="stat_2d"</code> we can also specify two test
 quantities and look at a scatterplot:</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/pp_check.stanreg.html">pp_check</a></span><span class="op">(</span><span class="va">post4</span>, plotfun <span class="op">=</span> <span class="st">"stat_2d"</span>, stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"sd"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="continuous_files/figure-html/continuous-kidiq-pp_check3-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="continuous_files/figure-html/continuous-kidiq-pp_check3-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level4">
 <h4 id="generating-predictions">Generating predictions<a class="anchor" aria-label="anchor" href="#generating-predictions"></a>
@@ -479,7 +479,7 @@ the two groups of kids side by side:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/boxplot.html" class="external-link">boxplot</a></span><span class="op">(</span><span class="va">y_nohs</span>, outline <span class="op">=</span> <span class="cn">FALSE</span>, col <span class="op">=</span> <span class="st">"red"</span>, axes <span class="op">=</span> <span class="cn">FALSE</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>,<span class="fl">170</span><span class="op">)</span>,</span>
 <span>        xlab <span class="op">=</span> <span class="st">"Mom IQ"</span>, ylab <span class="op">=</span> <span class="cn">NULL</span>, main <span class="op">=</span> <span class="st">"Mom No HS"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/axis.html" class="external-link">axis</a></span><span class="op">(</span><span class="fl">1</span>, at <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">y_hs</span><span class="op">)</span>, labels <span class="op">=</span> <span class="va">IQ_SEQ</span>, las <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
-<p><img src="continuous_files/figure-html/continuous-kidiq-plot-predict-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="continuous_files/figure-html/continuous-kidiq-plot-predict-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 </div>
 </div>
 </div>

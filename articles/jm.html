@@ -95,7 +95,7 @@
                         <h4 data-toc-skip class="author">Sam
 Brilleman</h4>
             
-            <h4 data-toc-skip class="date">2025-12-10</h4>
+            <h4 data-toc-skip class="date">2025-12-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/jm.Rmd" class="external-link"><code>vignettes/jm.Rmd</code></a></small>
       <div class="d-none name"><code>jm.Rmd</code></div>
@@ -162,7 +162,7 @@ longitudinal trajectories for log serum bilirubin, with some patients
 showing an increase in the biomarker over time, others decreasing, and
 some remaining stable. Moreover, there is variation between patients in
 terms of the frequency and timing of the longitudinal
-measurements.<br><img src="jm_files/figure-html/traj_figure-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+measurements.<br><img src="jm_files/figure-html/traj_figure-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>From the perspective of clinical risk prediction, we may be
 interested in asking whether the between-patient variation in the log
 serum bilirubin trajectories provides meaningful prognostic information
@@ -1025,8 +1025,8 @@ Please note the warmup may be much slower than later iterations!
 
 SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 0.000209 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.09 seconds.
+Chain 1: Gradient evaluation took 0.000208 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.08 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
@@ -1034,9 +1034,9 @@ Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
 Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 Chain 1: 
-Chain 1:  Elapsed Time: 19.324 seconds (Warm-up)
-Chain 1:                20.006 seconds (Sampling)
-Chain 1:                39.33 seconds (Total)
+Chain 1:  Elapsed Time: 19.03 seconds (Warm-up)
+Chain 1:                19.674 seconds (Sampling)
+Chain 1:                38.704 seconds (Total)
 Chain 1: </code></pre>
 <p>The argument <code>refresh = 2000</code> was specified so that Stan
 didn’t provide us with excessive progress updates whilst fitting the
@@ -1293,8 +1293,8 @@ Please note the warmup may be much slower than later iterations!
 
 SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 0.000314 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.14 seconds.
+Chain 1: Gradient evaluation took 0.000318 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.18 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
@@ -1302,9 +1302,9 @@ Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
 Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 Chain 1: 
-Chain 1:  Elapsed Time: 34.776 seconds (Warm-up)
-Chain 1:                35.724 seconds (Sampling)
-Chain 1:                70.5 seconds (Total)
+Chain 1:  Elapsed Time: 34.576 seconds (Warm-up)
+Chain 1:                35.486 seconds (Sampling)
+Chain 1:                70.062 seconds (Total)
 Chain 1: </code></pre>
 <p>We can now examine the output from the fitted model, for
 example<br></p>
@@ -1447,13 +1447,13 @@ included in the model estimation.</p>
 <code class="sourceCode R"><span><span class="va">p1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/posterior_traj.html">posterior_traj</a></span><span class="op">(</span><span class="va">mod3</span>, m <span class="op">=</span> <span class="fl">1</span>, ids <span class="op">=</span> <span class="fl">6</span><span class="op">:</span><span class="fl">8</span><span class="op">)</span></span>
 <span><span class="va">pp1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">p1</span>, plot_observed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">pp1</span></span></code></pre></div>
-<p><img src="jm_files/figure-html/plots_872312-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="jm_files/figure-html/plots_872312-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>and here are the plots for serum albumin:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/posterior_traj.html">posterior_traj</a></span><span class="op">(</span><span class="va">mod3</span>, m <span class="op">=</span> <span class="fl">2</span>, ids <span class="op">=</span> <span class="fl">6</span><span class="op">:</span><span class="fl">8</span><span class="op">)</span></span>
 <span><span class="va">pp2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">p2</span>, plot_observed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">pp2</span></span></code></pre></div>
-<p><img src="jm_files/figure-html/plots_555762-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="jm_files/figure-html/plots_555762-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>The <code>m</code> argument specifies which biomarker we want to
 predict for (only relevant for a multivariate joint model). The
 <code>ids</code> argument is optional, and specifies a subset of
@@ -1470,13 +1470,13 @@ serum bilirubin with extrapolation:</p>
 <code class="sourceCode R"><span><span class="va">p3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/posterior_traj.html">posterior_traj</a></span><span class="op">(</span><span class="va">mod3</span>, m <span class="op">=</span> <span class="fl">1</span>, ids <span class="op">=</span> <span class="fl">6</span><span class="op">:</span><span class="fl">8</span>, extrapolate <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">pp3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">p3</span>, plot_observed <span class="op">=</span> <span class="cn">TRUE</span>, vline <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">pp3</span></span></code></pre></div>
-<p><img src="jm_files/figure-html/plots_65662-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="jm_files/figure-html/plots_65662-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>and for serum albumin with extrapolation:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/posterior_traj.html">posterior_traj</a></span><span class="op">(</span><span class="va">mod3</span>, m <span class="op">=</span> <span class="fl">2</span>, ids <span class="op">=</span> <span class="fl">6</span><span class="op">:</span><span class="fl">8</span>, extrapolate <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">pp4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">p4</span>, plot_observed <span class="op">=</span> <span class="cn">TRUE</span>, vline <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">pp4</span></span></code></pre></div>
-<p><img src="jm_files/figure-html/plots_998889-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="jm_files/figure-html/plots_998889-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>Here, we included the <code>vline = TRUE</code> which adds a vertical
 dashed line at the timing of the individual’s event or censoring time.
 The interpolation and extrapolation of the biomarker trajectory can be
@@ -1527,7 +1527,7 @@ the multivariate joint model estimated above.<br></p>
 <code class="sourceCode R"><span><span class="va">p5</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/posterior_survfit.html">posterior_survfit</a></span><span class="op">(</span><span class="va">mod3</span>, ids <span class="op">=</span> <span class="fl">6</span><span class="op">:</span><span class="fl">8</span><span class="op">)</span></span>
 <span><span class="va">pp5</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">p5</span><span class="op">)</span></span>
 <span><span class="va">pp5</span></span></code></pre></div>
-<p><img src="jm_files/figure-html/plots_23812-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="jm_files/figure-html/plots_23812-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>We could customize the plot further, for example, by using any of the
 <strong>ggplot2</strong> functionality or using the additional arguments
 described in <code><a href="../reference/plot.survfit.stanjm.html">help(plot.survfit.stanjm)</a></code>.</p>
@@ -1542,7 +1542,7 @@ replotting the predictions for the three individuals in the previous
 example:</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot.survfit.stanjm.html">plot_stack_jm</a></span><span class="op">(</span>yplot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">pp3</span>, <span class="va">pp4</span><span class="op">)</span>, survplot <span class="op">=</span> <span class="va">pp5</span><span class="op">)</span></span></code></pre></div>
-<p><img src="jm_files/figure-html/plots_987321-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="jm_files/figure-html/plots_987321-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>Here we can see the strong relationship between the underlying values
 of the biomarkers and mortality. Patient <code>8</code> who, relative to
 patients <code>6</code> and <code>7</code>, has a higher underlying
@@ -1599,7 +1599,7 @@ trajectory can be obtained using:</p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pp6</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">p6</span>, plot_observed <span class="op">=</span> <span class="cn">TRUE</span>, vline <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">pp6</span></span></code></pre></div>
-<p><img src="jm_files/figure-html/plots_999333-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="jm_files/figure-html/plots_999333-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>and for the serum albumin trajectory:</p>
 <div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p7</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/posterior_traj.html">posterior_traj</a></span><span class="op">(</span><span class="va">mod3</span>, m <span class="op">=</span> <span class="fl">2</span>, </span>
@@ -1611,7 +1611,7 @@ trajectory can be obtained using:</p>
 <div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pp7</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">p7</span>, plot_observed <span class="op">=</span> <span class="cn">TRUE</span>, vline <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">pp7</span></span></code></pre></div>
-<p><img src="jm_files/figure-html/plots_122223-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="jm_files/figure-html/plots_122223-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>For the conditional survival probabilities we use similar
 information, provided to the <code>posterior_survfit</code>
 function:</p>
@@ -1625,13 +1625,13 @@ function:</p>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pp8</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">p8</span><span class="op">)</span></span>
 <span><span class="va">pp8</span></span></code></pre></div>
-<p><img src="jm_files/figure-html/plots_65401-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="jm_files/figure-html/plots_65401-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>We can then use the <code>plot_stack_jm</code> function, as we saw in
 a previous example, to stack the plots of the longitudinal trajectory
 and the conditional survival curve:</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot.survfit.stanjm.html">plot_stack_jm</a></span><span class="op">(</span>yplot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">pp6</span>, <span class="va">pp7</span><span class="op">)</span>, survplot <span class="op">=</span> <span class="va">pp8</span><span class="op">)</span></span></code></pre></div>
-<p><img src="jm_files/figure-html/plots_0089231-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="jm_files/figure-html/plots_0089231-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>Here we see that the predicted longitudinal trajectories and
 conditional survival curve for this individual, obtained using the
 dynamic predictions approach, are similar to the predictions we obtained
@@ -1722,7 +1722,7 @@ bilirubin under each covariate profile and plot it we can type:</p>
 <div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/posterior_traj.html">posterior_traj</a></span><span class="op">(</span><span class="va">mod3</span>, m <span class="op">=</span> <span class="fl">1</span>, newdataLong <span class="op">=</span> <span class="va">ndL</span>, dynamic <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">p1</span><span class="op">)</span> <span class="op">+</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">coord_cartesian</a></span><span class="op">(</span>ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">10</span>,<span class="fl">15</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="jm_files/figure-html/plot_traj_218391-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="jm_files/figure-html/plot_traj_218391-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>Because we are marginalising over the distribution of the
 individual-specific parameters, we are incorporating all the variation
 related to between-individual differences, and therefore the prediction
@@ -1790,7 +1790,7 @@ and the maximum event or censoring time.</p>
 6 5.0768   0.5934 0.5386 0.6456</code></pre>
 <div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">p1</span><span class="op">)</span> <span class="co"># plot the standardised survival curve</span></span></code></pre></div>
-<p><img src="jm_files/figure-html/standsurv-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="jm_files/figure-html/standsurv-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 </div>
 </div>
 </div>

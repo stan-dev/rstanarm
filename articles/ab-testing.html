@@ -94,7 +94,7 @@
       <img src="../logo.svg" class="logo" alt=""><h1>Probabilistic A/B Testing with rstanarm</h1>
                         <h4 data-toc-skip class="author">Imad Ali</h4>
             
-            <h4 data-toc-skip class="date">2025-12-10</h4>
+            <h4 data-toc-skip class="date">2025-12-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/ab-testing.Rmd" class="external-link"><code>vignettes/ab-testing.Rmd</code></a></small>
       <div class="d-none name"><code>ab-testing.Rmd</code></div>
@@ -444,7 +444,7 @@ business is with regards to inference.</p>
 <span>     xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v <span class="op">=</span> <span class="va">pp_b_quant</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, lwd <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v <span class="op">=</span> <span class="va">pp_b_quant</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, lwd <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ab-testing_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" width="576" style="display: block; margin: auto;"></p>
+<p><img src="ab-testing_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <!-- hist(pp_a) is plotting a single histogram combining all 12 columns of the `pp_a` matrix. is that intentional? if you you my idea above about doing this in one mode for `y ~ group` then I think you just want to predict two new observations, one from A one from B and compare their predictive distributions. should be easier to do with bayesplot that way too!-->
 <p>After computing the <span class="math inline">\(90\%\)</span>
 prediction interval for both groups we find an overlap proportion of
@@ -502,7 +502,7 @@ categorized as high/low consumers.</p>
 <span>     xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v <span class="op">=</span> <span class="va">pp_b1_quant</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, lwd <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v <span class="op">=</span> <span class="va">pp_b1_quant</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, lwd <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ab-testing_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" width="960" style="display: block; margin: auto;"></p>
+<p><img src="ab-testing_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="960" style="display: block; margin: auto;"></p>
 <p>In the plot below we show how the overlap proportion will vary as the
 prediction interval varies. To put it differently, it shows how the
 probabilistic difference between groups varies as risk varies. Notice
@@ -524,7 +524,7 @@ the two groups.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/axis.html" class="external-link">axis</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,by<span class="op">=</span><span class="fl">0.1</span><span class="op">)</span>, cex.axis <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/axis.html" class="external-link">axis</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,by<span class="op">=</span><span class="fl">0.1</span><span class="op">)</span>, cex.axis <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v <span class="op">=</span> <span class="fl">0.5</span>, lty <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ab-testing_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" width="480" style="display: block; margin: auto;"><!-- Maybe ggplot2::qplot(x = ci_p, y = overlap_ab, geom = c("line", "point")) ?--></p>
+<p><img src="ab-testing_files/figure-html/unnamed-chunk-7-1.png" class="r-plt" alt="" width="480" style="display: block; margin: auto;"><!-- Maybe ggplot2::qplot(x = ci_p, y = overlap_ab, geom = c("line", "point")) ?--></p>
 </div>
 <div class="section level2">
 <h2 id="count-data">Count Data<a class="anchor" aria-label="anchor" href="#count-data"></a>
@@ -595,7 +595,7 @@ the overlap proportion of these two sets of predictions.</p>
 <span>     xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">25</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v <span class="op">=</span> <span class="va">pp_d_quant</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, lwd <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v <span class="op">=</span> <span class="va">pp_d_quant</span><span class="op">[</span><span class="fl">2</span><span class="op">]</span>, lwd <span class="op">=</span> <span class="fl">2</span>, col <span class="op">=</span> <span class="st">"red"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ab-testing_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" width="960" style="display: block; margin: auto;"></p>
+<p><img src="ab-testing_files/figure-html/unnamed-chunk-9-1.png" class="r-plt" alt="" width="960" style="display: block; margin: auto;"></p>
 <p>Looking at the histograms it’s clear that there’s quite a bit of
 overlap between the two groups. The overlap proportion is about 0.7. So
 under our <span class="math inline">\(90\%\)</span> prediction interval,
@@ -619,7 +619,7 @@ inversely related to group similarity.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/axis.html" class="external-link">axis</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,by<span class="op">=</span><span class="fl">0.1</span><span class="op">)</span>, cex.axis <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/axis.html" class="external-link">axis</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,by<span class="op">=</span><span class="fl">0.1</span><span class="op">)</span>, cex.axis <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v <span class="op">=</span> <span class="fl">0.5</span>, lty <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ab-testing_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" width="480" style="display: block; margin: auto;"></p>
+<p><img src="ab-testing_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" alt="" width="480" style="display: block; margin: auto;"></p>
 <p>Note, this example involved a really small data set (only one
 observation for each group). But the same model can easily be extended
 to many observations within each group. Also, just as we described in
@@ -797,7 +797,7 @@ observed data. This is illustrated below. The red lines are the
 <span>     ylab <span class="op">=</span> <span class="st">"t-distribution density"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="op">-</span><span class="va">t_stat</span>, col<span class="op">=</span><span class="st">"red"</span>, lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="va">t_stat</span>, col<span class="op">=</span><span class="st">"red"</span>, lwd<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ab-testing_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" width="480" style="display: block; margin: auto;"></p>
+<p><img src="ab-testing_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="" width="480" style="display: block; margin: auto;"></p>
 <p>Given the small p-value we can make the following sequence of
 conclusions:</p>
 <ol style="list-style-type: decimal">

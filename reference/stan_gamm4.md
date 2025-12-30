@@ -360,9 +360,9 @@ plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 2.46 seconds (Warm-up)
-#> Chain 1:                1.239 seconds (Sampling)
-#> Chain 1:                3.699 seconds (Total)
+#> Chain 1:  Elapsed Time: 2.475 seconds (Warm-up)
+#> Chain 1:                1.245 seconds (Sampling)
+#> Chain 1:                3.72 seconds (Total)
 #> Chain 1: 
 #> Warning: There were 6 divergent transitions after warmup. See
 #> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup

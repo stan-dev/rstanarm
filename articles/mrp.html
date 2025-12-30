@@ -95,7 +95,7 @@
                         <h4 data-toc-skip class="author">Lauren Kennedy
 and Jonah Gabry</h4>
             
-            <h4 data-toc-skip class="date">2025-12-10</h4>
+            <h4 data-toc-skip class="date">2025-12-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/mrp.Rmd" class="external-link"><code>vignettes/mrp.Rmd</code></a></small>
       <div class="d-none name"><code>mrp.Rmd</code></div>
@@ -286,7 +286,7 @@ vignette.</p>
 <span><span class="va">sample</span><span class="op">$</span><span class="va">state</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">sample</span>, <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">state</span>, levels<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">state</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">true_popn</span><span class="op">$</span><span class="va">state</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">true_popn</span><span class="op">$</span><span class="va">state</span>,levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">sample</span><span class="op">$</span><span class="va">state</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">poststrat</span><span class="op">$</span><span class="va">state</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">poststrat</span><span class="op">$</span><span class="va">state</span>,levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">sample</span><span class="op">$</span><span class="va">state</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="mrp_files/figure-html/plot-data-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"><img src="mrp_files/figure-html/plot-data-2.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="mrp_files/figure-html/plot-data-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"><img src="mrp_files/figure-html/plot-data-2.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 </div>
 </div>
 <div class="section level2">
@@ -305,7 +305,7 @@ previous figure, which suggested that the sample was different to the
 population in the share of different levels of theses variables, this
 should suggest that using the sample to estimate cat preference may not
 give accurate estimates of cat preference in the population.</p>
-<p><img src="mrp_files/figure-html/plot-summary-by-poststrat-var-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="mrp_files/figure-html/plot-summary-by-poststrat-var-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <div class="section level3">
 <h3 id="interaction-effect">Interaction effect<a class="anchor" aria-label="anchor" href="#interaction-effect"></a>
 </h3>
@@ -317,7 +317,7 @@ a simulated interaction effect between age (<em>x-axis</em>) and gender
 between the genders on the outcome variable (<em>y-axis</em>), only the
 second panel shows this difference changing with the variable on the
 x-axis.</p>
-<p><img src="mrp_files/figure-html/plot-interaction-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="mrp_files/figure-html/plot-interaction-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">
 <h3 id="design-effect">Design effect<a class="anchor" aria-label="anchor" href="#design-effect"></a>
@@ -331,7 +331,7 @@ downward slope is because we ordered the x-axis by the proportion of cat
 preference for ease of viewing. We also include second plot with a
 horizontal line to represent the overall preference for cats in the
 total population, according to the sample.</p>
-<p><img src="mrp_files/figure-html/unnamed-chunk-11-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="mrp_files/figure-html/unnamed-chunk-11-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 </div>
 </div>
 <div class="section level2">
@@ -475,7 +475,7 @@ difference between the sample and population estimate.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_text.html" class="external-link">geom_text</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fl">5.2</span>, y <span class="op">=</span> <span class="va">model_popn_pref</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span> <span class="op">+</span> <span class="fl">.025</span><span class="op">)</span>, label <span class="op">=</span> <span class="st">"MRP"</span>, colour <span class="op">=</span> <span class="st">'#2ca25f'</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://mc-stan.org/bayesplot/reference/bayesplot_grid.html" class="external-link">bayesplot_grid</a></span><span class="op">(</span><span class="va">compare</span>, <span class="va">compare2</span>, </span>
 <span>               grid_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>nrow <span class="op">=</span> <span class="fl">1</span>, widths <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="mrp_files/figure-html/unnamed-chunk-16-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="mrp_files/figure-html/unnamed-chunk-16-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>As this is simulated data, we can look directly at the preference for
 cats that we simulated from to consider how good our estimate is.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
@@ -483,7 +483,7 @@ cats that we simulated from to consider how good our estimate is.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">true_popn_pref</span>, <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
 <pre><code>[1] 0.561</code></pre>
 <p>Which we will also add to the figure.
-<img src="mrp_files/figure-html/unnamed-chunk-18-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<img src="mrp_files/figure-html/unnamed-chunk-18-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>Our MRP estimate is barely off, while our sample estimate is off by
 more than 10 percentage points. This indicates that using MRP helps to
 make estimates for the population from our sample that are more
@@ -613,7 +613,7 @@ small. This is easier to see graphically, so we will continue to add
 additional layers to the previous figure. Here we add model
 estimates,represented by triangles, and the true population cat
 preference, represented as transparent circles.</p>
-<p><img src="mrp_files/figure-html/unnamed-chunk-22-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="mrp_files/figure-html/unnamed-chunk-22-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 </div>
 </div>
 <div class="section level2">

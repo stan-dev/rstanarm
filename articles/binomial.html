@@ -95,7 +95,7 @@
                         <h4 data-toc-skip class="author">Jonah Gabry and
 Ben Goodrich</h4>
             
-            <h4 data-toc-skip class="date">2025-12-10</h4>
+            <h4 data-toc-skip class="date">2025-12-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/binomial.Rmd" class="external-link"><code>vignettes/binomial.Rmd</code></a></small>
       <div class="d-none name"><code>binomial.Rmd</code></div>
@@ -270,7 +270,7 @@ interpretation.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">wells</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">dist100</span>, y <span class="op">=</span> <span class="va">..density..</span>, fill <span class="op">=</span> <span class="va">switch</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html" class="external-link">geom_histogram</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_fill_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"gray30"</span>, <span class="st">"skyblue"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="binomial_files/figure-html/binom-arsenic-plot-dist100-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="binomial_files/figure-html/binom-arsenic-plot-dist100-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>In the plot above the blue bars correspond to the 1737 residents who
 said they switched wells and darker bars show the distribution of
 <code>dist100</code> for the 1283 residents who didn’t switch. As we
@@ -327,7 +327,7 @@ together with the observed outcomes:</p>
 <span>  <span class="fu">jitt</span><span class="op">(</span>x<span class="op">=</span><span class="st">"dist100"</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_function.html" class="external-link">stat_function</a></span><span class="op">(</span>fun <span class="op">=</span> <span class="va">pr_switch</span>, args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>ests <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit1</span><span class="op">)</span><span class="op">)</span>, </span>
 <span>                size <span class="op">=</span> <span class="fl">2</span>, color <span class="op">=</span> <span class="st">"gray35"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="binomial_files/figure-html/binom-arsenic-plot-model-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="binomial_files/figure-html/binom-arsenic-plot-model-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>The plot shows that under this model the predicted probability of
 switching is a decent bit above 50% for residents living very close to
 wells with safe drinking water. As expected, larger values of
@@ -363,7 +363,7 @@ the points.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">wells</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">switch</span><span class="op">)</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">2</span>, alpha <span class="op">=</span> <span class="fl">0.85</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_gradient.html" class="external-link">scale_fill_gradient</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_color_manual</a></span><span class="op">(</span><span class="st">"switch"</span>, values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"white"</span>, <span class="st">"black"</span><span class="op">)</span>, labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"No"</span>, <span class="st">"Yes"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="binomial_files/figure-html/binom-arsenic-plot-model2-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="binomial_files/figure-html/binom-arsenic-plot-model2-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>We can see that the black points (<code>switch=1</code>) are
 predominantly clustered in the upper-left region of the plot where the
 predicted probability of switching is highest.</p>
@@ -390,7 +390,7 @@ variables.</p>
 <span><span class="op">}</span></span>
 <span><span class="fu"><a href="https://mc-stan.org/bayesplot/reference/bayesplot_grid.html" class="external-link">bayesplot_grid</a></span><span class="op">(</span><span class="va">vary_dist</span>, <span class="va">vary_arsenic</span>, </span>
 <span>               grid_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="binomial_files/figure-html/binom-arsenic-plot-model2-alt-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="binomial_files/figure-html/binom-arsenic-plot-model2-alt-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>We can compare our two models (with and without <code>arsenic</code>)
 using an approximation to Leave-One-Out (LOO) cross-validation, which is
 a method for estimating out of sample predictive performance and is

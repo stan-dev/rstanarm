@@ -95,7 +95,7 @@
                         <h4 data-toc-skip class="author">Bob Carpenter,
 Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 data-toc-skip class="date">2025-12-10</h4>
+            <h4 data-toc-skip class="date">2025-12-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/pooling.Rmd" class="external-link"><code>vignettes/pooling.Rmd</code></a></small>
       <div class="d-none name"><code>pooling.Rmd</code></div>
@@ -313,7 +313,7 @@ success. In fact, an even narrower prior is actually motivated here from
 substantial baseball knowledge.</p>
 <p>The figure below shows both this prior on <span class="math inline">\(\alpha\)</span> as well as the prior it implies on
 the probability <span class="math inline">\(\theta\)</span>.</p>
-<p><img src="pooling_files/figure-html/unnamed-chunk-2-1.png" class="r-plt" width="70%" style="display: block; margin: auto;"></p>
+<p><img src="pooling_files/figure-html/unnamed-chunk-2-1.png" class="r-plt" alt="" width="70%" style="display: block; margin: auto;"></p>
 <p>To fit the model we call <code>stan_glm</code> with the formula
 <code>cbind(Hits, AB - Hits) ~ 1</code>. The left-hand side of the
 formula specifies the binomial outcome by providing the number of
@@ -541,7 +541,7 @@ R code reproduces a similar plot for our data.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_continuous</a></span><span class="op">(</span>breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.2</span>, <span class="fl">0.3</span>, <span class="fl">0.4</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Observed Hits / AB"</span>, y <span class="op">=</span> <span class="st">"Predicted chance of hit"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Posterior Medians and 80% Intervals"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pooling_files/figure-html/plot-observed-vs-estimated-1.png" class="r-plt" width="70%" style="display: block; margin: auto;"></p>
+<p><img src="pooling_files/figure-html/plot-observed-vs-estimated-1.png" class="r-plt" alt="" width="70%" style="display: block; margin: auto;"></p>
 <p>The horizontal axis is the observed rate of success, broken out by
 player (the overplotting is from players with the same number of
 successes—they all had the same number of trials in this data). The dots
@@ -983,7 +983,7 @@ remainder of the season is shown as a blue dot.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/expression.html" class="external-link">expression</a></span><span class="op">(</span></span>
 <span>    <span class="fu">atop</span><span class="op">(</span><span class="st">"Posterior Predictions for Batting Average in Remainder of Season"</span>,</span>
 <span>         <span class="fu">atop</span><span class="op">(</span><span class="st">"50% posterior predictive intervals (gray bars); observed (blue dots)"</span>, <span class="st">""</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pooling_files/figure-html/plot-ppd-1.png" class="r-plt" width="70%" style="display: block; margin: auto;"></p>
+<p><img src="pooling_files/figure-html/plot-ppd-1.png" class="r-plt" alt="" width="70%" style="display: block; margin: auto;"></p>
 <p>We choose to plot 50% posterior intervals as they are a good single
 point for checking calibration. Rather than plotting the number of hits
 on the vertical axis, we have standardized all the predictions and
@@ -1230,7 +1230,7 @@ here for the baseball data.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_discrete.html" class="external-link">scale_y_discrete</a></span><span class="op">(</span><span class="st">"Probability"</span>, limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.1</span> <span class="op">*</span> <span class="va">M</span>, <span class="fl">0.2</span> <span class="op">*</span> <span class="va">M</span><span class="op">)</span>,</span>
 <span>                   labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0.0"</span>, <span class="st">"0.1"</span>, <span class="st">"0.2"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Rankings for Partial Pooling Model"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pooling_files/figure-html/plot-ranks-1.png" class="r-plt" width="70%" style="display: block; margin: auto;"></p>
+<p><img src="pooling_files/figure-html/plot-ranks-1.png" class="r-plt" alt="" width="70%" style="display: block; margin: auto;"></p>
 <div class="section level5">
 <h5 id="who-has-the-highest-chance-of-success">Who has the Highest Chance of Success?<a class="anchor" aria-label="anchor" href="#who-has-the-highest-chance-of-success"></a>
 </h5>
@@ -1272,7 +1272,7 @@ don’t have to worry about ties.</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_continuous</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Pr[player is best]"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Who is the Best Player?"</span><span class="op">)</span> <span class="op">+</span> </span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="op">-</span><span class="fl">45</span>, vjust <span class="op">=</span> <span class="fl">1</span>, hjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pooling_files/figure-html/plot-best-player-1.png" class="r-plt" width="70%" style="display: block; margin: auto;"></p>
+<p><img src="pooling_files/figure-html/plot-best-player-1.png" class="r-plt" alt="" width="70%" style="display: block; margin: auto;"></p>
 <p>This question of which player has the highest chance of success
 (batting ability) doesn’t even make sense in the complete pooling model,
 because the chance of success parameters are all the same by definition.
@@ -1354,7 +1354,7 @@ here is just the plot for the no pooling model using the mean as the
 test statistic:</p>
 <div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/pp_check.stanreg.html">pp_check</a></span><span class="op">(</span><span class="va">fit_nopool</span>, plotfun <span class="op">=</span> <span class="st">"stat"</span>, stat <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pooling_files/figure-html/plot-ppc-stats-mean-1.png" class="r-plt" width="70%" style="display: block; margin: auto;"></p>
+<p><img src="pooling_files/figure-html/plot-ppc-stats-mean-1.png" class="r-plt" alt="" width="70%" style="display: block; margin: auto;"></p>
 <p>The <code>stat</code> argument can the be the name of any R function
 (including your own functions defined in the Global Environment) that
 takes a vector as an input and returns a scalar.</p>
@@ -1381,7 +1381,7 @@ for each model and then arrange everything in a single plot.</p>
 <span>    <span class="fu"><a href="https://rdrr.io/pkg/gridExtra/man/arrangeGrob.html" class="external-link">arrangeGrob</a></span><span class="op">(</span>grobs <span class="op">=</span> <span class="va">ppcs_partialpool</span>, nrow <span class="op">=</span> <span class="fl">1</span>, left <span class="op">=</span> <span class="st">"Partial Pooling"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<p><img src="pooling_files/figure-html/plot-ppc-stats-1.png" class="r-plt" width="70%" style="display: block; margin: auto;"></p>
+<p><img src="pooling_files/figure-html/plot-ppc-stats-1.png" class="r-plt" alt="" width="70%" style="display: block; margin: auto;"></p>
 <p>The only worrisomely extreme value visible in the plots is the <span class="math inline">\(p\)</span>-value for standard deviation in the
 no-pooling model, where the vast majority of the simulated data sets
 under the model had standard deviations greater than the actual
@@ -1423,7 +1423,7 @@ proportion of successes.</p>
 <div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/pp_check.stanreg.html">pp_check</a></span><span class="op">(</span><span class="va">fit_partialpool</span>, plotfun <span class="op">=</span> <span class="st">"hist"</span>, nreps <span class="op">=</span> <span class="fl">15</span>, binwidth <span class="op">=</span> <span class="fl">0.025</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Model: Partial Pooling"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pooling_files/figure-html/plot-ppc-y-vs-yrep-1.png" class="r-plt" width="70%" style="display: block; margin: auto;"></p>
+<p><img src="pooling_files/figure-html/plot-ppc-y-vs-yrep-1.png" class="r-plt" alt="" width="70%" style="display: block; margin: auto;"></p>
 <p>These simulations are not unreasonable for a binomial likelihood, but
 they are more spread out than the actual data. In this case, this may
 actually have more to do with how the data were selected out of all the

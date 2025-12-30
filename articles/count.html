@@ -95,7 +95,7 @@
                         <h4 data-toc-skip class="author">Jonah Gabry and
 Ben Goodrich</h4>
             
-            <h4 data-toc-skip class="date">2025-12-10</h4>
+            <h4 data-toc-skip class="date">2025-12-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/count.Rmd" class="external-link"><code>vignettes/count.Rmd</code></a></small>
       <div class="d-none name"><code>count.Rmd</code></div>
@@ -317,7 +317,7 @@ the data <code>y</code> and replicated datasets <code>yrep</code>.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">prop_zero</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">y</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">y</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="op">(</span><span class="va">prop_zero_test1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pp_check.stanreg.html">pp_check</a></span><span class="op">(</span><span class="va">stan_glm1</span>, plotfun <span class="op">=</span> <span class="st">"stat"</span>, stat <span class="op">=</span> <span class="st">"prop_zero"</span>, binwidth <span class="op">=</span> <span class="fl">.005</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="count_files/figure-html/count-roaches-plot-pp_check1-1.png" class="r-plt" width="60%" style="display: block; margin: auto;"></p>
+<p><img src="count_files/figure-html/count-roaches-plot-pp_check1-1.png" class="r-plt" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>The value of the test statistic (in this case the proportion of
 zeros) computed from the sample <code>y</code> is the dark blue vertical
 line. More than 30% of these observations are zeros, whereas the
@@ -347,7 +347,7 @@ binomial model:</p>
 <span><span class="fu"><a href="https://mc-stan.org/bayesplot/reference/bayesplot_grid.html" class="external-link">bayesplot_grid</a></span><span class="op">(</span><span class="va">prop_zero_test1</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Poisson"</span><span class="op">)</span>, </span>
 <span>               <span class="va">prop_zero_test2</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"Negative Binomial"</span><span class="op">)</span>, </span>
 <span>               grid_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="count_files/figure-html/count-roaches-plot-pp_check2-1.png" class="r-plt" width="80%" style="display: block; margin: auto;"></p>
+<p><img src="count_files/figure-html/count-roaches-plot-pp_check2-1.png" class="r-plt" alt="" width="80%" style="display: block; margin: auto;"></p>
 <p>This is a much better fit, as the proportion of zeros in the data
 falls nicely near the center of the distribution of the proportion of
 zeros among the replicated datasets. The observed proportion of zeros is

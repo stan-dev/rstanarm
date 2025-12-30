@@ -16,7 +16,7 @@ articles:
   pooling: pooling.html
   priors: priors.html
   rstanarm: rstanarm.html
-last_built: 2025-12-10T23:14Z
+last_built: 2025-12-30T00:45Z
 urls:
   reference: https://mc-stan.org/rstanarm/reference
   article: https://mc-stan.org/rstanarm/articles
