@@ -248,3 +248,5 @@ Note that this binary is static (i.e. it is not automatically updated) and is on
 
 If you are interested in contributing to the development of **rstanarm** please 
 see the [developer notes](https://mc-stan.org/rstanarm/dev-notes/index.html) page.
+
+All contributions must follow the [Stan AI Contribution Policy](https://github.com/stan-dev/stan/wiki/AI-Contribution-Policy).
