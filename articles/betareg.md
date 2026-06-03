@@ -1,6 +1,7 @@
 # Modeling Rates/Proportions using Beta Regression with rstanarm
 
 ``` r
+
 library(ggplot2)
 library(bayesplot)
 theme_set(bayesplot::theme_default())
@@ -131,6 +132,7 @@ set of regressors and the log link function on the second set of
 regressors.
 
 ``` r
+
 SEED <- 1234
 set.seed(SEED)
 eta <- c(1, -0.2)
@@ -151,6 +153,7 @@ The model can be fit by calling `stan_betareg`, using the appropriate
 link functions.
 
 ``` r
+
 library(rstanarm)
 fit1 <- stan_betareg(y ~ x | z, data = dat, link = "logit", link.phi = "log",
                      cores = 2, seed = 12345)
@@ -171,6 +174,7 @@ the prior distributions used to fit the models. The priors used in
 `fit1` are provided below.
 
 ``` r
+
 prior_summary(fit1)
 ```
 
@@ -202,6 +206,7 @@ model noticeably fails to capture the top of the distribution
 consistently in comparison to the true model.
 
 ``` r
+
 library(ggplot2)
 library(bayesplot)
 bayesplot_grid(
@@ -221,6 +226,7 @@ method, which provides an interface for **rstanarm** models to the
 functionality in the **loo** package.
 
 ``` r
+
 loo1 <- loo(fit1)
 loo2 <- loo(fit2)
 loo_compare(loo1, loo2)
@@ -245,6 +251,7 @@ is used to model yield as a function of temperature, pressure, and the
 batch of conditions.
 
 ``` r
+
 library(rstanarm)
 data("GasolineYield", package = "betareg")
 gas_fit1 <- stan_betareg(yield ~ temp + batch, data = GasolineYield, link = "logit",
@@ -278,6 +285,7 @@ better job at capturing the shape of the distribution, however its
 location is off as it is centered around 0.50 rather than 0.20.
 
 ``` r
+
 library(ggplot2)
 bayesplot_grid(
   pp_check(gas_fit1), pp_check(gas_fit2), 
@@ -291,6 +299,7 @@ bayesplot_grid(
 ![](betareg_files/figure-html/gas-analysis-1.png)
 
 ``` r
+
 gas_loo1 <- loo(gas_fit1)
 gas_loo2 <- loo(gas_fit2)
 loo_compare(gas_loo1, gas_loo2)

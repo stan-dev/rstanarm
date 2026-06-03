@@ -1,6 +1,7 @@
 # MRP with rstanarm
 
 ``` r
+
 library(rstanarm)
 library(ggplot2)
 library(bayesplot)
@@ -9,21 +10,21 @@ theme_set(bayesplot::theme_default())
 ```
 
 ``` r
+
 library(dplyr)
 library(tidyr)
 ```
 
 Inference about the population is one the main aims of statistical
 methodology. Multilevel regression and post-stratification (MRP) (Little
-1993; Lax and Phillips 2009; Park, Gelman, and Bafumi 2004) has been
-shown to be an effective method of adjusting the sample to be more
-representative of the population for a set of key variables. Recent work
-has demonstrated the effectiveness of MRP when there are a number of
-suspected interactions between these variables (Ghitza and Gelman 2013),
-replicated by Lei, Gelman, and Ghitza (2017). While Ghitza and Gelman
-(2013) use approximate marginal maximum likelihood estimates; Lei,
-Gelman, and Ghitza (2017) implement a fully Bayesian approach through
-Stan.
+1993; Lax and Phillips 2009; Park et al. 2004) has been shown to be an
+effective method of adjusting the sample to be more representative of
+the population for a set of key variables. Recent work has demonstrated
+the effectiveness of MRP when there are a number of suspected
+interactions between these variables (Ghitza and Gelman 2013),
+replicated by Lei et al. (2017). While Ghitza and Gelman (2013) use
+approximate marginal maximum likelihood estimates; Lei et al. (2017)
+implement a fully Bayesian approach through Stan.
 
 The **rstanarm** package allows the user to conduct complicated
 regression analyses in Stan with the simplicity of standard formula
@@ -51,10 +52,10 @@ gender. Participants were randomly sampled from a state.
 
 MRP is often used for dichotomous fixed choice questions (e.g., McCain’s
 share of two party vote (Ghitza and Gelman 2013); support for George W
-Bush, (Park, Gelman, and Bafumi 2004); or support for the death penalty
-(Shirley and Gelman 2015)), so we will use a binary variable as the
-outcome in this vignette. However, MRP can also be used if there are
-more than two categories or if the outcome is continuous.
+Bush, (Park et al. 2004); or support for the death penalty (Shirley and
+Gelman 2015)), so we will use a binary variable as the outcome in this
+vignette. However, MRP can also be used if there are more than two
+categories or if the outcome is continuous.
 
 As this is a simple toy example, we will describe the proportion of the
 population who would choose to adopt a cat over a dog, given the
@@ -65,6 +66,7 @@ including the sample, population poststratification matrix and the true
 population preference for cats.
 
 ``` r
+
 mrp_sim <- simulate_mrp_data(n=1200)
 str(mrp_sim)
 ```
@@ -94,6 +96,7 @@ str(mrp_sim)
       ..$ cat_pref: num [1:6300] 0.5 0.426 0.269 0.574 0.332 ...
 
 ``` r
+
 sample <- mrp_sim[["sample"]]
 rbind(head(sample), tail(sample))
 ```
@@ -136,6 +139,7 @@ proportion/number in the sample in the cell).
 Below we read in the poststrat data our simulated data list.
 
 ``` r
+
 poststrat <- mrp_sim[["poststrat"]]
 rbind(head(poststrat), tail(poststrat))
 ```
@@ -162,6 +166,7 @@ the predictions of the model. Details regarding the simulation of this
 data are available in the appendix.
 
 ``` r
+
 true_popn <- mrp_sim[["true_popn"]]
 rbind(head(true_popn), tail(true_popn))
 ```
@@ -198,6 +203,7 @@ state that was observed. We will continue this formatting choice
 thoughout this vignette.
 
 ``` r
+
 sample$state <- factor(sample$state, levels=1:50)
 sample$state <- with(sample, factor(state, levels=order(table(state))))
 true_popn$state <- factor(true_popn$state,levels = levels(sample$state))
@@ -313,6 +319,7 @@ function in rstanarm, which uses the same formula syntax as the
 lme4 package:
 
 ``` r
+
 fit <- stan_glmer(
   cat_pref ~ factor(male) + factor(male) * factor(age) + 
     (1 | state) + (1 | age) + (1 | eth) + (1 | income),
@@ -322,6 +329,7 @@ fit <- stan_glmer(
 ```
 
 ``` r
+
 print(fit)
 ```
 
@@ -381,6 +389,7 @@ proportion of people in the *population* in each level of the factors
 included in the model.
 
 ``` r
+
 posterior_prob <- posterior_linpred(fit, transform = TRUE, newdata = poststrat)
 poststrat_prob <- posterior_prob %*% poststrat$N / sum(poststrat$N)
 model_popn_pref <- c(mean = mean(poststrat_prob), sd = sd(poststrat_prob))
@@ -394,6 +403,7 @@ We can compare this to the estimate we would have made if we had just
 used the sample:
 
 ``` r
+
 sample_popn_pref <- mean(sample$cat_pref)
 round(sample_popn_pref, 3)
 ```
@@ -404,6 +414,7 @@ We can also add it to the last figure to graphically represent the
 difference between the sample and population estimate.
 
 ``` r
+
 compare2 <- compare2 +
   geom_hline(yintercept = model_popn_pref[1], colour = '#2ca25f', size = 1) +
   geom_text(aes(x = 5.2, y = model_popn_pref[1] + .025), label = "MRP", colour = '#2ca25f')
@@ -417,6 +428,7 @@ As this is simulated data, we can look directly at the preference for
 cats that we simulated from to consider how good our estimate is.
 
 ``` r
+
 true_popn_pref <- sum(true_popn$cat_pref * poststrat$N) / sum(poststrat$N)
 round(true_popn_pref, 3)
 ```
@@ -448,6 +460,7 @@ of people who preferred cats in the population, only in this case the
 population of interest is the state.
 
 ``` r
+
 state_df <- data.frame(
   State = 1:50,
   model_state_sd = rep(-1, 50),
@@ -534,6 +547,7 @@ state_df[c(1,3:6)]
     50    50           0.8228            1.0000          0.8146 13
 
 ``` r
+
 state_df$State <- factor(state_df$State, levels = levels(sample$state))
 ```
 
@@ -542,6 +556,7 @@ While estimates for cat preference (in percent) using the sample are off
 by
 
 ``` r
+
 round(100 * c(
   mean = mean(abs(state_df$sample_state_pref-state_df$true_state_pref), na.rm = TRUE),
   max = max(abs(state_df$sample_state_pref-state_df$true_state_pref), na.rm = TRUE)
@@ -554,6 +569,7 @@ round(100 * c(
 the MRP based estimates are much closer to the actual percentage,
 
 ``` r
+
 round(100 * c(
   mean = mean(abs(state_df$model_state_pref-state_df$true_state_pref)),
   max = max(abs(state_df$model_state_pref-state_df$true_state_pref))
@@ -583,6 +599,7 @@ to create two n x 1 outcome variables, `N_cat_pref` (number in cell who
 prefer cats) and `N` (number in the poststrat cell).
 
 ``` r
+
 # not evaluated to avoid dependency on tidyverse
 sample_alt <- sample %>%
   group_by(male, age, income, state, eth) %>%
@@ -594,6 +611,7 @@ We then can use these two outcome variables to model the data using the
 binomial distribution.
 
 ``` r
+
 fit2 <- stan_glmer(
   cbind(N_cat_pref, N - N_cat_pref) ~ factor(male) + factor(male) * factor(age) + 
     (1 | state) + (1 | age) + (1 | eth) + (1 | income),
@@ -604,6 +622,7 @@ fit2 <- stan_glmer(
 ```
 
 ``` r
+
 print(fit2)
 ```
 
@@ -648,6 +667,7 @@ function to obtain an estimate of the preference for cats in the
 population.
 
 ``` r
+
 posterior_prob_alt <- posterior_linpred(fit2, transform = TRUE, newdata = poststrat)
 poststrat_prob_alt <- posterior_prob_alt %*% poststrat$N / sum(poststrat$N)
 model_popn_pref_alt <- c(mean = mean(poststrat_prob_alt), sd = sd(poststrat_prob_alt))
@@ -679,6 +699,7 @@ Here is the source code for the `simulate_mrp_function()`, which is
 based off of some code provided by Aki Vehtari.
 
 ``` r
+
 print(simulate_mrp_data)
 ```
 

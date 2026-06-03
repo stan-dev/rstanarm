@@ -487,9 +487,6 @@ posterior_interval(fit6, pars = "reciprocal_dispersion", prob = 0.8)
 plot(fit6, "areas", pars = "reciprocal_dispersion", prob = 0.8)
 # }
 }
-#> Warning: The largest R-hat is 1.06, indicating chains have not mixed.
-#> Running the chains for more iterations may help. See
-#> https://mc-stan.org/misc/warnings.html#r-hat
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#bulk-ess
@@ -511,9 +508,6 @@ plot(fit6, "areas", pars = "reciprocal_dispersion", prob = 0.8)
 #> * For help interpreting the printed output see ?print.stanreg
 #> * For info on the priors used see ?prior_summary.stanreg
 #> 'x' not specified in '...'. Using x=1:length(y).
-#> Warning: The largest R-hat is 1.07, indicating chains have not mixed.
-#> Running the chains for more iterations may help. See
-#> https://mc-stan.org/misc/warnings.html#r-hat
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#bulk-ess
@@ -528,7 +522,7 @@ plot(fit6, "areas", pars = "reciprocal_dispersion", prob = 0.8)
 #> ------
 #>             Median MAD_SD
 #> (Intercept)  3.0    0.2  
-#> outcome2    -0.4    0.2  
+#> outcome2    -0.5    0.2  
 #> outcome3    -0.3    0.2  
 #> treatment2   0.0    0.2  
 #> treatment3   0.0    0.2  
@@ -548,12 +542,12 @@ plot(fit6, "areas", pars = "reciprocal_dispersion", prob = 0.8)
 #>  predictors:   2
 #> ------
 #>             Median MAD_SD
-#> (Intercept)  5.53   0.63 
-#> log_u       -0.61   0.18 
+#> (Intercept)  5.53   0.55 
+#> log_u       -0.60   0.16 
 #> 
 #> Auxiliary parameter(s):
 #>       Median MAD_SD
-#> shape 3.93   1.82  
+#> shape 4.25   1.91  
 #> 
 #> ------
 #> * For help interpreting the printed output see ?print.stanreg
@@ -561,6 +555,12 @@ plot(fit6, "areas", pars = "reciprocal_dispersion", prob = 0.8)
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
+#> Warning: The largest R-hat is 1.09, indicating chains have not mixed.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#r-hat
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#bulk-ess

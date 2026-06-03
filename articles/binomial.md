@@ -1,6 +1,7 @@
 # Estimating Generalized Linear Models for Binary and Binomial Data with rstanarm
 
 ``` r
+
 library(ggplot2)
 library(bayesplot)
 theme_set(bayesplot::theme_default())
@@ -157,6 +158,7 @@ coefficient will represent the effect of the marginal meter, which is
 too small to have a useful interpretation.
 
 ``` r
+
 library(rstanarm)
 data(wells)
 wells$dist100 <- wells$dist / 100
@@ -166,6 +168,7 @@ Before estimating any models we can visualize the distribution of
 `dist100` in the data:
 
 ``` r
+
 ggplot(wells, aes(x = dist100, y = ..density.., fill = switch == 1)) +
   geom_histogram() + 
   scale_fill_manual(values = c("gray30", "skyblue"))
@@ -186,6 +189,7 @@ discussed above, is a reasonable default prior when coefficients should
 be close to zero but have some chance of being large.
 
 ``` r
+
 t_prior <- student_t(df = 7, location = 0, scale = 2.5)
 fit1 <- stan_glm(switch ~ dist100, data = wells, 
                  family = binomial(link = "logit"), 
@@ -211,6 +215,7 @@ the draws from the posterior distribution. For example, to compute 50%
 intervals we use:
 
 ``` r
+
 round(posterior_interval(fit1, prob = 0.5), 2)
 ```
 
@@ -228,6 +233,7 @@ Using the coefficient estimates we can plot the predicted probability of
 outcomes:
 
 ``` r
+
 # Predicted probability as a function of x
 pr_switch <- function(x, ests) plogis(ests[1] + ests[2] * x)
 # A function to slightly jitter the binary data
@@ -259,10 +265,12 @@ expect switching to be more likely from wells with high arsenic levels”
 function:
 
 ``` r
+
 fit2 <- update(fit1, formula = switch ~ dist100 + arsenic) 
 ```
 
 ``` r
+
 (coef_fit2 <- round(coef(fit2), 3))
 ```
 
@@ -276,6 +284,7 @@ background tiles (the lighter the color the higher the probability). The
 observed value of `switch` is indicated by the color of the points.
 
 ``` r
+
 pr_switch2 <- function(x, y, ests) plogis(ests[1] + ests[2] * x + ests[3] * y)
 grid <- expand.grid(dist100 = seq(0, 4, length.out = 100), 
                     arsenic = seq(0, 10, length.out = 100))
@@ -300,6 +309,7 @@ of switching for the minimum, maximum and quartile values of both
 variables.
 
 ``` r
+
 # Quantiles
 q_ars <- quantile(wells$dist100, seq(0, 1, 0.25))
 q_dist <- quantile(wells$arsenic, seq(0, 1, 0.25))  
@@ -327,8 +337,10 @@ for estimating out of sample predictive performance and is implemented
 by the `loo` function in the **loo** package:
 
 ``` r
+
 (loo1 <- loo(fit1))
 ```
+
 
     Computed from 4000 by 3020 log-likelihood matrix.
 
@@ -344,8 +356,10 @@ by the `loo` function in the **loo** package:
     See help('pareto-k-diagnostic') for details.
 
 ``` r
+
 (loo2 <- loo(fit2))
 ```
+
 
     Computed from 4000 by 3020 log-likelihood matrix.
 
@@ -361,6 +375,7 @@ by the `loo` function in the **loo** package:
     See help('pareto-k-diagnostic') for details.
 
 ``` r
+
 loo_compare(loo1, loo2)
 ```
 
@@ -403,6 +418,7 @@ limited multilevel structure supported by the `frailty` function in the
 For example,
 
 ``` r
+
 post <- stan_clogit(case ~ spontaneous + induced + (1 | parity), 
                     data = infert[order(infert$stratum), ], # order necessary
                     strata = stratum, QR = TRUE, 
@@ -410,6 +426,7 @@ post <- stan_clogit(case ~ spontaneous + induced + (1 | parity),
 ```
 
 ``` r
+
 post
 ```
 
@@ -436,6 +453,7 @@ exactly one success (in this case) for each of the strata and thus the
 posterior distribution of the probabilities are also so constrained:
 
 ``` r
+
 PPD <- posterior_predict(post)
 stopifnot(rowSums(PPD) == max(infert$stratum))
 PLP <- posterior_linpred(post, transform = TRUE)

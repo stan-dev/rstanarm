@@ -1,6 +1,7 @@
 # Estimating Generalized Linear Models for Continuous Data with rstanarm
 
 ``` r
+
 library(ggplot2)
 library(bayesplot)
 theme_set(bayesplot::theme_default())
@@ -145,6 +146,7 @@ of the many other available prior distributions see
 `help("prior", package = "rstanarm")`.
 
 ``` r
+
 library(rstanarm)
 data(kidiq)
 post1 <- stan_glm(kid_score ~ mom_hs, data = kidiq, 
@@ -179,6 +181,7 @@ Following Gelman and Hill’s example, we make some plots overlaying the
 estimated regression lines on the data.
 
 ``` r
+
 base <- ggplot(kidiq, aes(x = mom_hs, y = kid_score)) + 
   geom_point(size = 1, position = position_jitter(height = 0.05, width = 0.1)) + 
   scale_x_continuous(breaks = c(0,1), labels = c("No HS", "HS"))
@@ -196,6 +199,7 @@ draws from the fitted model object using the `as.matrix` or
 `as.data.frame` methods:
 
 ``` r
+
 draws <- as.data.frame(post1)
 colnames(draws)[1:2] <- c("a", "b")
 
@@ -212,6 +216,7 @@ For the second model we can make the same plot but the x-axis will show
 the continuous predictor `mom_iq`:
 
 ``` r
+
 draws <- as.data.frame(as.matrix(post2))
 colnames(draws)[1:2] <- c("a", "b")
 ggplot(kidiq, aes(x = mom_iq, y = kid_score)) + 
@@ -231,6 +236,7 @@ which points correspond to the different subpopulations defined by
 subpopulation:
 
 ``` r
+
 reg0 <- function(x, ests) cbind(1, 0, x) %*% ests 
 reg1 <- function(x, ests) cbind(1, 1, x) %*% ests
 
@@ -249,6 +255,7 @@ base2 +
 ![](continuous_files/figure-html/continuous-kidiq-plot3-1.png)
 
 ``` r
+
 reg0 <- function(x, ests) cbind(1, 0, x, 0 * x) %*% ests 
 reg1 <- function(x, ests) cbind(1, 1, x, 1 * x) %*% ests
 args <- list(ests = coef(post4))
@@ -266,6 +273,7 @@ approximation to Leave-One-Out (LOO) cross-validation, which is
 implemented by the `loo` function in the **loo** package:
 
 ``` r
+
 # Compare them with loo
 loo1 <- loo(post1, cores = 1)
 loo2 <- loo(post2, cores = 1)
@@ -286,6 +294,7 @@ value of the LOO Information Criterion (`looic`). The fourth model is
 preferred by a lot over the first model
 
 ``` r
+
 loo_compare(loo1, loo4)
 ```
 
@@ -298,6 +307,7 @@ error. However, the preference of the fourth model over the others isn’t
 as strong:
 
 ``` r
+
 loo_compare(loo3, loo4)
 ```
 
@@ -306,6 +316,7 @@ loo_compare(loo3, loo4)
     post3 -3.5       2.7   
 
 ``` r
+
 loo_compare(loo2, loo4)
 ```
 
@@ -346,6 +357,7 @@ juxtaposing the histogram of \\y\\ and histograms of five \\y^{\rm
 rep}\\ datasets:
 
 ``` r
+
 pp_check(post4, plotfun = "hist", nreps = 5)
 ```
 
@@ -370,6 +382,7 @@ observations is plausible when compared to the distribution of the means
 of the \\S\\ \\y^{\rm rep}\\ datasets:
 
 ``` r
+
 pp_check(post4, plotfun = "stat", stat = "mean")
 ```
 
@@ -379,6 +392,7 @@ Using `plotfun="stat_2d"` we can also specify two test quantities and
 look at a scatterplot:
 
 ``` r
+
 pp_check(post4, plotfun = "stat_2d", stat = c("mean", "sd"))
 ```
 
@@ -393,6 +407,7 @@ the outcome `kid_score` for a range of different values of `mom_iq` and
 for both subpopulations defined by `mom_hs`.
 
 ``` r
+
 IQ_SEQ <- seq(from = 75, to = 135, by = 5)
 y_nohs <- posterior_predict(post4, newdata = data.frame(mom_hs = 0, mom_iq = IQ_SEQ))
 y_hs <- posterior_predict(post4, newdata = data.frame(mom_hs = 1, mom_iq = IQ_SEQ))
@@ -407,6 +422,7 @@ the posterior sample. One way to show the predictors is to plot the
 predictions for the two groups of kids side by side:
 
 ``` r
+
 par(mfrow = c(1:2), mar = c(5,4,2,1))
 boxplot(y_hs, axes = FALSE, outline = FALSE, ylim = c(10,170),
         xlab = "Mom IQ", ylab = "Predicted Kid IQ", main = "Mom HS")
@@ -435,6 +451,7 @@ clotting was induced by two lots of thromboplastin” (p. 300).
 The help page for R’s `glm` function presents the example as follows:
 
 ``` r
+
 clotting <- data.frame(
     u = c(5,10,15,20,30,40,60,80,100),
     lot1 = c(118,58,42,35,27,25,21,19,18),
@@ -449,6 +466,7 @@ reshape the data slightly and fit a model interacting lot with plasma
 concentration:
 
 ``` r
+
 clotting2 <- with(clotting, data.frame(
   log_plasma = rep(log(u), 2),
   clot_time = c(lot1, lot2),
@@ -462,6 +480,7 @@ fit <- stan_glm(clot_time ~ log_plasma * lot_id, data = clotting2, family = Gamm
 ```
 
 ``` r
+
 print(fit, digits = 3)
 ```
 

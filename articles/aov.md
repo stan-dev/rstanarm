@@ -1,6 +1,7 @@
 # Estimating ANOVA Models with rstanarm
 
 ``` r
+
 library(ggplot2)
 library(bayesplot)
 theme_set(bayesplot::theme_default())
@@ -109,6 +110,7 @@ variance in weight gain might be attributed to protein (source) in the
 diet. The frequentist ANOVA estimates can be obtained:
 
 ``` r
+
 data("weightgain", package = "HSAUR3")
 coef(aov(weightgain ~ source * type, data = weightgain))
 ```
@@ -123,6 +125,7 @@ the prior location of the \\R^2\\ as well as optionally the number of
 cores that the computer is allowed to utilize:
 
 ``` r
+
 library(rstanarm)
 post1 <- stan_aov(weightgain ~ source * type, data = weightgain, 
                   prior = R2(location = 0.5), adapt_delta = 0.999,
@@ -170,6 +173,7 @@ Alternatively, we could prepend `stan_` to `lmer` and specify the
 corresponding priors
 
 ``` r
+
 post2 <- stan_lmer(weightgain ~ 1 + (1|source) + (1|type) + (1|source:type),
                    data = weightgain, prior_intercept = cauchy(),
                    prior_covariance = decov(shape = 2, scale = 2),

@@ -1,6 +1,7 @@
 # Estimating Regularized Linear Models with rstanarm
 
 ``` r
+
 library(ggplot2)
 library(bayesplot)
 theme_set(bayesplot::theme_default())
@@ -227,6 +228,7 @@ very much of the variation in rainfall and thus the prior mode of the
 The frequentist estimator of this model can be replicated by executing
 
 ``` r
+
 data("clouds", package = "HSAUR3")
 ols <- lm(rainfall ~ seeding * (sne + cloudcover + prewetness + echomotion) +
             time, data = clouds)
@@ -253,6 +255,7 @@ mode for \\R^2\\, and optionally specifying how many cores the computer
 may utilize:
 
 ``` r
+
 library(rstanarm)
 post <-
   stan_lm(
@@ -310,6 +313,7 @@ average treatment effect (ATE) using **rstanarm**’s `posterior_predict`
 function.
 
 ``` r
+
 clouds_cf <- clouds
 clouds_cf$seeding[] <- "yes"
 y1_rep <- posterior_predict(post, newdata = clouds_cf)
@@ -337,6 +341,7 @@ approach can be executed by calling the `stan_glm` function with
 `family = gaussian()` and specifying the priors:
 
 ``` r
+
 simple <-
   stan_glm(
     rainfall ~ seeding * (sne + cloudcover + prewetness + echomotion) + time,
@@ -353,8 +358,10 @@ Leave-One-Out (LOO) cross-validation, which is implemented by the `loo`
 function in the **loo** package.
 
 ``` r
+
 (loo_post <- loo(post))
 ```
+
 
     Computed from 4000 by 24 log-likelihood matrix.
 
@@ -370,10 +377,12 @@ function in the **loo** package.
     See help('pareto-k-diagnostic') for details.
 
 ``` r
+
 (loo_simple <- loo(simple))
 ```
 
     Warning: Found 3 observation(s) with a pareto_k > 0.7. We recommend calling 'loo' again with argument 'k_threshold = 0.7' in order to calculate the ELPD without the assumption that these observations are negligible. This will refit the model 3 times to compute the ELPDs for the problematic observations directly.
+
 
     Computed from 4000 by 24 log-likelihood matrix.
 
@@ -393,6 +402,7 @@ function in the **loo** package.
     See help('pareto-k-diagnostic') for details.
 
 ``` r
+
 loo_compare(loo_post, loo_simple)
 ```
 
@@ -414,6 +424,7 @@ and only has a few of the \\24\\ Pareto shape estimates in the “danger
 zone”. We might want to reexamine these observations
 
 ``` r
+
 plot(loo_post, label_points = TRUE)
 ```
 

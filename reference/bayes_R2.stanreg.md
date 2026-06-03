@@ -69,9 +69,9 @@ print(example_model)
 median(bayes_R2(example_model))
 median(bayes_R2(example_model, re.form = NA)) # exclude group-level
 }
-#> [1] 0.8156549
+#> [1] 0.8157104
 
-#> [1] 0.7993705
+#> [1] 0.7945397
 #> stan_glmer
 #>  family:       binomial [logit]
 #>  formula:      cbind(incidence, size - incidence) ~ size + period + (1 | herd)

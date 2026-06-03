@@ -1,6 +1,7 @@
 # Estimating Generalized (Non-)Linear Models with Group-Specific Terms with rstanarm
 
 ``` r
+
 library(ggplot2)
 library(bayesplot)
 theme_set(bayesplot::theme_default())
@@ -270,6 +271,7 @@ group-specific terms as a one-sided formula that is passed to the
 `random` argument as in the `lme` function in the **nlme** package.
 
 ``` r
+
 library(rstanarm)
 data(roaches)
 roaches$roach1 <- roaches$roach1 / 100
@@ -288,6 +290,7 @@ post <- stan_gamm4(
 ```
 
 ``` r
+
 plot_nonlinear(post)
 ```
 
@@ -313,6 +316,7 @@ package, we start by rescaling the outcome and main predictor(s) by a
 constant
 
 ``` r
+
 data("Orange", package = "datasets")
 Orange$age <- Orange$age / 100
 Orange$circumference <- Orange$circumference / 100
@@ -326,6 +330,7 @@ function requires that the user pass starting values to the
 ironically-named self-starting non-linear function:
 
 ``` r
+
 startvec <- c(Asym = 2, xmid = 7.25, scal = 3.5)
 library(lme4)
 nm1 <- nlmer(circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree,
@@ -394,11 +399,13 @@ To fit essentially the same model using Stan’s implementation of MCMC,
 we add a `stan_` prefix
 
 ``` r
+
 post1 <- stan_nlmer(circumference ~ SSlogis(age, Asym, xmid, scal) ~ Asym|Tree,
                     data = Orange, cores = 2, seed = 12345, init_r = 0.5)
 ```
 
 ``` r
+
 post1
 ```
 
@@ -439,6 +446,7 @@ uncertainty estimates for the tree-specific deviations in the asymptote,
 which are considerable.
 
 ``` r
+
 plot(post1, regex_pars = "^[b]")
 ```
 
@@ -448,6 +456,7 @@ As can be seen, the age of the tree has a non-linear effect on the
 predicted circumference of the tree (here for a out-of-sample tree):
 
 ``` r
+
 nd <- data.frame(age = 1:20, Tree = factor("6", levels = 1:6))
 PPD <- posterior_predict(post1, newdata = nd)
 PPD_df <- data.frame(age = as.factor(rep(1:20, each = nrow(PPD))),
@@ -461,6 +470,7 @@ If we were pharmacological, we could evaluate drug concentration using a
 first-order compartment model, such as
 
 ``` r
+
 post3 <- stan_nlmer(conc ~ SSfol(Dose, Time, lKe, lKa, lCl) ~ 
                     (0 + lKe + lKa + lCl | Subject), data = Theoph,
                     cores = 2, seed = 12345, 

@@ -13,8 +13,8 @@
 <link rel="manifest" href="../site.webmanifest">
 <!-- mathjax math --><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.js" integrity="sha256-qoRlVrS5NAnXSSSiMfFXwK8C9obG11Iybe4h2+bQYR4=" crossorigin="anonymous">
   </script><script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -95,7 +95,7 @@
                         <h4 data-toc-skip class="author">Sam
 Brilleman</h4>
             
-            <h4 data-toc-skip class="date">2025-12-30</h4>
+            <h4 data-toc-skip class="date">2026-06-03</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/jm.Rmd" class="external-link"><code>vignettes/jm.Rmd</code></a></small>
       <div class="d-none name"><code>jm.Rmd</code></div>
@@ -1025,8 +1025,8 @@ Please note the warmup may be much slower than later iterations!
 
 SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 0.000208 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.08 seconds.
+Chain 1: Gradient evaluation took 0.000226 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.26 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
@@ -1034,9 +1034,9 @@ Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
 Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 Chain 1: 
-Chain 1:  Elapsed Time: 19.03 seconds (Warm-up)
-Chain 1:                19.674 seconds (Sampling)
-Chain 1:                38.704 seconds (Total)
+Chain 1:  Elapsed Time: 19.813 seconds (Warm-up)
+Chain 1:                20.95 seconds (Sampling)
+Chain 1:                40.763 seconds (Total)
 Chain 1: </code></pre>
 <p>The argument <code>refresh = 2000</code> was specified so that Stan
 didn’t provide us with excessive progress updates whilst fitting the
@@ -1083,9 +1083,9 @@ b-splines-coef5 -0.061  1.665     NA
 b-splines-coef6 -0.820  1.665     NA     
 
 Group-level error terms:
- Groups Name              Std.Dev. Corr
- id     Long1|(Intercept) 1.2954       
-        Long1|year        0.1921   0.52
+ Groups Name              Std.Dev. Corr 
+ id     Long1|(Intercept) 1.2954        
+        Long1|year        0.1921   0.52 
 Num. levels: id 40 
 
 Sample avg. posterior predictive distribution 
@@ -1293,8 +1293,8 @@ Please note the warmup may be much slower than later iterations!
 
 SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 0.000318 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.18 seconds.
+Chain 1: Gradient evaluation took 0.000339 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.39 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
@@ -1302,9 +1302,9 @@ Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
 Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 Chain 1: 
-Chain 1:  Elapsed Time: 34.576 seconds (Warm-up)
-Chain 1:                35.486 seconds (Sampling)
-Chain 1:                70.062 seconds (Total)
+Chain 1:  Elapsed Time: 37.114 seconds (Warm-up)
+Chain 1:                37.989 seconds (Sampling)
+Chain 1:                75.103 seconds (Total)
 Chain 1: </code></pre>
 <p>We can now examine the output from the fitted model, for
 example<br></p>
@@ -1351,11 +1351,11 @@ b-splines-coef5  -1.276   1.887      NA
 b-splines-coef6  -2.704   1.864      NA    
 
 Group-level error terms:
- Groups Name              Std.Dev. Corr             
- id     Long1|(Intercept) 1.24123                   
-        Long1|year        0.18822   0.49            
-        Long2|(Intercept) 0.51395  -0.65 -0.49      
-        Long2|year        0.09606  -0.57 -0.81  0.45
+ Groups Name              Std.Dev. Corr              
+ id     Long1|(Intercept) 1.24123                    
+        Long1|year        0.18822   0.49             
+        Long2|(Intercept) 0.51395  -0.65 -0.49       
+        Long2|year        0.09606  -0.57 -0.81  0.45 
 Num. levels: id 40 
 
 Sample avg. posterior predictive distribution 
@@ -1741,11 +1741,11 @@ here are the point estimates for the population-level effects of
 effects:</p>
 <div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/stanreg-methods.html">VarCorr</a></span><span class="op">(</span><span class="va">mod3</span><span class="op">)</span></span></code></pre></div>
-<pre><code> Groups Name              Std.Dev. Corr                
- id     Long1|(Intercept) 1.241233                     
-        Long1|year        0.188221  0.490              
-        Long2|(Intercept) 0.513955 -0.652 -0.494       
-        Long2|year        0.096057 -0.567 -0.810  0.454</code></pre>
+<pre><code> Groups Name              Std.Dev. Corr                 
+ id     Long1|(Intercept) 1.241233                      
+        Long1|year        0.188221  0.490               
+        Long2|(Intercept) 0.513955 -0.652 -0.494        
+        Long2|year        0.096057 -0.567 -0.810  0.454 </code></pre>
 <p>This shows us that the point estimates for the population-level
 effects of <code>sex</code> and <code>trt</code> are 0.57 and -0.10,
 respectively, whereas the standard deviation for the individual-specific

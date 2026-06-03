@@ -293,18 +293,7 @@ fit <- stan_betareg(
 print(fit, digits = 2)
 }
 
-#> stan_betareg
-#>  family:       beta [logit, link.phi=log]
-#>  formula:      y ~ x | z
-#>  observations: 200
-#> ------
-#>                   Median MAD_SD
-#> (Intercept)       1.02   0.11  
-#> x                 0.17   0.05  
-#> (phi)_(Intercept) 1.35   0.24  
-#> (phi)_z           0.45   0.12  
-#> 
-#> ------
-#> * For help interpreting the printed output see ?print.stanreg
-#> * For info on the priors used see ?prior_summary.stanreg
+#> Warning: non-zero return code in optimizing
+#> Error in chol.default(-H) : the leading minor of order 2 is not positive
+#> Error in `colnames<-`(`*tmp*`, value = new_names): attempt to set 'colnames' on an object with less than two dimensions
 ```

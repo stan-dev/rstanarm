@@ -127,6 +127,7 @@ content (a value of 1 represents a high consumer and a value of -1
 represents a low consumer).
 
 ``` r
+
 set.seed(123)
 group <- c(rep(1,10), rep(2,12))
 group <- factor(c(rep("A",10), rep("B",12)))
@@ -232,6 +233,7 @@ function) without an intercept, and with group membership and additional
 variables as parameters. We fit the model below.
 
 ``` r
+
 fit <- stan_glm(y ~ 0 + group + hc,
                 data = experiment,
                 family = gaussian(link="identity"),
@@ -245,6 +247,7 @@ samples instead of point estimates for the parameter values. The medians
 for each parameter are provided below.
 
 ``` r
+
 c(coef(fit), sigma = sigma(fit))
 ##    groupA    groupB        hc     sigma 
 ## 2.9614608 4.8750319 0.5630955 0.4960421
@@ -278,6 +281,7 @@ The functions below compute the proportion of overlap between the two
 groups.
 
 ``` r
+
 #' Quantify Overlapping Proportion
 #' Compute how much of the smaller distribution overlaps with the larger (i.e. wider) distribution.
 #' @param large Posterior predictive samples that have larger range than \code{small}.
@@ -322,6 +326,7 @@ where the predictions lie. The closer the prediction interval is to
 \\1\\ the more risk averse the business is with regards to inference.
 
 ``` r
+
 pp_a <- posterior_predict(fit, newdata = data.frame(group = factor("A"), hc = experiment$hc))
 pp_b <- posterior_predict(fit, newdata = data.frame(group = factor("B"), hc = experiment$hc))
 pp_a_quant <- quantile(pp_a, probs = c(0.05,0.95))
@@ -367,6 +372,7 @@ streaming hours among the two groups for those individuals that were
 categorized as high/low consumers.
 
 ``` r
+
 pp_a0 <- posterior_predict(fit, newdata = data.frame(group = factor("A"), hc = -1))
 pp_b0 <- posterior_predict(fit, newdata = data.frame(group = factor("B"), hc = -1))
 pp_a1 <- posterior_predict(fit, newdata = data.frame(group = factor("A"), hc = 1))
@@ -418,6 +424,7 @@ proportion, and consequentially the more apparent the difference between
 the two groups.
 
 ``` r
+
 # prediction interval probabilities
 ci_p <- seq(0.1,1, by = 0.05)
 # compute proportions
@@ -463,6 +470,7 @@ purchased the product and \\N\\ is the total number of users in each
 group. Below we fit this model to the data.
 
 ``` r
+
 experiment_bin <- data.frame(group = factor(c("C","D")),
                              y = c(10,14),
                              trials = c(19,22))
@@ -476,6 +484,7 @@ each group. We also compute the overlap proportion of these two sets of
 predictions.
 
 ``` r
+
 # pp_c <- posterior_linpred(fit_group_bin, newdata = data.frame(group = factor("C")), transform = TRUE)
 # pp_d <- posterior_linpred(fit_group_bin, newdata = data.frame(group = factor("D")), transform = TRUE)
 # below doesn't work as expected (predictions are bigger than the number of trials)
@@ -524,6 +533,7 @@ Similar to the continuous example in the previous section, risk is
 inversely related to group similarity.
 
 ``` r
+
 # prediction interval probabilities
 ci_p <- rev(seq(0.1,1, by = 0.05))
 # compute proportions
@@ -691,6 +701,7 @@ groups have equal means. Below we compute Welch’s test statistic and
 p-value given the data.
 
 ``` r
+
 group_a <- experiment$y[experiment$group == "A"]
 group_b <- experiment$y[experiment$group == "B"]
 # Relevant dplyr code
@@ -721,6 +732,7 @@ observed data. This is illustrated below. The red lines are the
 (two-tailed) test statistics calculated from the data.
 
 ``` r
+
 dof <- t_test$parameter[["df"]]
 x <- seq(-10,10,length.out = 1e3)
 plot(x, dt(x, dof), type = "l",
@@ -766,6 +778,7 @@ matrix and } \sigma \mbox{)} \end{align\*} \\
 Below we fit the model.
 
 ``` r
+
 fit_hier <- stan_glmer(y ~ 0 + (1 | group) + hc,
                        prior = normal(0, 1),
                        data = experiment,
@@ -774,6 +787,7 @@ fit_hier <- stan_glmer(y ~ 0 + (1 | group) + hc,
 ```
 
 ``` r
+
 coef(fit_hier)
 ## $group
 ##   (Intercept)        hc

@@ -132,8 +132,38 @@ prior_summary(fit2)
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 2.1e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#> Chain 1: Gradient evaluation took 2.7e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.27 seconds.
+#> Chain 1: Adjust your expectations accordingly!
+#> Chain 1: 
+#> Chain 1: 
+#> Chain 1: WARNING: No variance estimation is
+#> Chain 1:          performed for num_warmup < 20
+#> Chain 1: 
+#> Chain 1: Iteration: 1 / 10 [ 10%]  (Warmup)
+#> Chain 1: Iteration: 2 / 10 [ 20%]  (Warmup)
+#> Chain 1: Iteration: 3 / 10 [ 30%]  (Warmup)
+#> Chain 1: Iteration: 4 / 10 [ 40%]  (Warmup)
+#> Chain 1: Iteration: 5 / 10 [ 50%]  (Warmup)
+#> Chain 1: Iteration: 6 / 10 [ 60%]  (Sampling)
+#> Chain 1: Iteration: 7 / 10 [ 70%]  (Sampling)
+#> Chain 1: Iteration: 8 / 10 [ 80%]  (Sampling)
+#> Chain 1: Iteration: 9 / 10 [ 90%]  (Sampling)
+#> Chain 1: Iteration: 10 / 10 [100%]  (Sampling)
+#> Chain 1: 
+#> Chain 1:  Elapsed Time: 0 seconds (Warm-up)
+#> Chain 1:                0 seconds (Sampling)
+#> Chain 1:                0 seconds (Total)
+#> Chain 1: 
+#> Warning: The largest R-hat is 1.9, indicating chains have not mixed.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#r-hat
+#> Warning: Markov chains did not converge! Do not analyze results!
+#> 
+#> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
+#> Chain 1: 
+#> Chain 1: Gradient evaluation took 2e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -158,36 +188,6 @@ prior_summary(fit2)
 #> Warning: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
 #> https://mc-stan.org/misc/warnings.html#bfmi-low
 #> Warning: Examine the pairs() plot to diagnose sampling problems
-#> Warning: The largest R-hat is 1.9, indicating chains have not mixed.
-#> Running the chains for more iterations may help. See
-#> https://mc-stan.org/misc/warnings.html#r-hat
-#> Warning: Markov chains did not converge! Do not analyze results!
-#> 
-#> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
-#> Chain 1: 
-#> Chain 1: Gradient evaluation took 1.6e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.16 seconds.
-#> Chain 1: Adjust your expectations accordingly!
-#> Chain 1: 
-#> Chain 1: 
-#> Chain 1: WARNING: No variance estimation is
-#> Chain 1:          performed for num_warmup < 20
-#> Chain 1: 
-#> Chain 1: Iteration: 1 / 10 [ 10%]  (Warmup)
-#> Chain 1: Iteration: 2 / 10 [ 20%]  (Warmup)
-#> Chain 1: Iteration: 3 / 10 [ 30%]  (Warmup)
-#> Chain 1: Iteration: 4 / 10 [ 40%]  (Warmup)
-#> Chain 1: Iteration: 5 / 10 [ 50%]  (Warmup)
-#> Chain 1: Iteration: 6 / 10 [ 60%]  (Sampling)
-#> Chain 1: Iteration: 7 / 10 [ 70%]  (Sampling)
-#> Chain 1: Iteration: 8 / 10 [ 80%]  (Sampling)
-#> Chain 1: Iteration: 9 / 10 [ 90%]  (Sampling)
-#> Chain 1: Iteration: 10 / 10 [100%]  (Sampling)
-#> Chain 1: 
-#> Chain 1:  Elapsed Time: 0 seconds (Warm-up)
-#> Chain 1:                0 seconds (Sampling)
-#> Chain 1:                0 seconds (Total)
-#> Chain 1: 
 #> Warning: The largest R-hat is 1.9, indicating chains have not mixed.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#r-hat

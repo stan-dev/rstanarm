@@ -1,6 +1,7 @@
 # Estimating Joint Models for Longitudinal and Time-to-Event Data with rstanarm
 
 ``` r
+
 library(ggplot2)
 library(bayesplot)
 theme_set(bayesplot::theme_default())
@@ -250,7 +251,7 @@ the situation where the longitudinal submodel is based on an identity
 link function and normal error distribution (i.e. a linear mixed model)
 the *current value* association structure can be viewed as a method for
 including the underlying “true” value of the biomarker as a time-varying
-covariate in the event submodel.[¹](#fn1)
+covariate in the event submodel.[^1]
 
 However, other association structures are also possible. For example, we
 could assume the log hazard of the event is linearly associated with the
@@ -410,7 +411,7 @@ longitudinal submodel, \\\log p(T_i, d_i \mid \boldsymbol{b}\_{i},
 likelihood for the distribution of the group-specific parameters
 (i.e. random effects), and \\\log p(\boldsymbol{\theta})\\ represents
 the log likelihood for the joint prior distribution across all remaining
-unknown parameters.[²](#fn2)
+unknown parameters.[^2]
 
 We can rewrite the log likelihood for the event submodel as
 
@@ -596,7 +597,7 @@ and similarly for the survival probability
 We can obtain draws for \\\boldsymbol{\tilde{b}}\_k\\ in the same manner
 as for the individual-specific parameters \\\boldsymbol{b}\_i\\. That
 is, at the \\l^{th}\\ iteration of the MCMC sampler we draw
-\\\boldsymbol{\tilde{b}}\_k^{(l)}\\ and store it[³](#fn3). However,
+\\\boldsymbol{\tilde{b}}\_k^{(l)}\\ and store it[^3]. However,
 individual \\k\\ did not provide any contribution to the training data
 and so we are effectively taking random draws from the posterior
 distribution for the individual-specific parameters. We are therefore
@@ -708,6 +709,7 @@ data frame contains multiple-row per patient longitudinal biomarker
 information, as shown in
 
 ``` r
+
 head(pbcLong)
 ```
 
@@ -723,6 +725,7 @@ while the second data frame contains single-row per patient survival
 information, as shown in
 
 ``` r
+
 head(pbcSurv)
 ```
 
@@ -755,6 +758,7 @@ A description of the example datasets can be found by accessing the
 following help documentation:
 
 ``` r
+
 help("datasets", package = "rstanarm")
 ```
 
@@ -794,6 +798,7 @@ gender (`sex`) and an indicator of treatment with D-penicillamine
 (`trt`).
 
 ``` r
+
 library(rstanarm)
 mod1 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id), 
                 dataLong = pbcLong,
@@ -809,8 +814,8 @@ mod1 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id),
 
     SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
     Chain 1: 
-    Chain 1: Gradient evaluation took 0.000208 seconds
-    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.08 seconds.
+    Chain 1: Gradient evaluation took 0.000226 seconds
+    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.26 seconds.
     Chain 1: Adjust your expectations accordingly!
     Chain 1: 
     Chain 1: 
@@ -818,9 +823,9 @@ mod1 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id),
     Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
     Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
     Chain 1: 
-    Chain 1:  Elapsed Time: 19.03 seconds (Warm-up)
-    Chain 1:                19.674 seconds (Sampling)
-    Chain 1:                38.704 seconds (Total)
+    Chain 1:  Elapsed Time: 19.813 seconds (Warm-up)
+    Chain 1:                20.95 seconds (Sampling)
+    Chain 1:                40.763 seconds (Total)
     Chain 1: 
 
 The argument `refresh = 2000` was specified so that Stan didn’t provide
@@ -867,9 +872,9 @@ will examine the most basic output for the fitted joint model by typing
     b-splines-coef6 -0.820  1.665     NA     
 
     Group-level error terms:
-     Groups Name              Std.Dev. Corr
-     id     Long1|(Intercept) 1.2954       
-            Long1|year        0.1921   0.52
+     Groups Name              Std.Dev. Corr 
+     id     Long1|(Intercept) 1.2954        
+            Long1|year        0.1921   0.52 
     Num. levels: id 40 
 
     Sample avg. posterior predictive distribution 
@@ -897,8 +902,10 @@ number of individuals, type of baseline hazard, etc) we can instead use
 the `summary` method:
 
 ``` r
+
 summary(mod1, probs = c(.025,.975))
 ```
+
 
     Model Info:
 
@@ -994,6 +1001,7 @@ deviations and correlations) then you can type the following to return a
 data frame with all of the relevant information:
 
 ``` r
+
 as.data.frame(VarCorr(mod1))
 ```
 
@@ -1022,6 +1030,7 @@ argument equal to a character vector `c("etavalue", "etaslope")` which
 indicates our desired association structure:
 
 ``` r
+
 mod2 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id), 
                 dataLong = pbcLong,
                 formulaEvent = survival::Surv(futimeYears, death) ~ sex + trt, 
@@ -1069,6 +1078,7 @@ respectively, the gender and treatment indicators for individual \\i\\.
 this analysis should not to be overinterpreted!).
 
 ``` r
+
 mod3 <- stan_jm(
     formulaLong = list(
         logBili ~ sex + trt + year + (year | id), 
@@ -1085,8 +1095,8 @@ mod3 <- stan_jm(
 
     SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
     Chain 1: 
-    Chain 1: Gradient evaluation took 0.000318 seconds
-    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.18 seconds.
+    Chain 1: Gradient evaluation took 0.000339 seconds
+    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.39 seconds.
     Chain 1: Adjust your expectations accordingly!
     Chain 1: 
     Chain 1: 
@@ -1094,14 +1104,15 @@ mod3 <- stan_jm(
     Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
     Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
     Chain 1: 
-    Chain 1:  Elapsed Time: 34.576 seconds (Warm-up)
-    Chain 1:                35.486 seconds (Sampling)
-    Chain 1:                70.062 seconds (Total)
+    Chain 1:  Elapsed Time: 37.114 seconds (Warm-up)
+    Chain 1:                37.989 seconds (Sampling)
+    Chain 1:                75.103 seconds (Total)
     Chain 1: 
 
 We can now examine the output from the fitted model, for example  
 
 ``` r
+
 print(mod3)
 ```
 
@@ -1146,11 +1157,11 @@ print(mod3)
     b-splines-coef6  -2.704   1.864      NA    
 
     Group-level error terms:
-     Groups Name              Std.Dev. Corr             
-     id     Long1|(Intercept) 1.24123                   
-            Long1|year        0.18822   0.49            
-            Long2|(Intercept) 0.51395  -0.65 -0.49      
-            Long2|year        0.09606  -0.57 -0.81  0.45
+     Groups Name              Std.Dev. Corr              
+     id     Long1|(Intercept) 1.24123                    
+            Long1|year        0.18822   0.49             
+            Long2|(Intercept) 0.51395  -0.65 -0.49       
+            Long2|year        0.09606  -0.57 -0.81  0.45 
     Num. levels: id 40 
 
     Sample avg. posterior predictive distribution 
@@ -1166,8 +1177,10 @@ or we can examine the summary output for the association parameters
 alone:  
 
 ``` r
+
 summary(mod3, pars = "assoc")
 ```
+
 
     Model Info:
 
@@ -1242,6 +1255,7 @@ model estimation.
 Here are the plots for log serum bilirubin:
 
 ``` r
+
 p1 <- posterior_traj(mod3, m = 1, ids = 6:8)
 pp1 <- plot(p1, plot_observed = TRUE)
 pp1
@@ -1252,6 +1266,7 @@ pp1
 and here are the plots for serum albumin:
 
 ``` r
+
 p2 <- posterior_traj(mod3, m = 2, ids = 6:8)
 pp2 <- plot(p2, plot_observed = TRUE)
 pp2
@@ -1272,6 +1287,7 @@ specifying `extrapolate = TRUE` in the `posterior_traj` call. For
 example, here is the plot for log serum bilirubin with extrapolation:
 
 ``` r
+
 p3 <- posterior_traj(mod3, m = 1, ids = 6:8, extrapolate = TRUE)
 pp3 <- plot(p3, plot_observed = TRUE, vline = TRUE)
 pp3
@@ -1282,6 +1298,7 @@ pp3
 and for serum albumin with extrapolation:
 
 ``` r
+
 p4 <- posterior_traj(mod3, m = 2, ids = 6:8, extrapolate = TRUE)
 pp4 <- plot(p4, plot_observed = TRUE, vline = TRUE)
 pp4
@@ -1337,6 +1354,7 @@ previous example. The predicted survival curve will be obtained under
 the multivariate joint model estimated above.  
 
 ``` r
+
 p5 <- posterior_survfit(mod3, ids = 6:8)
 pp5 <- plot(p5)
 pp5
@@ -1357,6 +1375,7 @@ replotting the predictions for the three individuals in the previous
 example:
 
 ``` r
+
 plot_stack_jm(yplot = list(pp3, pp4), survplot = pp5)
 ```
 
@@ -1384,6 +1403,7 @@ subject ID value so that they appear to be an individual who was not
 included in our training dataset:
 
 ``` r
+
 ndL <- pbcLong[pbcLong$id == 8, , drop = FALSE]
 ndE <- pbcSurv[pbcSurv$id == 8, , drop = FALSE]
 ndL$id <- paste0("new_patient")
@@ -1412,6 +1432,7 @@ Our predictions for this new individual for the log serum bilirubin
 trajectory can be obtained using:
 
 ``` r
+
 p6 <- posterior_traj(mod3, m = 1, 
                      newdataLong = ndL, 
                      newdataEvent = ndE,
@@ -1422,6 +1443,7 @@ p6 <- posterior_traj(mod3, m = 1,
       |                                                                              |                                                                      |   0%  |                                                                              |======================================================================| 100%
 
 ``` r
+
 pp6 <- plot(p6, plot_observed = TRUE, vline = TRUE)
 pp6
 ```
@@ -1431,6 +1453,7 @@ pp6
 and for the serum albumin trajectory:
 
 ``` r
+
 p7 <- posterior_traj(mod3, m = 2, 
                      newdataLong = ndL, 
                      newdataEvent = ndE,
@@ -1441,6 +1464,7 @@ p7 <- posterior_traj(mod3, m = 2,
       |                                                                              |                                                                      |   0%  |                                                                              |======================================================================| 100%
 
 ``` r
+
 pp7 <- plot(p7, plot_observed = TRUE, vline = TRUE)
 pp7
 ```
@@ -1451,6 +1475,7 @@ For the conditional survival probabilities we use similar information,
 provided to the `posterior_survfit` function:
 
 ``` r
+
 p8 <- posterior_survfit(mod3,
                         newdataLong = ndL, 
                         newdataEvent = ndE,
@@ -1461,6 +1486,7 @@ p8 <- posterior_survfit(mod3,
       |                                                                              |                                                                      |   0%  |                                                                              |======================================================================| 100%
 
 ``` r
+
 pp8 <- plot(p8)
 pp8
 ```
@@ -1472,6 +1498,7 @@ example, to stack the plots of the longitudinal trajectory and the
 conditional survival curve:
 
 ``` r
+
 plot_stack_jm(yplot = list(pp6, pp7), survplot = pp8)
 ```
 
@@ -1490,6 +1517,7 @@ posterior mean for the estimated individual-specific parameters for
 individual `8` from the fitted model:
 
 ``` r
+
 c(ranef(mod3)[["Long1"]][["id"]][8,], 
   ranef(mod3)[["Long2"]][["id"]][8,])
 ```
@@ -1510,6 +1538,7 @@ and here is the mean of the draws for the individual-specific parameters
 for individual `8` under the dynamic predictions approach:
 
 ``` r
+
 colMeans(attr(p6, "b_new"))
 ```
 
@@ -1556,6 +1585,7 @@ need to note two things:
 Here is our prediction data:
 
 ``` r
+
 ndL <- expand.grid(year = seq(0, 10, 1),
                    sex = c("m", "f"), 
                    trt = 0:1)
@@ -1575,6 +1605,7 @@ And to predict the marginal longitudinal trajectory for log serum
 bilirubin under each covariate profile and plot it we can type:
 
 ``` r
+
 p1 <- posterior_traj(mod3, m = 1, newdataLong = ndL, dynamic = FALSE)
 plot(p1) + ggplot2::coord_cartesian(ylim = c(-10,15))
 ```
@@ -1592,6 +1623,7 @@ For example, here are the point estimates for the population-level
 effects of `sex`, `trt`, and `year`:
 
 ``` r
+
 fixef(mod3)$Long1
 ```
 
@@ -1602,14 +1634,15 @@ and here are the standard deviations for the individual-level random
 effects:
 
 ``` r
+
 VarCorr(mod3)
 ```
 
-     Groups Name              Std.Dev. Corr                
-     id     Long1|(Intercept) 1.241233                     
-            Long1|year        0.188221  0.490              
-            Long2|(Intercept) 0.513955 -0.652 -0.494       
-            Long2|year        0.096057 -0.567 -0.810  0.454
+     Groups Name              Std.Dev. Corr                 
+     id     Long1|(Intercept) 1.241233                      
+            Long1|year        0.188221  0.490               
+            Long2|(Intercept) 0.513955 -0.652 -0.494        
+            Long2|year        0.096057 -0.567 -0.810  0.454 
 
 This shows us that the point estimates for the population-level effects
 of `sex` and `trt` are 0.57 and -0.10, respectively, whereas the
@@ -1639,6 +1672,7 @@ default anyway) which will mean we automatically predict at 10 evenly
 spaced time points between 0 and the maximum event or censoring time.
 
 ``` r
+
 p1 <- posterior_survfit(mod3, standardise = TRUE, times = 0)
 head(p1) # data frame with standardised survival probabilities
 ```
@@ -1652,6 +1686,7 @@ head(p1) # data frame with standardised survival probabilities
     6 5.0768   0.5934 0.5386 0.6456
 
 ``` r
+
 plot(p1) # plot the standardised survival curve
 ```
 
@@ -1720,20 +1755,18 @@ plot(p1) # plot the standardised survival curve
 20. Therneau T, Grambsch P. *Modeling Survival Data: Extending the Cox
     Model* Springer-Verlag, New York; 2000. ISBN: 0-387-98784-3
 
-------------------------------------------------------------------------
-
-1.  By “true” value of the biomarker, we mean the value of the biomarker
-    which is not subject to measurement error or discrete time
+[^1]: By “true” value of the biomarker, we mean the value of the
+    biomarker which is not subject to measurement error or discrete time
     observation. Of course, for the expected value from the longitudinal
     submodel to be considered the so-called “true” underlying biomarker
     value, we would need to have specified the longitudinal submodel
     appropriately!
 
-2.  We refer the reader to the priors
+[^2]: We refer the reader to the priors
     [vignette](https://mc-stan.org/rstanarm/articles/priors.md) for a
     discussion of the possible prior distributions.
 
-3.  These random draws from the posterior distribution of the
+[^3]: These random draws from the posterior distribution of the
     group-specific parameters are stored each time a joint model is
     estimated using `stan_glmer`, `stan_mvmer`, or `stan_jm`; they are
     saved under an ID value called `"_NEW_"`

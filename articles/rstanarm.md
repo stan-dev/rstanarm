@@ -1,6 +1,7 @@
 # How to Use the rstanarm Package
 
 ``` r
+
 library(ggplot2)
 library(bayesplot)
 theme_set(bayesplot::theme_default())
@@ -138,6 +139,7 @@ of \\g^{-1}\left(\eta_i \right)^{y_i} \left(1 - g^{-1}\left(\eta_i
 \\\beta_1\\, and \\\beta_2\\ to obtain frequentist estimates by calling
 
 ``` r
+
 data("womensrole", package = "HSAUR3")
 womensrole$total <- womensrole$agree + womensrole$disagree
 womensrole_glm_1 <- glm(cbind(agree, disagree) ~ education + gender,
@@ -165,6 +167,7 @@ way by prepending `stan_` to the `glm` call and specifying priors (and
 optionally the number of cores on your computer to utilize):
 
 ``` r
+
 library(rstanarm)
 womensrole_bglm_1 <- stan_glm(cbind(agree, disagree) ~ education + gender,
                               data = womensrole,
@@ -202,6 +205,7 @@ deviation. In addition, we can use the `posterior_interval` function to
 obtain a Bayesian uncertainty interval for \\\beta_1\\:
 
 ``` r
+
 ci95 <- posterior_interval(womensrole_bglm_1, prob = 0.95, pars = "education")
 round(ci95, 2)
 ```
@@ -222,6 +226,7 @@ is estimated by `glm` are also available for a model that is estimated
 by `stan_glm`. For example,
 
 ``` r
+
 cbind(Median = coef(womensrole_bglm_1), MAD_SD = se(womensrole_bglm_1))
 ```
 
@@ -231,13 +236,15 @@ cbind(Median = coef(womensrole_bglm_1), MAD_SD = se(womensrole_bglm_1))
     genderFemale -0.01262136 0.08463091
 
 ``` r
+
 summary(residuals(womensrole_bglm_1)) # not deviance residuals
 ```
 
-          Min.    1st Qu.     Median       Mean    3rd Qu.       Max.       NA's 
+          Min.    1st Qu.     Median       Mean    3rd Qu.       Max.        NAs 
     -0.3076575 -0.0359870 -0.0041319 -0.0003265  0.0660755  0.2822688          1 
 
 ``` r
+
 cov2cor(vcov(womensrole_bglm_1))
 ```
 
@@ -261,6 +268,7 @@ and diagnose any problems with the Markov chains. In this case, the
 results are fine and to verify that, you can call
 
 ``` r
+
 launch_shinystan(womensrole_bglm_1, ppd = FALSE)
 ```
 
@@ -275,6 +283,7 @@ out-of-sample, but in this case is omitted to obtain in-sample posterior
 predictions:
 
 ``` r
+
 y_rep <- posterior_predict(womensrole_bglm_1)
 dim(y_rep)
 ```
@@ -291,6 +300,7 @@ to the observed proportion of agreements in the data. We can create a
 plot to check this:
 
 ``` r
+
 par(mfrow = 1:2, mar = c(5,3.7,1,0) + 0.1, las = 3)
 boxplot(sweep(y_rep[,womensrole$gender == "Male"], 2, STATS = 
                womensrole$total[womensrole$gender == "Male"], FUN = "/"), 
@@ -330,6 +340,7 @@ effect on agreement, which is easy to specify using R’s formula-based
 syntax.
 
 ``` r
+
 (womensrole_bglm_2 <- update(womensrole_bglm_1, formula. = . ~ . + I(education^2)))
 ```
 
@@ -358,6 +369,7 @@ thereof provided by the `loo` function in the **loo** package, for which
 a method is provided by the **rstanarm** package.
 
 ``` r
+
 loo_bglm_1 <- loo(womensrole_bglm_1)
 loo_bglm_2 <- loo(womensrole_bglm_2)
 ```
@@ -366,6 +378,7 @@ First, we verify that the posterior is not too sensitive to any
 particular observation in the dataset.
 
 ``` r
+
 par(mfrow = 1:2, mar = c(5,3.8,1,0) + 0.1, las = 3)
 plot(loo_bglm_1, label_points = TRUE)
 plot(loo_bglm_2, label_points = TRUE)
@@ -378,6 +391,7 @@ greater than \\0.5\\), which should not have too much of an effect on
 the resulting model comparison:
 
 ``` r
+
 loo_compare(loo_bglm_1, loo_bglm_2)
 ```
 
@@ -391,8 +405,10 @@ between them after taking into account that the second model estimates
 an additional parameter. The “LOO Information Criterion (LOOIC)”
 
 ``` r
+
 loo_bglm_1
 ```
+
 
     Computed from 4000 by 42 log-likelihood matrix.
 
@@ -430,6 +446,7 @@ simply by inspecting the posterior predictive distribution at different
 levels of the predictors. For example,
 
 ``` r
+
 # note: in newdata we want agree and disagree to sum to the number of people we
 # want to predict for. the values of agree and disagree don't matter so long as
 # their sum is the desired number of trials. we need to explicitly imply the
@@ -501,6 +518,7 @@ To illustrate how to check the Rhat values after fitting a model using
 iterations.
 
 ``` r
+
 bad_rhat <- stan_glm(mpg ~ ., data = mtcars, iter = 20, chains = 2, seed = 12345)
 ```
 
@@ -524,6 +542,7 @@ bad_rhat <- stan_glm(mpg ~ ., data = mtcars, iter = 20, chains = 2, seed = 12345
     Warning: Markov chains did not converge! Do not analyze results!
 
 ``` r
+
 good_rhat <- update(bad_rhat, iter = 1000, chains = 2, seed = 12345)
 ```
 
@@ -532,6 +551,7 @@ the second model does not. Indeed, we can see that many Rhat values are
 much bigger than 1 for the first model:
 
 ``` r
+
 rhat <- summary(bad_rhat)[, "Rhat"]
 rhat[rhat > 1.1]
 ```
@@ -545,6 +565,7 @@ Since we didn’t get a warning for the second model we shouldn’t find any
 parameters with an Rhat far from 1:
 
 ``` r
+
 any(summary(good_rhat)[, "Rhat"] > 1.1)
 ```
 

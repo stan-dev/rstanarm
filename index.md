@@ -222,6 +222,7 @@ value. Currently, optimization is only supported for `stan_glm`.
 The most recent **rstanarm** release can be installed from CRAN via
 
 ``` r
+
 install.packages("rstanarm")
 ```
 
@@ -235,6 +236,7 @@ from GitHub using the **remotes** package by executing the following in
 R:
 
 ``` r
+
 # Change 2 to however many cores you can/want to use to parallelize install
 # If you experience crashes or run out RAM during installation, try changing this to 1
 Sys.setenv(MAKEFLAGS = "-j2")
@@ -271,3 +273,6 @@ analysis functionality without needing to go through the time consuming
 If you are interested in contributing to the development of **rstanarm**
 please see the [developer
 notes](https://mc-stan.org/rstanarm/dev-notes/index.html) page.
+
+All contributions must follow the [Stan AI Contribution
+Policy](https://github.com/stan-dev/stan/wiki/AI-Contribution-Policy).

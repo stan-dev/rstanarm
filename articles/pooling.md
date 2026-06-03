@@ -1,6 +1,7 @@
 # Hierarchical Partial Pooling for Repeated Binary Trials
 
 ``` r
+
 library(ggplot2)
 library(bayesplot)
 theme_set(bayesplot::theme_default())
@@ -70,6 +71,7 @@ It is drawn from the 1970 Major League Baseball season (from both
 leagues).
 
 ``` r
+
 library(rstanarm)
 data(bball1970)
 bball <- bball1970
@@ -97,6 +99,7 @@ print(bball)
     18      Alvis 45    7          70            14
 
 ``` r
+
 # A few quantities we'll use throughout
 N <- nrow(bball)
 K <- bball$AB
@@ -143,6 +146,7 @@ formats a number to include three decimal places to the right of zero
 when printing, as is customary for batting averages.
 
 ``` r
+
 batting_avg <- function(x) print(format(round(x, digits = 3), nsmall = 3), quote = FALSE)
 player_avgs <- y / K # player avgs through 45 AB
 tot_avg <- sum(y) / sum(K) # overall avg through 45 AB
@@ -228,6 +232,7 @@ specifies the binomial outcome by providing the number of successes
 indicates that we want an intercept-only model.
 
 ``` r
+
 SEED <- 101
 wi_prior <- normal(-1, 1)  # weakly informative prior on log-odds
 fit_pool <- stan_glm(cbind(Hits, AB - Hits) ~ 1, data = bball, family = binomial("logit"),
@@ -243,6 +248,7 @@ inverse-logit transformation (to convert from log-odds to probabilities)
 and then compute the median and 80% interval.
 
 ``` r
+
 invlogit <- plogis  # function(x) 1/(1 + exp(-x))
 summary_stats <- function(posterior) {
   x <- invlogit(posterior)  # log-odds -> probabilities
@@ -320,6 +326,7 @@ Using the same weakly informative prior now means that the each
 others.
 
 ``` r
+
 fit_nopool <- update(fit_pool, formula = . ~ 0 + Player, prior = wi_prior)
 nopool <- summary_stats(as.matrix(fit_nopool))
 rownames(nopool) <- as.character(bball$Player)
@@ -383,6 +390,7 @@ prior on the abilities with parameters that are themselves estimated.
 This model can be estimated using the `stan_glmer` function.
 
 ``` r
+
 fit_partialpool <- 
   stan_glmer(cbind(Hits, AB - Hits) ~ (1 | Player), data = bball, 
              family = binomial("logit"),
@@ -398,6 +406,7 @@ corresponding draw for the intercept. We can do this easily using the
 `sweep` function.
 
 ``` r
+
 # shift each player's estimate by intercept (and then drop intercept)
 shift_draws <- function(draws) {
   sweep(draws[, -1], MARGIN = 1, STATS = draws[, 1], FUN = "+")
@@ -445,6 +454,7 @@ the posterior. The following R code reproduces a similar plot for our
 data.
 
 ``` r
+
 library(ggplot2)
 models <- c("complete pooling", "no pooling", "partial pooling")
 estimates <- rbind(pool, nopool, partialpool)
@@ -644,6 +654,7 @@ number of data points in `newdata`. We can then take the row sums of
 this matrix to sum over the data points.
 
 ``` r
+
 newdata <- data.frame(Hits = y_new, AB = K_new, Player = bball$Player)
 fits <- list(Pooling = fit_pool, 
              NoPooling = fit_nopool, 
@@ -679,6 +690,7 @@ To compute this for each of the models we only need to take the mean of
 the corresponding column of `log_p_new`.
 
 ``` r
+
 mean_log_p_new <- colMeans(log_p_new)
 round(sort(mean_log_p_new, decreasing = TRUE), digits = 1)
 ```
@@ -748,6 +760,7 @@ digits to \\\max(u)\\ if it had not underflowed.
 We can implement \\\mathrm{log\\sum\\exp}\\ in R as follows:
 
 ``` r
+
 log_sum_exp <- function(u) {
   max_u <- max(u)
   a <- 0
@@ -767,6 +780,7 @@ log_sum_exp <- function(u) {
 and then include the \\-\log M\\ term to make it `log_mean_exp`:
 
 ``` r
+
 log_mean_exp <- function(u) {
   M <- length(u)
   -log(M) + log_sum_exp(u)
@@ -777,6 +791,7 @@ We can then use it to compute the log posterior predictive densities for
 each of the models:
 
 ``` r
+
 new_lps <- lapply(log_p_new_mats, function(x) apply(x, 2, log_mean_exp))
 
 # sum over the data points
@@ -801,6 +816,7 @@ density can be approximated using the `loo` function for each model and
 then compared across models:
 
 ``` r
+
 loo_compare(loo(fit_partialpool), loo(fit_pool), loo(fit_nopool))
 ```
 
@@ -847,6 +863,7 @@ properly calibrated (in a sense we define below).
 To predict \\z\\ for each player we can use the following code:
 
 ``` r
+
 newdata <- data.frame(Hits = y_new, AB = K_new, Player = bball$Player)
 ppd_pool <- posterior_predict(fit_pool, newdata)
 ppd_nopool <- posterior_predict(fit_nopool, newdata)
@@ -867,6 +884,7 @@ Translating the posterior number of hits into a season batting average,
 interval of
 
 ``` r
+
 z_1 <- ppd_partialpool[, 1]
 clemente_80pct <- (y[1] + quantile(z_1, prob = c(0.1, 0.9))) / (K[1] + K_new[1])
 batting_avg(clemente_80pct)
@@ -888,6 +906,7 @@ his remaining at bats (trials); the observed success rate in the
 remainder of the season is shown as a blue dot.
 
 ``` r
+
 ppd_intervals <- function(x) t(apply(x, 2, quantile, probs = c(0.25, 0.75)))
 ppd_summaries <- (1 / K_new) * rbind(ppd_intervals(ppd_pool),
                                      ppd_intervals(ppd_nopool),
@@ -900,6 +919,7 @@ df_ppd <- data.frame(player = rep(1:length(y_new), 3),
 ```
 
 ``` r
+
 ggplot(df_ppd, aes(x=player, y=y, ymin=lb, ymax=ub)) + 
   geom_linerange(color = "gray60", size = 2) + 
   geom_point(size = 2.5, color = "skyblue4") +
@@ -1003,6 +1023,7 @@ previous case.
 \sum\_{m=1}^M \mathrm{I}\[\theta_n^{(m)} \geq 0.400\]. \\
 
 ``` r
+
 draws_partialpool <- shift_draws(as.matrix(fit_partialpool))
 thetas_partialpool <- plogis(draws_partialpool)
 thetas_partialpool <- thetas_partialpool[,-ncol(thetas_partialpool)]
@@ -1103,6 +1124,7 @@ Of course, ranking players by ability makes no sense for the complete
 pooling model, where every player is assumed to have the same ability.
 
 ``` r
+
 reverse_rank <- function(x) 1 + length(x) - rank(x) # so lower rank is better
 rank <- apply(thetas_partialpool, 1, reverse_rank)
 t(apply(rank, 1, quantile, prob = c(0.1, 0.5, 0.9)))
@@ -1139,6 +1161,7 @@ for each hospital. It is now straightforward to reproduce that figure
 here for the baseball data.
 
 ``` r
+
 df_rank <- data.frame(name = rep(bball$Player, each = M), 
                       rank = c(t(rank)))
 
@@ -1174,6 +1197,7 @@ already computed or we could compute it directly as above. Because
 don’t have to worry about ties.
 
 ``` r
+
 thetas_nopool <- plogis(as.matrix(fit_nopool))
 colnames(thetas_nopool) <- as.character(bball$Player)
 rank_nopool <- apply(thetas_nopool, 1, reverse_rank)
@@ -1266,6 +1290,7 @@ line, and the \\p\\-value for each of the tests. First, here is just the
 plot for the no pooling model using the mean as the test statistic:
 
 ``` r
+
 pp_check(fit_nopool, plotfun = "stat", stat = "mean")
 ```
 
@@ -1280,6 +1305,7 @@ use the following code, which will create a list of ggplot objects for
 each model and then arrange everything in a single plot.
 
 ``` r
+
 tstat_plots <- function(model, stats) {
   lapply(stats, function(stat) {
     graph <- pp_check(model, plotfun = "stat", stat = stat, 
@@ -1315,6 +1341,7 @@ beyond what we can already see in the plot. However, if we did want to
 actually compute the \\p\\-value we can do so easily:
 
 ``` r
+
 yrep <- posterior_predict(fit_nopool, seed = SEED) # seed is optional
 Ty <- sd(y)
 Tyrep <- apply(yrep, 1, sd)
@@ -1346,6 +1373,7 @@ successes (hits in this case) on the x-axis, `pp_check` will plot the
 proportion of successes.
 
 ``` r
+
 pp_check(fit_partialpool, plotfun = "hist", nreps = 15, binwidth = 0.025) +
   ggtitle("Model: Partial Pooling")
 ```

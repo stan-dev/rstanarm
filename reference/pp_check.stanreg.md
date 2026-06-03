@@ -174,19 +174,11 @@ pp_check(fit2, plotfun = "bars_grouped", group = esoph$agegp,
          nreps = 500, prob = 0.5)
 # }
 }
-#> Warning: There were 3 divergent transitions after warmup. See
-#> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
-#> to find out why this is a problem and how to eliminate them.
-#> Warning: Examine the pairs() plot to diagnose sampling problems
-#> Warning: The largest R-hat is 1.07, indicating chains have not mixed.
-#> Running the chains for more iterations may help. See
-#> https://mc-stan.org/misc/warnings.html#r-hat
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#bulk-ess
 #> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#tail-ess
-#> Warning: Markov chains did not converge! Do not analyze results!
 #> Error in get(as.character(FUN), mode = "function", envir = envir): object 'q25' of mode 'function' was not found
 ```

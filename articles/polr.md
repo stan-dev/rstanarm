@@ -1,6 +1,7 @@
 # Estimating Ordinal Regression Models with rstanarm
 
 ``` r
+
 library(ggplot2)
 library(bayesplot)
 theme_set(bayesplot::theme_default())
@@ -147,6 +148,7 @@ as a function of age and alcohol consumption. Frequentist estimates can
 be obtained using the `polr` function in the **MASS** package:
 
 ``` r
+
 library(MASS)
 print(polr(tobgp ~ agegp + alcgp, data = esoph), digits = 1)
 ```
@@ -168,6 +170,7 @@ print(polr(tobgp ~ agegp + alcgp, data = esoph), digits = 1)
 To obtain Bayesian estimates, we prepend `stan_` and specify the priors:
 
 ``` r
+
 library(rstanarm)
 post0 <- stan_polr(tobgp ~ agegp + alcgp, data = esoph, 
                    prior = R2(0.25), prior_counts = dirichlet(1),
@@ -175,6 +178,7 @@ post0 <- stan_polr(tobgp ~ agegp + alcgp, data = esoph,
 ```
 
 ``` r
+
 print(post0, digits = 1)
 ```
 
@@ -215,6 +219,7 @@ birthweight is the binary outcome of interest. First, we recode some of
 the variables:
 
 ``` r
+
 data("birthwt", package = "MASS")
 birthwt$race <- factor(birthwt$race, levels = 1:3, 
                        labels = c("white", "black", "other"))
@@ -228,12 +233,14 @@ linear model for birthweight in kilograms, flipping the sign so that
 positive coefficients are associated with *lower* birthweights.
 
 ``` r
+
 post1 <- stan_lm(-bwt ~ smoke + age + race + ptl + ht + ftv,
                  data = birthwt, prior = R2(0.5), 
                  seed = 12345)
 ```
 
 ``` r
+
 print(post1)
 ```
 
@@ -272,12 +279,14 @@ proportional to \\y^\ast\\ and pretend that it is not observed, forcing
 us to estimate an ordinal model.
 
 ``` r
+
 post2 <- stan_polr(low ~ smoke + age + race + ptl + ht + ftv, data = birthwt,
                    prior = R2(0.5), prior_counts = dirichlet(c(1,1)), 
                    method = "probit", seed = 12345)
 ```
 
 ``` r
+
 plot(loo(post2))
 ```
 
@@ -289,6 +298,7 @@ posterior is very sensitive to those observations. If we compare the
 estimated coefficients,
 
 ``` r
+
 round(cbind(Linear = coef(post1), Ordinal = coef(post2), 
             Rescaled = coef(post1) / sigma(post1)), 3)
 ```

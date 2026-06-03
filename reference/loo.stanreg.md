@@ -299,11 +299,11 @@ loo_model_weights(loo_list)
 #> Computed from 4000 by 32 log-likelihood matrix.
 #> 
 #>          Estimate  SE
-#> elpd_loo    -83.4 4.3
-#> p_loo         3.2 1.1
-#> looic       166.9 8.5
+#> elpd_loo    -83.6 4.3
+#> p_loo         3.3 1.2
+#> looic       167.1 8.6
 #> ------
-#> MCSE of elpd_loo is 0.0.
+#> MCSE of elpd_loo is 0.1.
 #> MCSE and ESS estimates assume independent draws (r_eff=1).
 #> 
 #> All Pareto k estimates are good (k < 0.7).
@@ -333,6 +333,6 @@ loo_model_weights(loo_list)
 #> ------
 #>   weight
 #> A 0.000 
-#> B 0.487 
-#> C 0.513 
+#> B 0.489 
+#> C 0.511 
 ```

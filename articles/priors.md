@@ -1,6 +1,7 @@
 # Prior Distributions for rstanarm Models
 
 ``` r
+
 library(ggplot2)
 library(bayesplot)
 theme_set(bayesplot::theme_default())
@@ -39,12 +40,12 @@ the model parameters.
 
   
 
-| Argument           | Used in                                                    | Applies to                                                                                                                                                                                |
-|--------------------|------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `prior_intercept`  | All modeling functions except `stan_polr` and `stan_nlmer` | Model intercept, after centering predictors.                                                                                                                                              |
-| `prior`            | All modeling functions                                     | Regression coefficients. Does *not* include coefficients that vary by group in a multilevel model (see `prior_covariance`).                                                               |
-| `prior_aux`        | `stan_glm`\*, `stan_glmer`\*, `stan_gamm4`, `stan_nlmer`   | Auxiliary parameter, e.g. error SD (interpretation depends on the GLM).                                                                                                                   |
-| `prior_covariance` | `stan_glmer`\*, `stan_gamm4`, `stan_nlmer`                 | Covariance matrices in multilevel models with varying slopes and intercepts. See the [`stan_glmer` vignette](https://mc-stan.org/rstanarm/articles/glmer.html) for details on this prior. |
+| Argument | Used in | Applies to |
+|----|----|----|
+| `prior_intercept` | All modeling functions except `stan_polr` and `stan_nlmer` | Model intercept, after centering predictors. |
+| `prior` | All modeling functions | Regression coefficients. Does *not* include coefficients that vary by group in a multilevel model (see `prior_covariance`). |
+| `prior_aux` | `stan_glm`\*, `stan_glmer`\*, `stan_gamm4`, `stan_nlmer` | Auxiliary parameter, e.g. error SD (interpretation depends on the GLM). |
+| `prior_covariance` | `stan_glmer`\*, `stan_gamm4`, `stan_nlmer` | Covariance matrices in multilevel models with varying slopes and intercepts. See the [`stan_glmer` vignette](https://mc-stan.org/rstanarm/articles/glmer.html) for details on this prior. |
 
 \* `stan_glm` also implies `stan_glm.nb`. `stan_glmer` implies
 `stan_lmer` and `stan_glmer.nb`.
@@ -54,13 +55,13 @@ the model parameters.
 The `stan_polr`, `stan_betareg`, and `stan_gamm4` functions also provide
 additional arguments specific only to those models:
 
-| Argument            | Used only in   | Applies to                                                                             |
-|---------------------|----------------|----------------------------------------------------------------------------------------|
-| `prior_smooth`      | `stan_gamm4`   | Prior for hyperparameters in GAMs (lower values yield less flexible smooth functions). |
-| `prior_counts`      | `stan_polr`    | Prior counts of an *ordinal* outcome (when predictors at sample means).                |
-| `prior_z`           | `stan_betareg` | Coefficients in the model for `phi`.                                                   |
-| `prior_intercept_z` | `stan_betareg` | Intercept in the model for `phi`.                                                      |
-| `prior_phi`         | `stan_betareg` | `phi`, if not modeled as function of predictors.                                       |
+| Argument | Used only in | Applies to |
+|----|----|----|
+| `prior_smooth` | `stan_gamm4` | Prior for hyperparameters in GAMs (lower values yield less flexible smooth functions). |
+| `prior_counts` | `stan_polr` | Prior counts of an *ordinal* outcome (when predictors at sample means). |
+| `prior_z` | `stan_betareg` | Coefficients in the model for `phi`. |
+| `prior_intercept_z` | `stan_betareg` | Intercept in the model for `phi`. |
+| `prior_phi` | `stan_betareg` | `phi`, if not modeled as function of predictors. |
 
   
 
@@ -100,6 +101,7 @@ the `stan_glm` function accepts the arguments `prior_intercept`,
 arguments at their defaults (i.e., we don’t specify them):
 
 ``` r
+
 library("rstanarm")
 default_prior_test <- stan_glm(mpg ~ wt + am, data = mtcars, chains = 1)
 ```
@@ -108,6 +110,7 @@ The `prior_summary` function provides a concise summary of the priors
 used:
 
 ``` r
+
 prior_summary(default_prior_test)
 ```
 
@@ -248,6 +251,7 @@ use autoscaling with manually specified priors you have to set
 include any autoscaling:
 
 ``` r
+
 test_no_autoscale <-
   update(
     default_prior_test,
@@ -261,6 +265,7 @@ We can verify that the prior scales weren’t adjusted by checking
 `prior_summary`:
 
 ``` r
+
 prior_summary(test_no_autoscale)
 ```
 
@@ -302,6 +307,7 @@ some strange prior beliefs. For example, you believe a priori that
 verified by doing the calculation with the normal CDF
 
 ``` r
+
 p <- 1 - 2 * pnorm(-250, mean = 0, sd = 500)
 print(paste("Pr(-250 < theta < 250) =", round(p, 2)))
 ```
@@ -311,6 +317,7 @@ print(paste("Pr(-250 < theta < 250) =", round(p, 2)))
 or via approximation with Monte Carlo draws:
 
 ``` r
+
 theta <- rnorm(1e5, mean = 0, sd = 500)
 p_approx <- mean(abs(theta) < 250)
 print(paste("Pr(-250 < theta < 250) =", round(p_approx, 2)))
@@ -319,6 +326,7 @@ print(paste("Pr(-250 < theta < 250) =", round(p_approx, 2)))
     [1] "Pr(-250 < theta < 250) = 0.38"
 
 ``` r
+
 d <- data.frame(theta, clr = abs(theta) > 250)
 library(ggplot2)
 ggplot(d, aes(x = theta, fill = clr)) + 
@@ -362,6 +370,7 @@ distribution. For example, to use a flat prior on regression
 coefficients you would specify `prior=NULL`:
 
 ``` r
+
 flat_prior_test <- stan_glm(mpg ~ wt, data = mtcars, prior = NULL)
 ```
 
@@ -372,6 +381,7 @@ prior. To double check that indeed a flat prior was used for the
 coefficient on `wt` we can call `prior_summary`:
 
 ``` r
+
 prior_summary(flat_prior_test)
 ```
 
@@ -420,6 +430,7 @@ If the variables `y`, `x1`, and `x2` are in the data frame `dat` then
 this model can be specified as
 
 ``` r
+
 my_prior <- normal(location = c(-10, 0), scale = c(5, 2))
 stan_glm(y ~ x1 + x2, data = dat, prior = my_prior)
 ```

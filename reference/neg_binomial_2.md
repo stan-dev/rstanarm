@@ -40,6 +40,7 @@ with a different family name.
 if (.Platform$OS.type != "windows" || .Platform$r_arch != "i386")
 stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, seed = 123,
          family = neg_binomial_2, QR = TRUE, algorithm = "optimizing") 
+#> Warning: Pareto k diagnostic value is 0.74. Resampling is unreliable. Increasing the number of draws or decreasing tol_rel_grad may help.
 #> stan_glm
 #>  family:       neg_binomial_2 [log]
 #>  formula:      Days ~ Sex/(Age + Eth * Lrn)
@@ -48,18 +49,18 @@ stan_glm(Days ~ Sex/(Age + Eth*Lrn), data = MASS::quine, seed = 123,
 #> ------
 #>                 Median MAD_SD
 #> (Intercept)      3.1    0.3  
-#> SexM            -0.5    0.4  
-#> SexF:AgeF1      -0.8    0.3  
+#> SexM            -0.5    0.5  
+#> SexF:AgeF1      -0.7    0.4  
 #> SexM:AgeF1      -0.7    0.3  
 #> SexF:AgeF2      -0.6    0.4  
 #> SexM:AgeF2       0.6    0.3  
-#> SexF:AgeF3      -0.4    0.4  
-#> SexM:AgeF3       1.1    0.4  
+#> SexF:AgeF3      -0.3    0.4  
+#> SexM:AgeF3       1.2    0.4  
 #> SexF:EthN       -0.1    0.3  
-#> SexM:EthN       -0.7    0.3  
-#> SexF:LrnSL       1.0    0.3  
-#> SexM:LrnSL       0.2    0.4  
-#> SexF:EthN:LrnSL -1.4    0.4  
+#> SexM:EthN       -0.6    0.2  
+#> SexF:LrnSL       0.9    0.3  
+#> SexM:LrnSL       0.2    0.3  
+#> SexF:EthN:LrnSL -1.3    0.5  
 #> SexM:EthN:LrnSL  0.8    0.5  
 #> 
 #> Auxiliary parameter(s):

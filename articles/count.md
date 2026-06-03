@@ -1,6 +1,7 @@
 # Estimating Generalized Linear Models for Count Data with rstanarm
 
 ``` r
+
 library(ggplot2)
 library(bayesplot)
 theme_set(bayesplot::theme_default())
@@ -133,6 +134,7 @@ equivalent to adding \\\ln{(u_i)}\\ to the linear predictor \\\eta_i\\
 and it can be specified using the `offset` argument to `stan_glm`.
 
 ``` r
+
 library(rstanarm)
 data(roaches)
 
@@ -169,6 +171,7 @@ Here are the point estimates and uncertainties from the `glm` fit and
 `stan_glm` fit, which we see are nearly identical:
 
 ``` r
+
 round(rbind(glm = coef(glm1), stan_glm = coef(stan_glm1)), digits = 2)
 ```
 
@@ -177,6 +180,7 @@ round(rbind(glm = coef(glm1), stan_glm = coef(stan_glm1)), digits = 2)
     stan_glm        3.09    0.7     -0.52  -0.38
 
 ``` r
+
 round(rbind(glm = summary(glm1)$coefficients[, "Std. Error"], 
             stan_glm = se(stan_glm1)), digits = 3)
 ```
@@ -201,6 +205,7 @@ makes this easy. We can generate replicated datasets with a single line
 of code using the `posterior_predict` function:
 
 ``` r
+
 yrep <- posterior_predict(stan_glm1)
 ```
 
@@ -220,6 +225,7 @@ which generates graphical comparisons of the data `y` and replicated
 datasets `yrep`.
 
 ``` r
+
 prop_zero <- function(y) mean(y == 0)
 (prop_zero_test1 <- pp_check(stan_glm1, plotfun = "stat", stat = "prop_zero", binwidth = .005))
 ```
@@ -244,6 +250,7 @@ or, equivalently, change the `family` we specify in the call to
 can just use `update`:
 
 ``` r
+
 stan_glm2 <- update(stan_glm1, family = neg_binomial_2) 
 ```
 
@@ -251,6 +258,7 @@ We now use `pp_check` again, this time to check the proportion of zeros
 in the replicated datasets under the negative binomial model:
 
 ``` r
+
 prop_zero_test2 <- pp_check(stan_glm2, plotfun = "stat", stat = "prop_zero", 
                             binwidth = 0.01)
 # Show graphs for Poisson and negative binomial side by side
@@ -276,6 +284,7 @@ When we comparing the models using the **loo** package we also see a
 clear preference for the negative binomial model
 
 ``` r
+
 loo1 <- loo(stan_glm1, cores = 1)
 loo2 <- loo(stan_glm2, cores = 1)
 loo_compare(loo1, loo2)

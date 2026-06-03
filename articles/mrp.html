@@ -13,8 +13,8 @@
 <link rel="manifest" href="../site.webmanifest">
 <!-- mathjax math --><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.js" integrity="sha256-qoRlVrS5NAnXSSSiMfFXwK8C9obG11Iybe4h2+bQYR4=" crossorigin="anonymous">
   </script><script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Source_Sans_3-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/Source_Code_Pro-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -95,7 +95,7 @@
                         <h4 data-toc-skip class="author">Lauren Kennedy
 and Jonah Gabry</h4>
             
-            <h4 data-toc-skip class="date">2025-12-30</h4>
+            <h4 data-toc-skip class="date">2026-06-03</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/mrp.Rmd" class="external-link"><code>vignettes/mrp.Rmd</code></a></small>
       <div class="d-none name"><code>mrp.Rmd</code></div>
@@ -117,17 +117,15 @@ and Jonah Gabry</h4>
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyr.tidyverse.org" class="external-link">tidyr</a></span><span class="op">)</span></span></code></pre></div>
 <p>Inference about the population is one the main aims of statistical
-methodology. Multilevel regression and post-stratification (MRP) <span class="citation">(Little 1993; Lax and Phillips 2009; Park, Gelman, and
-Bafumi 2004)</span> has been shown to be an effective method of
-adjusting the sample to be more representative of the population for a
-set of key variables. Recent work has demonstrated the effectiveness of
-MRP when there are a number of suspected interactions between these
-variables <span class="citation">(Ghitza and Gelman 2013)</span>,
-replicated by <span class="citation">Lei, Gelman, and Ghitza
-(2017)</span>. While <span class="citation">Ghitza and Gelman
-(2013)</span> use approximate marginal maximum likelihood estimates;
-<span class="citation">Lei, Gelman, and Ghitza (2017)</span> implement a
-fully Bayesian approach through Stan.</p>
+methodology. Multilevel regression and post-stratification (MRP) <span class="citation">(Little 1993; Lax and Phillips 2009; Park et al.
+2004)</span> has been shown to be an effective method of adjusting the
+sample to be more representative of the population for a set of key
+variables. Recent work has demonstrated the effectiveness of MRP when
+there are a number of suspected interactions between these variables
+<span class="citation">(Ghitza and Gelman 2013)</span>, replicated by
+<span class="citation">Lei et al. (2017)</span>. While <span class="citation">Ghitza and Gelman (2013)</span> use approximate
+marginal maximum likelihood estimates; <span class="citation">Lei et al.
+(2017)</span> implement a fully Bayesian approach through Stan.</p>
 <p>The <strong>rstanarm</strong> package allows the user to conduct
 complicated regression analyses in Stan with the simplicity of standard
 formula notation in R. The purpose of this vignette is to demonstrate
@@ -151,11 +149,11 @@ within a specific bracket), and gender. Participants were randomly
 sampled from a state.</p>
 <p>MRP is often used for dichotomous fixed choice questions (e.g.,
 McCain’s share of two party vote <span class="citation">(Ghitza and
-Gelman 2013)</span>; support for George W Bush, <span class="citation">(Park, Gelman, and Bafumi 2004)</span>; or support for
-the death penalty <span class="citation">(Shirley and Gelman
-2015)</span>), so we will use a binary variable as the outcome in this
-vignette. However, MRP can also be used if there are more than two
-categories or if the outcome is continuous.</p>
+Gelman 2013)</span>; support for George W Bush, <span class="citation">(Park et al. 2004)</span>; or support for the death
+penalty <span class="citation">(Shirley and Gelman 2015)</span>), so we
+will use a binary variable as the outcome in this vignette. However, MRP
+can also be used if there are more than two categories or if the outcome
+is continuous.</p>
 <p>As this is a simple toy example, we will describe the proportion of
 the population who would choose to adopt a cat over a dog, given the
 opportunity. We will simulate data using a function that is included in
@@ -388,8 +386,11 @@ as it means we share information between the levels of each variable and
 we can prevent levels with with less data from being too sensitive to
 the few observed values. This also helps with the levels we don’t
 observe at all it will use information from the levels that we do
-observe. For more on the benefits of this type of model, see <span class="citation">Gelman et al. (2005)</span>, and see <span class="citation">Ghitza and Gelman (2013)</span> and <span class="citation">Si et al. (2017)</span> for more complicated extensions
-that involve deep interactions and structured prior distributions.</p>
+observe. For more on the benefits of this type of model, see <span class="citation"><span class="nocase">Gelman et al.</span>
+(2005)</span>, and see <span class="citation">Ghitza and Gelman
+(2013)</span> and <span class="citation">Si et al. (2017)</span> for
+more complicated extensions that involve deep interactions and
+structured prior distributions.</p>
 <p>Here is the model specified using the <code><a href="../reference/stan_glmer.html">stan_glmer()</a></code>
 function in rstanarm, which uses the same formula syntax as the
 <code><a href="https://rdrr.io/pkg/lme4/man/glmer.html" class="external-link">glmer()</a></code> function from the lme4 package:</p>
@@ -817,11 +818,11 @@ which is based off of some code provided by Aki Vehtari.</p>
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <!-- mrp.bib specified at the top -->
-<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-gelman2005analysis" class="csl-entry">
-Gelman, Andrew et al. 2005. <span>“Analysis of Variance-Why It Is More
-Important Than Ever.”</span> <em>The Annals of Statistics</em> 33 (1):
-1–53.
+<span class="nocase">Gelman, Andrew et al.</span> 2005. <span>“Analysis
+of Variance-Why It Is More Important Than Ever.”</span> <em>The Annals
+of Statistics</em> 33 (1): 1–53.
 </div>
 <div id="ref-ghitza2013deep" class="csl-entry">
 Ghitza, Yair, and Andrew Gelman. 2013. <span>“Deep Interactions with

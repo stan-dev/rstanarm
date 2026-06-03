@@ -238,8 +238,8 @@ plot(fit, regex_pars = "b\\[")
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 4e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.4 seconds.
+#> Chain 1: Gradient evaluation took 4.7e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.47 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -256,9 +256,9 @@ plot(fit, regex_pars = "b\\[")
 #> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.764 seconds (Warm-up)
-#> Chain 1:                0.383 seconds (Sampling)
-#> Chain 1:                1.147 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.861 seconds (Warm-up)
+#> Chain 1:                0.378 seconds (Sampling)
+#> Chain 1:                1.239 seconds (Total)
 #> Chain 1: 
 #> stan_nlmer
 #>  family:       gaussian [inv_SSlogis]
@@ -267,7 +267,7 @@ plot(fit, regex_pars = "b\\[")
 #> ------
 #>      Median MAD_SD
 #> Asym 1.9    0.1   
-#> xmid 7.2    0.3   
+#> xmid 7.2    0.4   
 #> scal 3.4    0.3   
 #> 
 #> Auxiliary parameter(s):
@@ -276,8 +276,8 @@ plot(fit, regex_pars = "b\\[")
 #> 
 #> Error terms:
 #>  Groups   Name Std.Dev.
-#>  Tree     Asym 0.313   
-#>  Residual      0.089   
+#>  Tree     Asym 0.32    
+#>  Residual      0.09    
 #> Num. levels: Tree 5 
 #> 
 #> ------
