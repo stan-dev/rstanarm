@@ -531,8 +531,8 @@ compare_priors(scale = 1000, xlim = c(-1000,1000))
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 2.6e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.26 seconds.
+#> Chain 1: Gradient evaluation took 2.3e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -557,9 +557,9 @@ compare_priors(scale = 1000, xlim = c(-1000,1000))
 #> Chain 1: Iteration: 225 / 250 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 250 / 250 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.024 seconds (Warm-up)
-#> Chain 1:                0.025 seconds (Sampling)
-#> Chain 1:                0.049 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.021 seconds (Warm-up)
+#> Chain 1:                0.022 seconds (Sampling)
+#> Chain 1:                0.043 seconds (Total)
 #> Chain 1: 
 #> Warning: The largest R-hat is 1.14, indicating chains have not mixed.
 #> Running the chains for more iterations may help. See
@@ -573,8 +573,8 @@ compare_priors(scale = 1000, xlim = c(-1000,1000))
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 2.5e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.25 seconds.
+#> Chain 1: Gradient evaluation took 2.4e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.24 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -591,15 +591,15 @@ compare_priors(scale = 1000, xlim = c(-1000,1000))
 #> Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.058 seconds (Warm-up)
-#> Chain 1:                0.055 seconds (Sampling)
-#> Chain 1:                0.113 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.051 seconds (Warm-up)
+#> Chain 1:                0.049 seconds (Sampling)
+#> Chain 1:                0.1 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 1.4e-05 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.14 seconds.
+#> Chain 2: Gradient evaluation took 1.2e-05 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -616,15 +616,15 @@ compare_priors(scale = 1000, xlim = c(-1000,1000))
 #> Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 0.06 seconds (Warm-up)
-#> Chain 2:                0.06 seconds (Sampling)
-#> Chain 2:                0.12 seconds (Total)
+#> Chain 2:  Elapsed Time: 0.052 seconds (Warm-up)
+#> Chain 2:                0.053 seconds (Sampling)
+#> Chain 2:                0.105 seconds (Total)
 #> Chain 2: 
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 3).
 #> Chain 3: 
-#> Chain 3: Gradient evaluation took 1.3e-05 seconds
-#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#> Chain 3: Gradient evaluation took 1.2e-05 seconds
+#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
 #> Chain 3: Adjust your expectations accordingly!
 #> Chain 3: 
 #> Chain 3: 
@@ -641,15 +641,15 @@ compare_priors(scale = 1000, xlim = c(-1000,1000))
 #> Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 3: 
-#> Chain 3:  Elapsed Time: 0.059 seconds (Warm-up)
-#> Chain 3:                0.074 seconds (Sampling)
-#> Chain 3:                0.133 seconds (Total)
+#> Chain 3:  Elapsed Time: 0.052 seconds (Warm-up)
+#> Chain 3:                0.065 seconds (Sampling)
+#> Chain 3:                0.117 seconds (Total)
 #> Chain 3: 
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 4).
 #> Chain 4: 
-#> Chain 4: Gradient evaluation took 1.3e-05 seconds
-#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.13 seconds.
+#> Chain 4: Gradient evaluation took 1.2e-05 seconds
+#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.12 seconds.
 #> Chain 4: Adjust your expectations accordingly!
 #> Chain 4: 
 #> Chain 4: 
@@ -666,9 +666,9 @@ compare_priors(scale = 1000, xlim = c(-1000,1000))
 #> Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 4: 
-#> Chain 4:  Elapsed Time: 0.062 seconds (Warm-up)
-#> Chain 4:                0.061 seconds (Sampling)
-#> Chain 4:                0.123 seconds (Total)
+#> Chain 4:  Elapsed Time: 0.054 seconds (Warm-up)
+#> Chain 4:                0.054 seconds (Sampling)
+#> Chain 4:                0.108 seconds (Total)
 #> Chain 4: 
 #> Warning: `aes_()` was deprecated in ggplot2 3.0.0.
 #> ℹ Please use tidy evaluation idioms with `aes()`

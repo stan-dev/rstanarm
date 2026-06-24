@@ -342,8 +342,8 @@ plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 9.2e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.92 seconds.
+#> Chain 1: Gradient evaluation took 8.4e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.84 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -360,9 +360,9 @@ plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 2.973 seconds (Warm-up)
-#> Chain 1:                2.83 seconds (Sampling)
-#> Chain 1:                5.803 seconds (Total)
+#> Chain 1:  Elapsed Time: 2.963 seconds (Warm-up)
+#> Chain 1:                2.81 seconds (Sampling)
+#> Chain 1:                5.773 seconds (Total)
 #> Chain 1: 
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See

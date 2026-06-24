@@ -238,8 +238,8 @@ plot(fit, regex_pars = "b\\[")
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 4.7e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.47 seconds.
+#> Chain 1: Gradient evaluation took 4.4e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.44 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -256,9 +256,9 @@ plot(fit, regex_pars = "b\\[")
 #> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.861 seconds (Warm-up)
-#> Chain 1:                0.378 seconds (Sampling)
-#> Chain 1:                1.239 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.827 seconds (Warm-up)
+#> Chain 1:                0.367 seconds (Sampling)
+#> Chain 1:                1.194 seconds (Total)
 #> Chain 1: 
 #> stan_nlmer
 #>  family:       gaussian [inv_SSlogis]

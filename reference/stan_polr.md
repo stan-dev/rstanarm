@@ -250,8 +250,8 @@ if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #> Chain 1: 
 #> Chain 1: 
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 5.5e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.55 seconds.
+#> Chain 1: Gradient evaluation took 5e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.5 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 

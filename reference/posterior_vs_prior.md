@@ -186,8 +186,8 @@ gg_polr + ggplot2::coord_flip()
 #> 
 #> SAMPLING FOR MODEL 'count' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 3.7e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.37 seconds.
+#> Chain 1: Gradient evaluation took 3e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.3 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -204,15 +204,15 @@ gg_polr + ggplot2::coord_flip()
 #> Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.205 seconds (Warm-up)
-#> Chain 1:                0.205 seconds (Sampling)
-#> Chain 1:                0.41 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.173 seconds (Warm-up)
+#> Chain 1:                0.172 seconds (Sampling)
+#> Chain 1:                0.345 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 2.1e-05 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#> Chain 2: Gradient evaluation took 1.8e-05 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.18 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -229,15 +229,15 @@ gg_polr + ggplot2::coord_flip()
 #> Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 0.242 seconds (Warm-up)
-#> Chain 2:                0.285 seconds (Sampling)
-#> Chain 2:                0.527 seconds (Total)
+#> Chain 2:  Elapsed Time: 0.198 seconds (Warm-up)
+#> Chain 2:                0.232 seconds (Sampling)
+#> Chain 2:                0.43 seconds (Total)
 #> Chain 2: 
 #> 
 #> SAMPLING FOR MODEL 'count' NOW (CHAIN 3).
 #> Chain 3: 
-#> Chain 3: Gradient evaluation took 2.3e-05 seconds
-#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
+#> Chain 3: Gradient evaluation took 1.7e-05 seconds
+#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
 #> Chain 3: Adjust your expectations accordingly!
 #> Chain 3: 
 #> Chain 3: 
@@ -254,15 +254,15 @@ gg_polr + ggplot2::coord_flip()
 #> Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 3: 
-#> Chain 3:  Elapsed Time: 0.216 seconds (Warm-up)
-#> Chain 3:                0.22 seconds (Sampling)
-#> Chain 3:                0.436 seconds (Total)
+#> Chain 3:  Elapsed Time: 0.177 seconds (Warm-up)
+#> Chain 3:                0.179 seconds (Sampling)
+#> Chain 3:                0.356 seconds (Total)
 #> Chain 3: 
 #> 
 #> SAMPLING FOR MODEL 'count' NOW (CHAIN 4).
 #> Chain 4: 
-#> Chain 4: Gradient evaluation took 2.1e-05 seconds
-#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#> Chain 4: Gradient evaluation took 1.8e-05 seconds
+#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.18 seconds.
 #> Chain 4: Adjust your expectations accordingly!
 #> Chain 4: 
 #> Chain 4: 
@@ -279,17 +279,17 @@ gg_polr + ggplot2::coord_flip()
 #> Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 4: 
-#> Chain 4:  Elapsed Time: 0.221 seconds (Warm-up)
-#> Chain 4:                0.199 seconds (Sampling)
-#> Chain 4:                0.42 seconds (Total)
+#> Chain 4:  Elapsed Time: 0.181 seconds (Warm-up)
+#> Chain 4:                0.162 seconds (Sampling)
+#> Chain 4:                0.343 seconds (Total)
 #> Chain 4: 
 #> 
 #> Drawing from prior...
 #> 
 #> SAMPLING FOR MODEL 'count' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 3.6e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.36 seconds.
+#> Chain 1: Gradient evaluation took 2.8e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.28 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -306,15 +306,15 @@ gg_polr + ggplot2::coord_flip()
 #> Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.166 seconds (Warm-up)
-#> Chain 1:                0.147 seconds (Sampling)
-#> Chain 1:                0.313 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.136 seconds (Warm-up)
+#> Chain 1:                0.119 seconds (Sampling)
+#> Chain 1:                0.255 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'count' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 2.1e-05 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#> Chain 2: Gradient evaluation took 1.7e-05 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -331,15 +331,15 @@ gg_polr + ggplot2::coord_flip()
 #> Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 0.148 seconds (Warm-up)
-#> Chain 2:                0.149 seconds (Sampling)
-#> Chain 2:                0.297 seconds (Total)
+#> Chain 2:  Elapsed Time: 0.121 seconds (Warm-up)
+#> Chain 2:                0.12 seconds (Sampling)
+#> Chain 2:                0.241 seconds (Total)
 #> Chain 2: 
 #> 
 #> SAMPLING FOR MODEL 'count' NOW (CHAIN 3).
 #> Chain 3: 
-#> Chain 3: Gradient evaluation took 2.2e-05 seconds
-#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+#> Chain 3: Gradient evaluation took 1.8e-05 seconds
+#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.18 seconds.
 #> Chain 3: Adjust your expectations accordingly!
 #> Chain 3: 
 #> Chain 3: 
@@ -356,15 +356,15 @@ gg_polr + ggplot2::coord_flip()
 #> Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 3: 
-#> Chain 3:  Elapsed Time: 0.168 seconds (Warm-up)
-#> Chain 3:                0.145 seconds (Sampling)
-#> Chain 3:                0.313 seconds (Total)
+#> Chain 3:  Elapsed Time: 0.137 seconds (Warm-up)
+#> Chain 3:                0.117 seconds (Sampling)
+#> Chain 3:                0.254 seconds (Total)
 #> Chain 3: 
 #> 
 #> SAMPLING FOR MODEL 'count' NOW (CHAIN 4).
 #> Chain 4: 
-#> Chain 4: Gradient evaluation took 2.1e-05 seconds
-#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#> Chain 4: Gradient evaluation took 1.7e-05 seconds
+#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.17 seconds.
 #> Chain 4: Adjust your expectations accordingly!
 #> Chain 4: 
 #> Chain 4: 
@@ -381,17 +381,17 @@ gg_polr + ggplot2::coord_flip()
 #> Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 4: 
-#> Chain 4:  Elapsed Time: 0.161 seconds (Warm-up)
-#> Chain 4:                0.132 seconds (Sampling)
-#> Chain 4:                0.293 seconds (Total)
+#> Chain 4:  Elapsed Time: 0.132 seconds (Warm-up)
+#> Chain 4:                0.106 seconds (Sampling)
+#> Chain 4:                0.238 seconds (Total)
 #> Chain 4: 
 #> 
 #> Drawing from prior...
 #> 
 #> SAMPLING FOR MODEL 'polr' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 5.8e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.58 seconds.
+#> Chain 1: Gradient evaluation took 4.8e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.48 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -408,15 +408,15 @@ gg_polr + ggplot2::coord_flip()
 #> Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.668 seconds (Warm-up)
-#> Chain 1:                0.606 seconds (Sampling)
-#> Chain 1:                1.274 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.579 seconds (Warm-up)
+#> Chain 1:                0.519 seconds (Sampling)
+#> Chain 1:                1.098 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'polr' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 4.2e-05 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.42 seconds.
+#> Chain 2: Gradient evaluation took 3.5e-05 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.35 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -433,15 +433,15 @@ gg_polr + ggplot2::coord_flip()
 #> Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 0.628 seconds (Warm-up)
-#> Chain 2:                0.53 seconds (Sampling)
-#> Chain 2:                1.158 seconds (Total)
+#> Chain 2:  Elapsed Time: 0.54 seconds (Warm-up)
+#> Chain 2:                0.452 seconds (Sampling)
+#> Chain 2:                0.992 seconds (Total)
 #> Chain 2: 
 #> 
 #> SAMPLING FOR MODEL 'polr' NOW (CHAIN 3).
 #> Chain 3: 
-#> Chain 3: Gradient evaluation took 4.3e-05 seconds
-#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.43 seconds.
+#> Chain 3: Gradient evaluation took 3.6e-05 seconds
+#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 0.36 seconds.
 #> Chain 3: Adjust your expectations accordingly!
 #> Chain 3: 
 #> Chain 3: 
@@ -458,15 +458,15 @@ gg_polr + ggplot2::coord_flip()
 #> Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 3: 
-#> Chain 3:  Elapsed Time: 0.631 seconds (Warm-up)
-#> Chain 3:                0.559 seconds (Sampling)
-#> Chain 3:                1.19 seconds (Total)
+#> Chain 3:  Elapsed Time: 0.544 seconds (Warm-up)
+#> Chain 3:                0.489 seconds (Sampling)
+#> Chain 3:                1.033 seconds (Total)
 #> Chain 3: 
 #> 
 #> SAMPLING FOR MODEL 'polr' NOW (CHAIN 4).
 #> Chain 4: 
-#> Chain 4: Gradient evaluation took 4.5e-05 seconds
-#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.45 seconds.
+#> Chain 4: Gradient evaluation took 3.5e-05 seconds
+#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.35 seconds.
 #> Chain 4: Adjust your expectations accordingly!
 #> Chain 4: 
 #> Chain 4: 
@@ -483,9 +483,9 @@ gg_polr + ggplot2::coord_flip()
 #> Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 4: 
-#> Chain 4:  Elapsed Time: 0.645 seconds (Warm-up)
-#> Chain 4:                0.544 seconds (Sampling)
-#> Chain 4:                1.189 seconds (Total)
+#> Chain 4:  Elapsed Time: 0.555 seconds (Warm-up)
+#> Chain 4:                0.462 seconds (Sampling)
+#> Chain 4:                1.017 seconds (Total)
 #> Chain 4: 
 #> 
 #> Drawing from prior...
