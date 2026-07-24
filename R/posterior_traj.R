@@ -463,8 +463,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
 #' 
 #' @method plot predict.stanjm
 #' @export
-#' @importFrom ggplot2 ggplot aes aes_string geom_line geom_smooth geom_ribbon 
-#'   geom_point facet_wrap geom_vline labs ggplot_build theme_bw
+#' @importFrom ggplot2 ggplot aes aes_string geom_line geom_smooth geom_ribbon geom_point facet_wrap geom_vline labs ggplot_build theme_bw
 #'    
 #' @templateVar labsArg xlab,ylab
 #' @templateVar scalesArg facet_scales
