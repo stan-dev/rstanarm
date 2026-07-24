@@ -212,7 +212,7 @@ for \code{stan_gamm4}.
 \code{plot_nonlinear} returns a ggplot object.
 }
 \description{
-\if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
+\if{html}{\figure{logo.svg}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 Bayesian inference for GAMMs with flexible priors.
 }
 \details{
