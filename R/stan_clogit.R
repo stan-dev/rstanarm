@@ -153,9 +153,13 @@ stan_clogit <- function(formula, data, subset, na.action = NULL, contrasts = NUL
   xint <- match("(Intercept)", colnames(X), nomatch = 0L)
   if (xint > 0L) {
     X <- X[, -xint, drop = FALSE]
+    attr(X, "contrasts") <- contrasts
     # I cannot remember why I was calling drop.terms() to get rid of the intercept
     # mt <- drop.terms(mt, dropx = xint)
     attr(mt, "intercept") <- 0L
+    # get_x() and model.matrix() read glmod$X for mer models, so it must not
+    # keep the intercept column that was just dropped from the fitted X
+    if (has_bars) glmod$X <- X
   }
   f <- binomial(link = "logit")
   stanfit <- stan_glm.fit(x = X, y = Y, weights = weights, 
