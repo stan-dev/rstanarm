@@ -170,6 +170,9 @@ pp_data <-
     NULL else lapply(mf[isFac], levels)
   mfnew <- model.frame(delete.response(Terms), newdata, xlev = orig_levs)
   x <- model.matrix(RHS, data = mfnew, contrasts.arg = attr(x, "contrasts"))
+  # RHS has an implicit intercept but stan_clogit has no intercept parameter
+  if (is_clogit(object))
+    x <- x[, colnames(x) != "(Intercept)", drop = FALSE]
   return(x)
 }
 
