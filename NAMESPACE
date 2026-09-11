@@ -190,94 +190,116 @@ export(student_t)
 export(waic)
 if(getRversion()>='3.3.0') importFrom(stats, sigma) else
   importFrom(lme4,sigma)
+if(getRversion()>='3.3.0') importFrom(stats, sigma) else
+  importFrom(lme4,sigma)
 
 import(Rcpp)
 import(bayesplot)
 import(methods)
 import(rstantools)
 import(stats)
-importFrom(Matrix,Matrix)
-importFrom(Matrix,t)
+importFrom(Matrix,
+  Matrix,
+  t
+)
 importFrom(RcppParallel,RcppParallelLibs)
-importFrom(bayesplot,pairs_condition)
-importFrom(bayesplot,pairs_style_np)
-importFrom(ggplot2,"%+replace%")
-importFrom(ggplot2,aes)
-importFrom(ggplot2,aes_)
-importFrom(ggplot2,aes_string)
-importFrom(ggplot2,coord_cartesian)
-importFrom(ggplot2,element_line)
-importFrom(ggplot2,element_text)
-importFrom(ggplot2,expand_limits)
-importFrom(ggplot2,facet_wrap)
-importFrom(ggplot2,geom_contour)
-importFrom(ggplot2,geom_line)
-importFrom(ggplot2,geom_point)
-importFrom(ggplot2,geom_pointrange)
-importFrom(ggplot2,geom_ribbon)
-importFrom(ggplot2,geom_segment)
-importFrom(ggplot2,geom_smooth)
-importFrom(ggplot2,geom_step)
-importFrom(ggplot2,geom_vline)
-importFrom(ggplot2,ggplot)
-importFrom(ggplot2,ggplot_build)
-importFrom(ggplot2,labs)
-importFrom(ggplot2,rel)
-importFrom(ggplot2,scale_color_gradient2)
-importFrom(ggplot2,scale_x_continuous)
-importFrom(ggplot2,scale_x_discrete)
-importFrom(ggplot2,theme)
-importFrom(ggplot2,theme_bw)
-importFrom(ggplot2,xlab)
-importFrom(lme4,fixef)
-importFrom(lme4,glFormula)
-importFrom(lme4,glmer)
-importFrom(lme4,glmerControl)
-importFrom(lme4,lmer)
-importFrom(lme4,lmerControl)
-importFrom(lme4,mkVarCorr)
-importFrom(lme4,ngrps)
-importFrom(lme4,nlformula)
-importFrom(lme4,nlmer)
-importFrom(lme4,nlmerControl)
-importFrom(lme4,ranef)
-importFrom(loo,is.kfold)
-importFrom(loo,is.loo)
-importFrom(loo,is.waic)
-importFrom(loo,kfold)
-importFrom(loo,loo)
-importFrom(loo,loo.function)
-importFrom(loo,loo.matrix)
-importFrom(loo,loo_compare)
-importFrom(loo,loo_model_weights)
-importFrom(loo,psis)
-importFrom(loo,waic)
-importFrom(loo,waic.function)
-importFrom(loo,waic.matrix)
+importFrom(bayesplot,
+  pairs_condition,
+  pairs_style_np
+)
+importFrom(ggplot2,
+  "%+replace%",
+  aes,
+  aes_,
+  aes_string,
+  coord_cartesian,
+  element_line,
+  element_text,
+  expand_limits,
+  facet_wrap,
+  geom_contour,
+  geom_line,
+  geom_point,
+  geom_pointrange,
+  geom_ribbon,
+  geom_segment,
+  geom_smooth,
+  geom_step,
+  geom_vline,
+  ggplot,
+  ggplot_build,
+  labs,
+  rel,
+  scale_color_gradient2,
+  scale_x_continuous,
+  scale_x_discrete,
+  theme,
+  theme_bw,
+  xlab
+)
+importFrom(lme4,
+  fixef,
+  glFormula,
+  glmer,
+  glmerControl,
+  lmer,
+  lmerControl,
+  mkVarCorr,
+  ngrps,
+  nlformula,
+  nlmer,
+  nlmerControl,
+  ranef
+)
+importFrom(loo,
+  is.kfold,
+  is.loo,
+  is.waic,
+  kfold,
+  loo,
+  loo.function,
+  loo.matrix,
+  loo_compare,
+  loo_model_weights,
+  psis,
+  waic,
+  waic.function,
+  waic.matrix
+)
 importFrom(nlme,VarCorr)
-importFrom(posterior,as_draws)
-importFrom(posterior,as_draws_array)
-importFrom(posterior,as_draws_df)
-importFrom(posterior,as_draws_list)
-importFrom(posterior,as_draws_matrix)
-importFrom(posterior,as_draws_rvars)
+importFrom(posterior,
+  as_draws,
+  as_draws_array,
+  as_draws_df,
+  as_draws_list,
+  as_draws_matrix,
+  as_draws_rvars
+)
 importFrom(reformulas,findbars)
-importFrom(rstan,constrain_pars)
-importFrom(rstan,extract)
-importFrom(rstan,extract_sparse_parts)
-importFrom(rstan,get_posterior_mean)
-importFrom(rstan,optimizing)
-importFrom(rstan,sampling)
-importFrom(rstan,stanc)
-importFrom(rstan,vb)
-importFrom(rstantools,loo_R2)
-importFrom(rstantools,nsamples)
-importFrom(stats,cov2cor)
-importFrom(stats,getInitial)
+importFrom(rstan,
+  constrain_pars,
+  extract,
+  extract_sparse_parts,
+  get_posterior_mean,
+  optimizing,
+  sampling,
+  stanc,
+  vb
+)
+importFrom(rstantools,
+  loo_R2,
+  nsamples
+)
+importFrom(stats,
+  cov2cor,
+  getInitial
+)
 importFrom(survival,Surv)
-importFrom(utils,capture.output)
-importFrom(utils,head)
-importFrom(utils,packageVersion)
-importFrom(utils,tail)
+importFrom(utils,
+  capture.output,
+  head,
+  packageVersion,
+  tail
+)
 importMethodsFrom(rstan,summary)
 useDynLib(rstanarm, .registration = TRUE)
