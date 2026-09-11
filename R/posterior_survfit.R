@@ -531,8 +531,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'
 #' @method plot survfit.stanjm
 #' @export
-#' @importFrom ggplot2 ggplot aes_string geom_line geom_ribbon
-#'   facet_wrap labs coord_cartesian
+#' @importFrom ggplot2 ggplot aes_string geom_line geom_ribbon facet_wrap labs coord_cartesian
 #'
 #' @templateVar idsArg ids
 #' @templateVar labsArg xlab,ylab

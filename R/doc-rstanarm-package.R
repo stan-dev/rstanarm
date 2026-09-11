@@ -20,14 +20,12 @@
 #' @useDynLib rstanarm, .registration = TRUE
 #'
 #' @import methods
-#' @importFrom rstan optimizing sampling vb constrain_pars extract
-#'   extract_sparse_parts get_posterior_mean stanc
+#' @importFrom rstan optimizing sampling vb constrain_pars extract extract_sparse_parts get_posterior_mean stanc
 #' @importFrom utils capture.output
 #' @importFrom RcppParallel RcppParallelLibs
 #' @import stats
 #' @import Rcpp
 #' @import bayesplot
-#' @import shinystan
 #' @import rstantools
 #' @export log_lik posterior_linpred posterior_epred posterior_predict posterior_interval
 #' @export predictive_interval predictive_error prior_summary bayes_R2

@@ -91,8 +91,7 @@
 #' gg_polr + ggplot2::coord_flip()
 #' }
 #' }
-#' @importFrom ggplot2 geom_pointrange facet_wrap aes_string labs
-#'   scale_x_discrete element_line element_text
+#' @importFrom ggplot2 geom_pointrange facet_wrap aes_string labs scale_x_discrete element_line element_text
 #' 
 posterior_vs_prior <- function(object, ...) {
   UseMethod("posterior_vs_prior")

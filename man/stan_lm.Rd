@@ -151,7 +151,7 @@ A \link[rstan:stanfit-class]{stanfit} object (or a slightly modified
   stanfit object) is returned if \code{stan_lm.fit or stan_lm.wfit} is called directly.
 }
 \description{
-\if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
+\if{html}{\figure{logo.svg}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 Bayesian inference for linear modeling with regularizing priors on the model
 parameters that are driven by prior beliefs about \eqn{R^2}, the proportion
 of variance in the outcome attributable to the predictors. See
