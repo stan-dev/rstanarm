@@ -36,10 +36,6 @@ SW(fit <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NU
 
 test_that("stan_clogit is similar to survival::clogit", {
   ref_vals <- c(spontaneous = 1.985876, induced = 1.409012)
-  # Account for RNG change in new Stan
-  if (utils::packageVersion("StanHeaders") >= "2.36") {
-    ref_vals <- c(spontaneous = 2.062676, induced = 1.360712)
-  }
   expect_equal(ref_vals, coef(fit), tol = threshold)
 })
 
