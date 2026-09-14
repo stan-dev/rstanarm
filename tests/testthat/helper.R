@@ -53,7 +53,7 @@ check_for_pp_errors <- function(fit, data = NULL, offset = NULL) {
 
 expect_equivalent_loo <- function(fit) {
   LOO.CORES <- ifelse(.Platform$OS.type == "windows", 1, 2)
-  l <- suppressWarnings(loo(fit, cores = LOO.CORES))
+  l <- suppressWarnings(loo(fit, cores = LOO.CORES, r_eff = TRUE))
   w <- suppressWarnings(waic(fit))
   expect_s3_class(l, "psis_loo")
   expect_s3_class(l, "loo")
@@ -214,4 +214,3 @@ recover_pars <- function(modLong, modEvent = NULL, idvar = "id") {
     list(fixef = fixef_pars, ranef = ranef_pars, event = event_pars))
   return(ret)
 }
-
