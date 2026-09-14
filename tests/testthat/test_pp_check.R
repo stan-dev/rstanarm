@@ -49,7 +49,12 @@ test_that("pp_check.stanreg creates ggplot object", {
                "ppc_rootogram",
                "ppc_error_binned",
                "ppc_km_overlay",
-               "ppc_pit_ecdf")
+               "ppc_pit_ecdf",
+               "ppc_calibration",
+               "ppc_calibration_overlay",
+               "ppc_dots",
+               "ppc_loo_calibration",
+               "ppc_loo_pit_ecdf")
   for (f in ppc_funs_not_grouped) for (j in 1:2) {
     if (!f %in% exclude) {
       expect_gg(suppressWarnings(pp_check(fit, plotfun = f, nreps = j)),
@@ -59,7 +64,8 @@ test_that("pp_check.stanreg creates ggplot object", {
 })
 
 test_that("pp_check.stanreg creates ggplot object for grouped functions", {
-  exclude <- c("ppc_km_overlay_grouped", "ppc_pit_ecdf_grouped")
+  exclude <- c("ppc_km_overlay_grouped", "ppc_pit_ecdf_grouped", "ppc_calibration_grouped",
+               "ppc_calibration_overlay_grouped", "ppc_loo_calibration_grouped")
   for (f in setdiff(ppc_funs_grouped, ppc_funs_discrete)) for (j in 1:2) {
     if (!(f %in% exclude)) {
       expect_gg(suppressWarnings(pp_check(fit2, plotfun = f, nreps = j, group = "am", x = "wt")),
