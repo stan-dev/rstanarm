@@ -27,7 +27,6 @@ REFRESH <- 0
 
 threshold <- 0.03
 
-context("stan_clogit")
 
 SW(fit <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NULL,
                    data = infert[order(infert$stratum), ], 
@@ -36,7 +35,7 @@ SW(fit <- stan_clogit(case ~ spontaneous + induced, strata = stratum, prior = NU
 
 test_that("stan_clogit is similar to survival::clogit", {
   ref_vals <- c(spontaneous = 1.985876, induced = 1.409012)
-  expect_equal(ref_vals, coef(fit), tol = threshold)
+  expect_equal(ref_vals, coef(fit), tolerance = threshold)
 })
 
 test_that("stan_clogit runs for infert example", {
@@ -64,7 +63,6 @@ test_that("loo/waic for stan_clogit works", {
   expect_identical(ll_fun(fit), rstanarm:::.ll_clogit_i)
 })
 
-context("posterior_predict (stan_clogit)")
 test_that("compatible with stan_clogit", {
   PPD1 <- posterior_predict(fit)
   PPD2 <- posterior_predict(fit, newdata = infert) # order irrelevant

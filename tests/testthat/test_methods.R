@@ -84,8 +84,6 @@ check_sizes <- function(x,y) {
 }
 
 
-context("methods for stanreg objects")
-
 
 # extractors --------------------------------------------------------------
 test_that("stanreg extractor methods work properly", {
@@ -211,9 +209,9 @@ test_that("log_lik method works", {
     llmat[i, ] <- dnorm(y, mean = eta[, i], sd = sigma[i], log = TRUE)
     llmat_new[i, ] <- dnorm(y_new, mean = eta_new[, i], sd = sigma[i], log = TRUE)
   }
-  expect_equal(log_lik(stan_glm1), llmat, check.attributes = FALSE)
+  expect_equal(log_lik(stan_glm1), llmat, ignore_attr = TRUE)
   nd <- data.frame(mpg = y_new, wt = x_new[, 2], cyl = x_new[, 3])
-  expect_equal(log_lik(stan_glm1, newdata = nd), llmat_new, check.attributes = FALSE)
+  expect_equal(log_lik(stan_glm1, newdata = nd), llmat_new, ignore_attr = TRUE)
 
 
   # make sure log_lik with newdata equals log_lik if newdata is the same as the
@@ -472,7 +470,7 @@ test_that("as.matrix and as.array errors & warnings", {
 
 
 # terms, formula, model.frame, model.matrix, update methods -----------------
-context("model.frame methods")
+
 test_that("model.frame works properly", {
   expect_identical(model.frame(stan_glm1), model.frame(glm1))
   expect_identical(model.frame(stan_glm_opt1), model.frame(glm1))
@@ -488,7 +486,6 @@ test_that("model.frame works properly", {
   expect_identical(model.frame(stan_betareg1), model.frame(betareg1))
 })
 
-context("terms methods")
 test_that("terms works properly", {
   expect_identical(terms(stan_glm1), terms(glm1))
   expect_identical(terms(stan_glm_opt1), terms(glm1))
@@ -501,21 +498,20 @@ test_that("terms works properly", {
   expect_identical(terms(stan_lmer2, fixed.only = TRUE),
                    terms(lmer2, fixed.only = TRUE))
   expect_equal(terms(stan_lmer1, random.only = TRUE),
-                   terms(lmer1, random.only = TRUE))
+               terms(lmer1, random.only = TRUE), ignore_formula_env = TRUE)
   expect_equal(terms(stan_lmer2, random.only = TRUE),
-               terms(lmer2, random.only = TRUE))
+               terms(lmer2, random.only = TRUE), ignore_formula_env = TRUE)
   expect_error(terms(stan_lmer1, fixed.only = TRUE, random.only = TRUE),
                regexp = "can't both be TRUE")
   expect_identical(terms(stan_betareg1), terms(betareg1))
 })
 
-context("formula methods")
 test_that("formula works properly", {
   expect_identical(formula(stan_glm1), formula(glm1))
   expect_identical(formula(stan_glm_opt1), formula(glm1))
   expect_identical(formula(stan_glm_vb1), formula(glm1))
   expect_identical(formula(stan_betareg1), formula(betareg1))
-  expect_equal(terms(stan_polr1), formula(polr1))
+  expect_equal(formula(stan_polr1), formula(terms(polr1)))
   expect_identical(formula(stan_lmer1), formula(lmer1))
   expect_identical(formula(stan_lmer2), formula(lmer2))
   expect_identical(formula(stan_lmer1, fixed.only = TRUE),
@@ -523,9 +519,9 @@ test_that("formula works properly", {
   expect_identical(formula(stan_lmer2, fixed.only = TRUE),
                    formula(lmer2, fixed.only = TRUE))
   expect_equal(formula(stan_lmer1, random.only = TRUE),
-               formula(lmer1, random.only = TRUE))
+               formula(lmer1, random.only = TRUE), ignore_formula_env = TRUE)
   expect_equal(formula(stan_lmer2, random.only = TRUE),
-               formula(lmer2, random.only = TRUE))
+               formula(lmer2, random.only = TRUE), ignore_formula_env = TRUE)
   expect_error(formula(stan_lmer1, fixed.only = TRUE, random.only = TRUE),
                regexp = "can't both be TRUE")
   
@@ -533,12 +529,11 @@ test_that("formula works properly", {
   tmp <- stan_lmer1
   tmp$formula <- NULL
   attr(tmp$glmod$fr, "formula") <- NULL
-  expect_equal(formula(tmp), formula(lmer1))
+  expect_equal(formula(tmp), formula(lmer1), ignore_formula_env = TRUE)
   tmp$call <- NULL
   expect_error(formula(tmp), regexp = "can't find formula", ignore.case = TRUE)
 })
 
-context("update methods")
 test_that("update works properly", {
   pss <- rstanarm:::posterior_sample_size
 
@@ -550,7 +545,7 @@ test_that("update works properly", {
   expect_equal(pss(fit3), 4 * pss(stan_betareg1))
   
   call_only <- update(fit1, evaluate = FALSE)
-  expect_is(call_only, "call")
+  expect_type(call_only, "language")
   expect_identical(call_only, getCall(fit1))
 
   # expect_error(fit2 <- update(fit2, algorithm = "optimizing"),
@@ -563,7 +558,7 @@ test_that("update works properly", {
 
 
 # print and summary -------------------------------------------------------
-context("print and summary methods")
+
 test_that("print and summary methods ok for mcmc and vb", {
   expect_output(print(example_model, digits = 2), "stan_glmer")
   expect_output(print(example_model, digits = 2), "Error terms")
@@ -718,7 +713,7 @@ test_that("prior_summary returns correctly named list", {
 
 
 # predictive_error,predictive_interval ------------------------------------
-context("predictive error and interval methods")
+
 test_that("predictive_error works", {
   expect_error(predictive_error(stan_glm1, draws = 100),
                "'draws' should be <= posterior sample size")
@@ -816,7 +811,7 @@ test_that("stan*_list functions throw proper errors", {
 test_that("stanreg_list works", {
   list1 <- stanreg_list(stan_lmer1, stan_lmer2)
   expect_named(list1, c("stan_lmer1", "stan_lmer2"))
-  expect_equivalent(attr(list1, "families"), c("gaussian", "gaussian"))
+  expect_equal(attr(list1, "families"), c("gaussian", "gaussian"), ignore_attr = TRUE)
   expect_identical(list1$stan_lmer1, stan_lmer1)
   expect_identical(list1$stan_lmer2, stan_lmer2)
 })

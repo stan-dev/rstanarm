@@ -48,7 +48,7 @@ test_that("posterior_predict errors if draws > posterior sample size", {
 })
 
 # VB ----------------------------------------------------------------------
-context("posterior_predict ok for vb")
+
 test_that("silent for vb", {
   SW(fit1 <- stan_glm(mpg ~ wt + cyl + am, data = mtcars, algorithm = "meanfield",
                    refresh = 0))
@@ -108,8 +108,8 @@ test_that("lme4 tests work similarly", {
                                size = 20, incidence = 0))
 
   p6 <- posterior_predict(sfit, nd3, allow.new.levels = TRUE, seed = SEED)
-  expect_equal(colMeans(p3), colMeans(p6[, 1:ncol(p3)]), tol = 0.05)
-  expect_equal(apply(p3, 2, sd), apply(p6[, 1:ncol(p3)], 2, sd), tol = 0.05)
+  expect_equal(colMeans(p3), colMeans(p6[, 1:ncol(p3)]), tolerance = 0.05)
+  expect_equal(apply(p3, 2, sd), apply(p6[, 1:ncol(p3)], 2, sd), tolerance = 0.05)
 
   # multiple groups
   lfit <- lmer(diameter ~ (1|plate) + (1|sample), Penicillin)
@@ -129,7 +129,7 @@ test_that("lme4 tests work similarly", {
 
 
 # spaces in factor levels -------------------------------------------------
-context("posterior_linpred/predict with spaces in factor levels")
+
 
 test_that("posterior_linpred not sensitive to spaces in factor levels", {
   df <- data.frame(
@@ -175,7 +175,7 @@ test_that("posterior_linpred not sensitive to spaces in factor levels", {
   )
   ans2 <- posterior_linpred(fit1, newdata = nd2)
   # should be same as ans1 except for cols 3:4 with new levels
-  expect_equal(ans2[, 1:2], ans1, check.attributes = FALSE)
+  expect_equal(ans2[, 1:2], ans1, ignore_attr = TRUE)
   expect_equal(ans2, posterior_linpred(fit2, newdata = nd2))
   expect_equal(ans2, posterior_linpred(fit3, newdata = nd2))
   expect_equal(ans2, posterior_linpred(fit4, newdata = nd2))
@@ -256,7 +256,7 @@ test_that("posterior_predict can handle empty interaction levels", {
 
 
 # helper functions --------------------------------------------------------
-context("posterior_predict helper functions")
+
 test_that("pp_binomial_trials works", {
   ppbt <- rstanarm:::pp_binomial_trials
 

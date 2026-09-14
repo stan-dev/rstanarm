@@ -28,7 +28,7 @@ if (!exists("example_model")) {
 }
 
 # loo and waic ------------------------------------------------------------
-context("loo and waic")
+
 
 # These tests just check that the loo.stanreg method (which calls loo.function
 # method) results are identical to the loo.matrix results. Since for these tests
@@ -55,7 +55,7 @@ expect_equivalent_loo <- function(fit) {
   r <- loo::relative_eff(exp(llik), chain_id = rstanarm:::chain_id_for_loo(fit))
   l2 <- suppressWarnings(loo(llik, r_eff = r, cores = LOO.CORES))
   expect_equal(l$estimates, l2$estimates)
-  expect_equivalent(w, suppressWarnings(waic(log_lik(fit))))
+  expect_equal(w, suppressWarnings(waic(log_lik(fit))), ignore_attr = TRUE)
 }
 
 test_that("loo & waic do something for non mcmc models", {
@@ -93,7 +93,7 @@ test_that("loo can handle empty interaction levels", {
 
 
 # loo with refitting ------------------------------------------------------
-context("loo then refitting")
+
 
 test_that("loo issues errors/warnings", {
   expect_warning(loo(example_model, cores = LOO.CORES, k_threshold = 2),
@@ -136,7 +136,7 @@ test_that("loo with k_threshold works for edge case(s)", {
 
 
 # kfold -------------------------------------------------------------------
-context("kfold")
+
 
 test_that("kfold does not throw an error for non mcmc models", {
   SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing",
@@ -274,7 +274,7 @@ test_that("loo_compare works", {
   expect_output(print(comp1_detail), "Model formulas")
 
   # equivalent to stanreg_list method
-  expect_equivalent(comp2, loo_compare(stanreg_list(fit1, fit2, fit3)))
+  expect_equal(comp2, loo_compare(stanreg_list(fit1, fit2, fit3)), ignore_attr = TRUE)
 
   # for kfold
   expect_warning(comp3 <- loo_compare(k1, k2, k3),
@@ -286,7 +286,7 @@ test_that("loo_compare works", {
 
 
 # helpers -----------------------------------------------------------------
-context("loo and waic helpers")
+
 
 test_that("kfold_and_reloo_data works", {
   f <- rstanarm:::kfold_and_reloo_data
@@ -296,12 +296,12 @@ test_that("kfold_and_reloo_data works", {
   # if 'data' arg not originally specified when fitting the model
   y <- rnorm(40)
   SW(fit <- stan_glm(y ~ 1, iter = ITER, chains = CHAINS, refresh = 0))
-  expect_equivalent(f(fit), model.frame(fit))
+  expect_equal(f(fit), model.frame(fit), ignore_attr = TRUE)
 
   # if 'subset' arg specified when fitting the model
   SW(fit2 <- stan_glm(mpg ~ wt, data = mtcars, subset = gear != 5, iter = ITER,
                       chains = CHAINS, refresh = 0))
-  expect_equivalent(f(fit2), subset(mtcars[mtcars$gear != 5, c("mpg", "wt")]))
+  expect_equal(f(fit2), subset(mtcars[mtcars$gear != 5, c("mpg", "wt")]), ignore_attr = TRUE)
 })
 
 test_that(".weighted works", {

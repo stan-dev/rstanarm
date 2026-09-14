@@ -26,7 +26,6 @@ if (!exists("example_model")) {
   example_model <- run_example_model()
 }
 
-context("helper functions")
 
 test_that("nlist works", {
   nlist <- rstanarm:::nlist
@@ -155,7 +154,7 @@ test_that("validate_offset works", {
   
   SW(fito <- stan_glm(mpg ~ wt, data = mtcars, algorithm = "optimizing", seed = SEED))
   SW(fito2 <- update(fito, offset = rep(5, nrow(mtcars))))
-  expect_equal(coef(fito)[1], 5 + coef(fito2)[1], tol = 0.2)
+  expect_equal(coef(fito)[1], 5 + coef(fito2)[1], tolerance = 0.2)
 })
 
 test_that("validate_family works", {
@@ -246,12 +245,12 @@ test_that("linear_predictor methods work", {
   vec_ans <- seq(0, 1.5, 0.5)
   mat_ans <- rbind(vec_ans, 1:4)
   offset <- rep(2, nrow(x))
-  expect_equivalent(linpred_vec(bvec, x), vec_ans)
-  expect_equivalent(linpred_vec(bvec, x, offset = NULL), vec_ans)
-  expect_equivalent(linpred_vec(bvec, x, offset), vec_ans + offset)
-  expect_equivalent(linpred_mat(bmat, x), mat_ans)
-  expect_equivalent(linpred_mat(bmat, x, offset = NULL), mat_ans)
-  expect_equivalent(linpred_mat(bmat, x, offset), mat_ans + offset)
+  expect_equal(linpred_vec(bvec, x), vec_ans, ignore_attr = TRUE)
+  expect_equal(linpred_vec(bvec, x, offset = NULL), vec_ans, ignore_attr = TRUE)
+  expect_equal(linpred_vec(bvec, x, offset), vec_ans + offset, ignore_attr = TRUE)
+  expect_equal(linpred_mat(bmat, x), mat_ans, ignore_attr = TRUE)
+  expect_equal(linpred_mat(bmat, x, offset = NULL), mat_ans, ignore_attr = TRUE)
+  expect_equal(linpred_mat(bmat, x, offset), mat_ans + offset, ignore_attr = TRUE)
 })
 
 # fits to use in multiple calls to test_that below
@@ -322,14 +321,14 @@ test_that("is.mer works", {
 test_that("get_x, get_y, get_z work", {
   x_ans <- cbind("(Intercept)" = 1, wt = mtcars$wt)
   y_ans <- mtcars$mpg
-  expect_equivalent(get_x(fit), x_ans)
-  expect_equivalent(get_y(fit), y_ans)
+  expect_equal(get_x(fit), x_ans, ignore_attr = TRUE)
+  expect_equal(get_y(fit), y_ans, ignore_attr = TRUE)
   expect_error(get_z(fit), "no applicable method")
   
   z_ans2 <- model.matrix(mpg ~ -1 + factor(cyl), data = mtcars)
-  expect_equivalent(get_x(fit2), x_ans)
-  expect_equivalent(get_y(fit2), y_ans)
-  expect_equivalent(as.matrix(get_z(fit2)), z_ans2)
+  expect_equal(get_x(fit2), x_ans, ignore_attr = TRUE)
+  expect_equal(get_y(fit2), y_ans, ignore_attr = TRUE)
+  expect_equal(as.matrix(get_z(fit2)), z_ans2, ignore_attr = TRUE)
   
   SW(
     fit3 <- stan_glmer(mpg ~ wt + (1 + wt|cyl), data = mtcars, refresh = 0,
@@ -338,9 +337,9 @@ test_that("get_x, get_y, get_z work", {
   z_ans3 <- mat.or.vec(nr = nrow(mtcars), nc = 6)
   z_ans3[, c(1, 3, 5)] <- model.matrix(mpg ~ 0 + factor(cyl), data = mtcars)
   z_ans3[, c(2, 4, 6)] <- model.matrix(mpg ~ 0 + wt:factor(cyl), data = mtcars)
-  expect_equivalent(get_x(fit3), x_ans)
-  expect_equivalent(get_y(fit3), y_ans)
-  expect_equivalent(as.matrix(get_z(fit3)), z_ans3)
+  expect_equal(get_x(fit3), x_ans, ignore_attr = TRUE)
+  expect_equal(get_y(fit3), y_ans, ignore_attr = TRUE)
+  expect_equal(as.matrix(get_z(fit3)), z_ans3, ignore_attr = TRUE)
 })
 
 test_that("set_sampling_args works", {
@@ -434,7 +433,7 @@ test_that("collect_pars and grep_for_pars work", {
   expect_identical(grep_for_pars(fit, "herd:[3,5]"), all_varying[c(3,5)])
   expect_identical(grep_for_pars(fit, "herd:[3-5]"), all_varying[3:5])
   expect_error(grep_for_pars(fit, "NOT A PARAMETER"), regexp = "No matches")
-  expect_error(grep_for_pars(fit, "b["))
+  expect_error(suppressWarnings(grep_for_pars(fit, "b[")))
   
   expect_identical(collect_pars(fit, regex_pars = "period"), all_period)
   expect_identical(collect_pars(fit, pars = "size", regex_pars = "period"), 
@@ -495,4 +494,3 @@ test_that("validate_newdata works", {
   newd$period[3] <- NA
   expect_error(validate_newdata(fit, newdata = newd), "NAs are not allowed")
 })
-

@@ -23,7 +23,6 @@ if (!exists("example_model")) {
   example_model <- run_example_model()
 }
 
-context("pp_validate")
 test_that("pp_validate throws correct errors", {
   expect_error(pp_validate(example_model$stanfit), "not a stanreg object")
   expect_error(pp_validate(example_model, nreps = 1), "at least 2")
