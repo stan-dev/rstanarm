@@ -37,8 +37,9 @@ jobs:
           r-version: ${{ matrix.r }}
           
       - run: |
-          R CMD config --all
+          R CMD config FC
+          R CMD config FLIBS
 
-      - run: |
-          install.packages('nloptr', type = 'source')
-        shell: Rscript {0}
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::nloptr?source
