@@ -113,7 +113,7 @@ test_that("loo with k_threshold works", {
                      seed = 12345, iter = 5, chains = 1, cores = 1,
                      refresh = 0))
   expect_message(loo(fit, k_threshold = 0.5), "Model will be refit")
-  
+
   # test that no errors from binomial model because it's trickier to get the
   # data right internally in reloo (matrix outcome)
   SW(loo_x <- loo(example_model))
@@ -213,17 +213,17 @@ test_that("loo_compare throws correct errors", {
 
   # this uses loo::loo_compare
   expect_error(loo_compare(l1, l2),
-               "Not all models have the same number of data points")
+               "All models must have the same number of observations")
   expect_error(loo_compare(list(l4, l2, l3)),
-               "Not all models have the same number of data points")
-  
+               "All models must have the same number of observations")
+
   # using loo_compare.stanreg (can do extra checks)
   fit1$loo <- l1
   fit2$loo <- l2
   fit3$loo <- l3
   fit4$loo <- l4
-  
-  expect_error(loo_compare(fit1, fit2), "Not all models have the same number of data points")
+
+  expect_error(loo_compare(fit1, fit2), "All models must have the same number of observations")
   expect_warning(loo_compare(fit1, fit3), "Not all models have the same y variable")
   expect_error(loo_compare(fit1, fit4),
                "Discrete and continuous observation models can't be compared")
@@ -269,15 +269,15 @@ test_that("loo_compare works", {
   expect_s3_class(comp2, "compare.loo")
   expect_equal(comp1[, "elpd_diff"], loo_compare(list(fit1$loo, fit2$loo))[, "elpd_diff"])
   expect_equal(comp2[, "elpd_diff"], loo_compare(list(fit1$loo, fit2$loo, fit3$loo))[, "elpd_diff"])
-  
+
   comp1_detail <- loo_compare(fit1, fit2, detail=TRUE)
   expect_output(print(comp1_detail), "Model formulas")
-  
+
   # equivalent to stanreg_list method
   expect_equivalent(comp2, loo_compare(stanreg_list(fit1, fit2, fit3)))
 
   # for kfold
-  expect_warning(comp3 <- loo_compare(k1, k2, k3), 
+  expect_warning(comp3 <- loo_compare(k1, k2, k3),
                  "Not all kfold objects have the same K value")
   expect_true(attr(k4, "discrete"))
   expect_true(attr(k5, "discrete"))
