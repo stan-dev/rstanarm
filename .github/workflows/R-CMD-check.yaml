@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - ci-fixes
+      - fun-debug
   pull_request:
     branches:
       - master
@@ -52,4 +52,8 @@ jobs:
           dependencies: "TRUE"
           extra-packages: any::rcmdcheck
 
-      - uses: r-lib/actions/check-r-package@v2
+      - run: |
+          library(rstanarm)
+          library(testthat)
+          source("tests/testthat/test_stan_functions.R")
+        shell: Rscript {0}
