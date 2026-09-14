@@ -71,7 +71,7 @@ SW({
 
 att_names <- function(object) {
   nms <- names(object)
-  att_nms <- names(attributes(object))
+  att_nms <- sort(names(attributes(object)))
   att_nms2 <- lapply(object, function(x) sort(names(attributes(x))))
   c(nms, att_nms, att_nms2)
 }
@@ -869,4 +869,3 @@ test_that("as_draws methods work", {
     "not fit using MCMC"
   )
 })
-
