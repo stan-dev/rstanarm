@@ -301,6 +301,7 @@ plot_nonlinear <- function(x, smooths, ...,
     stop("Plot only available for models fit using the stan_gamm4 function.")
   on.exit(message("try plot(x$jam) instead"))
   scheme <- bayesplot::color_scheme_get()
+  predictor <- lower <- upper <- middle <- y <- z <- NULL
   
   XZ <- x$x
   XZ <- XZ[,!grepl("_NEW_", colnames(XZ), fixed = TRUE)]
@@ -354,7 +355,7 @@ plot_nonlinear <- function(x, smooths, ...,
     xz <- XZ[, grepl(labels, colnames(XZ), fixed = TRUE), drop = FALSE]
     plot_data$z <- apply(linear_predictor.matrix(b, xz), 2, FUN = median)
     return(
-      ggplot(plot_data, aes_(x = ~x, y = ~y, z = ~z)) + 
+      ggplot(plot_data, aes(x = x, y = y, z = z)) + 
              geom_contour(aes_string(color = "..level.."), size = size/2) + 
              labs(x = xnames[1], y = xnames[2]) + 
              scale_color_gradient2(low = scheme[[1]],
