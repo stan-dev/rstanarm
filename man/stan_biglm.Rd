@@ -139,7 +139,7 @@ The output of both \code{stan_biglm} and \code{stan_biglm.fit} is an
   \code{\link{posterior_predict}} cannot be used.
 }
 \description{
-\if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
+\if{html}{\figure{logo.svg}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 This is the same model as with \code{\link{stan_lm}} but it utilizes the
 output from \code{\link[biglm]{biglm}} in the \pkg{biglm} package in order to
 proceed when the data is too large to fit in memory.

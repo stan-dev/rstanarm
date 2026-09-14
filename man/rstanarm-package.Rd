@@ -7,7 +7,7 @@
 \title{Applied Regression Modeling via RStan}
 \description{
 \if{html}{
-   \figure{stanlogo.png}{options: width="50" alt="https://mc-stan.org/about/logo/"}
+   \figure{logo.svg}{options: width="50" alt="https://mc-stan.org/about/logo/"}
    \emph{Stan Development Team}
 }
 
@@ -242,6 +242,7 @@ User-friendly Bayesian regression modeling: A tutorial with rstanarm and shinyst
 
 Authors:
 \itemize{
+  \item Ben Goodrich \email{benjamin.goodrich@columbia.edu}
   \item Jonah Gabry \email{jgabry@gmail.com}
 }
 

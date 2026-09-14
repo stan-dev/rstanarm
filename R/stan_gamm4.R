@@ -291,7 +291,7 @@ stan_gamm4 <-
 #'   
 #' @return \code{plot_nonlinear} returns a ggplot object.
 #' 
-#' @importFrom ggplot2 aes_ aes_string facet_wrap ggplot geom_contour geom_line geom_ribbon labs scale_color_gradient2
+#' @importFrom ggplot2 aes aes_string facet_wrap ggplot geom_contour geom_line geom_ribbon labs scale_color_gradient2
 #' 
 plot_nonlinear <- function(x, smooths, ..., 
                            prob = 0.9, facet_args = list(), 
@@ -416,12 +416,12 @@ plot_nonlinear <- function(x, smooths, ...,
     facet_args[["strip.position"]] <- "left"
 
   on.exit(NULL)  
-  ggplot(plot_data, aes_(x = ~ predictor)) + 
-    geom_ribbon(aes_(ymin = ~ lower, ymax = ~ upper), 
+  ggplot(plot_data, aes(x = predictor)) + 
+    geom_ribbon(aes(ymin = lower, ymax = upper), 
                 fill = scheme[[1]], color = scheme[[2]],
-                alpha = alpha, size = size) + 
-    geom_line(aes_(y = ~ middle), color = scheme[[5]], 
-              size = 0.75 * size, lineend = "round") + 
+                alpha = alpha, linewidth = size) + 
+    geom_line(aes(y = middle), color = scheme[[5]], 
+              linewidth = 0.75 * size, lineend = "round") + 
     labs(y = NULL) + 
     do.call(facet_wrap, facet_args) + 
     bayesplot::theme_default()
