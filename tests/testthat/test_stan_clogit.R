@@ -20,7 +20,7 @@
 suppressPackageStartupMessages(library(rstanarm))
 
 SEED <- 123
-ITER <- 100
+ITER <- 200
 CHAINS <- 2
 CORES <- 1
 REFRESH <- 0
