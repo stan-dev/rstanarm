@@ -50,6 +50,6 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           dependencies: "TRUE"
-          extra-packages: any::rcmdcheck, any::rstan?source
+          extra-packages: any::rcmdcheck, rstan?source
 
       - uses: r-lib/actions/check-r-package@v2
