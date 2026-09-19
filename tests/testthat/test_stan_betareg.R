@@ -22,8 +22,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
   ITER <- 10
   CHAINS <- 2
   REFRESH <- 0
-  
-  context("stan_betareg")
+
   
   simple_betareg_data <- function(N, draw_z = FALSE) {
     x <- rnorm(N, 2, 1)
@@ -80,7 +79,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
       expect_stanreg(fit)
       val <- coef(fit)
       ans <- coef(betareg(y ~ x, link = link1[i], data = dat))
-      expect_equal(val, ans, tol = 0.1, info = link1[i])
+      expect_equal(val, ans, tolerance = 0.1, info = link1[i])
     }
   })
   
@@ -92,7 +91,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     expect_stanreg(fit)
     val <- coef(fit)
     ans <- coef(betareg(y ~ x + z, link = "logit", data = dat))
-    expect_equal(val, ans, tol = 0.1, info = "logit")
+    expect_equal(val, ans, tolerance = 0.1, info = "logit")
   })
   
   test_that("stan_betareg works with QR = TRUE and algorithm = 'sampling'", {
@@ -103,7 +102,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     expect_stanreg(fit)
     val <- coef(fit)
     ans <- coef(betareg(y ~ x + z, link = "logit", data = dat))
-    expect_equal(val, ans, tol = 0.1)
+    expect_equal(val, ans, tolerance = 0.1)
   })
   
   test_that("QR recommended if VB and at least 2 predictors", {
@@ -149,7 +148,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
       val <- coef(fit)
       ans <- coef(betareg(y ~ x | z, link = link1[i], link.phi = link2[1], 
                           data = dat))
-      expect_equal(val, ans, tol = 0.1, info = c(link1[i], link2[1]))
+      expect_equal(val, ans, tolerance = 0.1, info = c(link1[i], link2[1]))
     }
   })
   
@@ -169,7 +168,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
       expect_stanreg(fit)
       val <- coef(fit)
       ans <- coef(betareg(y ~ x | z, link = link1[i], link.phi = link2[2], data = dat))
-      expect_equal(val, ans, tol = 0.15, info = c(link1[i], link2[2]))
+      expect_equal(val, ans, tolerance = 0.15, info = c(link1[i], link2[2]))
     }
   })
   
@@ -206,7 +205,7 @@ if (.Platform$OS.type != "windows" && require(betareg)) {
     expect_stanreg(fit)
     val <- coef(fit)
     ans <- coef(betareg(y ~ x, link = "logit", weights = weights, offset = offset, data = dat))
-    expect_equal(val, ans, tol = 0.3, info = "logit")
+    expect_equal(val, ans, tolerance = 0.3, info = "logit")
   })
   
   test_that("heavy tailed priors work with stan_betareg", {

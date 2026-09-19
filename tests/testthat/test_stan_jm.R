@@ -33,7 +33,6 @@ TOLSCALES <- list(
   event = 0.3        # how many SEs can stan_jm fixefs be from coxph fixefs
 )
 
-context("stan_jm")
 
 #----  Data (for non-Gaussian families)
 
@@ -354,11 +353,11 @@ compare_glmer <- function(fmLong, fam = gaussian, ...) {
   pars <- recover_pars(y1, s1)
   parsjm <- recover_pars(j1)
   for (i in names(tols$fixef))
-    expect_equal(pars$fixef[[i]], parsjm$fixef[[i]], tol = tols$fixef[[i]], info = fam)
+    expect_equal(pars$fixef[[i]], parsjm$fixef[[i]], tolerance = tols$fixef[[i]], info = fam)
   for (i in names(tols$ranef))
-    expect_equal(pars$ranef[[i]], parsjm$ranef[[i]], tol = tols$ranef[[i]], info = fam)
+    expect_equal(pars$ranef[[i]], parsjm$ranef[[i]], tolerance = tols$ranef[[i]], info = fam)
   for (i in names(tols$event))
-    expect_equal(pars$event[[i]], parsjm$event[[i]], tol = tols$event[[i]], info = fam)
+    expect_equal(pars$event[[i]], parsjm$event[[i]], tolerance = tols$event[[i]], info = fam)
 }
 
 # test_that("coefs same for stan_jm and stan_lmer/coxph", {

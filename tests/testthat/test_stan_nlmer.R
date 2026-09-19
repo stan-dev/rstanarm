@@ -26,7 +26,6 @@ REFRESH <- 0
 
 threshold <- 0.05
 
-context("stan_nlmer")
 
 data("Orange", package = "datasets")
 Orange$circumference <- Orange$circumference / 100
@@ -44,7 +43,7 @@ test_that("stan_nlmer runs for Orange example", {
 })
 
 test_that("stan_nlmer is similar to nlmer on Orange example", {
-  expect_equal(fixef(ml), fixef(fit), tol = threshold)
+  expect_equal(fixef(ml), fixef(fit), tolerance = threshold)
 })
 
 test_that("stan_nlmer throws error if formula includes an unknown function", {
@@ -57,7 +56,6 @@ test_that("loo/waic for stan_nlmer works", {
   expect_equivalent_loo(fit)
 })
 
-context("posterior_predict (stan_nlmer)")
 test_that("compatible with stan_nlmer", {
   check_for_pp_errors(fit)
 })

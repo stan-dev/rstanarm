@@ -857,7 +857,7 @@ get_common_cnms <- function(x, stub = "Long") {
       if (nm %in% nms[[m]]) paste0(stub, m, "|", x[[m]][[nm]])))
   })
   names(cnms) <- unique_nms
-  cnms
+  cnms[order(names(cnms))]
 }
 
 # Function to return a single list with the factor levels for each
@@ -2097,4 +2097,3 @@ handle_weights <- function(mod_stuff, weights, id_var) {
   
   wts
 }
-

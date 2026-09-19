@@ -47,13 +47,13 @@ check_for_pp_errors <- function(fit, data = NULL, offset = NULL) {
   expect_equal(dim(yrep6), c(3, 5))
   
   expect_error(posterior_predict(fit, draws = nsims + 1), 
-               regexep = "posterior sample size is only")
+               regexp = "'draws' should be <= posterior sample size")
 }
 
 
 expect_equivalent_loo <- function(fit) {
   LOO.CORES <- ifelse(.Platform$OS.type == "windows", 1, 2)
-  l <- suppressWarnings(loo(fit, cores = LOO.CORES))
+  l <- suppressWarnings(loo(fit, cores = LOO.CORES, r_eff = TRUE))
   w <- suppressWarnings(waic(fit))
   expect_s3_class(l, "psis_loo")
   expect_s3_class(l, "loo")
@@ -69,15 +69,16 @@ expect_equivalent_loo <- function(fit) {
   
   if (fit$stan_function != "stan_clogit") {
     ll <- log_lik(fit)
-    r_eff <- loo::relative_eff(exp(ll), chain_id = rstanarm:::chain_id_for_loo(fit))
+    r_eff <- suppressWarnings(loo::relative_eff(
+      exp(ll), chain_id = rstanarm:::chain_id_for_loo(fit)))
     l2 <- suppressWarnings(loo(ll, r_eff = r_eff, cores = LOO.CORES))
     expect_equal(l$estimates, l2$estimates)
-    expect_equivalent(w, suppressWarnings(waic(ll)))
+    expect_equal(w, suppressWarnings(waic(ll)), ignore_attr = TRUE)
   }
 }
 
 expect_gg <- function(x, info = NULL, label = NULL) {
-  testthat::expect_is(x, "ggplot", info = info, label = label)
+  testthat::expect_true(inherits(x, "ggplot"), info = info, label = label)
   invisible(ggplot2::ggplot_build(x))
 }
 
@@ -96,9 +97,9 @@ expect_identical_sorted_stanmats <- function(x, y) {
 
 expect_linpred_equal <- function(object, tol = 0.1) {
   linpred <- posterior_linpred(object)
-  expect_equal(apply(linpred, 2, median), object$linear.predictors, 
-               tolerance = tol, 
-               check.attributes = FALSE)
+  expect_equal(apply(linpred, 2, median), object$linear.predictors,
+               tolerance = tol,
+               ignore_attr = TRUE)
 }
 
 expect_matrix <- function(x) expect_true(is.matrix(x))
@@ -214,4 +215,3 @@ recover_pars <- function(modLong, modEvent = NULL, idvar = "id") {
     list(fixef = fixef_pars, ranef = ranef_pars, event = event_pars))
   return(ret)
 }
-

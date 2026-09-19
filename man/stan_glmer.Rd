@@ -228,7 +228,7 @@ A list with classes \code{stanreg}, \code{glm}, \code{lm},
   one row and one column (in which case it is just the group-level variance).
 }
 \description{
-\if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
+\if{html}{\figure{logo.svg}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 Bayesian inference for GLMs with group-specific coefficients that have 
 unknown covariance matrices with flexible priors.
 }
