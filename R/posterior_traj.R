@@ -463,7 +463,7 @@ posterior_traj <- function(object, m = 1, newdata = NULL, newdataLong = NULL,
 #' 
 #' @method plot predict.stanjm
 #' @export
-#' @importFrom ggplot2 ggplot aes aes_string geom_line geom_smooth geom_ribbon 
+#' @importFrom ggplot2 ggplot aes .data geom_line geom_smooth geom_ribbon
 #'   geom_point facet_wrap geom_vline labs ggplot_build theme_bw
 #'    
 #' @templateVar labsArg xlab,ylab
@@ -600,6 +600,8 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
     group_var <- NULL
     facet_var <- "grp"
   }  
+  # symbol (or NULL) to inject as the group aesthetic in aes() calls below
+  group_aes <- if (is.null(group_var)) NULL else as.name(group_var)
   n_facets <- if (facet_var == "id") length(id_list) else length(grp_list)
   
   if (n_facets > 60L) {
@@ -607,7 +609,7 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
          "number of individuals by specifying the 'ids' argument.")
   } else if (n_facets > 1L) {
     geom_mapp <- list(
-      mapping = aes_string(x = "time", y = "yfit", group = group_var), 
+      mapping = aes(x = .data$time, y = .data$yfit, group = !!group_aes), 
       data = plot_dat)
     graph <- ggplot() + theme_bw() +
       do.call("geom_smooth", c(geom_mapp, geom_args)) +
@@ -615,10 +617,10 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
     if (!limits == "none") {
       graph_smoothlim <- ggplot(plot_dat) + 
         geom_smooth(
-          aes_string(x = "time", y = if (ci) "ci_lb" else "pi_lb", group = group_var),
+          aes(x = .data$time, y = .data[[if (ci) "ci_lb" else "pi_lb"]], group = !!group_aes),
           method = "loess", se = FALSE) +
         geom_smooth(
-          aes_string(x = "time", y = if (ci) "ci_ub" else "pi_ub", group = group_var), 
+          aes(x = .data$time, y = .data[[if (ci) "ci_ub" else "pi_ub"]], group = !!group_aes), 
           method = "loess", se = FALSE) +
         facet_wrap(facet_var, scales = facet_scales)
       build_smoothlim <- ggplot_build(graph_smoothlim)
@@ -630,20 +632,20 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
       panel_id_map <- build_smoothlim$layout$layout[, c("PANEL", facet_var), drop = FALSE]
       df_smoothlim <- merge(df_smoothlim, panel_id_map)
       lim_mapp <- list(
-        mapping = aes_string(x = "time", ymin = "lb", ymax = "ub", group = "group"), 
+        mapping = aes(x = .data$time, ymin = .data$lb, ymax = .data$ub, group = .data$group), 
         data = df_smoothlim)
       graph_limits <- do.call("geom_ribbon", c(lim_mapp, lim_args))
     } else graph_limits <- NULL
   } else {
-    geom_mapp <- list(mapping = aes_string(x = "time", y = "yfit", group = group_var), 
+    geom_mapp <- list(mapping = aes(x = .data$time, y = .data$yfit, group = !!group_aes), 
                       data = plot_dat)
     graph <- ggplot() + theme_bw() + 
       do.call("geom_smooth", c(geom_mapp, geom_args))
     if (!(limits == "none")) {
       graph_smoothlim <- ggplot(plot_dat) + 
-        geom_smooth(aes_string(x = "time", y = if (ci) "ci_lb" else "pi_lb"), 
+        geom_smooth(aes(x = .data$time, y = .data[[if (ci) "ci_lb" else "pi_lb"]]), 
                     method = "loess", se = FALSE) +
-        geom_smooth(aes_string(x = "time", y = if (ci) "ci_ub" else "pi_ub"), 
+        geom_smooth(aes(x = .data$time, y = .data[[if (ci) "ci_ub" else "pi_ub"]]), 
                     method = "loess", se = FALSE)
       build_smoothlim <- ggplot_build(graph_smoothlim)
       df_smoothlim <- data.frame(time = build_smoothlim$data[[1]]$x,
@@ -651,7 +653,7 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
                                  ub = build_smoothlim$data[[2]]$y,
                                  group = build_smoothlim$data[[1]]$group) 
       lim_mapp <- list(
-        mapping = aes_string(x = "time", ymin = "lb", ymax = "ub", group = "group"), 
+        mapping = aes(x = .data$time, ymin = .data$lb, ymax = .data$ub, group = .data$group), 
         data = df_smoothlim)
       graph_limits <- do.call("geom_ribbon", c(lim_mapp, lim_args))
     } else graph_limits <- NULL
@@ -672,7 +674,7 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
     if (is.null(obs_dat[["y"]]))
       stop("Cannot find observed outcome data to add to plot.")
     obs_mapp <- list(
-      mapping = aes_string(x = "time", y = "y", group = group_var), 
+      mapping = aes(x = .data$time, y = .data$y, group = !!group_aes), 
       data = obs_dat)
     graph_obs <- do.call("geom_point", c(obs_mapp, obs_args)) 
   } else graph_obs <- NULL
@@ -688,7 +690,7 @@ plot.predict.stanjm <- function(x, ids = NULL, limits = c("ci", "pi", "none"),
     vline_dat <- data.frame(FACETVAR = facet_list, last_time = last_time)
     colnames(vline_dat) <- c(facet_var, "last_time")
     graph_vline <- geom_vline(
-      mapping = aes_string(xintercept = "last_time"), 
+      mapping = aes(xintercept = .data$last_time), 
       data = vline_dat, linetype = 2)
   } else graph_vline <- NULL
   

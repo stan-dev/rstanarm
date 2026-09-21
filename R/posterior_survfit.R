@@ -531,7 +531,7 @@ posterior_survfit <- function(object, newdataLong = NULL, newdataEvent = NULL,
 #'
 #' @method plot survfit.stanjm
 #' @export
-#' @importFrom ggplot2 ggplot aes_string geom_line geom_ribbon
+#' @importFrom ggplot2 ggplot aes .data geom_line geom_ribbon
 #'   facet_wrap labs coord_cartesian
 #'
 #' @templateVar idsArg ids
@@ -648,22 +648,22 @@ plot.survfit.stanjm <- function(x, ids = NULL,
     stop("Too many individuals to plot for. Perhaps consider limiting ",
          "the number of individuals by specifying the 'ids' argument.")
   } else if ((!standardise) && (length(ids) > 1L)) {
-    graph <- ggplot(x, aes_string(x = "time", y = "survpred")) +
+    graph <- ggplot(x, aes(x = .data$time, y = .data$survpred)) +
       theme_bw() +
       do.call("geom_line", geom_args) +
       coord_cartesian(ylim = c(0, 1)) +
       facet_wrap(~ id, scales = facet_scales)
     if (ci) {
-      lim_mapp <- list(mapping = aes_string(ymin = "ci_lb", ymax = "ci_ub"))
+      lim_mapp <- list(mapping = aes(ymin = .data$ci_lb, ymax = .data$ci_ub))
       graph_limits <- do.call("geom_ribbon", c(lim_mapp, lim_args))
     } else graph_limits <- NULL
   } else {
-    graph <- ggplot(x, aes_string(x = "time", y = "survpred")) +
+    graph <- ggplot(x, aes(x = .data$time, y = .data$survpred)) +
       theme_bw() +
       do.call("geom_line", geom_args) +
       coord_cartesian(ylim = c(0, 1))
     if (ci) {
-      lim_mapp <- list(mapping = aes_string(ymin = "ci_lb", ymax = "ci_ub"))
+      lim_mapp <- list(mapping = aes(ymin = .data$ci_lb, ymax = .data$ci_ub))
       graph_limits <- do.call("geom_ribbon", c(lim_mapp, lim_args))
     } else graph_limits <- NULL
   }
@@ -677,7 +677,7 @@ plot.survfit.stanjm <- function(x, ids = NULL,
 
 #' @rdname plot.survfit.stanjm
 #' @export
-#' @importFrom ggplot2 ggplot_build facet_wrap aes_string expand_limits
+#' @importFrom ggplot2 ggplot_build facet_wrap aes .data expand_limits
 #'
 #' @description The \code{plot_stack_jm} function takes arguments containing the plots of the estimated
 #' subject-specific longitudinal trajectory (or trajectories if a multivariate
@@ -786,7 +786,7 @@ plot_stack_jm <- function(yplot, survplot) {
   }
 
   if (vline_found) {
-    graph_vline <- geom_vline(aes_string(xintercept = "xintercept_max"),
+    graph_vline <- geom_vline(aes(xintercept = .data$xintercept_max),
                               vline_alldat, linetype = 2)
   } else {
     graph_vline <- NULL

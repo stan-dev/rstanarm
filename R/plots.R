@@ -164,7 +164,7 @@
 #' # For graphical posterior predictive checks see
 #' # help("pp_check.stanreg")
 #' }
-#' @importFrom ggplot2 ggplot aes_string xlab %+replace% theme
+#' @importFrom ggplot2 ggplot xlab %+replace% theme
 #'
 plot.stanreg <- function(x, plotfun = "intervals", pars = NULL,
                          regex_pars = NULL, ...) {

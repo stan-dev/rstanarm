@@ -91,7 +91,7 @@
 #' try(pp_validate(example_model)) # fails with default seed / priors
 #' }
 #' }
-#' @importFrom ggplot2 rel geom_point geom_segment scale_x_continuous element_line
+#' @importFrom ggplot2 aes .data rel geom_point geom_segment scale_x_continuous element_line
 #' @keywords internal
 pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   # based on Samantha Cook's BayesValidate::validate
@@ -191,11 +191,11 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
   plotdata <- data.frame(x = z_batch, y = params_batch)
 
   scheme <- bayesplot::color_scheme_get()
-  ggplot(plotdata, aes_string(x = "x", y = "y")) +
+  ggplot(plotdata, aes(x = .data$x, y = .data$y)) +
     geom_segment(
-      aes_string(x = "0", xend = "x", y = "y", yend = "y"),
+      aes(x = 0, xend = .data$x, y = .data$y, yend = .data$y),
       color = scheme[["mid"]],
-      size = rel(1)
+      linewidth = rel(1)
     ) +
     geom_point(
       size = rel(3),
@@ -207,5 +207,5 @@ pp_validate <- function(object, nreps = 20, seed = 12345, ...) {
     xlab(expression("Absolute " * z[theta] * " Statistics")) +
     theme_default() +
     yaxis_title(FALSE) +
-    grid_lines(color = "gray", size = 0.1)
+    grid_lines(color = "gray", linewidth = 0.1)
 }
