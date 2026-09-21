@@ -15,7 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-context("stan_lm|aov|biglm")
 
 suppressPackageStartupMessages(library(rstanarm))
 SEED <- 12345
@@ -43,7 +42,7 @@ test_that("stan_aov returns expected result for npk example", {
   fit_sigma <- fit$stan_summary["sigma", "mean"]
   lm_sigma <- summary(lm(yield ~ block + N*P*K, data = npk,
                          contrasts = contrasts_list))$sigma
-  expect_equal(fit_sigma, lm_sigma, tol = threshold)
+  expect_equal(fit_sigma, lm_sigma, tolerance = threshold)
   expect_output(print(fit), regexp = "stan_aov")
   expect_output(print(fit), regexp = "ANOVA-like table")
 })
@@ -73,7 +72,7 @@ test_that("stan_biglm returns expected result", {
   SW(post <- stan_biglm(biglm, xbar, ybar, s_y, prior = R2(0.5),
                         chains = CHAINS, iter = ITER, seed = SEED, refresh = 0))
   expect_equal(coef(lm(mpg ~ wt + qsec + am, data = mtcars)),
-               rstan::summary(post)$summary[1:4, "mean"], tol = threshold)
+               rstan::summary(post)$summary[1:4, "mean"], tolerance = threshold)
 })
 
 test_that("stan_lm returns expected result for mtcars example", {
@@ -82,7 +81,7 @@ test_that("stan_lm returns expected result for mtcars example", {
 
   fit_sigma <- fit$stan_summary["sigma", "mean"]
   lm_sigma <- summary(lm(mpg ~ ., data = mtcars))$sigma
-  expect_equal(fit_sigma, lm_sigma, tol = threshold)
+  expect_equal(fit_sigma, lm_sigma, tolerance = threshold)
 })
 test_that("stan_lm returns expected result for trees example", {
   # example using trees dataset
@@ -93,7 +92,7 @@ test_that("stan_lm returns expected result for trees example", {
 
   fit_sigma <- fit$stan_summary["sigma", "mean"]
   lm_sigma <- summary(lm(log(Volume) ~ log(Girth) + log(Height),data = trees))$sigma
-  expect_equal(fit_sigma, lm_sigma, tol = threshold)
+  expect_equal(fit_sigma, lm_sigma, tolerance = threshold)
 })
 
 test_that("stan_lm doesn't break with less common priors", {
@@ -158,5 +157,8 @@ test_that("loo/waic for stan_lm works", {
 test_that("posterior_predict compatible with stan_lm", {
   skip_on_os("mac")
   check_for_pp_errors(fit)
-  expect_linpred_equal(fit)
+  # Scale relative error by the posterior medians.
+  expect_true(all.equal(apply(posterior_linpred(fit), 2, median),
+                        fit$linear.predictors, tolerance = 0.1,
+                        check.attributes = FALSE))
 })

@@ -21,7 +21,6 @@ set.seed(12345)
 MODELS_HOME <- system.file("stan", package = "rstanarm", mustWork = TRUE)
 INCLUDE_DIR <- system.file("include", package = "rstanarm", mustWork = TRUE)
 
-context("setup")
 test_that("Stan programs are available", {
   expect_true(file.exists(MODELS_HOME))
 })
@@ -69,7 +68,6 @@ N <- 99L
 # bernoulli
 links <- c("logit", "probit", "cauchit", "log", "cloglog")
 
-context("Bernoulli")
 test_that("linkinv_bern returns expected results", {
   for (i in 1:length(links)) {
     eta <- -abs(rnorm(N))
@@ -78,7 +76,7 @@ test_that("linkinv_bern returns expected results", {
                           linkinv_bern(eta, i)), info = links[i])
   }
 })
-context("Bernoulli")
+
 test_that("pw_bern and ll_bern_lp return expected results", {
   for (i in 1:length(links)) {
     eta0 <- -abs(rnorm(N))
@@ -96,7 +94,7 @@ test_that("pw_bern and ll_bern_lp return expected results", {
 
 # Binomial
 trials <- 10L
-context("Binomial")
+
 test_that("linkinv_binom returns expected results", {
   for (i in 1:length(links)) {
     eta <- -abs(rnorm(N))
@@ -105,7 +103,7 @@ test_that("linkinv_binom returns expected results", {
                           linkinv_binom(eta, i)), info = links[i])
   }
 })
-context("Bernoulli")
+
 test_that("pw_binom and ll_binom_lp return expected results", {
   for (i in 1:length(links)) {
     eta <- -abs(rnorm(N))
@@ -120,7 +118,6 @@ test_that("pw_binom and ll_binom_lp return expected results", {
 # Count GLM
 links <- c("log", "identity", "sqrt")
 
-context("Poisson")
 test_that("linkinv_count returns expected results", {
   for (i in 1:length(links)) {
     eta <- abs(rnorm(N))
@@ -129,7 +126,7 @@ test_that("linkinv_count returns expected results", {
                           linkinv_count(eta, i)), info = links[i])
   }
 })
-context("Poisson")
+
 test_that("pw_pois return expected results", {
   for (i in 1:length(links)) {
     y <- sample.int(10, size = N, replace = TRUE)
@@ -141,7 +138,7 @@ test_that("pw_pois return expected results", {
 })
 
 # Negative Binomial
-context("Negative Binomial")
+
 test_that("pw_nb return expected results", {
   for (i in 1:length(links)) {
     y <- sample.int(10, size = N, replace = TRUE)
@@ -156,7 +153,6 @@ test_that("pw_nb return expected results", {
 # Gaussian GLM
 links <- c("identity", "log", "inverse")
 
-context("Gaussian")
 test_that("linkinv_gauss returns expected results", {
   for (i in 1:length(links)) {
     eta <- rnorm(N)
@@ -164,7 +160,7 @@ test_that("linkinv_gauss returns expected results", {
     expect_true(all.equal(linkinv(eta), linkinv_gauss(eta, i)), info = links[i])
   }
 })
-context("Gaussian")
+
 test_that("pw_gauss returns expected results", {
   for (i in 1:length(links)) {
     eta <- rnorm(N)
@@ -275,7 +271,7 @@ test_that("inv_gaussian returns expected results", {
 
 # lm
 N <- 99L
-context("lm")
+
 test_that("ll_mvn_ols... returns expected results", {
   X <- matrix(rnorm(2 * N), N, 2)
   X <- sweep(X, MARGIN = 2, STATS = colMeans(X), FUN = "-")
@@ -302,7 +298,7 @@ test_that("ll_mvn_ols... returns expected results", {
 
 # polr
 links <- c("logistic", "probit", "loglog", "cloglog", "cauchit")
-context("polr")
+
 test_that("CDF_polr returns expected results", {
   for (i in 1:length(links)) {
     x <- rnorm(1)
@@ -312,7 +308,7 @@ test_that("CDF_polr returns expected results", {
     expect_true(all.equal(linkinv(x), CDF_polr(x, i)))
   }
 })
-context("polr")
+
 test_that("pw_polr returns expected results", {
   J <- 3
   for (i in 1:length(links)) {
@@ -339,7 +335,7 @@ rdirichlet <- function(n, alpha) {
   sm <- x %*% rep(1, l)
   return(x/as.vector(sm))
 }
-context("polr")
+
 test_that("make_cutpoints returns expected results", {
   J <- 5L
   for (i in 1:length(links)) {
@@ -350,7 +346,7 @@ test_that("make_cutpoints returns expected results", {
     }
   }
 })
-context("polr")
+
 test_that("draw_ystar_rng returns expected results", {
   l <- -0.1
   u <-  0.1
@@ -363,7 +359,7 @@ test_that("draw_ystar_rng returns expected results", {
 })
 
 # glmer
-context("glmer")
+
 if (require(lme4) && require(HSAUR3)) test_that("the Stan equivalent of lme4's Z %*% b works", {
   stopifnot(require(Matrix))
   test_lme4 <- function(group) {
@@ -394,7 +390,7 @@ if (require(lme4) && require(HSAUR3)) test_that("the Stan equivalent of lme4's Z
     b <- make_b(z_b, theta_L, p, l)
     mark <- colnames(Z) == ""
     expect_equal(b[!mark], as.vector(Matrix::t(Lambdati) %*% z_b[!mark]),
-                 tol = 1e-14)
+                 tolerance = 1e-14)
 
     parts <- extract_sparse_parts(Z)
     Zb <- Z %*% b
@@ -427,14 +423,12 @@ if (require(lme4) && require(HSAUR3)) test_that("the Stan equivalent of lme4's Z
   test_lme4(glFormula(diameter ~ (1|plate) + (1|sample), data = Penicillin)$reTrms)
 })
 
-context("glmer")
 test_that("the Cornish-Fisher expansion from standard normal to Student t works", {
   df <- exp(1) / pi
   approx_t <- sapply(rnorm(1000), FUN = CFt, df = df)
   expect_true(ks.test(approx_t, "pt", df = df, exact = TRUE)$p.value > 0.05)
 })
 
-context("nlmer")
 test_that("SSasymp works", {
   Lob.329 <- Loblolly[ Loblolly$Seed == "329", ]
   Asym <- 100
@@ -448,7 +442,6 @@ test_that("SSasymp works", {
                         SS_asymp( Lob.329$age, Phi ), check.attributes = FALSE))
 })
 
-context("nlmer")
 test_that("SSasympOff works", {
   CO2.Qn1 <- CO2[CO2$Plant == "Qn1", ]
   Asym <- 32; lrc <- -4; c0 <- 43
@@ -460,7 +453,6 @@ test_that("SSasympOff works", {
                         SS_asympOff(CO2.Qn1$conc, Phi), check.attributes = FALSE))
 })
 
-context("nlmer")
 test_that("SSasympOrig works", {
   Lob.329 <- Loblolly[ Loblolly$Seed == "329", ]
   Asym <- 100; lrc <- -3.2
@@ -472,7 +464,6 @@ test_that("SSasympOrig works", {
                         SS_asympOrig(Lob.329$age, Phi), check.attributes = FALSE))
 })
 
-context("nlmer")
 test_that("SSbiexp works", {
   Indo.1 <- Indometh[Indometh$Subject == 1, ]
   A1 <- 3; lrc1 <- 1; A2 <- 0.6; lrc2 <- -1.3
@@ -484,7 +475,6 @@ test_that("SSbiexp works", {
                         SS_biexp( Indo.1$time, Phi ), check.attributes = FALSE))
 })
 
-context("nlmer")
 test_that("SSfol works", {
   Theoph.1 <- Theoph[ Theoph$Subject == 1, ]
   lKe <- -2.5; lKa <- 0.5; lCl <- -3
@@ -496,7 +486,6 @@ test_that("SSfol works", {
                         SS_fol(Theoph.1$Dose, Theoph.1$Time, Phi), check.attributes = FALSE))
 })
 
-context("nlmer")
 test_that("SSfpl works", {
   Chick.1 <- ChickWeight[ChickWeight$Chick == 1, ]
   A <- 13; B <- 368; xmid <- 14; scal <- 6
@@ -508,7 +497,6 @@ test_that("SSfpl works", {
                         SS_fpl(Chick.1$Time, Phi), check.attributes = FALSE))
 })
 
-context("nlmer")
 test_that("SSgompertz works", {
   DNase.1 <- subset(DNase, Run == 1)
   Asym <- 4.5; b2 <- 2.3; b3 <- 0.7
@@ -520,7 +508,6 @@ test_that("SSgompertz works", {
                         SS_gompertz(log(DNase.1$conc), Phi), check.attributes = FALSE))
 })
 
-context("nlmer")
 test_that("SSlogis works", {
   Chick.1 <- ChickWeight[ChickWeight$Chick == 1, ]
   Asym <- 368; xmid <- 14; scal <- 6
@@ -532,7 +519,6 @@ test_that("SSlogis works", {
                         SS_logis(Chick.1$Time, Phi), check.attributes = FALSE))
 })
 
-context("nlmer")
 test_that("SSmicmen works", {
   PurTrt <- Puromycin[ Puromycin$state == "treated", ]
   Vm <- 200; K <- 0.05
@@ -544,7 +530,6 @@ test_that("SSmicmen works", {
                         SS_micmen(PurTrt$conc, Phi), check.attributes = FALSE))
 })
 
-context("nlmer")
 test_that("SSweibull works", {
   Chick.6 <- subset(ChickWeight, (Chick == 6) & (Time > 0))
   Asym <- 160; Drop <- 115; lrc <- -5.5; pwr <- 2.5
@@ -556,7 +541,6 @@ test_that("SSweibull works", {
                         SS_weibull(Chick.6$Time, Phi) , check.attributes = FALSE))
 })
 
-context("nlmer")
 test_that("reshape works", {
   x <- as.double(1:10)
   expect_true(all(matrix(x, 5, 2) == reshape_vec(x, 5L, 2L)))
@@ -565,7 +549,6 @@ test_that("reshape works", {
 # betareg
 links <- c("logit", "probit", "cloglog", "cauchit", "log")
 
-context("betareg")
 test_that("linkinv_beta returns expected results", {
   for (i in 1:length(links)) {
     eta <- -abs(rnorm(N))
@@ -574,7 +557,7 @@ test_that("linkinv_beta returns expected results", {
                           linkinv_beta(eta, i)), info = links[i])
   }
 })
-context("betareg")
+
 test_that("pw_beta and ll_beta_lp return expected results", {
   for (i in 1:length(links)) {
     eta <- -abs(rnorm(N))
@@ -586,7 +569,6 @@ test_that("pw_beta and ll_beta_lp return expected results", {
   }
 })
 
-context("clogit")
 test_that("ll_clogit_lp (which calls log_clogit_denom) returns the expected results", {
   data(infert)
   infert <- infert[order(infert$stratum, !infert$case),]

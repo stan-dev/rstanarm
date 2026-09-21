@@ -30,7 +30,7 @@ SW(fito <- stan_glm(mpg ~ ., data = mtcars, algorithm = "optimizing", seed = SEE
 SW(fitvb <- update(fito, algorithm = "meanfield"))
 
 # plot.stanreg ------------------------------------------------------------
-context("plot.stanreg")
+
 test_that("plot.stanreg errors if chains = 1 but needs multiple", {
   multiple_chain_plots <- c("trace_highlight",
                             "hist_by_chain",
@@ -119,7 +119,7 @@ test_that("plot.stanreg ok for vb", {
 
 
 # pairs.stanreg -----------------------------------------------------------
-context("pairs.stanreg")
+
 test_that("pairs method ok", {
   expect_silent(pairs(fit, pars = c("period2", "log-posterior")))
   expect_silent(pairs(fit, pars = "b[(Intercept) herd:15]", regex_pars = "Sigma"))
@@ -132,7 +132,7 @@ test_that("pairs method ok", {
 
 
 # posterior_vs_prior ------------------------------------------------------
-context("posterior_vs_prior")
+
 test_that("posterior_vs_prior ok", {
   SW(p1 <- posterior_vs_prior(fit, pars = "beta"))
   expect_gg(p1)

@@ -352,7 +352,7 @@ turns off the iteration updates.}
 A \link[=stanreg-objects]{stanjm} object is returned.
 }
 \description{
-\if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
+\if{html}{\figure{logo.svg}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 Fits a shared parameter joint model for longitudinal and time-to-event 
 (e.g. survival) data under a Bayesian framework using Stan.
 }

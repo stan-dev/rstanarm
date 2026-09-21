@@ -363,7 +363,8 @@ VarCorr.stanreg <- function(x, sigma = 1, ...) {
       rownames(Sigma) <- colnames(Sigma) <- cnms[[i]]
       stddev <- sqrt(diag(Sigma))
       corr <- cov2cor(Sigma)
-      structure(Sigma, stddev = stddev, correlation = corr)
+      structure(Sigma, stddev = stddev, correlation = corr,
+          class = c("vcmat_us", "matrix", "array"))
     })       
   } else { # stanfit contains lower tri Sigma entries
     spt <- split(Sigma, rep.int(ncseq, (nc * (nc + 1)) / 2))
@@ -375,7 +376,8 @@ VarCorr.stanreg <- function(x, sigma = 1, ...) {
       rownames(Sigma) <- colnames(Sigma) <- cnms[[i]]
       stddev <- sqrt(diag(Sigma))
       corr <- cov2cor(Sigma)
-      structure(Sigma, stddev = stddev, correlation = corr)
+      structure(Sigma, stddev = stddev, correlation = corr,
+                class = c("vcmat_us", "matrix", "array"))
     })    
   }
   names(ans) <- nms
