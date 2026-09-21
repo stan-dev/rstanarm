@@ -69,7 +69,7 @@
 #'  ggplot2::scale_fill_manual(values = c(NA, NA)) # remove fill
 #' }
 #' }
-#' @importFrom ggplot2 ggplot aes_string geom_step
+#' @importFrom ggplot2 ggplot aes .data geom_step
 #' 
 ps_check <- function(object, check = "survival", 
                      limits = c("ci", "none"),
@@ -110,7 +110,7 @@ ps_check <- function(object, check = "survival",
   # Plot estimated survival function with KM curve overlaid
   graph <- plot.survfit.stanjm(dat, ids = NULL, limits = limits, ...)
   kmgraph <- geom_step(data = kmdat, 
-                       mapping = aes_string(x = "times", y = "surv"))
+                       mapping = aes(x = .data$times, y = .data$surv))
   graph + kmgraph
 }
 

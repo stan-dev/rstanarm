@@ -291,7 +291,7 @@ stan_gamm4 <-
 #'   
 #' @return \code{plot_nonlinear} returns a ggplot object.
 #' 
-#' @importFrom ggplot2 aes aes_string facet_wrap ggplot geom_contour geom_line geom_ribbon labs scale_color_gradient2
+#' @importFrom ggplot2 aes after_stat facet_wrap ggplot geom_contour geom_line geom_ribbon labs scale_color_gradient2
 #' 
 plot_nonlinear <- function(x, smooths, ..., 
                            prob = 0.9, facet_args = list(), 
@@ -306,7 +306,7 @@ plot_nonlinear <- function(x, smooths, ...,
   XZ <- x$x
   XZ <- XZ[,!grepl("_NEW_", colnames(XZ), fixed = TRUE)]
   labels <- sapply(x$jam$smooth, "[[", "label")
-  xnames <- sapply(x$jam$smooth, "[[", "vn")
+  xnames <- lapply(x$jam$smooth, "[[", "vn")
   names(x$jam$smooth) <- labels
   names(xnames) <- labels
   fs <- sapply(x$jam$smooth, FUN = "inherits", what = "fs.interaction")
@@ -322,20 +322,21 @@ plot_nonlinear <- function(x, smooths, ...,
               paste(smooths[!found], collapse = ", "))
     }
     labels <- smooths[found]
-    fs <- fs[found]
-    if (!is.matrix(xnames)) xnames <- xnames[found]
+    fs <- fs[labels]
+    xnames <- xnames[labels]
   }
   else smooths <- 1:length(labels)
   
   B <- as.matrix(x)[, colnames(XZ), drop = FALSE]
   original <- x$jam$model
   
-  bivariate <- any(grepl(",", labels, fixed = TRUE))
-  if (bivariate && !any(fs)) {
+  bivariate <- any(grepl(",", labels, fixed = TRUE) & !fs)
+  if (bivariate) {
     if (length(labels) > 1) {
       on.exit(NULL)
       stop("Multivariate functions can only be plotted one at a time; specify 'smooths'.")
     }
+    xnames <- xnames[[1]]
     if (length(xnames) > 2)
       stop("Only univariate and bivariate functions can be plotted currently.")
     xrange <- range(original[, xnames[1]])
@@ -345,7 +346,7 @@ plot_nonlinear <- function(x, smooths, ...,
     colnames(xz) <- xnames[1:2]
     plot_data <- data.frame(x = xz[, 1], y = xz[, 2])
     nd <- original
-    nd <- nd[sample(nrow(xz), size = nrow(xz), replace = TRUE), ]
+    nd <- nd[sample(nrow(nd), size = nrow(xz), replace = TRUE), ]
     nd[[xnames[1]]] <- xz[[xnames[1]]]
     nd[[xnames[2]]] <- xz[[xnames[2]]]
     requireNamespace("mgcv", quietly = TRUE)
@@ -354,9 +355,10 @@ plot_nonlinear <- function(x, smooths, ...,
     b <- B[, incl, drop = FALSE]
     xz <- XZ[, grepl(labels, colnames(XZ), fixed = TRUE), drop = FALSE]
     plot_data$z <- apply(linear_predictor.matrix(b, xz), 2, FUN = median)
+    on.exit(NULL)
     return(
       ggplot(plot_data, aes(x = x, y = y, z = z)) + 
-             geom_contour(aes_string(color = "..level.."), size = size/2) + 
+             geom_contour(aes(color = after_stat(level)), linewidth = size/2) + 
              labs(x = xnames[1], y = xnames[2]) + 
              scale_color_gradient2(low = scheme[[1]],
                                    mid = scheme[[3]], 

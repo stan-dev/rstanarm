@@ -91,7 +91,7 @@
 #' gg_polr + ggplot2::coord_flip()
 #' }
 #' }
-#' @importFrom ggplot2 geom_pointrange facet_wrap aes_string labs
+#' @importFrom ggplot2 geom_pointrange facet_wrap aes labs
 #'   scale_x_discrete element_line element_text
 #' 
 posterior_vs_prior <- function(object, ...) {
@@ -160,7 +160,7 @@ posterior_vs_prior.stanreg <-
                       regex_pars = regex_pars)
     
     graph <-
-      ggplot(plot_data, mapping = do.call("aes_string", aes_args)) +
+      ggplot(plot_data, mapping = aes(!!!lapply(aes_args, as.name))) +
       geom_pointrange(...) +
       do.call("facet_wrap", facet_args) +
       theme_default() +
@@ -168,7 +168,7 @@ posterior_vs_prior.stanreg <-
       yaxis_title(FALSE) +
       xaxis_ticks() +
       xaxis_text(angle = -30, hjust = 0) + 
-      grid_lines(color = "gray", size = 0.1)
+      grid_lines(color = "gray", linewidth = 0.1)
       
     if (group_by == "parameter")
       return(graph)
