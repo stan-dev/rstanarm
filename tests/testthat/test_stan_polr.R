@@ -26,7 +26,6 @@ REFRESH <- 0
 
 threshold <- 0.03
 
-context("stan_polr")
 
 
 f <- tobgp ~ agegp + alcgp
@@ -82,10 +81,10 @@ test_that("gumbel functions ok", {
   # formulas are correct
   # just test a few cases so they're flagged if anything changes by accident
   # maybe should compare to corresponding functions in ordinal package?
-  expect_equal(rstanarm:::dgumbel(0), 0.3678794, tol = 0.00001)
+  expect_equal(rstanarm:::dgumbel(0), 0.3678794, tolerance = 0.00001)
   expect_equal(rstanarm:::qgumbel(0), -Inf)
-  expect_equal(rstanarm:::qgumbel(0.5), 0.3665129, tol = 0.00001)
-  expect_equal(rstanarm:::pgumbel(0.3665129), 0.5, tol = 0.00001)
+  expect_equal(rstanarm:::qgumbel(0.5), 0.3665129, tolerance = 0.00001)
+  expect_equal(rstanarm:::pgumbel(0.3665129), 0.5, tolerance = 0.00001)
   expect_equal(rstanarm:::qgumbel(1), Inf)
 })
 
@@ -101,7 +100,6 @@ test_that("loo/waic for stan_polr works", {
   expect_identical(ll_fun(fit3), rstanarm:::.ll_polr_i)
 })
 
-context("posterior_predict (stan_polr)")
 test_that("compatible with stan_polr", {
   check_for_pp_errors(fit1)
   check_for_pp_errors(fit2)

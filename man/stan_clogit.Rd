@@ -126,7 +126,7 @@ A \link[=stanreg-objects]{stanreg} object is returned
 for \code{stan_clogit}.
 }
 \description{
-\if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
+\if{html}{\figure{logo.svg}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 A model for case-control studies with optional prior distributions for the
 coefficients, intercept, and auxiliary parameters.
 }

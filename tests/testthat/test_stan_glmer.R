@@ -35,7 +35,6 @@ SW(fit <- stan_lmer(Reaction / 10 ~ Days + (Days | Subject),
                     data = sleepstudy, refresh = 0,
                     init_r = 0.05, chains = CHAINS, iter = ITER, seed = SEED))
 
-context("stan_glmer")
 test_that("draws from stan_glmer (gaussian) same as from stan_lmer", {
   SW(fit1 <- stan_glmer(mpg ~ wt + (1|cyl), data = mtcars, 
                         iter = 10, chains = 1, seed = SEED, refresh = 0))
@@ -53,13 +52,12 @@ test_that("stan_glmer returns expected result for binomial cbpp example", {
     expect_stanreg(fit)
     
     ans <- glmer(fmla, data = cbpp, family = binomial(links[i]))
-    expect_equal(fixef(fit), fixef(ans), tol = FIXEF_tol)
-    expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol, check.attributes = FALSE)
+    expect_equal(fixef(fit), fixef(ans), tolerance = FIXEF_tol)
+    expect_equal(ranef(fit), ranef(ans), tolerance = RANEF_tol, ignore_attr = TRUE)
     expect_equal(ngrps(fit), ngrps(ans))
   # }
 })
 
-context("stan_glmer.nb")
 test_that("stan_glmer.nb ok", {
   dd <- expand.grid(f1 = factor(1:3),
                     f2 = LETTERS[1:2], g=1:9, rep=1:15,
@@ -78,13 +76,12 @@ test_that("stan_glmer.nb ok", {
   expect_equal(ngrps(fit), ngrps(ans))
 })
 
-context("stan_lmer")
 test_that("stan_lmer returns expected result for slepstudy example", {
   fmla <- formula(fit)
   expect_stanreg(fit)
   
   ans <- lmer(fmla, data = sleepstudy)
-  expect_equal(fixef(fit), fixef(ans), tol = FIXEF_tol)
+  expect_equal(fixef(fit), fixef(ans), tolerance = FIXEF_tol)
   # expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
   expect_equal(ngrps(fit), ngrps(ans))
 })
@@ -95,8 +92,8 @@ test_that("stan_lmer returns expected result for Penicillin example", {
   expect_stanreg(fit)
   
   ans <- lmer(fmla, data = Penicillin)
-  expect_equal(fixef(fit), fixef(ans), tol = FIXEF_tol)
-  expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol, check.attributes = FALSE)
+  expect_equal(fixef(fit), fixef(ans), tolerance = FIXEF_tol)
+  expect_equal(ranef(fit), ranef(ans), tolerance = RANEF_tol, ignore_attr = TRUE)
   expect_identical(ngrps(fit), ngrps(ans))
 })
 test_that("stan_lmer ok if global intercept forced to 0", {
@@ -128,8 +125,6 @@ test_that("error if y is character", {
   )
 })
 
-
-context("stan_gamm4")
 test_that("stan_gamm4 returns stanreg object", {
   skip_if_not_installed("mgcv")
   sleepstudy$y <- sleepstudy$Reaction / 10
@@ -139,7 +134,7 @@ test_that("stan_gamm4 returns stanreg object", {
   expect_stanreg(fit)
   # ans <- gamm4(Reaction / 10 ~ s(Days), data = sleepstudy, 
   #              random = ~(1|Subject))$mer
-  # expect_equal(fixef(fit)[-1], fixef(ans)[-1], tol = FIXEF_tol, check.attributes = FALSE)
+  # expect_equal(fixef(fit)[-1], fixef(ans)[-1], tol = FIXEF_tol, ignore_attr = TRUE)
   # expect_equal(ranef(fit), ranef(ans), tol = RANEF_tol)
   # expect_identical(ngrps(fit), ngrps(ans))
   
@@ -196,7 +191,6 @@ test_that("loo/waic for stan_glmer works", {
   expect_identical(ll_fun(example_model), rstanarm:::.ll_binomial_i)
 })
 
-context("posterior_predict (stan_gamm4)")
 test_that("stan_gamm4 returns expected result for sleepstudy example", {
   skip_if_not_installed("mgcv")
   sleepstudy$y <- sleepstudy$Reaction / 10
@@ -210,8 +204,6 @@ test_that("stan_gamm4 returns expected result for sleepstudy example", {
   expect_silent(posterior_predict(fit, newdata = sleepstudy))
 })
 
-
-context("posterior_predict (stan_(g)lmer)")
 test_that("compatible with stan_lmer", {
   check_for_pp_errors(fit)
   expect_linpred_equal(fit)
@@ -262,7 +254,7 @@ test_that("predition with family mgcv::betar doesn't error", {
 })
 
 # compare to lme4 ---------------------------------------------------------
-context("posterior_predict (compare to lme4)")
+
 test_that("posterior_predict close to predict.merMod for gaussian", {
   mod1 <- as.formula(mpg ~ wt + (1|cyl) + (1|gear))
   mod2 <- as.formula(mpg ~ log1p(wt) + I(disp/100) + (1|cyl))
@@ -290,17 +282,17 @@ test_that("posterior_predict close to predict.merMod for gaussian", {
     expect_equal(
       colMeans(posterior_predict(get(paste0("sfit", j)), newdata = nd, seed = SEED)),
       unname(predict(get(paste0("lfit", j)), newdata = nd)),
-      tol = tol, check.attributes = FALSE)
+      tolerance = tol, ignore_attr = TRUE)
     expect_equal(
       colMeans(posterior_predict(get(paste0("sfit", j)), newdata = nd2, seed = SEED,
                                  allow.new.levels = TRUE)),
       unname(predict(get(paste0("lfit", j)), newdata = nd2, allow.new.levels = TRUE)),
-      tol = tol, check.attributes = FALSE)
+      tolerance = tol, ignore_attr = TRUE)
     expect_equal(
       colMeans(posterior_predict(get(paste0("sfit", j)), newdata = nd3, seed = SEED,
                                  allow.new.levels = TRUE)),
       unname(predict(get(paste0("lfit", j)), newdata = nd3, allow.new.levels = TRUE)),
-      tol = tol, check.attributes = FALSE)
+      tolerance = tol, ignore_attr = TRUE)
   }
 })
 
@@ -320,5 +312,5 @@ test_that("posterior_predict close to predict.merMod for binomial", {
                              seed = SEED)
   spred <- sweep(spred, 2, rowSums(get_y(sfit)), "/")
   expect_equal(colMeans(spred), unname(colMeans(lpred)),
-               tol = .125, check.attributes = FALSE)
+               tolerance = .125, ignore_attr = TRUE)
 })

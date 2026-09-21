@@ -31,7 +31,6 @@ TOLSCALES <- list(
   glmer_ranef = 0.1 # how many SDs can stan_jm ranefs be from glmer ranefs
 )
 
-context("stan_mvmer")
 
 #----  Data (for non-Gaussian families)
 
@@ -167,14 +166,14 @@ if (interactive()) {
     pars <- recover_pars(y1)
     pars2 <- recover_pars(y2)
     for (i in names(tols$fixef))
-      expect_equal(pars$fixef[[i]], pars2$fixef[[i]], tol = tols$fixef[[i]])     
+      expect_equal(pars$fixef[[i]], pars2$fixef[[i]], tolerance = tols$fixef[[i]])
     for (i in names(tols$ranef))
-      expect_equal(pars$ranef[[i]], pars2$ranef[[i]], tol = tols$ranef[[i]])
+      expect_equal(pars$ranef[[i]], pars2$ranef[[i]], tolerance = tols$ranef[[i]])
     expect_equal(colMeans(log_lik(y1)), 
-                 colMeans(log_lik(y2)), tol = 0.15)
+                 colMeans(log_lik(y2)), tolerance = 0.15)
     nd <- pbcLong[stats::complete.cases(pbcLong), , drop = FALSE]
     expect_equal(colMeans(log_lik(y1, newdata = nd)), 
-                 colMeans(log_lik(y2, newdata = nd)), tol = 0.15)
+                 colMeans(log_lik(y2, newdata = nd)), tolerance = 0.15)
   }
   test_that("coefs same for stan_jm and stan_lmer/coxph", {
     # fails in many cases
@@ -287,14 +286,14 @@ for (j in 1:5) {
     fm <- formula(mod)
     fam <- family(mod)
     sig <- sigma(mod)
-    expect_is(fe, "list"); expect_identical(length(fe), M)
-    expect_is(re, "list"); expect_identical(length(re), M)
-    expect_is(ce, "list"); expect_identical(length(re), M)
-    expect_is(mf, "list"); expect_identical(length(mf), M); lapply(mf, function(x) expect_is(x, "data.frame"))
-    expect_is(tt, "list"); expect_identical(length(tt), M); lapply(tt, function(x) expect_is(x, "terms"))
-    expect_is(fm, "list"); expect_identical(length(fm), M); lapply(fm, function(x) expect_is(x, "formula"))
-    expect_is(fam,"list"); expect_identical(length(fam),M); lapply(fam, function(x) expect_is(x, "family"))
-    expect_is(sig, "numeric");
+    expect_type(fe, "list"); expect_identical(length(fe), M)
+    expect_type(re, "list"); expect_identical(length(re), M)
+    expect_type(ce, "list"); expect_identical(length(re), M)
+    expect_type(mf, "list"); expect_identical(length(mf), M); lapply(mf, function(x) expect_s3_class(x, "data.frame"))
+    expect_type(tt, "list"); expect_identical(length(tt), M); lapply(tt, function(x) expect_s3_class(x, "terms"))
+    expect_type(fm, "list"); expect_identical(length(fm), M); lapply(fm, function(x) expect_s3_class(x, "formula"))
+    expect_type(fam, "list"); expect_identical(length(fam),M); lapply(fam, function(x) expect_s3_class(x, "family"))
+    expect_type(sig, "double");
   })
   
   test_that("these extraction methods are currently disallowed", {

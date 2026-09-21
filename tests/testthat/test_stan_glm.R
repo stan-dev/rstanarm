@@ -15,7 +15,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-context("stan_glm")
 
 suppressPackageStartupMessages(library(rstanarm))
 SEED <- 12345
@@ -161,7 +160,7 @@ test_that("gaussian returns expected result for trees example", {
     
     ans <- glm(Volume ~ log(Girth) + log(Height),data = trees, 
                family = gaussian(link = links[i]))
-    expect_equal(coef(fit), coef(ans), tol = 0.021)
+    expect_equal(coef(fit), coef(ans), tolerance = 0.021)
   }
   
   expect_error(update(fit, prior = dnorm), 
@@ -186,13 +185,13 @@ test_that("stan_glm returns expected result for glm poisson example", {
     
     ans <- glm(counts ~ outcome + treatment, data = d.AD,
                family = poisson(links[i]), start = coef(fit))
-    if (links[i] == "log") expect_equal(coef(fit), coef(ans), tol = 0.03)
+    if (links[i] == "log") expect_equal(coef(fit), coef(ans), tolerance = 0.03)
     # if (links[i] == "identity") expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.03)
     if (links[i] == "sqrt") { # this is weird
       if (coef(ans)[1] > 0)
-        expect_equal(coef(fit)[-1], coef(ans)[-1], tol = 0.1)
+        expect_equal(coef(fit)[-1], coef(ans)[-1], tolerance = 0.1)
       else
-        expect_equal(-coef(fit)[-1], coef(ans)[-1], tol = 0.04)
+        expect_equal(-coef(fit)[-1], coef(ans)[-1], tolerance = 0.04)
     }
   }
 })
@@ -225,18 +224,18 @@ test_that("stan_glm returns expected result for cars example", {
   expect_stanreg(fit)
   
   ans <- glm(log(dist) ~ log(speed), data = cars, family = gaussian(link = "identity"))
-  expect_equal(coef(fit), coef(ans), tol = 0.1)
+  expect_equal(coef(fit), coef(ans), tolerance = 0.1)
 })
 test_that("stan_glm returns expected result with no intercept for mtcars example", {
   f <- as.formula(mpg ~ -1 + wt + cyl + disp + am + carb)
-  fit <- stan_glm(f, data = mtcars, refresh = 0,
+  SW(fit <- stan_glm(f, data = mtcars, refresh = 0,
                   prior = NULL, prior_intercept = NULL,
                   tol_rel_obj = .Machine$double.eps, algorithm = "optimizing",
-                  seed  = SEED, sparse = TRUE)
+                  seed  = SEED, sparse = TRUE))
   expect_stanreg(fit)
   
   ans <- glm(f, data = mtcars, family = gaussian(link = "identity"))
-  expect_equal(coef(fit), coef(ans), tol = 0.04)
+  expect_equal(coef(fit), coef(ans), tolerance = 0.04)
 })
 
 links <- c("logit", "probit", "cauchit", "log", "cloglog")
@@ -261,7 +260,7 @@ test_that("stan_glm returns expected result for bernoulli", {
     val <- coef(fit)
     if (links[i] != "log") {
       ans <- coef(glm(y ~ x, family = fam, etastart = theta))
-      expect_equal(val, ans, 0.09, info = links[i])
+      expect_equal(val, ans, tolerance = 0.09, info = links[i])
     }
     # else expect_equal(val[-1], ans[-1], 0.06, info = links[i])
   }
@@ -294,7 +293,7 @@ test_that("stan_glm returns expected result for binomial example", {
     
     val <- coef(fit)
     ans <- coef(glm(y ~ x1 + x2 + x3, data = dat, family = fam, start = b))
-    if (links[i] != "log") expect_equal(val, ans, 0.02, info = links[i])
+    if (links[i] != "log") expect_equal(val, ans, tolerance = 0.02, info = links[i])
     # else expect_equal(val[-1], ans[-1], 0.02, info = links[i]) # unstable
 
     prop <- yes / trials
@@ -307,8 +306,8 @@ test_that("stan_glm returns expected result for binomial example", {
     expect_stanreg(fit2)
     
     val2 <- coef(fit2)
-    if (links[i] != "log") expect_equal(val2, ans, 0.02, info = links[i])
-    else expect_equal(val2[-1], ans[-1], 0.02, info = links[i])
+    if (links[i] != "log") expect_equal(val2, ans, tolerance = 0.02, info = links[i])
+    else expect_equal(val2[-1], ans[-1], tolerance = 0.02, info = links[i])
   }
 })
 
@@ -389,10 +388,10 @@ test_that("prior_options is deprecated", {
     ops <- prior_options(scaled = FALSE, prior_scale_for_dispersion = 3), 
     "deprecated and will be removed"
   )
-  expect_warning(
+  suppressWarnings(expect_warning(
     capture.output(fit <- stan_glm(mpg ~ wt, data = mtcars, iter = 5, prior_ops = ops)),
     "Setting prior scale for aux to value specified in 'prior_options'"
-  )
+  ))
   expect_output(
     print(prior_summary(fit)), 
     "~ exponential(rate = 0.33)", 
@@ -406,8 +405,9 @@ test_that("empty interaction levels dropped", {
   x1[x2 == 1] <- 1
   x1[x2 == 2] <- 1
   y <- rnorm(100)
-  expect_warning(stan_glm(y ~ x1*x2, chains = 1, iter = 20, refresh = 0), 
-                 regexp = "Dropped empty interaction levels")
+  suppressWarnings(expect_warning(
+    stan_glm(y ~ x1*x2, chains = 1, iter = 20, refresh = 0),
+    regexp = "Dropped empty interaction levels"))
 })
 
 
@@ -480,12 +480,12 @@ test_that("returns something with collinear predictors", {
   x1 <- rnorm(N)
   x2 <- 2*x1
 
-  fit_1 <- stan_glm(
+  SW(fit_1 <- stan_glm(
     y ~ z * (x1 + x2),
     data = data.frame(y, z, x1, x2),
     prior = normal(location = 0, scale = 0.1),
     prior_intercept = normal(location = 0, scale = 0.1),
     chains = CHAINS, iter = ITER, refresh = REFRESH
-  )
+  ))
   expect_stanreg(fit_1)  
 })

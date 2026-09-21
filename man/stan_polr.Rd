@@ -127,7 +127,7 @@ A \link[rstan:stanfit-class]{stanfit} object (or a slightly modified
   stanfit object) is returned if \code{stan_polr.fit} is called directly.
 }
 \description{
-\if{html}{\figure{stanlogo.png}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
+\if{html}{\figure{logo.svg}{options: width="25" alt="https://mc-stan.org/about/logo/"}}
 Bayesian inference for ordinal (or binary) regression models under a
 proportional odds assumption.
 }
