@@ -238,14 +238,14 @@ outcomes:
 pr_switch <- function(x, ests) plogis(ests[1] + ests[2] * x)
 # A function to slightly jitter the binary data
 jitt <- function(...) {
-  geom_point(aes_string(...), position = position_jitter(height = 0.05, width = 0.1), 
+  geom_point(aes(...), position = position_jitter(height = 0.05, width = 0.1), 
              size = 2, shape = 21, stroke = 0.2)
 }
 ggplot(wells, aes(x = dist100, y = switch, color = switch)) + 
   scale_y_continuous(breaks = c(0, 0.5, 1)) +
-  jitt(x="dist100") + 
+  jitt(x = dist100) + 
   stat_function(fun = pr_switch, args = list(ests = coef(fit1)), 
-                size = 2, color = "gray35")
+                linewidth = 2, color = "gray35")
 ```
 
 ![](binomial_files/figure-html/binom-arsenic-plot-model-1.png)
@@ -315,8 +315,8 @@ q_ars <- quantile(wells$dist100, seq(0, 1, 0.25))
 q_dist <- quantile(wells$arsenic, seq(0, 1, 0.25))  
 base <- ggplot(wells) + xlim(c(0, NA)) +
   scale_y_continuous(breaks = c(0, 0.5, 1))
-vary_arsenic <- base + jitt(x="arsenic", y="switch", color="switch")
-vary_dist <- base + jitt(x="dist100", y="switch", color="switch")
+vary_arsenic <- base + jitt(x = arsenic, y = switch, color = switch)
+vary_dist <- base + jitt(x = dist100, y = switch, color = switch)
 for (i in 1:5) {
   vary_dist <- 
     vary_dist + stat_function(fun = pr_switch2, color = "gray35", 

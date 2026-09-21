@@ -256,9 +256,9 @@ plot(fit, regex_pars = "b\\[")
 #> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.827 seconds (Warm-up)
-#> Chain 1:                0.362 seconds (Sampling)
-#> Chain 1:                1.189 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.897 seconds (Warm-up)
+#> Chain 1:                0.396 seconds (Sampling)
+#> Chain 1:                1.293 seconds (Total)
 #> Chain 1: 
 #> stan_nlmer
 #>  family:       gaussian [inv_SSlogis]

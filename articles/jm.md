@@ -814,8 +814,8 @@ mod1 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id),
 
     SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
     Chain 1: 
-    Chain 1: Gradient evaluation took 0.000241 seconds
-    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.41 seconds.
+    Chain 1: Gradient evaluation took 0.000214 seconds
+    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.14 seconds.
     Chain 1: Adjust your expectations accordingly!
     Chain 1: 
     Chain 1: 
@@ -823,9 +823,9 @@ mod1 <- stan_jm(formulaLong = logBili ~ sex + trt + year + (year | id),
     Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
     Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
     Chain 1: 
-    Chain 1:  Elapsed Time: 19.044 seconds (Warm-up)
-    Chain 1:                19.657 seconds (Sampling)
-    Chain 1:                38.701 seconds (Total)
+    Chain 1:  Elapsed Time: 20.619 seconds (Warm-up)
+    Chain 1:                21.308 seconds (Sampling)
+    Chain 1:                41.927 seconds (Total)
     Chain 1: 
 
 The argument `refresh = 2000` was specified so that Stan didn’t provide
@@ -922,7 +922,7 @@ summary(mod1, probs = c(.025,.975))
      num subjects:    40
      num events:      29 (72.5%)
      groups:          id (40)
-     runtime:         0.6 mins
+     runtime:         0.7 mins
 
     Estimates:
                                                     mean     sd       2.5%  
@@ -1095,8 +1095,8 @@ mod3 <- stan_jm(
 
     SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
     Chain 1: 
-    Chain 1: Gradient evaluation took 0.000325 seconds
-    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.25 seconds.
+    Chain 1: Gradient evaluation took 0.000321 seconds
+    Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.21 seconds.
     Chain 1: Adjust your expectations accordingly!
     Chain 1: 
     Chain 1: 
@@ -1104,9 +1104,9 @@ mod3 <- stan_jm(
     Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
     Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
     Chain 1: 
-    Chain 1:  Elapsed Time: 34.437 seconds (Warm-up)
-    Chain 1:                35.412 seconds (Sampling)
-    Chain 1:                69.849 seconds (Total)
+    Chain 1:  Elapsed Time: 37.53 seconds (Warm-up)
+    Chain 1:                38.528 seconds (Sampling)
+    Chain 1:                76.058 seconds (Total)
     Chain 1: 
 
 We can now examine the output from the fitted model, for example  
