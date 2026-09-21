@@ -290,9 +290,9 @@ loo2 <- loo(stan_glm2, cores = 1)
 loo_compare(loo1, loo2)
 ```
 
-              elpd_diff se_diff
-    stan_glm2     0.0       0.0
-    stan_glm1 -5345.4     706.7
+         model elpd_diff se_diff p_worse diag_diff       diag_elpd
+     stan_glm2       0.0     0.0      NA            1 k_psis > 0.7
+     stan_glm1   -5345.4   706.7    1.00           15 k_psis > 0.7
 
 which is not surprising given the better fit we’ve already observed from
 the posterior predictive checks.

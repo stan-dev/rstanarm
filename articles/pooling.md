@@ -420,24 +420,24 @@ batting_avg(partialpool)
 
                 
     parameters   10%   50%   90%  
-      Clemente   0.249 0.283 0.349
-      Robinson   0.245 0.281 0.341
-      Howard     0.243 0.277 0.331
-      Johnstone  0.240 0.274 0.323
-      Berry      0.238 0.271 0.317
-      Spencer    0.235 0.271 0.316
-      Kessinger  0.233 0.268 0.310
-      Alvarado   0.229 0.265 0.303
-      Santo      0.222 0.262 0.299
-      Swaboda    0.223 0.262 0.298
-      Petrocelli 0.216 0.258 0.294
-      Rodriguez  0.218 0.259 0.293
-      Scott      0.217 0.259 0.294
-      Unser      0.217 0.258 0.293
-      Williams   0.215 0.258 0.296
-      Campaneris 0.211 0.255 0.290
-      Munson     0.205 0.253 0.287
-      Alvis      0.198 0.250 0.285
+      Clemente   0.249 0.282 0.347
+      Robinson   0.246 0.279 0.337
+      Howard     0.243 0.276 0.331
+      Johnstone  0.242 0.274 0.324
+      Berry      0.237 0.270 0.316
+      Spencer    0.237 0.271 0.315
+      Kessinger  0.233 0.267 0.307
+      Alvarado   0.230 0.265 0.303
+      Santo      0.223 0.262 0.298
+      Swaboda    0.223 0.262 0.300
+      Petrocelli 0.218 0.260 0.294
+      Rodriguez  0.218 0.258 0.293
+      Scott      0.220 0.260 0.295
+      Unser      0.220 0.259 0.293
+      Williams   0.217 0.260 0.294
+      Campaneris 0.211 0.257 0.290
+      Munson     0.204 0.254 0.286
+      Alvis      0.200 0.250 0.283
 
 Here the estimates are less extreme than in the no-pooling case, which
 we should expect due to the partial pooling. It is also clear from the
@@ -670,12 +670,12 @@ head(log_p_new)
 ```
 
            Pooling NoPooling PartialPooling
-    [1,] -87.50510 -270.1454      -98.24389
-    [2,] -73.97575 -310.3988     -116.16486
-    [3,] -80.95743 -250.4451      -93.64268
-    [4,] -77.54662 -281.8998     -101.46736
-    [5,] -74.39093 -172.3741     -115.82690
-    [6,] -88.18157 -171.3092      -74.83273
+    [1,] -87.50510 -270.1454     -106.88362
+    [2,] -73.97575 -310.3988      -72.52398
+    [3,] -80.95743 -250.4451      -88.06833
+    [4,] -77.54662 -281.8998      -89.68794
+    [5,] -74.39093 -172.3741      -78.39453
+    [6,] -88.18157 -171.3092      -74.88100
 
 We now have the distributions of `log_p_new` in a matrix with a column
 for each model.
@@ -696,7 +696,7 @@ round(sort(mean_log_p_new, decreasing = TRUE), digits = 1)
 ```
 
            Pooling PartialPooling      NoPooling 
-             -81.8          -99.6         -207.8 
+             -81.8          -99.3         -207.8 
 
 From a predictive standpoint, the models are ranked by the amount of
 pooling they do, with complete pooling being the best, and no pooling
@@ -801,7 +801,7 @@ round(sort(new_lps_sums, decreasing = TRUE), digits = 1)
 ```
 
     PartialPooling        Pooling      NoPooling 
-             -71.8          -73.1          -81.5 
+             -71.9          -73.1          -81.5 
 
 Now the ranking is different! As expected, the values here are greater
 than the expectation of the log density due to Jensen’s inequality. The
@@ -820,10 +820,10 @@ then compared across models:
 loo_compare(loo(fit_partialpool), loo(fit_pool), loo(fit_nopool))
 ```
 
-                    elpd_diff se_diff
-    fit_pool         0.0       0.0   
-    fit_partialpool -0.1       0.5   
-    fit_nopool      -6.0       2.6   
+               model elpd_diff se_diff p_worse diag_diff       diag_elpd
+            fit_pool       0.0     0.0      NA                          
+     fit_partialpool      -0.3     0.5    0.75   N < 100  2 k_psis > 0.7
+          fit_nopool      -6.0     2.6    0.99   N < 100 12 k_psis > 0.7
 
 The third column is the leave-one-out (loo) approximation to the
 expected log predictive density. This approximation is only
@@ -873,11 +873,11 @@ colMeans(ppd_partialpool)
 ```
 
       Clemente   Robinson     Howard  Johnstone      Berry    Spencer  Kessinger 
-     107.11175  122.81375  147.09175   76.57650  114.83275  127.77175  158.14625 
+     106.80250  121.98000  147.06375   76.60925  114.51400  127.67125  157.83875 
       Alvarado      Santo    Swaboda Petrocelli  Rodriguez      Scott      Unser 
-      36.78775  133.26850   52.09350  137.74925   47.83100  111.74450   71.23400 
+      36.54650  133.33625   52.36775  138.71500   47.85375  112.44425   71.32400 
       Williams Campaneris     Munson      Alvis 
-     151.40900  141.09625  101.63950   17.27250 
+     152.49425  141.58000  101.86700   17.16500 
 
 Translating the posterior number of hits into a season batting average,
 \\\frac{y_n + z_n}{K_n + K^{\mathrm{new}}\_n}\\, we get an 80% posterior
@@ -1039,9 +1039,9 @@ mean(some_gt_350)
 
     Pr(theta_n >= 0.400 | y)
     Clemente    Berry  Swaboda 
-     0.02175  0.00325  0.00050 
+     0.02125  0.00400  0.00075 
     Pr(at least one theta_n >= 0.350 | y)
-    [1] 0.22875
+    [1] 0.2215
 
 ### Multiple Comparisons
 
@@ -1134,22 +1134,22 @@ t(apply(rank, 1, quantile, prob = c(0.1, 0.5, 0.9)))
     parameters   10% 50% 90%
       Clemente     1   5  14
       Robinson     1   5  14
-      Howard       1   6  14
+      Howard       1   6  15
       Johnstone    2   7  15
-      Berry        2   8  15
+      Berry        2   8  16
       Spencer      2   8  15
       Kessinger    2   9  16
       Alvarado     3   9  16
       Santo        3  10  17
       Swaboda      3  10  17
-      Petrocelli   4  11  17
+      Petrocelli   3  11  17
       Rodriguez    4  11  17
-      Scott        4  11  17
-      Unser        4  11  17
+      Scott        3  11  17
+      Unser        3  11  17
       Williams     3  11  17
       Campaneris   4  12  17
-      Munson       4  13  18
-      Alvis        5  14  18
+      Munson       5  13  18
+      Alvis        5  13  18
 
 It is again abundantly clear from the posterior intervals that our
 uncertainty is very great after only 45 at bats.

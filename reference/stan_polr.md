@@ -250,8 +250,8 @@ if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #> Chain 1: 
 #> Chain 1: 
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 5e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.5 seconds.
+#> Chain 1: Gradient evaluation took 4.9e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.49 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -261,17 +261,20 @@ if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #> Chain 1: Iteration: 100 / 250 [ 40%]  (Adaptation)
 #> Chain 1: Iteration: 150 / 250 [ 60%]  (Adaptation)
 #> Chain 1: Iteration: 200 / 250 [ 80%]  (Adaptation)
-#> Chain 1: Success! Found best value [eta = 1] earlier than expected.
+#> Chain 1: Iteration: 250 / 250 [100%]  (Adaptation)
+#> Chain 1: Success! Found best value [eta = 0.1].
 #> Chain 1: 
 #> Chain 1: Begin stochastic gradient ascent.
 #> Chain 1:   iter             ELBO   delta_ELBO_mean   delta_ELBO_med   notes 
-#> Chain 1:    100         -135.991             1.000            1.000
-#> Chain 1:    200         -131.110             0.519            1.000
-#> Chain 1:    300         -128.295             0.353            0.037
-#> Chain 1:    400         -127.636             0.266            0.037
-#> Chain 1:    500         -127.828             0.213            0.022
-#> Chain 1:    600         -127.903             0.178            0.022
-#> Chain 1:    700         -127.740             0.153            0.005   MEDIAN ELBO CONVERGED
+#> Chain 1:    100         -138.300             1.000            1.000
+#> Chain 1:    200         -131.592             0.525            1.000
+#> Chain 1:    300         -129.352             0.356            0.051
+#> Chain 1:    400         -127.902             0.270            0.051
+#> Chain 1:    500         -128.076             0.216            0.017
+#> Chain 1:    600         -127.893             0.180            0.017
+#> Chain 1:    700         -127.827             0.155            0.011
+#> Chain 1:    800         -127.211             0.136            0.011
+#> Chain 1:    900         -127.465             0.121            0.005   MEDIAN ELBO CONVERGED
 #> Chain 1: 
 #> Chain 1: Drawing a sample of size 1000 from the approximate posterior... 
 #> Chain 1: COMPLETED.
@@ -281,15 +284,15 @@ if (.Platform$OS.type != "windows" || .Platform$r_arch !="i386") {
 #>  observations: 88
 #> ------
 #>         Median MAD_SD
-#> agegp.L -0.1    0.3  
-#> agegp.Q -0.2    0.2  
-#> agegp.C  0.0    0.3  
-#> agegp^4  0.0    0.2  
-#> agegp^5  0.0    0.2  
+#> agegp.L -0.2    0.3  
+#> agegp.Q -0.2    0.3  
+#> agegp.C -0.1    0.3  
+#> agegp^4  0.0    0.3  
+#> agegp^5  0.0    0.3  
 #> 
 #> Cutpoints:
 #>                Median MAD_SD
-#> 0-9g/day|10-19 -0.6    0.1  
+#> 0-9g/day|10-19 -0.6    0.2  
 #> 10-19|20-29     0.1    0.1  
 #> 20-29|30+       0.8    0.2  
 #> 

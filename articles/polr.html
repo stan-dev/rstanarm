@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">
       <!-- Add Stan logo -->
-      <picture><source type="image/svg+xml" srcset="../logo.svg"><img src="../logo.png" class="stan-logo" alt="Stan blue hex logo"></source></picture>
+      <img src="../logo.svg" class="stan-logo" alt="Stan blue hex logo">
       rstanarm
     </a>
 
@@ -46,7 +46,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../index.html" aria-label="Go to homepage"><span class="fa fa-home fa-lg"></span></a></li>
-<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Vignettes</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Functions</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
 <li class="nav-item dropdown">
@@ -95,7 +94,7 @@
                         <h4 data-toc-skip class="author">Jonah Gabry and
 Ben Goodrich</h4>
             
-            <h4 data-toc-skip class="date">2026-06-24</h4>
+            <h4 data-toc-skip class="date">2026-09-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/polr.Rmd" class="external-link"><code>vignettes/polr.Rmd</code></a></small>
       <div class="d-none name"><code>polr.Rmd</code></div>
@@ -289,7 +288,7 @@ Cutpoints:
                Median MAD_SD
 0-9g/day|10-19 -1.0    0.2  
 10-19|20-29     0.2    0.2  
-20-29|30+       1.3    0.2  
+20-29|30+       1.3    0.3  
 
 ------
 * For help interpreting the printed output see ?print.stanreg
@@ -368,14 +367,14 @@ observations. If we compare the estimated coefficients,</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span>Linear <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">post1</span><span class="op">)</span>, Ordinal <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">post2</span><span class="op">)</span>, </span>
 <span>            Rescaled <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">post1</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="../reference/stanreg-methods.html">sigma</a></span><span class="op">(</span><span class="va">post1</span><span class="op">)</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
 <pre><code>            Linear Ordinal Rescaled
-(Intercept) -3.254  -0.535   -4.812
-smoke        0.361   0.514    0.534
+(Intercept) -3.254  -0.543   -4.812
+smoke        0.361   0.515    0.534
 age         -0.003  -0.025   -0.005
-raceblack    0.394   0.514    0.582
-raceother    0.400   0.530    0.592
-ptl          0.154   0.400    0.228
-ht           0.368   0.696    0.544
-ftv         -0.004  -0.005   -0.006</code></pre>
+raceblack    0.394   0.513    0.582
+raceother    0.400   0.533    0.592
+ptl          0.154   0.406    0.228
+ht           0.368   0.692    0.544
+ftv         -0.004  -0.006   -0.006</code></pre>
 <p>they have the same signs and similar magnitudes, with the exception
 of the “Intercept”. In an ordinal model where the outcome only has <span class="math inline">\(J=2\)</span> categories, this “Intercept” is
 actually <span class="math inline">\(\zeta_1\)</span>, but it is more
@@ -444,7 +443,7 @@ sampling with those priors.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

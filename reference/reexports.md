@@ -5,4 +5,4 @@ to see their documentation.
 
 - survival:
 
-  [`Surv`](https://rdrr.io/pkg/survival/man/Surv.html)
+  [`Surv()`](https://rdrr.io/pkg/survival/man/Surv.html)

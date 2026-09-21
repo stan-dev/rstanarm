@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">
       <!-- Add Stan logo -->
-      <picture><source type="image/svg+xml" srcset="../logo.svg"><img src="../logo.png" class="stan-logo" alt="Stan blue hex logo"></source></picture>
+      <img src="../logo.svg" class="stan-logo" alt="Stan blue hex logo">
       rstanarm
     </a>
 
@@ -46,7 +46,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../index.html" aria-label="Go to homepage"><span class="fa fa-home fa-lg"></span></a></li>
-<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Vignettes</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Functions</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
 <li class="nav-item dropdown">
@@ -95,7 +94,7 @@
                         <h4 data-toc-skip class="author">Jonah Gabry and
 Ben Goodrich</h4>
             
-            <h4 data-toc-skip class="date">2026-06-24</h4>
+            <h4 data-toc-skip class="date">2026-09-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/rstanarm.Rmd" class="external-link"><code>vignettes/rstanarm.Rmd</code></a></small>
       <div class="d-none name"><code>rstanarm.Rmd</code></div>
@@ -445,9 +444,9 @@ greater than <span class="math inline">\(0.5\)</span>), which should not
 have too much of an effect on the resulting model comparison:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/loo.stanreg.html">loo_compare</a></span><span class="op">(</span><span class="va">loo_bglm_1</span>, <span class="va">loo_bglm_2</span><span class="op">)</span></span></code></pre></div>
-<pre><code>                  elpd_diff se_diff
-womensrole_bglm_1  0.0       0.0   
-womensrole_bglm_2 -0.7       1.7   </code></pre>
+<pre><code>             model elpd_diff se_diff p_worse diag_diff      diag_elpd
+ womensrole_bglm_1       0.0     0.0      NA           1 k_psis &gt; 0.7
+ womensrole_bglm_2      -0.7     1.6    0.67   N &lt; 100 1 k_psis &gt; 0.7</code></pre>
 <p>In this case, there is little difference in the expected log
 pointwise deviance between the two models, so we are essentially
 indifferent between them after taking into account that the second model
@@ -502,7 +501,7 @@ different levels of the predictors. For example,</p>
 <span><span class="va">y_rep</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/posterior_predict.stanreg.html">posterior_predict</a></span><span class="op">(</span><span class="va">womensrole_bglm_2</span>, <span class="va">newdata</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">y_rep</span>, <span class="fl">1</span>, <span class="va">diff</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
- -41.00  -24.00  -20.00  -19.69  -16.00   -1.00 </code></pre>
+  -41.0   -24.0   -20.0   -19.7   -16.0     0.0 </code></pre>
 <p>As can be seen, out of <span class="math inline">\(100\)</span> women
 who have a college degree versus <span class="math inline">\(100\)</span> women with only a high school degree,
 we would expect about <span class="math inline">\(20\)</span> fewer
@@ -714,7 +713,7 @@ Chapman &amp; Hall/CRC.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

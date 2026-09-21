@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">
       <!-- Add Stan logo -->
-      <picture><source type="image/svg+xml" srcset="../logo.svg"><img src="../logo.png" class="stan-logo" alt="Stan blue hex logo"></source></picture>
+      <img src="../logo.svg" class="stan-logo" alt="Stan blue hex logo">
       rstanarm
     </a>
 
@@ -46,7 +46,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../index.html" aria-label="Go to homepage"><span class="fa fa-home fa-lg"></span></a></li>
-<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Vignettes</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Functions</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
 <li class="nav-item dropdown">
@@ -95,7 +94,7 @@
                         <h4 data-toc-skip class="author">Jonah Gabry and
 Ben Goodrich</h4>
             
-            <h4 data-toc-skip class="date">2026-06-24</h4>
+            <h4 data-toc-skip class="date">2026-09-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/binomial.Rmd" class="external-link"><code>vignettes/binomial.Rmd</code></a></small>
       <div class="d-none name"><code>binomial.Rmd</code></div>
@@ -428,9 +427,9 @@ All Pareto k estimates are good (k &lt; 0.7).
 See help('pareto-k-diagnostic') for details.</code></pre>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/loo.stanreg.html">loo_compare</a></span><span class="op">(</span><span class="va">loo1</span>, <span class="va">loo2</span><span class="op">)</span></span></code></pre></div>
-<pre><code>     elpd_diff se_diff
-fit2   0.0       0.0  
-fit1 -71.7      12.2  </code></pre>
+<pre><code> model elpd_diff se_diff p_worse diag_diff diag_elpd
+  fit2       0.0     0.0      NA                    
+  fit1     -71.7    12.2    1.00                    </code></pre>
 <p>These results favor <code>fit2</code> over <code>fit1</code>, as the
 estimated difference in <code>elpd</code> (the expected log pointwise
 predictive density for a new dataset) is so much larger than its
@@ -559,7 +558,7 @@ Cambridge, UK.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

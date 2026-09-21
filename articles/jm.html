@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">
       <!-- Add Stan logo -->
-      <picture><source type="image/svg+xml" srcset="../logo.svg"><img src="../logo.png" class="stan-logo" alt="Stan blue hex logo"></source></picture>
+      <img src="../logo.svg" class="stan-logo" alt="Stan blue hex logo">
       rstanarm
     </a>
 
@@ -46,7 +46,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../index.html" aria-label="Go to homepage"><span class="fa fa-home fa-lg"></span></a></li>
-<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Vignettes</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Functions</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
 <li class="nav-item dropdown">
@@ -95,7 +94,7 @@
                         <h4 data-toc-skip class="author">Sam
 Brilleman</h4>
             
-            <h4 data-toc-skip class="date">2026-06-24</h4>
+            <h4 data-toc-skip class="date">2026-09-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/jm.Rmd" class="external-link"><code>vignettes/jm.Rmd</code></a></small>
       <div class="d-none name"><code>jm.Rmd</code></div>
@@ -1025,8 +1024,8 @@ Please note the warmup may be much slower than later iterations!
 
 SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 0.000205 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.05 seconds.
+Chain 1: Gradient evaluation took 0.000241 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 2.41 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
@@ -1034,9 +1033,9 @@ Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
 Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 Chain 1: 
-Chain 1:  Elapsed Time: 19.129 seconds (Warm-up)
-Chain 1:                19.779 seconds (Sampling)
-Chain 1:                38.908 seconds (Total)
+Chain 1:  Elapsed Time: 19.044 seconds (Warm-up)
+Chain 1:                19.657 seconds (Sampling)
+Chain 1:                38.701 seconds (Total)
 Chain 1: </code></pre>
 <p>The argument <code>refresh = 2000</code> was specified so that Stan
 didn’t provide us with excessive progress updates whilst fitting the
@@ -1293,8 +1292,8 @@ Please note the warmup may be much slower than later iterations!
 
 SAMPLING FOR MODEL 'jm' NOW (CHAIN 1).
 Chain 1: 
-Chain 1: Gradient evaluation took 0.00032 seconds
-Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.2 seconds.
+Chain 1: Gradient evaluation took 0.000325 seconds
+Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.25 seconds.
 Chain 1: Adjust your expectations accordingly!
 Chain 1: 
 Chain 1: 
@@ -1302,9 +1301,9 @@ Chain 1: Iteration:    1 / 2000 [  0%]  (Warmup)
 Chain 1: Iteration: 1001 / 2000 [ 50%]  (Sampling)
 Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 Chain 1: 
-Chain 1:  Elapsed Time: 35.319 seconds (Warm-up)
-Chain 1:                36.354 seconds (Sampling)
-Chain 1:                71.673 seconds (Total)
+Chain 1:  Elapsed Time: 34.437 seconds (Warm-up)
+Chain 1:                35.412 seconds (Sampling)
+Chain 1:                69.849 seconds (Total)
 Chain 1: </code></pre>
 <p>We can now examine the output from the fitted model, for
 example<br></p>
@@ -1874,7 +1873,7 @@ Cox Model</em> Springer-Verlag, New York; 2000. ISBN: 0-387-98784-3</li>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

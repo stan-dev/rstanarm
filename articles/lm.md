@@ -406,9 +406,9 @@ function in the **loo** package.
 loo_compare(loo_post, loo_simple)
 ```
 
-           elpd_diff se_diff
-    post    0.0       0.0   
-    simple -0.9       3.0   
+      model elpd_diff se_diff p_worse diag_diff      diag_elpd
+       post       0.0     0.0      NA                         
+     simple      -0.9     3.0    0.62   N < 100 3 k_psis > 0.7
 
 The results indicate that the first approach is expected to produce
 better out-of-sample predictions but the Warning messages are at least

@@ -201,7 +201,7 @@ print(post0, digits = 1)
                    Median MAD_SD
     0-9g/day|10-19 -1.0    0.2  
     10-19|20-29     0.2    0.2  
-    20-29|30+       1.3    0.2  
+    20-29|30+       1.3    0.3  
 
     ------
     * For help interpreting the printed output see ?print.stanreg
@@ -304,14 +304,14 @@ round(cbind(Linear = coef(post1), Ordinal = coef(post2),
 ```
 
                 Linear Ordinal Rescaled
-    (Intercept) -3.254  -0.535   -4.812
-    smoke        0.361   0.514    0.534
+    (Intercept) -3.254  -0.543   -4.812
+    smoke        0.361   0.515    0.534
     age         -0.003  -0.025   -0.005
-    raceblack    0.394   0.514    0.582
-    raceother    0.400   0.530    0.592
-    ptl          0.154   0.400    0.228
-    ht           0.368   0.696    0.544
-    ftv         -0.004  -0.005   -0.006
+    raceblack    0.394   0.513    0.582
+    raceother    0.400   0.533    0.592
+    ptl          0.154   0.406    0.228
+    ht           0.368   0.692    0.544
+    ftv         -0.004  -0.006   -0.006
 
 they have the same signs and similar magnitudes, with the exception of
 the “Intercept”. In an ordinal model where the outcome only has \\J=2\\

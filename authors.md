@@ -8,6 +8,8 @@
 
 - **Sam Brilleman**. Contributor.
 
+- **Andrew Johnson**. Contributor.
+
 - **Jacqueline Buros Novik**. Contributor.  
   R/stan_jm.R
 

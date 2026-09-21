@@ -232,9 +232,9 @@ loo2 <- loo(fit2)
 loo_compare(loo1, loo2)
 ```
 
-         elpd_diff se_diff
-    fit1   0.0       0.0  
-    fit2 -79.9      11.8  
+     model elpd_diff se_diff p_worse diag_diff diag_elpd
+      fit1       0.0     0.0      NA                    
+      fit2     -79.9    11.8    1.00                    
 
 The difference in `elpd` is negative indicating that the expected
 predictive accuracy for the first model is higher.
@@ -269,13 +269,13 @@ round(coef(gas_fit2), 2)
            0.80        0.72        0.33        0.26        0.15       12.04 
 
           (Intercept)              temp            batch1            batch2 
-                -6.06              0.01              1.69              1.29 
+                -6.04              0.01              1.69              1.27 
                batch3            batch4            batch5            batch6 
-                 1.53              1.03              1.10              1.01 
+                 1.52              1.03              1.10              1.01 
                batch7            batch8            batch9 (phi)_(Intercept) 
-                 0.52              0.47              0.37              5.34 
+                 0.52              0.46              0.36              5.33 
        (phi)_pressure 
-                 0.04 
+                 0.05 
 
 The plots below illustrate simulated values of gasoline yield. While the
 first model accounts for variation in batch conditions its predictions
@@ -305,9 +305,9 @@ gas_loo2 <- loo(gas_fit2)
 loo_compare(gas_loo1, gas_loo2)
 ```
 
-             elpd_diff se_diff
-    gas_fit2   0.0       0.0  
-    gas_fit1 -33.9       3.3  
+        model elpd_diff se_diff p_worse diag_diff      diag_elpd
+     gas_fit2       0.0     0.0      NA           2 k_psis > 0.7
+     gas_fit1     -34.1     3.1    1.00   N < 100               
 
 Evaluating the expected log predictive distribution using `loo` reveals
 that the second of the two models is preferred.

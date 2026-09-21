@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">
       <!-- Add Stan logo -->
-      <picture><source type="image/svg+xml" srcset="../logo.svg"><img src="../logo.png" class="stan-logo" alt="Stan blue hex logo"></source></picture>
+      <img src="../logo.svg" class="stan-logo" alt="Stan blue hex logo">
       rstanarm
     </a>
 
@@ -46,7 +46,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../index.html" aria-label="Go to homepage"><span class="fa fa-home fa-lg"></span></a></li>
-<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Vignettes</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Functions</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
 <li class="nav-item dropdown">
@@ -95,7 +94,7 @@
                         <h4 data-toc-skip class="author">Bob Carpenter,
 Jonah Gabry and Ben Goodrich</h4>
             
-            <h4 data-toc-skip class="date">2026-06-24</h4>
+            <h4 data-toc-skip class="date">2026-09-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/pooling.Rmd" class="external-link"><code>vignettes/pooling.Rmd</code></a></small>
       <div class="d-none name"><code>pooling.Rmd</code></div>
@@ -490,24 +489,24 @@ this easily using the <code>sweep</code> function.</p>
 <span><span class="fu">batting_avg</span><span class="op">(</span><span class="va">partialpool</span><span class="op">)</span></span></code></pre></div>
 <pre><code>            
 parameters   10%   50%   90%  
-  Clemente   0.249 0.283 0.349
-  Robinson   0.245 0.281 0.341
-  Howard     0.243 0.277 0.331
-  Johnstone  0.240 0.274 0.323
-  Berry      0.238 0.271 0.317
-  Spencer    0.235 0.271 0.316
-  Kessinger  0.233 0.268 0.310
-  Alvarado   0.229 0.265 0.303
-  Santo      0.222 0.262 0.299
-  Swaboda    0.223 0.262 0.298
-  Petrocelli 0.216 0.258 0.294
-  Rodriguez  0.218 0.259 0.293
-  Scott      0.217 0.259 0.294
-  Unser      0.217 0.258 0.293
-  Williams   0.215 0.258 0.296
-  Campaneris 0.211 0.255 0.290
-  Munson     0.205 0.253 0.287
-  Alvis      0.198 0.250 0.285</code></pre>
+  Clemente   0.249 0.282 0.347
+  Robinson   0.246 0.279 0.337
+  Howard     0.243 0.276 0.331
+  Johnstone  0.242 0.274 0.324
+  Berry      0.237 0.270 0.316
+  Spencer    0.237 0.271 0.315
+  Kessinger  0.233 0.267 0.307
+  Alvarado   0.230 0.265 0.303
+  Santo      0.223 0.262 0.298
+  Swaboda    0.223 0.262 0.300
+  Petrocelli 0.218 0.260 0.294
+  Rodriguez  0.218 0.258 0.293
+  Scott      0.220 0.260 0.295
+  Unser      0.220 0.259 0.293
+  Williams   0.217 0.260 0.294
+  Campaneris 0.211 0.257 0.290
+  Munson     0.204 0.254 0.286
+  Alvis      0.200 0.250 0.283</code></pre>
 <p>Here the estimates are less extreme than in the no-pooling case,
 which we should expect due to the partial pooling. It is also clear from
 the wide posteriors for the <span class="math inline">\(\theta_n\)</span> that there is considerable
@@ -749,12 +748,12 @@ sum over the data points.</p>
 <span><span class="va">M</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">log_p_new</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">log_p_new</span><span class="op">)</span></span></code></pre></div>
 <pre><code>       Pooling NoPooling PartialPooling
-[1,] -87.50510 -270.1454      -98.24389
-[2,] -73.97575 -310.3988     -116.16486
-[3,] -80.95743 -250.4451      -93.64268
-[4,] -77.54662 -281.8998     -101.46736
-[5,] -74.39093 -172.3741     -115.82690
-[6,] -88.18157 -171.3092      -74.83273</code></pre>
+[1,] -87.50510 -270.1454     -106.88362
+[2,] -73.97575 -310.3988      -72.52398
+[3,] -80.95743 -250.4451      -88.06833
+[4,] -77.54662 -281.8998      -89.68794
+[5,] -74.39093 -172.3741      -78.39453
+[6,] -88.18157 -171.3092      -74.88100</code></pre>
 <p>We now have the distributions of <code>log_p_new</code> in a matrix
 with a column for each model.</p>
 <p>For each model, the posterior mean for <code>log_p_new</code> will
@@ -773,7 +772,7 @@ of the corresponding column of <code>log_p_new</code>.</p>
 <code class="sourceCode R"><span><span class="va">mean_log_p_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/Matrix/man/colSums-methods.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="va">log_p_new</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">mean_log_p_new</span>, decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, digits <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 <pre><code>       Pooling PartialPooling      NoPooling 
-         -81.8          -99.6         -207.8 </code></pre>
+         -81.8          -99.3         -207.8 </code></pre>
 <p>From a predictive standpoint, the models are ranked by the amount of
 pooling they do, with complete pooling being the best, and no pooling
 being the worst predictively. All of these models do predictions by
@@ -874,7 +873,7 @@ for each of the models:</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">new_lps_sums</span>, decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, digits <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 <pre><code>PartialPooling        Pooling      NoPooling 
-         -71.8          -73.1          -81.5 </code></pre>
+         -71.9          -73.1          -81.5 </code></pre>
 <p>Now the ranking is different! As expected, the values here are
 greater than the expectation of the log density due to Jensen’s
 inequality. The partial pooling model appears to be making slightly
@@ -889,10 +888,10 @@ predictive density can be approximated using the <code>loo</code>
 function for each model and then compared across models:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/loo.stanreg.html">loo_compare</a></span><span class="op">(</span><span class="fu"><a href="../reference/loo.stanreg.html">loo</a></span><span class="op">(</span><span class="va">fit_partialpool</span><span class="op">)</span>, <span class="fu"><a href="../reference/loo.stanreg.html">loo</a></span><span class="op">(</span><span class="va">fit_pool</span><span class="op">)</span>, <span class="fu"><a href="../reference/loo.stanreg.html">loo</a></span><span class="op">(</span><span class="va">fit_nopool</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code>                elpd_diff se_diff
-fit_pool         0.0       0.0   
-fit_partialpool -0.1       0.5   
-fit_nopool      -6.0       2.6   </code></pre>
+<pre><code>           model elpd_diff se_diff p_worse diag_diff       diag_elpd
+        fit_pool       0.0     0.0      NA                          
+ fit_partialpool      -0.3     0.5    0.75   N &lt; 100  2 k_psis &gt; 0.7
+      fit_nopool      -6.0     2.6    0.99   N &lt; 100 12 k_psis &gt; 0.7</code></pre>
 <p>The third column is the leave-one-out (loo) approximation to the
 expected log predictive density. This approximation is only
 asymptotically valid and with only 18 observations in this case,
@@ -940,11 +939,11 @@ can use the following code:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">ppd_pool</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">ppd_nopool</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">ppd_partialpool</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">bball</span><span class="op">$</span><span class="va">Player</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/Matrix/man/colSums-methods.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="va">ppd_partialpool</span><span class="op">)</span></span></code></pre></div>
 <pre><code>  Clemente   Robinson     Howard  Johnstone      Berry    Spencer  Kessinger 
- 107.11175  122.81375  147.09175   76.57650  114.83275  127.77175  158.14625 
+ 106.80250  121.98000  147.06375   76.60925  114.51400  127.67125  157.83875 
   Alvarado      Santo    Swaboda Petrocelli  Rodriguez      Scott      Unser 
-  36.78775  133.26850   52.09350  137.74925   47.83100  111.74450   71.23400 
+  36.54650  133.33625   52.36775  138.71500   47.85375  112.44425   71.32400 
   Williams Campaneris     Munson      Alvis 
- 151.40900  141.09625  101.63950   17.27250 </code></pre>
+ 152.49425  141.58000  101.86700   17.16500 </code></pre>
 <p>Translating the posterior number of hits into a season batting
 average, <span class="math inline">\(\frac{y_n + z_n}{K_n +
 K^{\mathrm{new}}_n}\)</span>, we get an 80% posterior interval of</p>
@@ -1102,9 +1101,9 @@ and computed via MCMC as the previous case.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">some_gt_350</span><span class="op">)</span></span></code></pre></div>
 <pre><code>Pr(theta_n &gt;= 0.400 | y)
 Clemente    Berry  Swaboda 
- 0.02175  0.00325  0.00050 
+ 0.02125  0.00400  0.00075 
 Pr(at least one theta_n &gt;= 0.350 | y)
-[1] 0.22875</code></pre>
+[1] 0.2215</code></pre>
 <!-- These results show that the probability of batting 0.400 or better for -->
 <!-- the season is a different question than asking if the player's ability -->
 <!-- is 0.400 or better; for example, with respect to the basic partial -->
@@ -1197,22 +1196,22 @@ ability.</p>
 parameters   10% 50% 90%
   Clemente     1   5  14
   Robinson     1   5  14
-  Howard       1   6  14
+  Howard       1   6  15
   Johnstone    2   7  15
-  Berry        2   8  15
+  Berry        2   8  16
   Spencer      2   8  15
   Kessinger    2   9  16
   Alvarado     3   9  16
   Santo        3  10  17
   Swaboda      3  10  17
-  Petrocelli   4  11  17
+  Petrocelli   3  11  17
   Rodriguez    4  11  17
-  Scott        4  11  17
-  Unser        4  11  17
+  Scott        3  11  17
+  Unser        3  11  17
   Williams     3  11  17
   Campaneris   4  12  17
-  Munson       4  13  18
-  Alvis        5  14  18</code></pre>
+  Munson       5  13  18
+  Alvis        5  13  18</code></pre>
 <p>It is again abundantly clear from the posterior intervals that our
 uncertainty is very great after only 45 at bats.</p>
 <p>In the original Volume I BUGS <a href="https://chjackson.github.io/openbugsdoc/Examples/Surgical.html" class="external-link">example</a>
@@ -1605,7 +1604,7 @@ seanlahman.com, which is currently not working.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

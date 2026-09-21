@@ -275,6 +275,8 @@ Quantitative Methods for Psychology*. 14(2), 99–119.
 
 Authors:
 
+- Ben Goodrich <benjamin.goodrich@columbia.edu>
+
 - Jonah Gabry <jgabry@gmail.com>
 
 Other contributors:

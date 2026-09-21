@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">
       <!-- Add Stan logo -->
-      <picture><source type="image/svg+xml" srcset="../logo.svg"><img src="../logo.png" class="stan-logo" alt="Stan blue hex logo"></source></picture>
+      <img src="../logo.svg" class="stan-logo" alt="Stan blue hex logo">
       rstanarm
     </a>
 
@@ -26,7 +26,6 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../index.html" aria-label="Go to homepage"><span class="fa fa-home fa-lg"></span></a></li>
-<li class="nav-item"><a class="nav-link" href="../articles/index.html">Vignettes</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Functions</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
 <li class="nav-item dropdown">
@@ -212,37 +211,37 @@ data, computational issues, etc.).</p>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">example_model</span>, pars <span class="op">=</span> <span class="st">"varying"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                               mean       mcse        sd         10%         50%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:1]   0.62722341 0.01608742 0.4415459  0.07595455  0.62715031</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:2]  -0.36427769 0.01525883 0.4424714 -0.94483006 -0.33901142</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:3]   0.38045628 0.01263177 0.3766349 -0.07852149  0.37502550</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:4]   0.03841076 0.01803683 0.4905975 -0.58000948  0.04103359</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:5]  -0.26015881 0.01415271 0.4160125 -0.80240461 -0.23959978</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:6]  -0.45988461 0.01559916 0.4388333 -1.02158661 -0.43434658</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:7]   0.92618148 0.01426487 0.4360411  0.40131569  0.89970975</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:8]   0.51032101 0.01925821 0.5221492 -0.13943996  0.52135539</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:9]  -0.25893282 0.01666986 0.5406258 -0.90647896 -0.24139284</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:10] -0.62914073 0.01481049 0.4468560 -1.22576496 -0.60609808</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:11] -0.14637179 0.01431972 0.4129541 -0.71249718 -0.11485555</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:12] -0.04363117 0.01846334 0.5122429 -0.69627174 -0.02758330</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:13] -0.78627355 0.01656960 0.4573965 -1.36763552 -0.75501245</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:14]  1.00700584 0.01707785 0.4423126  0.43654877  0.98415992</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:15] -0.60198255 0.01381385 0.4725656 -1.22122313 -0.57879172</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:1]   0.62300438 0.01620054 0.4588130  0.03796704  0.62611637</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:2]  -0.36481538 0.01489670 0.4327220 -0.90822480 -0.35023927</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:3]   0.37725127 0.01568539 0.3696453 -0.08760737  0.37827066</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:4]   0.03678426 0.01566984 0.4916136 -0.58336494  0.02393670</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:5]  -0.26173939 0.01476787 0.4332863 -0.83041946 -0.22689161</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:6]  -0.48400034 0.01559027 0.4606396 -1.09863009 -0.45470874</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:7]   0.93232301 0.01603749 0.4173846  0.41634352  0.93039901</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:8]   0.53408380 0.02178227 0.5098291 -0.09138152  0.52287568</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:9]  -0.25936885 0.01859386 0.5542501 -0.93166615 -0.23831961</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:10] -0.62692607 0.01603693 0.4352790 -1.20094641 -0.60839733</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:11] -0.17262225 0.01698866 0.4154737 -0.72043939 -0.16538408</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:12] -0.08228036 0.01522644 0.5096514 -0.73990528 -0.06503475</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:13] -0.82538180 0.01737403 0.4745142 -1.47618453 -0.80554091</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:14]  1.02188545 0.01670857 0.4402157  0.45192065  1.02659147</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:15] -0.63270314 0.01345009 0.4438263 -1.22398627 -0.60756536</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                90% n_eff      Rhat</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:1]   1.18994683   753 1.0005647</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:2]   0.18168238   841 0.9992947</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:3]   0.86572288   889 0.9996979</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:4]   0.64919383   740 0.9988455</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:5]   0.24399929   864 0.9985012</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:6]   0.06249890   791 1.0008678</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:7]   1.52063980   934 0.9988557</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:8]   1.15757378   735 1.0005324</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:9]   0.41947464  1052 0.9983954</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:10] -0.09920854   910 0.9994387</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:11]  0.35927443   832 0.9998923</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:12]  0.59755834   770 1.0019334</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:13] -0.25753682   762 1.0027890</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:14]  1.59355623   671 1.0003160</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:15] -0.01508412  1170 0.9985240</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:1]   1.20556247   802 0.9982976</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:2]   0.18783005   844 0.9993093</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:3]   0.85919710   555 0.9990585</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:4]   0.65275493   984 0.9986838</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:5]   0.25863332   861 0.9993085</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:6]   0.08783862   873 1.0012477</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:7]   1.45930283   677 0.9981217</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:8]   1.18441094   548 1.0004232</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:9]   0.42257927   889 1.0004938</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:10] -0.11416995   737 0.9995577</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:11]  0.35144067   598 1.0020647</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:12]  0.51117888  1120 0.9988075</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:13] -0.25850026   746 1.0002000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:14]  1.61145793   694 0.9987592</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b[(Intercept) herd:15] -0.07991711  1089 0.9989376</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -254,7 +253,7 @@ data, computational issues, etc.).</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

@@ -282,11 +282,11 @@ loo4 <- loo(post4, cores = 1)
 (comp <- loo_compare(loo1, loo2, loo3, loo4))
 ```
 
-          elpd_diff se_diff
-    post4   0.0       0.0  
-    post3  -3.5       2.7  
-    post2  -6.2       4.1  
-    post1 -42.4       8.7  
+     model elpd_diff se_diff p_worse       diag_diff diag_elpd
+     post4       0.0     0.0      NA                          
+     post3      -3.5     2.7    0.90 |elpd_diff| < 4          
+     post2      -6.2     4.1    0.94                          
+     post1     -42.4     8.7    1.00                          
 
 In this case the fourth model is preferred as it has the highest
 expected log predicted density (`elpd_loo`) or, equivalently, the lowest
@@ -298,9 +298,9 @@ preferred by a lot over the first model
 loo_compare(loo1, loo4)
 ```
 
-          elpd_diff se_diff
-    post4   0.0       0.0  
-    post1 -42.4       8.7  
+     model elpd_diff se_diff p_worse diag_diff diag_elpd
+     post4       0.0     0.0      NA                    
+     post1     -42.4     8.7    1.00                    
 
 because the difference in `elpd` is so much larger than the standard
 error. However, the preference of the fourth model over the others isn’t
@@ -311,18 +311,18 @@ as strong:
 loo_compare(loo3, loo4)
 ```
 
-          elpd_diff se_diff
-    post4  0.0       0.0   
-    post3 -3.5       2.7   
+     model elpd_diff se_diff p_worse       diag_diff diag_elpd
+     post4       0.0     0.0      NA                          
+     post3      -3.5     2.7    0.90 |elpd_diff| < 4          
 
 ``` r
 
 loo_compare(loo2, loo4)
 ```
 
-          elpd_diff se_diff
-    post4  0.0       0.0   
-    post2 -6.2       4.1   
+     model elpd_diff se_diff p_worse diag_diff diag_elpd
+     post4       0.0     0.0      NA                    
+     post2      -6.2     4.1    0.94                    
 
 ### The posterior predictive distribution
 

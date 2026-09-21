@@ -395,9 +395,9 @@ the resulting model comparison:
 loo_compare(loo_bglm_1, loo_bglm_2)
 ```
 
-                      elpd_diff se_diff
-    womensrole_bglm_1  0.0       0.0   
-    womensrole_bglm_2 -0.7       1.7   
+                 model elpd_diff se_diff p_worse diag_diff      diag_elpd
+     womensrole_bglm_1       0.0     0.0      NA           1 k_psis > 0.7
+     womensrole_bglm_2      -0.7     1.6    0.67   N < 100 1 k_psis > 0.7
 
 In this case, there is little difference in the expected log pointwise
 deviance between the two models, so we are essentially indifferent
@@ -460,7 +460,7 @@ summary(apply(y_rep, 1, diff))
 ```
 
        Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-     -41.00  -24.00  -20.00  -19.69  -16.00   -1.00 
+      -41.0   -24.0   -20.0   -19.7   -16.0     0.0 
 
 As can be seen, out of \\100\\ women who have a college degree versus
 \\100\\ women with only a high school degree, we would expect about

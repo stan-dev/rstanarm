@@ -379,9 +379,9 @@ by the `loo` function in the **loo** package:
 loo_compare(loo1, loo2)
 ```
 
-         elpd_diff se_diff
-    fit2   0.0       0.0  
-    fit1 -71.7      12.2  
+     model elpd_diff se_diff p_worse diag_diff diag_elpd
+      fit2       0.0     0.0      NA                    
+      fit1     -71.7    12.2    1.00                    
 
 These results favor `fit2` over `fit1`, as the estimated difference in
 `elpd` (the expected log pointwise predictive density for a new dataset)

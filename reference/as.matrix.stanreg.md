@@ -107,23 +107,23 @@ print(nrow(draws)) # 1000 draws are taken
 #>  observations: 56
 #> ------
 #>             Median MAD_SD
-#> (Intercept) -1.5    0.6  
+#> (Intercept) -1.6    0.6  
 #> size         0.0    0.0  
 #> period2     -1.0    0.3  
-#> period3     -1.1    0.4  
-#> period4     -1.6    0.5  
+#> period3     -1.1    0.3  
+#> period4     -1.6    0.4  
 #> 
 #> Error terms:
 #>  Groups Name        Std.Dev.
-#>  herd   (Intercept) 0.76    
+#>  herd   (Intercept) 0.79    
 #> Num. levels: herd 15 
 #> 
 #> ------
 #> * For help interpreting the printed output see ?print.stanreg
 #> * For info on the priors used see ?prior_summary.stanreg
 #> [1] 1000   21
-#> [1] -1.515377
-#> [1] -1.515377
+#> [1] -1.555414
+#> [1] -1.555414
 #> [1] 500   2  21
 #> [1] "(Intercept)" "wt"          "sigma"      
 #> [1] 1000
@@ -135,8 +135,8 @@ print(nrow(draws)) # 1000 draws are taken
 #> Chain 1: 
 #> Chain 1: 
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 2.1e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#> Chain 1: Gradient evaluation took 2.3e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.23 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 

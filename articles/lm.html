@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">
       <!-- Add Stan logo -->
-      <picture><source type="image/svg+xml" srcset="../logo.svg"><img src="../logo.png" class="stan-logo" alt="Stan blue hex logo"></source></picture>
+      <img src="../logo.svg" class="stan-logo" alt="Stan blue hex logo">
       rstanarm
     </a>
 
@@ -46,7 +46,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../index.html" aria-label="Go to homepage"><span class="fa fa-home fa-lg"></span></a></li>
-<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Vignettes</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Functions</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
 <li class="nav-item dropdown">
@@ -95,7 +94,7 @@
                         <h4 data-toc-skip class="author">Jonah Gabry and
 Ben Goodrich</h4>
             
-            <h4 data-toc-skip class="date">2026-06-24</h4>
+            <h4 data-toc-skip class="date">2026-09-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/lm.Rmd" class="external-link"><code>vignettes/lm.Rmd</code></a></small>
       <div class="d-none name"><code>lm.Rmd</code></div>
@@ -491,9 +490,9 @@ Pareto k diagnostic values:
 See help('pareto-k-diagnostic') for details.</code></pre>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/loo.stanreg.html">loo_compare</a></span><span class="op">(</span><span class="va">loo_post</span>, <span class="va">loo_simple</span><span class="op">)</span></span></code></pre></div>
-<pre><code>       elpd_diff se_diff
-post    0.0       0.0   
-simple -0.9       3.0   </code></pre>
+<pre><code>  model elpd_diff se_diff p_worse diag_diff      diag_elpd
+   post       0.0     0.0      NA                         
+ simple      -0.9     3.0    0.62   N &lt; 100 3 k_psis &gt; 0.7</code></pre>
 <p>The results indicate that the first approach is expected to produce
 better out-of-sample predictions but the Warning messages are at least
 as important. Some of the estimated shape parameters for the Generalized
@@ -586,7 +585,7 @@ correlation matrices based on vines and extended onion method.
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">
       <!-- Add Stan logo -->
-      <picture><source type="image/svg+xml" srcset="../logo.svg"><img src="../logo.png" class="stan-logo" alt="Stan blue hex logo"></source></picture>
+      <img src="../logo.svg" class="stan-logo" alt="Stan blue hex logo">
       rstanarm
     </a>
 
@@ -46,7 +46,6 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../index.html" aria-label="Go to homepage"><span class="fa fa-home fa-lg"></span></a></li>
-<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Vignettes</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Functions</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
 <li class="nav-item dropdown">
@@ -95,7 +94,7 @@
                         <h4 data-toc-skip class="author">Jonah Gabry and
 Ben Goodrich</h4>
             
-            <h4 data-toc-skip class="date">2026-06-24</h4>
+            <h4 data-toc-skip class="date">2026-09-21</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/vignettes/continuous.Rmd" class="external-link"><code>vignettes/continuous.Rmd</code></a></small>
       <div class="d-none name"><code>continuous.Rmd</code></div>
@@ -355,33 +354,33 @@ package:</p>
 <span><span class="va">loo3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/loo.stanreg.html">loo</a></span><span class="op">(</span><span class="va">post3</span>, cores <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">loo4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/loo.stanreg.html">loo</a></span><span class="op">(</span><span class="va">post4</span>, cores <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="op">(</span><span class="va">comp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/loo.stanreg.html">loo_compare</a></span><span class="op">(</span><span class="va">loo1</span>, <span class="va">loo2</span>, <span class="va">loo3</span>, <span class="va">loo4</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code>      elpd_diff se_diff
-post4   0.0       0.0  
-post3  -3.5       2.7  
-post2  -6.2       4.1  
-post1 -42.4       8.7  </code></pre>
+<pre><code> model elpd_diff se_diff p_worse       diag_diff diag_elpd
+ post4       0.0     0.0      NA                          
+ post3      -3.5     2.7    0.90 |elpd_diff| &lt; 4          
+ post2      -6.2     4.1    0.94                          
+ post1     -42.4     8.7    1.00                          </code></pre>
 <p>In this case the fourth model is preferred as it has the highest
 expected log predicted density (<code>elpd_loo</code>) or, equivalently,
 the lowest value of the LOO Information Criterion (<code>looic</code>).
 The fourth model is preferred by a lot over the first model</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/loo.stanreg.html">loo_compare</a></span><span class="op">(</span><span class="va">loo1</span>, <span class="va">loo4</span><span class="op">)</span></span></code></pre></div>
-<pre><code>      elpd_diff se_diff
-post4   0.0       0.0  
-post1 -42.4       8.7  </code></pre>
+<pre><code> model elpd_diff se_diff p_worse diag_diff diag_elpd
+ post4       0.0     0.0      NA                    
+ post1     -42.4     8.7    1.00                    </code></pre>
 <p>because the difference in <code>elpd</code> is so much larger than
 the standard error. However, the preference of the fourth model over the
 others isn’t as strong:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/loo.stanreg.html">loo_compare</a></span><span class="op">(</span><span class="va">loo3</span>, <span class="va">loo4</span><span class="op">)</span></span></code></pre></div>
-<pre><code>      elpd_diff se_diff
-post4  0.0       0.0   
-post3 -3.5       2.7   </code></pre>
+<pre><code> model elpd_diff se_diff p_worse       diag_diff diag_elpd
+ post4       0.0     0.0      NA                          
+ post3      -3.5     2.7    0.90 |elpd_diff| &lt; 4          </code></pre>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/loo.stanreg.html">loo_compare</a></span><span class="op">(</span><span class="va">loo2</span>, <span class="va">loo4</span><span class="op">)</span></span></code></pre></div>
-<pre><code>      elpd_diff se_diff
-post4  0.0       0.0   
-post2 -6.2       4.1   </code></pre>
+<pre><code> model elpd_diff se_diff p_worse diag_diff diag_elpd
+ post4       0.0     0.0      NA                    
+ post2      -6.2     4.1    0.94                    </code></pre>
 </div>
 <div class="section level3">
 <h3 id="the-posterior-predictive-distribution">The posterior predictive distribution<a class="anchor" aria-label="anchor" href="#the-posterior-predictive-distribution"></a>
@@ -567,7 +566,7 @@ Models.</em> Chapman and Hall/CRC Press, New York.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>
