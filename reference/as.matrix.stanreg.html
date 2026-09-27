@@ -42,6 +42,7 @@ variational approximation to the posterior distribution.'><meta property="og:ima
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../index.html" aria-label="Go to homepage"><span class="fa fa-home fa-lg"></span></a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Functions</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
 <li class="nav-item dropdown">
@@ -50,8 +51,10 @@ variational approximation to the posterior distribution.'><meta property="og:ima
     <li><a class="external-link dropdown-item" href="https://mc-stan.org/cmdstanr">cmdstanr</a></li>
     <li><a class="external-link dropdown-item" href="https://mc-stan.org/loo">loo</a></li>
     <li><a class="external-link dropdown-item" href="https://mc-stan.org/posterior">posterior</a></li>
+    <li><a class="external-link dropdown-item" href="https://mc-stan.org/priorsense/">priorsense</a></li>
     <li><a class="external-link dropdown-item" href="https://mc-stan.org/projpred">projpred</a></li>
     <li><a class="external-link dropdown-item" href="https://mc-stan.org/rstan">rstan</a></li>
+    <li><a class="dropdown-item" href="https://mc-stan.org/rstanarm">rstanarm</a></li>
     <li><a class="external-link dropdown-item" href="https://mc-stan.org/rstantools">rstantools</a></li>
     <li><a class="external-link dropdown-item" href="https://mc-stan.org/shinystan">shinystan</a></li>
   </ul></li>
@@ -75,7 +78,7 @@ variational approximation to the posterior distribution.'><meta property="og:ima
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Extract the posterior sample</h1>
-      <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/R/as.matrix.stanreg.R" class="external-link"><code>R/as.matrix.stanreg.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/update-pkgdown-navbar/R/as.matrix.stanreg.R" class="external-link"><code>R/as.matrix.stanreg.R</code></a></small>
       <div class="d-none name"><code>as.matrix.stanreg.Rd</code></div>
     </div>
 
@@ -187,23 +190,23 @@ using optimization.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  observations: 56</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             Median MAD_SD</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept) -1.6    0.6  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept) -1.5    0.7  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> size         0.0    0.0  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> period2     -1.0    0.3  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> period3     -1.1    0.3  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> period4     -1.6    0.4  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> period4     -1.6    0.5  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Error terms:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Groups Name        Std.Dev.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  herd   (Intercept) 0.79    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  herd   (Intercept) 0.78    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Num. levels: herd 15 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> * For help interpreting the printed output see ?print.stanreg</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> * For info on the priors used see ?prior_summary.stanreg</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1000   21</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1.555414</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1.555414</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1.513052</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1.513052</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 500   2  21</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "(Intercept)" "wt"          "sigma"      </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1000</span>
@@ -215,8 +218,8 @@ using optimization.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Gradient evaluation took 2e-05 seconds</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Gradient evaluation took 2.2e-05 seconds</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Adjust your expectations accordingly!</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
