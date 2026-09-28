@@ -64,7 +64,7 @@ proportional odds assumption."><meta property="og:image" content="https://mc-sta
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Bayesian ordinal regression models via Stan</h1>
-      <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/update-pkgdown-navbar/R/stan_polr.R" class="external-link"><code>R/stan_polr.R</code></a>, <a href="https://github.com/stan-dev/rstanarm/blob/update-pkgdown-navbar/R/stan_polr.fit.R" class="external-link"><code>R/stan_polr.fit.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/stan-dev/rstanarm/blob/master/R/stan_polr.R" class="external-link"><code>R/stan_polr.R</code></a>, <a href="https://github.com/stan-dev/rstanarm/blob/master/R/stan_polr.fit.R" class="external-link"><code>R/stan_polr.fit.R</code></a></small>
       <div class="d-none name"><code>stan_polr.Rd</code></div>
     </div>
 
@@ -307,8 +307,8 @@ for <code>stan_polr</code>.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Gradient evaluation took 4.9e-05 seconds</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.49 seconds.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Gradient evaluation took 5.5e-05 seconds</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.55 seconds.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Adjust your expectations accordingly!</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
@@ -318,15 +318,20 @@ for <code>stan_polr</code>.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 100 / 250 [ 40%]  (Adaptation)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 150 / 250 [ 60%]  (Adaptation)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 200 / 250 [ 80%]  (Adaptation)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Success! Found best value [eta = 1] earlier than expected.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 250 / 250 [100%]  (Adaptation)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Success! Found best value [eta = 0.1].</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Begin stochastic gradient ascent.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:   iter             ELBO   delta_ELBO_mean   delta_ELBO_med   notes </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    100         -130.980             1.000            1.000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    200         -129.388             0.506            1.000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    300         -128.950             0.339            0.012</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    400         -128.422             0.255            0.012</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    500         -127.866             0.205            0.004   MEDIAN ELBO CONVERGED</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    100         -138.300             1.000            1.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    200         -131.592             0.525            1.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    300         -129.352             0.356            0.051</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    400         -127.902             0.270            0.051</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    500         -128.076             0.216            0.017</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    600         -127.893             0.180            0.017</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    700         -127.827             0.155            0.011</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    800         -127.211             0.136            0.011</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:    900         -127.465             0.121            0.005   MEDIAN ELBO CONVERGED</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Drawing a sample of size 1000 from the approximate posterior... </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: COMPLETED.</span>
@@ -336,17 +341,17 @@ for <code>stan_polr</code>.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  observations: 88</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         Median MAD_SD</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> agegp.L -0.1    0.2  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> agegp.Q -0.1    0.3  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> agegp.L -0.2    0.3  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> agegp.Q -0.2    0.3  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> agegp.C -0.1    0.3  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> agegp^4  0.0    0.2  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> agegp^5  0.0    0.2  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> agegp^4  0.0    0.3  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> agegp^5  0.0    0.3  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Cutpoints:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                Median MAD_SD</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0-9g/day|10-19 -0.6    0.1  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10-19|20-29     0.0    0.1  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20-29|30+       0.7    0.1  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0-9g/day|10-19 -0.6    0.2  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10-19|20-29     0.1    0.1  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 20-29|30+       0.8    0.2  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> * For help interpreting the printed output see ?print.stanreg</span>

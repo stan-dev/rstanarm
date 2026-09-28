@@ -204,8 +204,8 @@ all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr))
 #> 
 #> SAMPLING FOR MODEL 'bernoulli' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 4.3e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.43 seconds.
+#> Chain 1: Gradient evaluation took 5e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.5 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -222,15 +222,15 @@ all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr))
 #> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.107 seconds (Warm-up)
-#> Chain 1:                0.038 seconds (Sampling)
-#> Chain 1:                0.145 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.218 seconds (Warm-up)
+#> Chain 1:                0.077 seconds (Sampling)
+#> Chain 1:                0.295 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'bernoulli' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 2.1e-05 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.21 seconds.
+#> Chain 2: Gradient evaluation took 3.9e-05 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.39 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -247,9 +247,9 @@ all.equal(rep(sum(nd$case), nrow(pr)), rowSums(pr))
 #> Chain 2: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 2: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 0.141 seconds (Warm-up)
-#> Chain 2:                0.055 seconds (Sampling)
-#> Chain 2:                0.196 seconds (Total)
+#> Chain 2:  Elapsed Time: 0.286 seconds (Warm-up)
+#> Chain 2:                0.111 seconds (Sampling)
+#> Chain 2:                0.397 seconds (Total)
 #> Chain 2: 
 #> [1] TRUE
 ```

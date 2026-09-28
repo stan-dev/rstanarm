@@ -342,8 +342,8 @@ plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #> 
 #> SAMPLING FOR MODEL 'continuous' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 6.5e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.65 seconds.
+#> Chain 1: Gradient evaluation took 8.2e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.82 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -360,10 +360,14 @@ plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 1.544 seconds (Warm-up)
-#> Chain 1:                1.091 seconds (Sampling)
-#> Chain 1:                2.635 seconds (Total)
+#> Chain 1:  Elapsed Time: 3.015 seconds (Warm-up)
+#> Chain 1:                1.294 seconds (Sampling)
+#> Chain 1:                4.309 seconds (Total)
 #> Chain 1: 
+#> Warning: There were 5 divergent transitions after warmup. See
+#> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#> to find out why this is a problem and how to eliminate them.
+#> Warning: Examine the pairs() plot to diagnose sampling problems
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#bulk-ess
@@ -378,24 +382,24 @@ plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #>             Median MAD_SD
 #> (Intercept)   4.3    0.2 
 #> x1            6.4    0.3 
-#> s(x0).1       0.9    2.2 
-#> s(x0).2       0.2    2.2 
-#> s(x0).3      -0.5    1.9 
-#> s(x0).4       0.4    1.9 
-#> s(x0).5       1.0    2.1 
-#> s(x0).6      -2.0    1.2 
+#> s(x0).1       1.1    2.5 
+#> s(x0).2       0.3    2.4 
+#> s(x0).3      -0.6    2.2 
+#> s(x0).4       0.2    1.9 
+#> s(x0).5       1.4    2.2 
+#> s(x0).6      -1.9    1.3 
 #> s(x0).7      -0.6    0.7 
-#> s(x0).8      -2.6    1.7 
-#> s(x0).9       0.0    0.8 
-#> s(x2).1     -44.0   13.1 
-#> s(x2).2      -6.1    7.9 
-#> s(x2).3     -40.0    8.2 
-#> s(x2).4     -38.8    6.1 
-#> s(x2).5      -3.4    4.3 
-#> s(x2).6     -10.5    2.6 
-#> s(x2).7       8.5    1.4 
-#> s(x2).8      -9.8    4.9 
-#> s(x2).9       1.7    3.3 
+#> s(x0).8      -2.7    1.6 
+#> s(x0).9       0.0    1.0 
+#> s(x2).1     -42.3   11.6 
+#> s(x2).2       5.4    8.2 
+#> s(x2).3     -39.9    9.6 
+#> s(x2).4     -39.5    5.5 
+#> s(x2).5      -2.3    4.0 
+#> s(x2).6     -10.2    2.3 
+#> s(x2).7       8.4    1.6 
+#> s(x2).8      -8.6    4.5 
+#> s(x2).9       1.3    2.7 
 #> 
 #> Auxiliary parameter(s):
 #>       Median MAD_SD
@@ -403,15 +407,15 @@ plot_nonlinear(br, smooths = "s(x0)", alpha = 2/3)
 #> 
 #> Smoothing terms:
 #>                   Median MAD_SD
-#> smooth_sd[s(x0)1]  2.3    1.0  
-#> smooth_sd[s(x0)2]  1.4    1.3  
-#> smooth_sd[s(x2)1] 18.6    3.4  
-#> smooth_sd[s(x2)2]  2.6    2.6  
+#> smooth_sd[s(x0)1]  2.4    1.0  
+#> smooth_sd[s(x0)2]  1.2    1.2  
+#> smooth_sd[s(x2)1] 19.4    3.0  
+#> smooth_sd[s(x2)2]  2.7    3.1  
 #> 
 #> Error terms:
 #>  Groups   Name        Std.Dev.
-#>  fac      (Intercept) 0.45    
-#>  Residual             2.02    
+#>  fac      (Intercept) 0.5     
+#>  Residual             2.0     
 #> Num. levels: fac 20 
 #> 
 #> ------

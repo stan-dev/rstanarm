@@ -222,8 +222,8 @@ pp_check(fit, plotfun = "stat_grouped", stat = "median",
 #> 
 #> SAMPLING FOR MODEL 'lm' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 2.2e-05 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.22 seconds.
+#> Chain 1: Gradient evaluation took 2e-05 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.2 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -240,12 +240,15 @@ pp_check(fit, plotfun = "stat_grouped", stat = "median",
 #> Chain 1: Iteration: 450 / 500 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 500 / 500 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 0.344 seconds (Warm-up)
-#> Chain 1:                0.193 seconds (Sampling)
-#> Chain 1:                0.537 seconds (Total)
+#> Chain 1:  Elapsed Time: 0.729 seconds (Warm-up)
+#> Chain 1:                0.244 seconds (Sampling)
+#> Chain 1:                0.973 seconds (Total)
 #> Chain 1: 
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
 #> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 #> `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
 ```
