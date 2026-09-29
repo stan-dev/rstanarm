@@ -60,6 +60,14 @@ functions <- c(unlist(lapply(file.path(MODELS_HOME, "functions",
 model_code <- paste(c("functions {", functions[grep("CODOLS", functions, invert = TRUE)], "}"), collapse = "\n")
 stanc_ret <- stanc(model_code = model_code, model_name = "Stan Functions",
                    allow_undefined = TRUE)
+# rstan's plugin links to RcppParallel's libtbb without an rpath, so on musl
+# (e.g., Alpine) the compiled module can't find libtbb.so at load time (#660).
+# This can be removed once we require an rstan release that includes the fix
+# (stan-dev/rstan#1196).
+if (Sys.info()[["sysname"]] == "Linux") {
+  Sys.setenv(PKG_LIBS = paste(Sys.getenv("PKG_LIBS"),
+                              paste0("-Wl,-rpath,", RcppParallel::tbbLibraryPath())))
+}
 expose_stan_functions(stanc_ret, rebuild = TRUE, verbose = TRUE)
 # Rcpp::registerPlugin("rstan", rstan:::rstanplugin)
 # Rcpp::sourceCpp(file.path(INCLUDE_DIR, "tests.cpp"), rebuild = TRUE, verbose = TRUE)
