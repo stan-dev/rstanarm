@@ -145,7 +145,12 @@ test_that("posterior_vs_prior ok", {
                               color_by = "none", 
                               facet_args = list(scales = "free", nrow = 2)))
   expect_gg(p3)
-  
+
+  # regex_pars matching a single parameter (#662)
+  SW(p_one <- posterior_vs_prior(fit, regex_pars = "^Sigma"))
+  expect_gg(p_one)
+  expect_equal(nrow(p_one$data), 2)
+
   SW(fit_polr <- stan_polr(tobgp ~ agegp, data = esoph, method = "probit",
                           prior = R2(0.2, "mean"), init_r = 0.1, 
                           seed = SEED, chains = CHAINS, cores = CORES, 
