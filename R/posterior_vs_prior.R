@@ -205,7 +205,7 @@ stack_estimates <-
                    regex_pars = regex_pars,
                    probs = probs)
       if (is.null(pars))
-        s <- s[!rownames(s) %in% c("log-posterior", "mean_PPD"),]
+        s <- s[!rownames(s) %in% c("log-posterior", "mean_PPD"), , drop = FALSE]
       s[, labs, drop = FALSE]
     })
     est_column <- function(list_of_matrices, col) {
