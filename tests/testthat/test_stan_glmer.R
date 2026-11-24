@@ -178,6 +178,79 @@ test_that("stan_gamm4 errors if no smooth terms in formula", {
   )
 })
 
+test_that("stan_gamm4 predictions with t2 terms match the design matrix", {
+  # mgcv uses another basis for the prediction of t2 terms than for the fit
+  skip_if_not_installed("mgcv")
+  N <- 60
+  i <- seq_len(N)
+  dat <- data.frame(w = (i * 0.2847) %% 1, x = (i * 0.618) %% 1,
+                    z = (i * 0.4142) %% 1, g = gl(6, 10))
+  dat$y <- cos(2 * pi * dat$w) + sin(2 * pi * dat$x) + cos(3 * dat$z) +
+    as.numeric(dat$g) / 3 + 0.3 * sin(7 * i)
+  SW(fit1 <- stan_gamm4(y ~ s(w) + t2(x, z), data = dat, chains = 1,
+                        iter = 100, seed = SEED, refresh = 0))
+  SW(fit2 <- stan_gamm4(y ~ s(w) + t2(x, z), random = ~(1 | g), data = dat,
+                        chains = 1, iter = 100, seed = SEED, refresh = 0))
+  idx <- c(5:1, 31:35)
+  fits <- list(gam = fit1, gamm = fit2)
+  for (nm in names(fits)) {
+    fit <- fits[[nm]]
+    expect_false(is.null(fit$jam$P), info = nm)
+    x_all <- as.matrix(fit$x)
+    draws <- as.matrix(fit$stanfit)[, colnames(x_all)]
+    eta <- tcrossprod(draws, x_all)
+    expect_equal(posterior_linpred(fit), eta, tolerance = 1e-8,
+                 ignore_attr = TRUE, info = nm)
+    expect_equal(posterior_linpred(fit, newdata = dat[idx, ]), eta[, idx],
+                 tolerance = 1e-8, ignore_attr = TRUE, info = nm)
+    ll <- dnorm(matrix(dat$y, nrow(eta), N, byrow = TRUE), eta,
+                as.matrix(fit)[, "sigma"], log = TRUE)
+    expect_equal(log_lik(fit, newdata = dat), ll, tolerance = 1e-8,
+                 ignore_attr = TRUE, info = nm)
+    # the jam object has the posterior mean and covariance of the
+    # population-level coefficients
+    pop <- colnames(fit$jam$X)
+    eta_pop <- tcrossprod(draws[, pop], x_all[idx, pop])
+    pred_jam <- predict(fit$jam, newdata = dat[idx, ], se.fit = TRUE)
+    expect_equal(pred_jam$fit, colMeans(eta_pop), tolerance = 1e-8,
+                 ignore_attr = TRUE, info = nm)
+    expect_equal(pred_jam$se.fit, apply(eta_pop, 2, sd), tolerance = 1e-8,
+                 ignore_attr = TRUE, info = nm)
+  }
+  # log_lik without newdata uses fit$x (GAM only: see get_x.gamm4)
+  expect_equal(log_lik(fit1, newdata = dat), log_lik(fit1), tolerance = 1e-8)
+
+  # the prediction constraint of t2 centers the term over the data
+  expect_lt(max(abs(colSums(predict(fit1$jam, type = "terms")))), 1e-8)
+
+  # plot_nonlinear uses the basis of the prediction matrix, as plot.gam does
+  P1 <- fit1$jam$P
+  B1 <- as.matrix(fit1)[, colnames(fit1$jam$X)] %*% t(P1)
+  X1 <- predict(fit1$jam, type = "lpmatrix")
+  sw <- grep("s(w).", colnames(X1), fixed = TRUE)
+  p1 <- plot_nonlinear(fit1, smooths = "s(w)")
+  ord <- order(dat$w)
+  expect_equal(p1$data$middle,
+               apply(tcrossprod(B1[, sw], X1[ord, sw]), 2, median),
+               tolerance = 1e-8, ignore_attr = TRUE)
+  SW(fit3 <- stan_gamm4(y ~ t2(x, z), data = dat, chains = 1, iter = 100,
+                        seed = SEED, refresh = 0))
+  p3 <- plot_nonlinear(fit3)
+  grid <- data.frame(x = p3$data$x, z = p3$data$y)
+  X3 <- predict(fit3$jam, newdata = grid, type = "lpmatrix")
+  t2c <- grep("t2(x,z).", colnames(X3), fixed = TRUE)
+  B3 <- as.matrix(fit3)[, colnames(fit3$jam$X)] %*% t(fit3$jam$P)
+  expect_equal(p3$data$z,
+               apply(tcrossprod(B3[, t2c], X3[, t2c]), 2, median),
+               tolerance = 1e-8, ignore_attr = TRUE)
+  # the transformed draws give the linear predictor, and the t2 term of each
+  # draw has mean 0 over the data
+  expect_equal(tcrossprod(B3, X3), posterior_linpred(fit3, newdata = grid),
+               tolerance = 1e-8, ignore_attr = TRUE)
+  X3d <- predict(fit3$jam, type = "lpmatrix")
+  expect_lt(max(abs(rowMeans(tcrossprod(B3[, t2c], X3d[, t2c])))), 1e-8)
+})
+
 
 test_that("loo/waic for stan_glmer works", {
   ll_fun <- rstanarm:::ll_fun

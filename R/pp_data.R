@@ -35,12 +35,27 @@ pp_data <-
     .pp_data(object, newdata = newdata, offset = offset, ...)
   }
 
+# Prediction matrix in the basis of the coefficients of a stan_gamm4 model. For
+# smooths with a separate prediction constraint (t2), mgcv predicts in another
+# basis; the matrix P of the jagam setup maps the prediction matrix to the fit
+# basis.
+gamm4_lpmatrix <- function(object, newdata = NULL) {
+  requireNamespace("mgcv", quietly = TRUE)
+  if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
+  else x <- predict(object$jam, newdata = newdata, type = "lpmatrix")
+  P <- object$jam$P
+  if (!is.null(P)) {
+    nms <- colnames(x)
+    x <- x %*% P
+    colnames(x) <- nms
+  }
+  return(x)
+}
+
 # for models without lme4 structure
 .pp_data <- function(object, newdata = NULL, offset = NULL, ...) {
   if (is(object, "gamm4")) {
-    requireNamespace("mgcv", quietly = TRUE)
-    if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
-    else x <- predict(object$jam, newdata = newdata, type = "lpmatrix")
+    x <- gamm4_lpmatrix(object, newdata = newdata)
     if (is.null(offset)) 
       offset <- object$offset %ORifNULL% rep(0, nrow(x))
     return(nlist(x, offset))
@@ -81,9 +96,7 @@ pp_data <-
 # for models fit using stan_(g)lmer or stan_gamm4
 .pp_data_mer <- function(object, newdata, re.form, m = NULL, ...) {
   if (is(object, "gamm4")) {
-    requireNamespace("mgcv", quietly = TRUE)
-    if (is.null(newdata))   x <- predict(object$jam, type = "lpmatrix")
-    else x <- predict(object$jam, newdata = newdata, type = "lpmatrix")
+    x <- gamm4_lpmatrix(object, newdata = newdata)
     if (is.null(re.form)) {
       re.form <- as.formula(object$call$random)
       if (length(re.form) == 0) re.form <- NA
