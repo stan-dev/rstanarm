@@ -601,7 +601,9 @@ get_x.betareg <- function(object, ...) {
 }
 #' @export
 get_x.gamm4 <- function(object, ...) {
-  as.matrix(object[["x"]])
+  x <- as.matrix(object[["x"]])
+  # with group-level terms, x is cbind(X, padded Z); get_z gives the Z part
+  x[, b_names(colnames(x), invert = TRUE), drop = FALSE]
 }
 #' @export
 get_x.lmerMod <- function(object, ...) {

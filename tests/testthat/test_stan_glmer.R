@@ -178,6 +178,41 @@ test_that("stan_gamm4 errors if no smooth terms in formula", {
   )
 })
 
+test_that("log_lik of stan_gamm4 with group-level terms matches the fit", {
+  skip_if_not_installed("mgcv")
+  N <- 60
+  i <- seq_len(N)
+  dat <- data.frame(x = (i * 0.618) %% 1, g = gl(6, 10), h = factor(i %% 5))
+  dat$y <- sin(2 * pi * dat$x) + as.numeric(dat$g) / 3 +
+    as.numeric(dat$h) / 5 + 0.3 * sin(7 * i)
+  dat$yb <- as.integer(dat$y > median(dat$y))
+  # with two grouping terms, fit$x has a _NEW_ column between group terms
+  SW(fit1 <- stan_gamm4(y ~ s(x), random = ~(1 | g) + (1 | h), data = dat,
+                        chains = 1, iter = 100, seed = SEED, refresh = 0))
+  SW(fit2 <- stan_gamm4(yb ~ s(x), random = ~(1 | g), family = binomial(),
+                        data = dat, chains = 1, iter = 100, seed = SEED,
+                        refresh = 0))
+  fits <- list(gaussian = fit1, binomial = fit2)
+  for (nm in names(fits)) {
+    fit <- fits[[nm]]
+    expect_identical(colnames(get_x(fit)), colnames(fit$jam$X), info = nm)
+    # linear predictor from the design matrix of the Stan fit
+    x_all <- as.matrix(fit$x)
+    eta <- tcrossprod(as.matrix(fit$stanfit)[, colnames(x_all)], x_all)
+    if (nm == "gaussian") {
+      ll <- dnorm(matrix(dat$y, nrow(eta), N, byrow = TRUE), eta,
+                  as.matrix(fit)[, "sigma"], log = TRUE)
+    } else {
+      ll <- dbinom(matrix(dat$yb, nrow(eta), N, byrow = TRUE), 1,
+                   plogis(eta), log = TRUE)
+    }
+    expect_equal(log_lik(fit), ll, tolerance = 1e-8, ignore_attr = TRUE,
+                 info = nm)
+    expect_equal(log_lik(fit, newdata = dat), ll, tolerance = 1e-8,
+                 ignore_attr = TRUE, info = nm)
+  }
+})
+
 
 test_that("loo/waic for stan_glmer works", {
   ll_fun <- rstanarm:::ll_fun
