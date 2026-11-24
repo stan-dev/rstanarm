@@ -262,6 +262,15 @@ stan_gamm4 <-
   w <- as.numeric(jd$pregam$w * family$mu.eta(eta) ^ 2 / family$variance(mu))
   XWX <- t(X) %*% (w * X)
   jd$pregam$edf <- rowSums(jd$pregam$Vp * t(XWX)) / jd$pregam$sig2
+  P <- jd$pregam$P
+  if (!is.null(P)) {
+    # predict.gam expects the coefficients in the basis of the prediction
+    # matrix (see gamm4_lpmatrix), as mgcv::gam returns them
+    nms <- names(jd$pregam$coefficients)
+    jd$pregam$coefficients <- setNames(drop(P %*% jd$pregam$coefficients), nms)
+    jd$pregam$Vp <- P %*% jd$pregam$Vp %*% t(P)
+    dimnames(jd$pregam$Vp) <- list(nms, nms)
+  }
   class(jd$pregam) <- c("jam", "gam")
   fit <- nlist(stanfit, family, formula, offset, weights, 
                x = XZ, y = y, data, terms = jd$pregam$terms, 
@@ -328,6 +337,13 @@ plot_nonlinear <- function(x, smooths, ...,
   else smooths <- 1:length(labels)
   
   B <- as.matrix(x)[, colnames(XZ), drop = FALSE]
+  P <- x$jam$P
+  if (!is.null(P)) {
+    # use the basis of the prediction matrix, as plot.gam does
+    requireNamespace("mgcv", quietly = TRUE)
+    pop <- colnames(x$jam$X)
+    B[, pop] <- B[, pop] %*% t(P)
+  }
   original <- x$jam$model
   
   bivariate <- any(grepl(",", labels, fixed = TRUE) & !fs)
@@ -366,6 +382,7 @@ plot_nonlinear <- function(x, smooths, ...,
              bayesplot::theme_default()
     )
   }
+  if (!is.null(P)) XZ[, pop] <- predict(x$jam, type = "lpmatrix")
   
   df_list <- lapply(x$jam$smooth[smooths], FUN = function(s) {
     incl <- s$first.para:s$last.para
